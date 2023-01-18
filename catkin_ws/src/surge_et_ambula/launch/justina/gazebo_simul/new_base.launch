@@ -1,0 +1,28 @@
+<launch>
+  <arg name="world" default="appartment"/>
+  <arg name="initial_x" default="7.64"/>
+  <arg name="initial_y" default="5.0"/>
+  <arg name="initial_z" default="0.2"/>
+  <arg name="initial_yaw" default="1.57"/>
+
+  <env name="GAZEBO_MODEL_PATH" value="$(find gazebo_envs)/models:$(optenv GAZEBO_MODEL_PATH)"/>
+  <param name="/base_link_name" value="base_link"/>
+  <param name="robot_description" command="xacro $(find justina_description)/urdf/justina_base_omni.xacro"/>
+  
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+    <arg name="debug" value="false"/>
+    <arg name="world_name" value="$(find gazebo_envs)/worlds/$(arg world).world"/>
+  </include>
+  <!-- <rosparam file="$(find config_files)/ros_control/justina_controllers.yaml" command="load"/> -->
+  <!-- <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" -->
+  <!--       output="screen" ns="/" args="base_left_wheel_controller base_back_wheel_controller base_right_wheel_controller"/> -->
+  <!-- <node name="ros_vel_controller_spawner" pkg="controller_manager" type="controller_manager" -->
+  <!--       args="load base_left_wheel_controller base_back_wheel_controller base_right_wheel_controller" respawn="false" output="screen"  /> -->
+  <node name="robot_spawn" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-urdf -param robot_description -model justina -x $(arg initial_x) -y $(arg initial_y) -z $(arg initial_z) -Y $(arg initial_yaw)"/>
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+  <!-- <node name="topic_resender" pkg="gazebo_envs" type="topic_resender.py" output="screen"/> -->
+</launch>

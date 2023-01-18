@@ -1,0 +1,31 @@
+<launch>
+     <!-- Simulation gazebo -->
+
+  <include file="$(find surge_et_ambula)/launch/gazebo_simul/justina_hardware_gazebo.launch">
+	<arg name="world" value="appartment_exploration"/>
+	<arg name="posx" value="9.506894"/>
+	<arg name="posy" value="11.160222"/>
+	<arg name="posz" value="0.05"/>
+	<arg name="yaw" value="3.115600"/>
+  </include>
+
+   <!-- SLAM gmapping -->
+  <node name="gmapping" pkg="gmapping" type="slam_gmapping" args="scan:=/hardware/scan" output="screen">
+
+  <rosparam file="$(find config_files)/ros_control/gmapping_params.yaml" command="load"/>
+  </node>
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/exploration.rviz"/>
+  <include file="$(find surge_et_ambula)/launch/gazebo_simul/justina_controllers.launch"/>
+  
+
+  <node name="arms_kinematics" pkg="inverse_kinematics" type="ik_numeric.py" output="screen"/>
+
+        <!-- Exploration services-->
+
+  <include file="$(find exploration)/launch/Exploration_Services.launch"/>
+
+  <node pkg="exploration" type="autonomous_exploration.py" name="autonomous_exploration" respawn="false" output="screen"></node> 
+
+
+</launch>

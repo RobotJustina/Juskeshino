@@ -1,0 +1,38 @@
+<launch>
+  <group ns="hardware">
+    <node name="left_arm" pkg="arms" type="arm_node" output="screen" respawn="false">
+      <rosparam command="load" file="$(find config_files)/arms/left_arm_params.yaml"/>
+      <remap from="/hardware/arm/goal_pose"      to="/hardware/left_arm/goal_pose"     />
+      <remap from="/hardware/arm/goal_gripper"   to="/hardware/left_arm/goal_gripper"  />
+      <remap from="/hardware/arm/torque_gripper" to="/hardware/left_arm/torque_gripper"/>
+      <remap from="/hardware/arm/current_pose"        to="/hardware/left_arm/current_pose"       />
+      <remap from="/hardware/arm/current_gripper"     to="/hardware/left_arm/current_gripper"    />
+      <remap from="/hardware/arm/object_on_hand"      to="/hardware/left_arm/object_on_hand"     />
+      <remap from="/hardware/robot_state/arm_battery" to="/hardware/robot_state/left_arm_battery"/>
+      <remap from="/manipulation/q_trajectory"        to="/manipulation/la_q_trajectory"/>
+      <remap from="/manipulation/arm/goal_reached"    to="/manipulation/left_arm/goal_reached"/>
+      <remap from="/hardware/arm_voltage"             to="/hardware/left_arm_voltage"/>
+    </node>
+    <node name="right_arm" pkg="arms" type="arm_node" output="screen" respawn="false">
+      <rosparam command="load" file="$(find config_files)/arms/right_arm_params.yaml"/>
+      <remap from="/hardware/arm/goal_pose"      to="/hardware/right_arm/goal_pose"     />
+      <remap from="/hardware/arm/goal_gripper"   to="/hardware/right_arm/goal_gripper"  />
+      <remap from="/hardware/arm/torque_gripper" to="/hardware/right_arm/torque_gripper"/>
+      <remap from="/hardware/arm/current_pose"        to="/hardware/right_arm/current_pose"       />
+      <remap from="/hardware/arm/current_gripper"     to="/hardware/right_arm/current_gripper"    />
+      <remap from="/hardware/arm/object_on_hand"      to="/hardware/right_arm/object_on_hand"     />
+      <remap from="/hardware/robot_state/arm_battery" to="/hardware/robot_state/right_arm_battery"/>
+      <remap from="/manipulation/q_trajectory"        to="/manipulation/ra_q_trajectory"/>
+      <remap from="/manipulation/arm/goal_reached"    to="/manipulation/right_arm/goal_reached"/>
+      <remap from="/hardware/arm_voltage"             to="/hardware/right_arm_voltage"/>
+    </node>
+    <node name="head" pkg="head" type="head_node" output="screen">
+      <rosparam command="load" file="$(find config_files)/head/head_params.yaml"/>
+    </node>
+    <node name="torso" pkg="torso" type="torso_node_pololu" output="screen">
+      <param name="simul" value="false"/>
+      <param name="port" value="/dev/serial/by-id/usb-Pololu_Corporation_Pololu_Jrk_12v12_Motor_Controller_00191339-if00"/>
+      <param name="baud" value="9600"/>
+    </node>
+  </group>
+</launch>

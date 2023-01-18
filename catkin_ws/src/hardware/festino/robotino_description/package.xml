@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<package>
+  <name>robotino_description</name>
+  <version>0.1.0</version>
+  <description>The robotino_description package</description>
+  <maintainer email="verbeek@servicerobotics.eu">Christian Verbeek</maintainer>
+  <license>BSD</license>
+  <url type="website">http://wiki.ros.org/robotino_description</url>
+  <author email="v@rec.de">Christian Verbeek</author>
+  <!-- The *_depend tags are used to specify dependencies -->
+  <buildtool_depend>catkin</buildtool_depend>
+</package>

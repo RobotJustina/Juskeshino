@@ -1,0 +1,25 @@
+<launch>
+  <param name="base_link_name" value="base_link"/>
+  <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
+  <param name="robot_description" command="$(find xacro)/xacro '$(find justina_description)/urdf/justina.xacro'"/>
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+  
+  <include file="$(find surge_et_ambula)/launch/hardware/justina_hardware.launch"/>
+  
+  <include file="$(find surge_et_ambula)/launch/navigation.launch">
+    <arg name="static_map_file"  value="$(find config_files)/maps/Blank.yaml"/>
+    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/Blank.yaml"/>
+    <arg name="initial_pose_x" value="0.0"/>
+    <arg name="initial_pose_y" value="0.0"/>
+    <arg name="initial_pose_a" value="0.0"/>
+    <arg name="laser_scan_topic" value="/hardware/scan"/>
+    <arg name="point_cloud_topic" value="/hardware/kinect/rgbd_wrt_kinect_downsampled"/>
+    <arg name="use_lidar" value="True"/>
+    <arg name="use_sonars" value="False"/>
+    <arg name="use_point_cloud" value="True"/>
+    <arg name="cloud_downsampling" value="1"/>
+    <arg name="cloud_points_threshold" value="50"/>
+    <arg name="lidar_points_threshold" value="5"/>
+  </include>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/navigation.rviz"/>
+</launch>

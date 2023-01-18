@@ -1,0 +1,9 @@
+<launch>
+  <group ns="hardware">
+    <node name="arm_torque_node" pkg="arms" type="arm_torque_node" output="screen" respawn="false">
+      <rosparam command="load" file="$(find config_files)/arms/left_arm_params.yaml"/>
+    </node>    
+  </group>
+</launch>
+
+

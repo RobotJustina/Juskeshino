@@ -1,0 +1,7 @@
+#JSGF V1.0;
+grammar gpsr_gram;
+
+public <simple_command> = ROBOT TAKE THE <object> TO THE <location>;
+
+<object> = JUICE | SOAP | CUP | DEODORANT;
+<location> = LIVINGROOM | KITCHEN;

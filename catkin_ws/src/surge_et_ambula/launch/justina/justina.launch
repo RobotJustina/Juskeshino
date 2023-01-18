@@ -1,0 +1,49 @@
+<launch>
+  <param name="base_link_name" value="base_link"/>
+  <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
+  <param name="robot_description" command="$(find xacro)/xacro '$(find justina_description)/urdf/justina.xacro'"/>
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+  
+  <include file="$(find surge_et_ambula)/launch/hardware/justina_hardware.launch"/>
+  
+  <include file="$(find surge_et_ambula)/launch/navigation.launch">
+    <arg name="static_map_file"  value="$(find config_files)/maps/Blank.yaml"/>
+    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/Blank.yaml"/>
+    <arg name="initial_pose_x" value="0.0"/>
+    <arg name="initial_pose_y" value="0.0"/>
+    <arg name="initial_pose_a" value="0.0"/>
+    <arg name="laser_scan_topic" value="/hardware/scan"/>
+    <arg name="point_cloud_topic" value="/camera/depth_registered/points"/>
+    <arg name="use_lidar" value="True"/>
+    <arg name="use_sonars" value="False"/>
+    <arg name="use_point_cloud" value="True"/>
+    <arg name="cloud_downsampling" value="9"/>
+    <arg name="cloud_points_threshold" value="50"/>
+    <arg name="lidar_points_threshold" value="5"/>
+  </include>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/navigation.rviz"/>
+
+  <node name="justina_gui" pkg="justina_gui" type="justina_gui_node" output="screen">
+    <param name="la_predefined" value="$(find config_files)/manipulation/la_predefined.yaml"/>
+    <param name="ra_predefined" value="$(find config_files)/manipulation/ra_predefined.yaml"/>
+    <param name="hd_predefined" value="$(find config_files)/manipulation/hd_predefined.yaml"/>
+  </node>
+
+  <include file="$(find surge_et_ambula)/launch/manipulation.launch"/>
+  <!-- <node name="obj_reco" pkg="obj_reco" type="obj_reco_node" output="screen"/> -->
+  
+  <!--node name="sound_play" pkg="sound_play" type="soundplay_node.py" output="screen"/>
+  <node name="speech_recog" pkg="sprec_pocketsphinx" type="asr.py">
+    <remap from="jsgf_audio" to="sphinx_audio" />
+    <param name="gram" value="$(find pocketsphinx)/vocab/gpsr"/>
+    <param name="dict" value="$(find pocketsphinx)/vocab/gpsr.dic"/>
+    <param name="grammar" value="gpsr_gram"/>
+    <param name="rule" value="simple_command"/>
+    <param name="lm" value=":default"/>
+    <param name="hmm" value=":default"/>
+  </node>
+
+  <node name="audio_control" pkg="sprec_pocketsphinx" type="send_audio.py" output="screen">
+    <param name="input" value=":default"/>
+  </node-->
+</launch>

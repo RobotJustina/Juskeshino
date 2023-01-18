@@ -1,0 +1,110 @@
+#include "dynamixel_sdk/dynamixel_sdk.h"
+#include "ros/ros.h"
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
+
+int main(int argc, char **argv)
+{
+    ros::init(argc, argv, "read1byte");
+    ros::NodeHandle node("~");
+    int addr,value,baudrate;
+    std::vector<int> ids;
+    std::string ids_string;
+    std::string port;
+
+    if(!node.hasParam("ids")){
+        std::cout<<"missing servo IDs"<<std::endl;
+        return -1;
+    }
+    if(!node.hasParam("addr")){
+        std::cout<<"missing address"<<std::endl;
+        return -1;
+    }
+    if(!node.getParam("ids",ids_string )){
+        std::cout<<"Invalid servo IDs"<<std::endl;
+        return -1;
+    }
+    if(!node.getParam("addr",addr)){
+        std::cout<<"Invalid address"<<std::endl;
+        return -1;
+    }
+
+    std::vector<std::string> parts;
+    boost::split(parts, ids_string, boost::is_any_of(" ,\t\r\n"), boost::token_compress_on);
+    for(size_t i=0; i < parts.size(); i++)
+    {
+        std::stringstream ss(parts[i]);
+        int temp_id;
+        if(!(ss >> temp_id))
+        {
+            std::cout<<"Invalid servo IDs"<<std::endl;
+            return -1;
+        }
+        else
+            ids.push_back(temp_id);
+    }
+    
+    
+    //Check if param exist. Otherwise, use the default values
+    node.param("baudrate", baudrate,1000000);
+    node.param<std::string>("port",port,"/dev/ttyUSB0");
+    
+    //Set port, select protocol and set baudrate
+    dynamixel::PortHandler   *portHandler   = dynamixel::PortHandler::getPortHandler(port.c_str());
+    dynamixel::PacketHandler *packetHandler = dynamixel::PacketHandler::getPacketHandler(1.0);
+    portHandler->setBaudRate(baudrate);
+
+    uint8_t  dxl_error_read      = 0;
+    int      dxl_comm_result = COMM_TX_FAIL;
+    uint8_t info;
+
+    ros::Time start_time = ros::Time::now();
+    for(int i=0; i<ids.size(); i++)
+    {
+        //Read value of 1 Byte
+        dxl_comm_result = packetHandler->read1ByteTxRx(portHandler, ids[i], addr,&info, &dxl_error_read);
+        if(dxl_comm_result != COMM_SUCCESS)
+        {
+            std::cout<<"Comunication error at servo " << i <<std::endl;
+            return -1;
+        }
+        if(dxl_error_read & 0x01)
+        {
+            std::cout<<"Input voltage error at servo " << i <<std::endl;
+        }
+        if(dxl_error_read & 0x02)
+        {
+            std::cout<<"Angle limit error at servo " << i <<std::endl;
+        }
+        if(dxl_error_read & 0x04)
+        {
+            std::cout<<"Overheating error at servo " << i <<std::endl;
+        }
+        if(dxl_error_read & 0x08)
+        {
+            std::cout<<"Range error at servo " << i <<std::endl;
+        }
+        if(dxl_error_read & 0x10)
+        {
+            std::cout<<"CheckSum error at servo " << i <<std::endl;
+        }
+        if(dxl_error_read & 0x20)
+        {
+            std::cout<<"Overload error at servo " << i <<std::endl;
+        }
+        if(dxl_error_read & 0x40)
+        {
+            std::cout<<"Instruction error at servo " << i <<std::endl;
+        }
+        std::cout<<"Data: "<<int(info)<<"\tid: "<<ids[i]<<"\taddress: "<<addr<<"\tBaudRate: "<<baudrate<<"\tPort: "<<port
+                 <<"\tError code: "<<int(dxl_error_read)<<std::endl;
+    }
+    double millisecs = 1000*(ros::Time::now() - start_time).toSec();
+    std::cout << "Communication time: " << millisecs << " milliseconds." << std::endl;
+    
+    portHandler->closePort();
+
+    return 0;
+    
+}

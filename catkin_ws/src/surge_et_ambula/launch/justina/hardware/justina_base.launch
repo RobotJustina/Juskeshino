@@ -1,0 +1,28 @@
+<launch>
+  <group ns="hardware">
+    <!-- Nodes to the real justina robot -->
+    <node name="mobile_base" pkg="mobile_base" type="omni_base_node" output="screen">
+      <param name="port1" value="/dev/justinaRC30"/>
+      <param name="port2" value="/dev/justinaRC15"/>
+    </node>
+    <node name="urg_node" pkg="urg_node" type="urg_node" output="screen">
+      <param name="serial_port" type="string" value="/dev/justinaHokuyo_H1009463" />
+      <param name="frame_id" type="string" value="laser_link" />
+    </node>
+    <node name="urg_rear_node" pkg="urg_node" type="urg_node" output="screen">
+      <param name="serial_port" type="string" value="/dev/justinaHokuyo_H1303051" />
+      <param name="frame_id" type="string" value="laser_link_rear" />
+      <remap from="scan" to="scan_rear"/>
+      <param name="angle_min" value="-1.5708"/>
+      <param name="angle_max" value="1.5708"/>
+    </node>
+    <node name="joy" pkg="joy" type="joy_node" output="screen"/>
+    <node name="joystick_teleop" pkg="joystick_teleop" type="joystick_teleop_node.py" output="screen" />
+  </group>
+  <node name="tf_wheel_front_connect_x" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 base_link wheel_front_x 30"/>
+  <node name="tf_wheel_front_connect_y" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 wheel_front_x wheel_front_y 30"/>
+  <node name="tf_wheel_front_connect_z" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 wheel_front_y wheel_front_z 30"/>
+  <node name="tf_wheel_back_connect_x"  pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 base_link wheel_back_x 30"/>
+  <node name="tf_wheel_back_connect_y"  pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 wheel_back_x wheel_back_y 30"/>
+  <node name="tf_wheel_back_connect_z"  pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 wheel_back_y wheel_back_z 30"/>
+</launch>

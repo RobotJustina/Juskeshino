@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+  <env name="WEBOTS_HOME" value="/usr/local/webots"/>
+
+  <arg name="no_gui" default="false," doc="Start Webots with minimal GUI"/>
+  <include file="$(find webots_ros)/launch/webots.launch">
+    <arg name="mode" value="realtime"/>
+    <arg name="no_gui" value="$(arg no_gui)"/>
+    <arg name="world" value="$(find webots_simul)/worlds/JustinaWebots.wbt"/>
+  </include>
+
+  <node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen" args="-d $(find config_files)/rviz/justinaWebots.rviz"/>
+</launch>
