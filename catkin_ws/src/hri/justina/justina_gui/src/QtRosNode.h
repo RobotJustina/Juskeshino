@@ -18,6 +18,7 @@
 #include "manip_msgs/ForwardKinematics.h"
 #include "manip_msgs/GetPolynomialTrajectory.h"
 #include "vision_msgs/FindLines.h"
+#include "vision_msgs/FindPlanes.h"
 #include "vision_msgs/TrainObject.h"
 #include "vision_msgs/RecognizeObjects.h"
 #include "vision_msgs/RecognizeObject.h"
@@ -55,6 +56,7 @@ public:
     ros::ServiceClient cltRaForwardKinematics;
     ros::ServiceClient cltGetPolynomialTraj;
     ros::ServiceClient cltFindLines;
+    ros::ServiceClient cltFindHoriPlanes;
     ros::ServiceClient cltTrainObject;
     ros::ServiceClient cltRecogObjects;
     ros::ServiceClient cltRecogObject;
@@ -104,6 +106,7 @@ public:
     void callback_recognized_speech(const hri_msgs::RecognizedSpeech::ConstPtr& msg);
 
     bool call_find_lines();
+    bool call_find_horizontal_planes();
     bool call_train_object(std::string name);
     bool call_recognize_objects();
     bool call_recognize_object(std::string name);

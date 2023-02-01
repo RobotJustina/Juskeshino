@@ -27,6 +27,7 @@ add_message_files(
 add_service_files(
   FILES
   FindLines.srv
+  FindPlanes.srv
   RecognizeObjects.srv
   RecognizeObject.srv
   TrainObject.srv

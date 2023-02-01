@@ -99,6 +99,7 @@ public slots:
     void sprTxtFakeRecogReturnPressed();
 
     void visFindLinesClicked();
+    void visFindHoriPlanesClicked();
     void visTrainObjectReturnPressed();
     void visRecognizeObjectReturnPressed();
     void visRecognizeObjectsClicked();

@@ -1,6 +1,7 @@
 #include "ros/ros.h"
 #include <ros/package.h>
 #include "vision_msgs/FindLines.h"
+#include "vision_msgs/FindPlanes.h"
 #include "vision_msgs/RecognizeObjects.h"
 #include "vision_msgs/RecognizeObject.h"
 #include "vision_msgs/VisionObject.h"
@@ -10,21 +11,24 @@
 #include "Utils.h"
 
 tf::TransformListener* tf_listener;
-visualization_msgs::Marker table_border_marker;
-
-visualization_msgs::MarkerArray get_detected_objs_markers()
-{
-    
-}
+ros::Publisher pubMarkers;
 
 bool callback_find_lines(vision_msgs::FindLines::Request& req, vision_msgs::FindLines::Response& resp)
 {
     std::cout << std::endl << "ObjReco.->Executing srvFindLines (Jebusian method)." << std::endl;
     resp.lines = PlaneExtractor::find_table_border(req.point_cloud, tf_listener);
-    table_border_marker = Utils::get_lines_marker(resp.lines);
+    pubMarkers.publish(Utils::get_lines_marker(resp.lines));
     if(resp.lines.size() > 0) std::cout << "ObjReco.->Found line: " << resp.lines[0] << " - " <<resp.lines[1] <<std::endl;
     else std::cout << "ObjReco.->Cannot find lines. " << std::endl;
     return resp.lines.size() > 0;
+}
+
+bool callback_find_planes(vision_msgs::FindPlanes::Request& req, vision_msgs::FindPlanes::Response& resp)
+{
+    std::cout << std::endl << "ObjReco.->Executing srvFindPlanes." << std::endl;
+    std::vector<cv::Vec3f> plane = PlaneExtractor::get_horizontal_planes(req.point_cloud, tf_listener);
+    pubMarkers.publish(Utils::get_plane_marker(plane));
+    return true;
 }
 
 bool callback_recog_objs(vision_msgs::RecognizeObjects::Request& req, vision_msgs::RecognizeObjects::Response& resp)
@@ -60,11 +64,12 @@ int main(int argc, char** argv)
     std::cout << "INITIALIZING OBJECT RECOGNIZER BY MR. YISUS (CORRECTED AND IMPROVED BY MARCOSOFT)" << std::endl;
     ros::init(argc, argv, "obj_reco_node");
     ros::NodeHandle n;
-    ros::ServiceServer srvFindLines = n.advertiseService("/vision/line_finder/find_lines_ransac", callback_find_lines);
-    ros::ServiceServer srvRecogObjs = n.advertiseService("/vision/obj_reco/recognize_objects", callback_recog_objs);
-    ros::ServiceServer srvRecogObj  = n.advertiseService("/vision/obj_reco/recognize_object" , callback_recog_obj );
-    ros::ServiceServer srvTrainObj  = n.advertiseService("/vision/obj_reco/train_object", callback_train_object);
-    ros::Publisher     pubMarkers   = n.advertise<visualization_msgs::Marker>("/vision/obj_reco/markers", 1);
+    ros::ServiceServer srvFindLines  = n.advertiseService("/vision/line_finder/find_line_pca", callback_find_lines);
+    ros::ServiceServer srvFindPlanes = n.advertiseService("/vision/line_finder/find_horizontal_plane_ransac", callback_find_planes);
+    ros::ServiceServer srvRecogObjs  = n.advertiseService("/vision/obj_reco/recognize_objects", callback_recog_objs);
+    ros::ServiceServer srvRecogObj   = n.advertiseService("/vision/obj_reco/recognize_object" , callback_recog_obj );
+    ros::ServiceServer srvTrainObj   = n.advertiseService("/vision/obj_reco/train_object", callback_train_object);
+    pubMarkers    = n.advertise<visualization_msgs::Marker>("/vision/obj_reco/markers", 1);
     ros::Rate loop(30);
     tf_listener = new tf::TransformListener();
 
@@ -110,7 +115,6 @@ int main(int argc, char** argv)
 
     while(ros::ok() && cv::waitKey(10) != 27)
     {
-        pubMarkers.publish(table_border_marker);
         ros::spinOnce();
         loop.sleep();
     }

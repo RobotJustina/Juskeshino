@@ -63,10 +63,11 @@ void QtRosNode::run()
     pubFakeSpeechRecog = n->advertise<hri_msgs::RecognizedSpeech>("/hri/sp_rec/recognized", 1);
     subRecogSpeech     = n->subscribe("/hri/sp_rec/recognized",1, &QtRosNode::callback_recognized_speech, this);
         
-    cltFindLines     = n->serviceClient<vision_msgs::FindLines>       ("/vision/line_finder/find_lines_ransac");
-    cltTrainObject   = n->serviceClient<vision_msgs::TrainObject>     ("/vision/obj_reco/train_object");
-    cltRecogObjects  = n->serviceClient<vision_msgs::RecognizeObjects>("/vision/obj_reco/recognize_objects");
-    cltRecogObject   = n->serviceClient<vision_msgs::RecognizeObject >("/vision/obj_reco/recognize_object");
+    cltFindLines      = n->serviceClient<vision_msgs::FindLines>       ("/vision/line_finder/find_line_pca");
+    cltFindHoriPlanes = n->serviceClient<vision_msgs::FindPlanes>      ("/vision/line_finder/find_horizontal_plane_ransac");
+    cltTrainObject    = n->serviceClient<vision_msgs::TrainObject>     ("/vision/obj_reco/train_object");
+    cltRecogObjects   = n->serviceClient<vision_msgs::RecognizeObjects>("/vision/obj_reco/recognize_objects");
+    cltRecogObject    = n->serviceClient<vision_msgs::RecognizeObject >("/vision/obj_reco/recognize_object");
     
     int pub_zero_counter = 5;
     while(ros::ok() && !this->gui_closed)
@@ -364,12 +365,28 @@ bool QtRosNode::call_find_lines()
     ptr = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/camera/depth_registered/points", ros::Duration(1.0));
     if(ptr==NULL)
     {
-        std::cout << "JustinaGUI.->Cannot get point cloud before calling train object service..." << std::endl;
+        std::cout << "JustinaGUI.->Cannot get point cloud before calling find lines service..." << std::endl;
         return false;
     }
     srv.request.point_cloud = *ptr;
     bool success = cltFindLines.call(srv);
     if(!success) std::cout << "JustinaGUI.->Cannot find any lines :'(" << std::endl;
+    return success;
+}
+
+bool QtRosNode::call_find_horizontal_planes()
+{
+    vision_msgs::FindPlanes srv;
+    boost::shared_ptr<sensor_msgs::PointCloud2 const> ptr;
+    ptr = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/camera/depth_registered/points", ros::Duration(1.0));
+    if(ptr==NULL)
+    {
+        std::cout << "JustinaGUI.->Cannot get point cloud before calling find planes service..." << std::endl;
+        return false;
+    }
+    srv.request.point_cloud = *ptr;
+    bool success = cltFindHoriPlanes.call(srv);
+    if(!success) std::cout << "JustinaGUI.->Cannot find any planes :'(" << std::endl;
     return success;
 }
 

@@ -125,10 +125,10 @@ visualization_msgs::Marker Utils::get_lines_marker(std::vector<geometry_msgs::Po
     marker.type = visualization_msgs::Marker::LINE_LIST;
     marker.action = visualization_msgs::Marker::ADD;
     marker.scale.x = 0.1;
-    marker.color.a = 1.0; // Don't forget to set the alpha!
+    marker.color.a = 0.5; // Don't forget to set the alpha!
     marker.color.r = 0.0;
-    marker.color.g = 0.6;
-    marker.color.b = 0.0;
+    marker.color.g = 0.0;
+    marker.color.b = 0.9;
     marker.lifetime = ros::Duration(10.0);
     for(size_t i=0; i < lines.size(); i++) marker.points.push_back(lines[i]);
     return marker;
@@ -278,10 +278,10 @@ std::vector<cv::Vec3f> Utils::line_by_pca(cv::Mat& points)
     cv::PCA pca(points, cv::Mat(), cv::PCA::DATA_AS_ROW);
     if(Utils::debug)
     {
-        std::cout << "ObjReco->PCA: number of points: " << points.rows << std::endl;
-        std::cout << "ObjReco->PCA mean: " << pca.mean << std::endl;
-        std::cout << "ObjReco->PCA vectors: " << pca.eigenvectors << std::endl;
-        std::cout << "ObjReco->PCA eigenvalues: " << pca.eigenvalues << std::endl;
+        std::cout << "ObjReco->Line PCA: number of points: " << points.rows << std::endl;
+        std::cout << "ObjReco->Line PCA mean: " << pca.mean << std::endl;
+        std::cout << "ObjReco->Line PCA vectors: " << pca.eigenvectors << std::endl;
+        std::cout << "ObjReco->Line PCA eigenvalues: " << pca.eigenvalues << std::endl;
     }
     float line_mag = 2*sqrt(pca.eigenvalues.at<float>(0));
     line[0][0] = pca.mean.at<float>(0,0) + line_mag*pca.eigenvectors.at<float>(0,0);
@@ -291,4 +291,106 @@ std::vector<cv::Vec3f> Utils::line_by_pca(cv::Mat& points)
     line[1][1] = pca.mean.at<float>(0,1) - line_mag*pca.eigenvectors.at<float>(0,1);
     line[1][2] = pca.mean.at<float>(0,2) - line_mag*pca.eigenvectors.at<float>(0,2);
     return line;
+}
+
+/*
+ * Returns a plane given by a set of 6 xyz vectors: [center, normal and four bounding points].
+ * Yes, it is assumed only a planar segment with a rectangular shape. Sorry for that limitation.
+ */
+std::vector<cv::Vec3f> Utils::plane_by_pca(cv::Mat points)
+{
+    std::vector<cv::Vec3f> plane(6);
+    cv::PCA pca(points, cv::Mat(), cv::PCA::DATA_AS_ROW);
+    if(Utils::debug)
+    {
+        std::cout << "ObjReco->Plane PCA: number of points: " << points.rows << std::endl;
+        std::cout << "ObjReco->Plane PCA mean: " << pca.mean << std::endl;
+        std::cout << "ObjReco->Plane PCA vectors: " << pca.eigenvectors << std::endl;
+        std::cout << "ObjReco->Plane PCA eigenvalues: " << pca.eigenvalues << std::endl;
+    }
+    float width  = 2*sqrt(pca.eigenvalues.at<float>(0));
+    float height = 2*sqrt(pca.eigenvalues.at<float>(1));
+    plane[0] = pca.mean.at<cv::Vec3f>(0);
+    plane[1] = pca.eigenvectors.at<cv::Vec3f>(0).cross(pca.eigenvectors.at<cv::Vec3f>(1));
+    plane[2] = plane[0] + width*pca.eigenvectors.at<cv::Vec3f>(0) + height*pca.eigenvectors.at<cv::Vec3f>(1);
+    plane[3] = plane[0] - width*pca.eigenvectors.at<cv::Vec3f>(0) + height*pca.eigenvectors.at<cv::Vec3f>(1);
+    plane[4] = plane[0] - width*pca.eigenvectors.at<cv::Vec3f>(0) - height*pca.eigenvectors.at<cv::Vec3f>(1);
+    plane[5] = plane[0] + width*pca.eigenvectors.at<cv::Vec3f>(0) - height*pca.eigenvectors.at<cv::Vec3f>(1);
+    return plane;
+}
+
+/*
+ * Returns a plane given by a set of 2 xyz vectors: [center, normal].
+ * Normal is returned as a unitary vector
+ */
+std::vector<cv::Vec3f> Utils::plane_from_points(cv::Vec3f p1, cv::Vec3f p2, cv::Vec3f p3)
+{
+    std::vector<cv::Vec3f> plane(2);
+    plane[0] = (p1 + p2 + p3)/3; //Center point
+    plane[1] = (p2 - p1).cross(p3 - p1); //Normal vector
+    float mag = cv::norm(plane[1]);
+    if(mag != 0) plane[1] /= mag;
+    if(plane[1][2] < 0) plane[1] = -plane[1];
+    return plane;
+}
+
+/*
+ * Returns the first found plane with more than 'min_area' inliers
+ */
+std::vector<cv::Vec3f> Utils::plane_by_ransac(cv::Mat& points, float normals_tol, float dist_tol, float min_area)
+{
+    std::cout << "Executing ransac with " << points.rows << " points"  << std::endl;
+    std::vector<cv::Vec3f> planes, plane;
+    cv::RNG rng(time(NULL));
+    //Get first three random points until get a horizontal candidate plane.
+    cv::Vec3f p1, p2, p3;
+    do{
+        p1 = points.at<cv::Vec3f>(rng.next()%points.rows, rng.next()%points.cols);
+        p2 = points.at<cv::Vec3f>(rng.next()%points.rows, rng.next()%points.cols);
+        p3 = points.at<cv::Vec3f>(rng.next()%points.rows, rng.next()%points.cols);
+        plane = Utils::plane_from_points(p1, p2, p3);
+    }while(plane[1][2] < normals_tol);
+
+    //Find inliers
+    cv::Vec3f center = plane[0];
+    cv::Vec3f normal = plane[1];
+    std::vector<cv::Vec3f> inliers;
+    std::cout << "Checking candidate plane: " << center << "  " << normal << std::endl;
+    for(size_t i=0; i < points.rows; i++)
+    {
+        cv::Vec3f v = points.at<cv::Vec3f>(i) - center;
+        float dist = fabs(normal[0]*v[0] + normal[1]*v[1] + normal[2]*v[2]);
+        if (dist < dist_tol)
+            inliers.push_back(points.at<cv::Vec3f>(i));
+    }
+    std::cout << "Candidate plane had " << inliers.size() << " inliers" << std::endl;
+    plane = Utils::plane_by_pca(cv::Mat(inliers).reshape(1));
+    return plane;
+}
+
+visualization_msgs::Marker Utils::get_plane_marker(std::vector<cv::Vec3f> plane)
+{
+    //Intended only for horizontal planes
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "base_link";
+    marker.header.stamp = ros::Time();
+    marker.ns = "obj_reco_markers";
+    marker.id = 1;
+    marker.type = visualization_msgs::Marker::CUBE;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose.position.x = plane[0][0];
+    marker.pose.position.y = plane[0][1];
+    marker.pose.position.z = plane[0][2];
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+    marker.scale.x = fabs(plane[2][0] - plane[4][0]);
+    marker.scale.y = fabs(plane[2][1] - plane[4][1]);
+    marker.scale.z = 0.1;
+    marker.color.a = 0.5; // Don't forget to set the alpha!
+    marker.color.r = 0.0;
+    marker.color.g = 0.5;
+    marker.color.b = 0.0;
+    return marker;
 }

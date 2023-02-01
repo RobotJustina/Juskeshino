@@ -28,4 +28,9 @@ public:
                                               float theta_max, float theta_step, int threshold, std::vector<cv::Vec2f>& lines_img);
     static void draw_lines(cv::Mat& img, std::vector<cv::Vec2f>& lines);
     static std::vector<cv::Vec3f> line_by_pca(cv::Mat& points);
+    static std::vector<cv::Vec3f> plane_by_pca(cv::Mat points);
+    static std::vector<cv::Vec3f> plane_from_points(cv::Vec3f p1, cv::Vec3f p2, cv::Vec3f p3);
+    static std::vector<cv::Vec3f> plane_by_ransac(cv::Mat& points, float normals_tol, float dist_tol, float min_area);
+    static float dist_point_to_plane(cv::Vec3f point, cv::Vec3f center, cv::Vec3f normal);
+    static visualization_msgs::Marker get_plane_marker(std::vector<cv::Vec3f> plane);
 };

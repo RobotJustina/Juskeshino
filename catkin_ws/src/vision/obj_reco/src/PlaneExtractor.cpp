@@ -13,13 +13,23 @@ float PlaneExtractor::hough_min_theta  = 1.5708-0.5;
 float PlaneExtractor::hough_max_theta  = 1.5708+0.5;
 float PlaneExtractor::hough_step_theta = 0.03;
 
-std::vector<cv::Point> PlaneExtractor::extract_horizontal_planes(sensor_msgs::PointCloud2& point_cloud_msg, tf::TransformListener* tf_listener)
+std::vector<cv::Vec3f> PlaneExtractor::get_horizontal_planes(sensor_msgs::PointCloud2& point_cloud_msg, tf::TransformListener* tf_listener)
 {
-    cv::Mat img, cloud;
+    cv::Mat img, cloud, grayscale_normals, img_bin;
+    std::vector<cv::Point> indices;
     Utils::transform_cloud_wrt_base(point_cloud_msg, img, cloud, tf_listener);
     Utils::filter_by_distance(cloud, img, cloud, img);
     cv::Mat normals = PlaneExtractor::get_horizontal_normals(cloud);
-    if(Utils::debug) cv::imshow("Horizontal normals", cloud);
+    cv::cvtColor(normals, grayscale_normals, cv::COLOR_BGR2GRAY);
+    grayscale_normals.convertTo(grayscale_normals, CV_8UC1, 255);
+    cv::threshold(grayscale_normals, img_bin, 10, 255, cv::THRESH_BINARY);
+    cv::imshow("binary", img_bin);
+    cv::findNonZero(img_bin, indices);
+    cv::Mat points = cv::Mat(indices.size(), 3, CV_32F);
+    for(int i=0; i<indices.size(); i++)
+        points.at<cv::Vec3f>(i) = cloud.at<cv::Vec3f>(indices[i]);
+    std::vector<cv::Vec3f> plane = Utils::plane_by_ransac(points, PlaneExtractor::normals_tol, 0.05, 0.5);
+    return plane;
 }
 
 cv::Mat PlaneExtractor::get_horizontal_normals(cv::Mat& cloud)

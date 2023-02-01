@@ -95,6 +95,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(ui->sprTxtFakeRecog, SIGNAL(returnPressed()), this, SLOT(sprTxtFakeRecogReturnPressed()));
 
     QObject::connect(ui->visBtnFindLines, SIGNAL(clicked()), this, SLOT(visFindLinesClicked()));
+    QObject::connect(ui->visBtnFindHoriPlanes, SIGNAL(clicked()), this, SLOT(visFindHoriPlanesClicked()));
     QObject::connect(ui->visTxtTrainObject, SIGNAL(returnPressed()), this, SLOT(visTrainObjectReturnPressed()));
     QObject::connect(ui->visBtnRecogObjects, SIGNAL(clicked()), this, SLOT(visRecognizeObjectsClicked()));
     QObject::connect(ui->visTxtRecognizeObject, SIGNAL(returnPressed()), this, SLOT(visRecognizeObjectReturnPressed()));
@@ -851,6 +852,11 @@ void MainWindow::sprTxtFakeRecogReturnPressed()
 void MainWindow::visFindLinesClicked()
 {
     qtRosNode->call_find_lines();
+}
+
+void MainWindow::visFindHoriPlanesClicked()
+{
+    qtRosNode->call_find_horizontal_planes();
 }
 
 void MainWindow::visTrainObjectReturnPressed()

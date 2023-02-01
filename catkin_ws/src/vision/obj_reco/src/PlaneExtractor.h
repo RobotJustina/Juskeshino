@@ -22,7 +22,7 @@ public:
     static float hough_max_theta;
     static float hough_step_theta;
     
-    static std::vector<cv::Point> extract_horizontal_planes(sensor_msgs::PointCloud2& point_cloud_msg, tf::TransformListener* tf_listener);
+    static std::vector<cv::Vec3f> get_horizontal_planes(sensor_msgs::PointCloud2& point_cloud_msg, tf::TransformListener* tf_listener);
     static cv::Mat get_horizontal_normals(cv::Mat& cloud);
     static std::vector<cv::Vec3f> find_horizontal_lines(cv::Mat& normals, cv::Mat& cloud, cv::Mat& output_bgr);
     static std::vector<cv::Vec3f> find_nearest_horizontal_line(std::vector<cv::Vec3f>& lines);
