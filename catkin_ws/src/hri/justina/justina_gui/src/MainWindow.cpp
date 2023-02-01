@@ -130,25 +130,30 @@ void MainWindow::closeEvent(QCloseEvent *event)
     //event->accept();
 }
 
-void MainWindow::initArmsGuiElements(std_msgs::Float64MultiArray la_q0, std_msgs::Float64MultiArray ra_q0)
+void MainWindow::initArmsGuiElements(std_msgs::Float64MultiArray::ConstPtr la_q0, std_msgs::Float64MultiArray::ConstPtr ra_q0)
 {
+    if(la_q0 == NULL || ra_q0 == NULL)
+    {
+        std::cout << "JustinaGUI->WARNING!!! No arms initial position received!!! OMG! " << std::endl;
+        return;
+    }
     ui->laGbArticular->setEnabled(false);
-    ui->laTxtAngles1->setValue(la_q0.data[0]);
-    ui->laTxtAngles2->setValue(la_q0.data[1]);
-    ui->laTxtAngles3->setValue(la_q0.data[2]);
-    ui->laTxtAngles4->setValue(la_q0.data[3]);
-    ui->laTxtAngles5->setValue(la_q0.data[4]);
-    ui->laTxtAngles6->setValue(la_q0.data[5]);
-    ui->laTxtAngles7->setValue(la_q0.data[6]);
+    ui->laTxtAngles1->setValue(la_q0->data[0]);
+    ui->laTxtAngles2->setValue(la_q0->data[1]);
+    ui->laTxtAngles3->setValue(la_q0->data[2]);
+    ui->laTxtAngles4->setValue(la_q0->data[3]);
+    ui->laTxtAngles5->setValue(la_q0->data[4]);
+    ui->laTxtAngles6->setValue(la_q0->data[5]);
+    ui->laTxtAngles7->setValue(la_q0->data[6]);
     ui->laGbArticular->setEnabled(true);
     ui->raGbArticular->setEnabled(false);
-    ui->raTxtAngles1->setValue(ra_q0.data[0]);
-    ui->raTxtAngles2->setValue(ra_q0.data[1]);
-    ui->raTxtAngles3->setValue(ra_q0.data[2]);
-    ui->raTxtAngles4->setValue(ra_q0.data[3]);
-    ui->raTxtAngles5->setValue(ra_q0.data[4]);
-    ui->raTxtAngles6->setValue(ra_q0.data[5]);
-    ui->raTxtAngles7->setValue(ra_q0.data[6]);
+    ui->raTxtAngles1->setValue(ra_q0->data[0]);
+    ui->raTxtAngles2->setValue(ra_q0->data[1]);
+    ui->raTxtAngles3->setValue(ra_q0->data[2]);
+    ui->raTxtAngles4->setValue(ra_q0->data[3]);
+    ui->raTxtAngles5->setValue(ra_q0->data[4]);
+    ui->raTxtAngles6->setValue(ra_q0->data[5]);
+    ui->raTxtAngles7->setValue(ra_q0->data[6]);
     ui->raGbArticular->setEnabled(true);
 }
 

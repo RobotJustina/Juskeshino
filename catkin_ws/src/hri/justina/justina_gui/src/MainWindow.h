@@ -32,7 +32,7 @@ public:
     void setRosNode(QtRosNode* qtRosNode);
     void setYamlParser(YamlParser* yamlParser);
     void closeEvent(QCloseEvent *event);
-    void initArmsGuiElements(std_msgs::Float64MultiArray la_q0, std_msgs::Float64MultiArray ra_q0);
+    void initArmsGuiElements(std_msgs::Float64MultiArray::ConstPtr la_q0, std_msgs::Float64MultiArray::ConstPtr ra_q0);
 
 public slots:
     //Slots for signals emitted in the QtRosNode (e.g. a topic is received)
