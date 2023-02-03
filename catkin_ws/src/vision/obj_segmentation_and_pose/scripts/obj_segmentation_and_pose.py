@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
+
 import math
 import rospy
 import numpy as np
 import tf
 import tf.transformations as tft
 import tf2_ros
-import tf2_msgs.msg
 import ros_numpy
 import cv2
 import pandas as pd
@@ -13,7 +13,6 @@ from sensor_msgs.msg import PointCloud2, Image
 from std_msgs.msg import Header, Float32MultiArray, Float32
 from geometry_msgs.msg import PointStamped, PoseStamped, Point, Pose, Vector3
 from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
 from numpy.linalg import eig
 from visualization_msgs.msg import Marker
 from vision_msgs.srv import *
@@ -143,9 +142,6 @@ def segment_by_contour(msg):
 def contour_point_cloud(img_bgr, mask_ero):  
     mask_ero = cv2.cvtColor(mask_ero, cv2.COLOR_BGR2GRAY)
     img_with_mask = cv2.bitwise_and(img_bgr,img_bgr, mask=mask_ero)
-    cv2.imshow('final obj', img_with_mask)
-    cv2.waitKey(2)
-
     img_non_zero = cv2.findNonZero(mask_ero)
     pixels_array= []
 
@@ -269,36 +265,42 @@ def arow_marker(centroide_cam, p1,p2,p3, frame_id_point_cloud):  # P1 y P2
     p0.point.x , p0.point.y, p0.point.z = centroide_cam[0], centroide_cam[1], centroide_cam[2]
     # Arrow
     frame = frame_id_point_cloud
-    ns = ['arrow','arrow2','arrow3']
+    ns = ['orientation_obj_1','orientation_obj_2','orientation_obj_3']
     points = [p0,p1,p2,p3]
-    marker_1, marker_2, marker_3 = Marker(), Marker(), Marker()
-    marker_array = [marker_1, marker_2, marker_3]
-    marker_pub_array = [marker_pub_1, marker_pub_2, marker_pub_3]
+
+    #marker_1, marker_2, marker_3 = Marker(), Marker(), Marker()
+    #marker_1.id = 0
+    marker = Marker()
+    #marker_array = [marker_1, marker_2, marker_3]
+
+    #marker_pub_array = [marker_pub_1, marker_pub_2, marker_pub_3]
 
     for i in range(3):
-        marker_array[i].header.frame_id = frame
-        marker_array[i].type = Marker.ARROW
-        marker_array[i].ns = ns[i]
-        marker_array[i].header.stamp = rospy.Time.now()
-        marker_array[i].action = marker_array[i].ADD
+        marker.header.frame_id = frame
+        marker.type = Marker.ARROW
+        marker.ns = ns[i]
+        marker.header.stamp = rospy.Time.now()
+        marker.action = marker.ADD
+        marker.id = i+10
+
         # body radius, Head radius, hight head
-        marker_array[i].scale.x, marker_array[i].scale.y, marker_array[i].scale.z = 0.02, 0.1, 0.04 
+        marker.scale.x, marker.scale.y, marker.scale.z = 0.02, 0.1, 0.04 
         # Set the color
-        marker_array[i].color.r , marker_array[i].color.g , marker_array[i].color.b, marker_array[i].color.a = 0, 100.0, 100.0, 1.0
+        marker.color.r , marker.color.g , marker.color.b, marker.color.a = 0, 100.0, 100.0, 1.0
         point = Point()
         point.x = points[0].point.x + (points[i+1].x) 
         point.y = points[0].point.y + (points[i+1].y)
         point.z = points[0].point.z + (points[i+1].z)
 
-        marker_array[i].points = [points[0].point, point]
-        marker_pub_array[i].publish(marker_array[i])
+        marker.points = [points[0].point, point]
+        marker_pub.publish(marker)
 
 
 
 
 def callback_RecognizeObject(req):  # Request is a PointCloud2
     msg = req.point_cloud
-
+    print("the service has been requested **************")
     obj_in_stage, centroide_cam, x_points, y_points, z_points, recog_obj_img, img_with_mask, cloud_msg = segment_by_contour(msg)
     frame_id_point_cloud = msg.header.frame_id
     resp = RecognizeObjectResponse()
@@ -312,11 +314,9 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
 
         resp.recog_object.header = req.point_cloud.header
         resp.recog_object.point_cloud = cloud_msg
-
-        print("eig valores", eig_val[0], eig_val[1], eig_val[2])
-
         resp.recog_object.size.x, resp.recog_object.size.y, resp.recog_object.size.z = eig_val[0], eig_val[1], eig_val[2]
         resp.recog_object.pose = obj_pose
+        print(obj_pose)
         resp.recog_object.image.data = img_with_mask.flatten().tolist()
         resp.recog_object.image.height = 480
         resp.recog_object.image.width = 640
@@ -326,8 +326,10 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
         resp.image.height = 480
         resp.image.width = 640
 
-        cv2.imshow('detected object', recog_obj_img)
-        cv2.waitKey(2) 
+        #cv2.imshow('final obj', img_with_mask)
+        #cv2.waitKey(2)
+        #cv2.imshow('detected object', recog_obj_img)
+        #cv2.waitKey(2) 
         return resp
 
     else:
@@ -340,13 +342,11 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
 def main():
     print("Node to segment objects in a image from camera...ʕ•ᴥ•ʔ")
     rospy.init_node("object_pose")
-    global pub_point, marker_pub_1, marker_pub_2, marker_pub_3
+    global pub_point, marker_pub, marker_pub_2, marker_pub_3
     
-    rospy.Service("/vision/object_pose", RecognizeObject, callback_RecognizeObject) 
+    rospy.Service("/vision/obj_reco/recognize_object", RecognizeObject, callback_RecognizeObject) 
     pub_point = rospy.Publisher('/vision/detected_object', PointStamped, queue_size=10)
-    marker_pub_1 = rospy.Publisher("/vision/visualization_marker_1", Marker, queue_size = 2) 
-    marker_pub_2 = rospy.Publisher("/vision/visualization_marker_2", Marker, queue_size = 2) 
-    marker_pub_3 = rospy.Publisher("/vision/visualization_marker_3", Marker, queue_size = 2) 
+    marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 2) 
 
     loop = rospy.Rate(30)
     while not rospy.is_shutdown():
