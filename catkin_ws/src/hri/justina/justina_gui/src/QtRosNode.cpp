@@ -63,7 +63,7 @@ void QtRosNode::run()
     pubFakeSpeechRecog = n->advertise<hri_msgs::RecognizedSpeech>("/hri/sp_rec/recognized", 1);
     subRecogSpeech     = n->subscribe("/hri/sp_rec/recognized",1, &QtRosNode::callback_recognized_speech, this);
         
-    cltFindLines      = n->serviceClient<vision_msgs::FindLines>       ("/vision/line_finder/find_line_pca");
+    cltFindLines      = n->serviceClient<vision_msgs::FindLines>       ("/vision/line_finder/find_table_edge");
     cltFindHoriPlanes = n->serviceClient<vision_msgs::FindPlanes>      ("/vision/line_finder/find_horizontal_plane_ransac");
     cltTrainObject    = n->serviceClient<vision_msgs::TrainObject>     ("/vision/obj_reco/train_object");
     cltRecogObjects   = n->serviceClient<vision_msgs::RecognizeObjects>("/vision/obj_reco/recognize_objects");

@@ -7,18 +7,41 @@
 #include "vision_msgs/VisionObject.h"
 #include "vision_msgs/TrainObject.h"
 #include "visualization_msgs/MarkerArray.h"
-#include "PlaneExtractor.h"
 #include "Utils.h"
+#include "GeometricFeatures.h"
 
 tf::TransformListener* tf_listener;
 ros::Publisher pubMarkers;
 
-bool callback_find_lines(vision_msgs::FindLines::Request& req, vision_msgs::FindLines::Response& resp)
+bool  debug = false;
+float normal_min_z = 0.8;
+int   canny_threshold1  = 30;
+int   canny_threshold2  = 100;
+int   canny_window_size = 3;
+int   hough_min_rho  = 0;
+int   hough_max_rho  = 800;
+int   hough_step_rho = 10;
+float hough_min_theta  = 1.5708-0.5;
+float hough_max_theta  = 1.5708+0.5;
+float hough_step_theta = 0.03;
+float hough_threshold  = 400;
+float plane_dist_threshold = 0.05;
+float plane_min_area = 0.5;
+std::string training_dir;
+
+bool callback_find_table_edge(vision_msgs::FindLines::Request& req, vision_msgs::FindLines::Response& resp)
 {
     std::cout << std::endl << "ObjReco.->Executing srvFindLines (Jebusian method)." << std::endl;
-    resp.lines = PlaneExtractor::find_table_border(req.point_cloud, tf_listener);
-    pubMarkers.publish(Utils::get_lines_marker(resp.lines));
-    if(resp.lines.size() > 0) std::cout << "ObjReco.->Found line: " << resp.lines[0] << " - " <<resp.lines[1] <<std::endl;
+    cv::Mat img, cloud;
+    std::vector<cv::Vec3f> edge_line;
+        
+    Utils::transform_cloud_wrt_base(req.point_cloud, img, cloud, tf_listener);
+    Utils::filter_by_distance(cloud, img, cloud, img);
+    edge_line = GeometricFeatures::find_table_edge(cloud, normal_min_z, canny_threshold1, canny_threshold2, canny_window_size, hough_min_rho, hough_max_rho,
+                                                   hough_step_rho, hough_min_theta, hough_max_theta, hough_step_theta, hough_threshold, img, debug);
+    resp.lines = Utils::get_lines_msg(edge_line);
+    pubMarkers.publish(Utils::get_lines_marker(edge_line));
+    if(edge_line.size() > 0) std::cout << "ObjReco.->Found line: " << resp.lines[0] << " - " <<resp.lines[1] <<std::endl;
     else std::cout << "ObjReco.->Cannot find lines. " << std::endl;
     return resp.lines.size() > 0;
 }
@@ -26,16 +49,39 @@ bool callback_find_lines(vision_msgs::FindLines::Request& req, vision_msgs::Find
 bool callback_find_planes(vision_msgs::FindPlanes::Request& req, vision_msgs::FindPlanes::Response& resp)
 {
     std::cout << std::endl << "ObjReco.->Executing srvFindPlanes." << std::endl;
-    std::vector<cv::Vec3f> plane = PlaneExtractor::get_horizontal_planes(req.point_cloud, tf_listener);
+    cv::Mat img, cloud, output_mask;
+        
+    Utils::transform_cloud_wrt_base(req.point_cloud, img, cloud, tf_listener);
+    Utils::filter_by_distance(cloud, img, cloud, img);
+    std::vector<cv::Vec3f> plane = GeometricFeatures::get_horizontal_planes(cloud, normal_min_z, plane_dist_threshold, plane_min_area, output_mask, debug);
     pubMarkers.publish(Utils::get_plane_marker(plane));
+    if(plane.size() > 0) std::cout << "ObjReco.->Found Plane. Center: " << plane[0] << " Normal: " << plane[1] <<std::endl;
+    else std::cout << "ObjReco.->Cannot find plane. " << std::endl;
     return true;
 }
 
 bool callback_recog_objs(vision_msgs::RecognizeObjects::Request& req, vision_msgs::RecognizeObjects::Response& resp)
 {
     std::cout << "ObjReco.->Recognizing objects by Jebug's method." << std::endl;
-    cv::Mat img, cloud;
-    //transform_cloud_wrt_base(req.point_cloud, img, cloud);
+    cv::Mat img, cloud, output_mask;
+        
+    Utils::transform_cloud_wrt_base(req.point_cloud, img, cloud, tf_listener);
+    Utils::filter_by_distance(cloud, img, cloud, img);
+    std::vector<cv::Vec3f> plane = GeometricFeatures::get_horizontal_planes(cloud, normal_min_z, plane_dist_threshold, plane_min_area, output_mask, debug);
+    std::vector<cv::Vec3f> points = GeometricFeatures::above_horizontal_plane(cloud, img, plane, plane_dist_threshold+0.005, output_mask, debug);
+    cv::imshow("Detected objects", img);
+
+    cv::RNG rng(12345);
+    std::vector<std::vector<cv::Point> > contours;
+    std::vector<cv::Vec4i> hierarchy;
+    cv::findContours(output_mask, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE );
+    cv::Mat drawing = cv::Mat::zeros( output_mask.size(), CV_8UC3 );
+    for( size_t i = 0; i< contours.size(); i++ )
+    {
+        cv::Scalar color = cv::Scalar( rng.uniform(0, 256), rng.uniform(0,256), rng.uniform(0,256) );
+        drawContours( drawing, contours, (int)i, color, 2, cv::LINE_8, hierarchy, 0 );
+    }
+    cv::imshow( "Contours", drawing );
     return false;
 }
 
@@ -64,7 +110,7 @@ int main(int argc, char** argv)
     std::cout << "INITIALIZING OBJECT RECOGNIZER BY MR. YISUS (CORRECTED AND IMPROVED BY MARCOSOFT)" << std::endl;
     ros::init(argc, argv, "obj_reco_node");
     ros::NodeHandle n;
-    ros::ServiceServer srvFindLines  = n.advertiseService("/vision/line_finder/find_line_pca", callback_find_lines);
+    ros::ServiceServer srvFindLines  = n.advertiseService("/vision/line_finder/find_table_edge", callback_find_table_edge);
     ros::ServiceServer srvFindPlanes = n.advertiseService("/vision/line_finder/find_horizontal_plane_ransac", callback_find_planes);
     ros::ServiceServer srvRecogObjs  = n.advertiseService("/vision/obj_reco/recognize_objects", callback_recog_objs);
     ros::ServiceServer srvRecogObj   = n.advertiseService("/vision/obj_reco/recognize_object" , callback_recog_obj );
@@ -73,9 +119,9 @@ int main(int argc, char** argv)
     ros::Rate loop(30);
     tf_listener = new tf::TransformListener();
 
-    std::string training_dir = ros::package::getPath("obj_reco") + std::string("/training_dir");
+    training_dir = ros::package::getPath("obj_reco") + std::string("/training_dir");
     if(ros::param::has("~debug"))
-        ros::param::get("~debug", Utils::debug);
+        ros::param::get("~debug", debug);
     if(ros::param::has("~training_dir"))
         ros::param::get("~training_dir", training_dir);
     if(ros::param::has("~min_x"))
@@ -90,28 +136,32 @@ int main(int argc, char** argv)
         ros::param::get("~min_z", Utils::min_z);
     if(ros::param::has("~max_z"))
         ros::param::get("~max_z", Utils::max_z);
-    if(ros::param::has("~normals_tol"))
-        ros::param::get("~normals_tol", PlaneExtractor::normals_tol);
+    if(ros::param::has("~normal_min_z"))
+        ros::param::get("~normal_min_z", normal_min_z);
     if(ros::param::has("~canny_threshold1"))
-        ros::param::get("~canny_threshold1", PlaneExtractor::canny_threshold1);
+        ros::param::get("~canny_threshold1", canny_threshold1);
     if(ros::param::has("~canny_threshold2"))
-        ros::param::get("~canny_threshold2", PlaneExtractor::canny_threshold2);
+        ros::param::get("~canny_threshold2", canny_threshold2);
     if(ros::param::has("~canny_window_size"))
-        ros::param::get("~canny_window_size", PlaneExtractor::canny_window_size);
+        ros::param::get("~canny_window_size",canny_window_size);
     if(ros::param::has("~hough_threshold"))
-        ros::param::get("~hough_threshold", PlaneExtractor::hough_threshold);
+        ros::param::get("~hough_threshold", hough_threshold);
     if(ros::param::has("~hough_min_rho"))
-        ros::param::get("~hough_min_rho", PlaneExtractor::hough_min_rho);
+        ros::param::get("~hough_min_rho", hough_min_rho);
     if(ros::param::has("~hough_max_rho"))
-        ros::param::get("~hough_max_rho", PlaneExtractor::hough_max_rho);
+        ros::param::get("~hough_max_rho", hough_max_rho);
     if(ros::param::has("~hough_step_rho"))
-        ros::param::get("~hough_step_rho", PlaneExtractor::hough_step_rho);
+        ros::param::get("~hough_step_rho", hough_step_rho);
     if(ros::param::has("~hough_min_theta"))
-        ros::param::get("~hough_min_theta", PlaneExtractor::hough_min_theta);
+        ros::param::get("~hough_min_theta", hough_min_theta);
     if(ros::param::has("~hough_max_theta"))
-        ros::param::get("~hough_max_theta", PlaneExtractor::hough_max_theta);
+        ros::param::get("~hough_max_theta", hough_max_theta);
     if(ros::param::has("~hough_step_theta"))
-        ros::param::get("~hough_step_theta", PlaneExtractor::hough_step_theta);
+        ros::param::get("~hough_step_theta", hough_step_theta);
+    if(ros::param::has("~plane_dist_threshold"))
+        ros::param::get("~plane_dist_threshold", plane_dist_threshold);
+    if(ros::param::has("~plane_min_area"))
+        ros::param::get("~plane_min_area", plane_min_area);
 
     while(ros::ok() && cv::waitKey(10) != 27)
     {
