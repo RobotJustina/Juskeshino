@@ -30,6 +30,7 @@ add_executable(obj_reco_node
   src/obj_reco_node.cpp
   src/Utils.cpp
   src/GeometricFeatures.cpp
+  src/ObjectRecognizer.cpp
 )
 
 add_dependencies(obj_reco_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

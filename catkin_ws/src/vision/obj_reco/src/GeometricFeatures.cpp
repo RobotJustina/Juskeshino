@@ -43,10 +43,11 @@ std::vector<cv::Vec3f> GeometricFeatures::get_horizontal_planes(cv::Mat& cloud, 
     return plane;
 }
 
-std::vector<cv::Vec3f> GeometricFeatures::above_horizontal_plane(cv::Mat& cloud, cv::Mat img_bgr, std::vector<cv::Vec3f> plane, float dist_threshold,
+std::vector<cv::Vec3f> GeometricFeatures::above_horizontal_plane(cv::Mat& cloud, std::vector<cv::Vec3f> plane, float dist_threshold,
                                                                  cv::Mat& output_img_mask, bool debug)
 {
     std::vector<cv::Vec3f> points;
+    if(plane.size()<2) return points;
     cv::Vec3f center = plane[0];
     cv::Vec3f normal = plane[1];
     if(normal[2] < 0) normal = -normal;
@@ -61,7 +62,6 @@ std::vector<cv::Vec3f> GeometricFeatures::above_horizontal_plane(cv::Mat& cloud,
                 output_img_mask.at<char>(i,j) = 255;
                 points.push_back(cloud.at<cv::Vec3f>(i,j));
             }
-            else img_bgr.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
         }
     if(debug) cv::imshow("Points above plane mask", output_img_mask);
     return points;

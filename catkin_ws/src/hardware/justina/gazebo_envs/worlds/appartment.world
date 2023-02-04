@@ -350,9 +350,21 @@
     </include>
     <include>
       <static>0</static>
-      <pose>4.6797 13.0506 1.05 0 0 1</pose>
+      <pose>7.62 5.8 0.85 0 0 1.7557</pose>
       <uri>model://apple</uri>
       <name>apple_01</name>
+    </include>
+    <include>
+      <static>0</static>
+      <pose>7.77 5.8 0.85 0 0 1.7557</pose>
+      <uri>model://hsr_orange</uri>
+      <name>hsr_orange_03</name>
+    </include>
+    <include>
+      <static>0</static>
+      <pose>4.6797 13.0506 1.05 0 0 1</pose>
+      <uri>model://apple</uri>
+      <name>apple_02</name>
     </include>
     <include>
       <static>0</static>
