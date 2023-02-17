@@ -16,13 +16,11 @@ bool ObjectRecognizer::segment_by_contours(cv::Mat cloud, cv::Mat img_bgr, cv::M
     for(int i=0; i< object_masks.size(); i++) object_masks[i] = cv::Mat::zeros(img_bgr.rows, img_bgr.cols, CV_8UC1);
     for( size_t i = 0; i< contours.size(); i++ )
     {
-        std::cout << "before draw contours " << i << std::endl;
         cv::drawContours(object_masks[i], contours, (int)i, 255, -1, cv::LINE_8, hierarchy, 0);
-        std::cout << "after draw contours " << i << std::endl;
         if(cv::countNonZero(object_masks[i]) < min_points)
             continue;
         cv::cvtColor(object_masks[i], detected_obj_masks_8UC3[i], cv::COLOR_GRAY2BGR);
-        detected_obj_masks_8UC3[i].convertTo(detected_obj_masks_32FC3, CV_32FC3);
+        detected_obj_masks_8UC3[i].convertTo(detected_obj_masks_32FC3[i], CV_32FC3);
         cv::Mat obj_bgr, obj_xyz;
         cv::bitwise_and(img_bgr, detected_obj_masks_8UC3[i] , obj_bgr);
         cv::bitwise_and(cloud  , detected_obj_masks_32FC3[i], obj_xyz);
@@ -31,5 +29,16 @@ bool ObjectRecognizer::segment_by_contours(cv::Mat cloud, cv::Mat img_bgr, cv::M
         if(debug)
             cv::imshow("Detected object " + std::to_string(i), obj_bgr);
     }
+    return objects_bgr.size() > 0;
+}
+
+cv::Mat ObjectRecognizer::get_hue_histogram(cv::Mat img_bgr, cv::Mat mask, bool accumulate)
+{
+    cv::Mat histogram;
+    int chan[] = { 0 }; 
+    int histSize[] = { 18 };
+    float hueRange[] = { 0, 255 };
+    const float* ranges[] = { hueRange };
     
+    cv::calcHist(&img_bgr, 1, chan, mask, histogram, 1, histSize, ranges, true, accumulate);
 }
