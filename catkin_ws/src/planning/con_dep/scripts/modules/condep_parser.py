@@ -42,7 +42,7 @@ def CondepParser(text):
     pos_list = []
     
     #Remove the word "Robot" in order to obtain a clean separation of the types of "obj"
-    txt = txt.replace('Robot,', '')
+    text = text.replace('Robot,', '')
     
     #Extracting tokens from the sentence
     nlp = None
@@ -52,7 +52,7 @@ def CondepParser(text):
         os.system("python -m spacy download en_core_web_sm")
         nlp = spacy.load("en_core_web_sm")
     
-    doc = nlp(txt)
+    doc = nlp(text)
     
     #Creating the list of nouns and positions
     text_list = [token.text for token in doc]
@@ -64,16 +64,15 @@ def CondepParser(text):
     
     verb_list = [token.lemma_ for token in doc if token.pos_ == "VERB"]
     #print(verb_list)
-
+    
     #print("=====================================================================")
     #============================================================================
     #                          WHICH QUESTION?                                    
     #============================================================================
-    qu_list = []
-
+    question_list = []
     for qu in text_list:
-    	if qu in ["where", "what", "which", "who"]:
-    		question_list = qu
+    	if qu.lower() in ["where", "what", "which", "who"]:
+    		question_list.append(qu.lower())
     #print(question_list) #<------------------------NOTE
     
     #elif text_list[-1] == '?':
@@ -275,7 +274,7 @@ def CondepParser(text):
             
             elif prim == "QTRANS":
                 for qsen in text_list_sen:
-                    if qsen in ["where", "what", "which", "who"]:
+                    if qsen.lower() in ["where", "what", "which", "who"]:
                         question = qsen
                 
                 if len(pron_list_sen) == 0:
