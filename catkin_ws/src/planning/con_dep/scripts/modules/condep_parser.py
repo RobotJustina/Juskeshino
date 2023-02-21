@@ -84,7 +84,7 @@ def CondepParser(text):
         print("I can't understand you, give me a valid command.")
     else:
         print("FINDING THE SENTENCES: ")
-        txt = frase
+        txt = text
         #Sentences where her o him are included, ex: ... and give an apple to her
         #Check for the words "her" or "him" and replace them with the last PROPN
         acus_list = []
@@ -99,8 +99,8 @@ def CondepParser(text):
     	#print(acus_list)
     	#print(pers_list)
         
-    	d = []
-    	for f in range(len(acus_list)):
+        d = []
+        for f in range(len(acus_list)):
             dis = np.array(pers_list) - acus_list[f]
             a=-1000
             for poc in range(len(dis)):
@@ -116,23 +116,23 @@ def CondepParser(text):
     			#print(txt)
         #txt = txt.replace(" and", ".")
         
-    	txt = txt.replace(",", ".")
-    	txt = txt.replace(" and", ".")
-    	#print(txt)
-    	doc = nlp(txt)
-    	assert doc.has_annotation("SENT_START")
-    	list_sentences =[sent.text for sent in doc.sents]
-    	for s in range(len(list_sentences)):
+        txt = txt.replace(",", ".")
+        txt = txt.replace(" and", ".")
+        #print(txt)
+        doc = nlp(txt)
+        assert doc.has_annotation("SENT_START")
+        list_sentences =[sent.text for sent in doc.sents]
+        for s in range(len(list_sentences)):
             list_sentences[s] = list_sentences[s].replace('.', '')
-    	print(list_sentences)
+        print(list_sentences)
         
-    	#print("=====================================================================")
+        #print("=====================================================================")
         
-    	location_list = []
-    	object_list = []
+        location_list = []
+        object_list = []
         person_list = []
         
-    	for sen in list_sentences:
+        for sen in list_sentences:
             doc1 = nlp(sen)
             #Creating the list of nouns and positions
             text_list_sen = [token.text for token in doc1]
@@ -289,7 +289,7 @@ def CondepParser(text):
                     dependencies_list.append(prim+'((OBJ '+obj+')(QUESTION '+question+'))')
                     #print(prim+'((OBJ '+obj+')(QUESTION '+question+'))')
         
-    	print("====================================================================")
+        print("====================================================================")
     
     for i in range(len(dependencies_list)):
         #FORMAT
