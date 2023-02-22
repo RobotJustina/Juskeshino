@@ -26,14 +26,14 @@ def callback_laser_scan(msg):
     obstacle_left=False
     obstacle_right=False
     obstacle=False
-    for i in range(152,184):
-        temp=msg.ranges[i]<1.0
+    for i in range(139,184):
+        temp=msg.ranges[i]<1.05
         obstacle_left=obstacle_left or temp
-    for i in range(0,32):
-       temp=msg.ranges[i]<1.0
+    for i in range(0,45):
+       temp=msg.ranges[i]<1.05
        obstacle_right=obstacle_right or temp
-    for i in range(74,110):
-       temp=msg.ranges[i]<1.0
+    for i in range(46,138):
+       temp=msg.ranges[i]<1.05
        obstacle=obstacle or temp
     if not(obstacle)  and not(obstacle_left) and not(obstacle_right):
         edo=0
@@ -57,16 +57,16 @@ def do_action(act):
     goal_lateral=Float32()
     goal=Float32()
     if (act==0): #ir hacia el frente
-         goal.data=0.1
+         goal.data=0.08
          pub_fro.publish(goal)
     elif(act==1): #ir a la izquierda
-         goal_lateral.data=0.1
+         goal_lateral.data=0.08
          pub_lat.publish(goal_lateral)
     elif(act==2): #ir  a la derecha
-         goal_lateral=-0.1
+         goal_lateral=-0.08
          pub_lat.publish(goal_lateral)
     else: ###ir hacia atrás
-         goal.data=-0.1
+         goal.data=-0.08
          pub_fro.publish(goal)
     return
 
@@ -183,7 +183,7 @@ def main():
     R=R_values()
     epsilon = 0.9
     total_episodes = 10000
-    max_steps = 20
+    max_steps = 50
     alpha = 0.85
     gamma = 0.95
     #do_action(act)
