@@ -1,0 +1,4 @@
+gpsr_defactions.clp
+gpsr_deftemplates.clp
+gpsr_initial_states.clp
+gpsr_rules.clp

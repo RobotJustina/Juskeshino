@@ -404,7 +404,7 @@
     </include>
     <!-- End of object model -->
     <state world_name="default">
-      <sim_time>172 674000000</sim_time>
+      <sim_time>0</sim_time>
       <real_time>173 410833696</real_time>
       <wall_time>1406595440 490832864</wall_time>
       <model name="gplane">
