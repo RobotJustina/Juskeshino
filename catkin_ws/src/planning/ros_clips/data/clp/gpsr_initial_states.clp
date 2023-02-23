@@ -33,13 +33,12 @@
 
     ( item (type Objects) (name freespace)(room any)(zone any)(image none)(attributes none)(pose 0.0 0.0 0.0) )
 
-; Rooms definitions
-    ( Room (name deposit)(zone any)(zones dummy1 frontexit frontentrance storage dummy2)(center 0.70 1.51 0.0) )
-    ( Room (name corridor)(zone mail_box)(zones dummy1 frontexit frontentrance storage dummy2)(center 0.6 1.0 0.0) )
-    ( Room (name studio)(zone any)(zones dummy1 frontexit desk storage dummy2)(center 0.25 1.45 0.0) )
-    ( Room (name service)(zone service_table)(zones dummy1 frontexit frontentrance storage dummy2)(center 1.65 0.55 0.0) )
-    ( Room (name kitchen)(zone cold_storage)(zones dummy1 frontexit frontentrance deposit dummy2)(center 1.60 1.40 0.0) )
-    ( Room (name bedroom)(zone desk)(zones dummy1 frontexit frontentrance deposit dummy2)(center 1.0 0.55 0.0) )
+; Furniture definitions
+    ( item (type Furniture) (name fridge)(zone kitchen)(image fridge)( attributes no-pick white)(pose 1.50 1.436 0.0) )
+    ( item (type Furniture) (name table)(zone service)(image table)( attributes no-pick brown)(pose 1.65 0.35 0.0) )
+
+; Doors definitions
+    ( item (type Door) (name outsidedoor) (status closed) )
 
 ; Humans definitions
     ( item (type Human) (name mother)(room studio)(zone desk)(pose 1.048340 1.107002 0.0) )
@@ -48,12 +47,13 @@
 ; Robots definitions
     ( item (type Robot) (name robot)(zone frontexit)(pose 1.048340 1.107002 0.0) )
 
-; Furniture definitions
-    ( item (type Furniture) (name fridge)(zone kitchen)(image fridge)( attributes no-pick white)(pose 1.50 1.436 0.0) )
-    ( item (type Furniture) (name table)(zone service)(image table)( attributes no-pick brown)(pose 1.65 0.35 0.0) )
-
-; Doors definitions
-    ( item (type Door) (name outsidedoor) (status closed) )
+; Rooms definitions
+    ( Room (name deposit)(zone any)(zones dummy1 frontexit frontentrance storage dummy2)(center 0.70 1.51 0.0 0.0) )
+    ( Room (name corridor)(zone mail_box)(zones dummy1 frontexit frontentrance storage dummy2)(center 0.6 1.0 0.0 0.0) )
+    ( Room (name studio)(zone any)(zones dummy1 frontexit desk storage dummy2)(center 0.25 1.45 0.0 0.0) )
+    ( Room (name service)(zone service_table)(zones dummy1 frontexit frontentrance storage dummy2)(center 1.65 0.55 0.0 0.0) )
+    ( Room (name kitchen)(zone cold_storage)(zones dummy1 frontexit frontentrance deposit dummy2)(center 1.60 1.40 0.0 0.0) )
+    ( Room (name bedroom)(zone desk)(zones dummy1 frontexit frontentrance deposit dummy2)(center 1.0 0.55 0.0 0.0) )
 
 ; Arm definition
     ( Arm (name left))

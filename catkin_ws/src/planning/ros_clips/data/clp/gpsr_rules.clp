@@ -319,7 +319,7 @@
     ;(assert (attempt (name answer)(id ?*plan_number* )(question where)(zone ?zone)(number 1 )))
     ;(assert (finish-planner state ?*plan_number* ?*plan_number_new*))
     
-    (printout t "(plan (name state)(id " ?*plan_number* ")(number 1)(actions answer where " ?obj " " ?room-object " " ?zone-object "))" crlf)
+    (printout t "(plan (name state)(id " ?*plan_number* ")(number 1)(actions answer where object " ?obj " " ?room-object " " ?zone-object "))" crlf)
 )
 
 
@@ -336,7 +336,7 @@
     ;(assert (attempt (name answer)(id ?*plan_number* )(question where)(zone ?zone-human)(number 1 )))
     ;(assert (finish-planner state ?*plan_number* ?*plan_number_new*))
     
-    (printout t "(plan (name state)(id " ?*plan_number* ")(number 1)(actions answer where " ?human " " ?room-human " " ?zone-human "))" crlf)
+    (printout t "(plan (name state)(id " ?*plan_number* ")(number 1)(actions answer where human " ?human " " ?room-human " " ?zone-human "))" crlf)
 )
 
 
