@@ -11,19 +11,33 @@ import cv2
 import pandas as pd
 from sensor_msgs.msg import PointCloud2, Image
 from std_msgs.msg import Header, Float32MultiArray, Float32
-from geometry_msgs.msg import PointStamped, PoseStamped, Point, Pose, Vector3
+from geometry_msgs.msg import PointStamped, PoseStamped, Point, Pose, Vector3, Vector3Stamped
 from sklearn.preprocessing import StandardScaler
 from numpy.linalg import eig
 from visualization_msgs.msg import Marker
 from vision_msgs.srv import *
 import geometry_msgs.msg
 
-
+"""
+    Hacer que el codigo busque la mejor matriz de transformacion R que contiene a los eigenvectores
+    para 10 febrero 2023
+    Hecho
+"""
 
 """
  node to recognize the closest object from the recognition of edges and contours, 
  in addition an approximation of the object's pose is obtained through principal 
  component analysis techniques.
+"""
+
+"""
+    Se modifica el metodo PCA para que entregue solo eigen valores y eigenvectores, no la pose,
+    el metodo que determina la pose se llama en la funcion callback y determina la pose del objeto 
+    con nuevas reglas, basandose en el paper de Lei Q, Chen
+
+
+    Para 16 de Febrero generar el frame object y adecuarlo a la orientacion de objeto, ademas
+    terminar de replicar resultados de paper
 """
 
 def segment_by_contour(msg):
@@ -52,19 +66,27 @@ def segment_by_contour(msg):
     img_bin = cv2.adaptiveThreshold(image_gray,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,15)
     kernel = np.ones((3,3),np.uint8)    # Define a kernel for erosion
     img_erode=cv2.erode(img_bin , kernel,iterations=4)  #4 eroded image
-    img_dilate = cv2.dilate(img_erode , kernel, iterations=3) 
+    #cv2.imshow('erod', img_erode)
+    #cv2.waitKey(1) 
+    img_dilate = cv2.dilate(img_erode , kernel, iterations=2) 
+    #cv2.imshow('dilat', img_dilate)
+    #cv2.waitKey(1) 
     edged = cv2.Canny(img_dilate, 100, 20)
+    #cv2.imshow('contours', edged)
+    #cv2.waitKey(1) 
+    #edged = img_dilate
     #Finding contours in the image, each individual contour is a Numpy array of (x,y) coordinates of boundary points of the object
     contours, hierarchy = cv2.findContours(edged.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
     cents , normas, new_contour_list, contour_index, temp = [], [], [], [], []
     desired_idx = np.nan
     
+    #print("num contours", len(contours))
     if len(contours) > 600:
         return(objects_on_stage ,0 ,0, 0, 0,0,0,0)  
 
     for i, contour in enumerate(contours):
         area = cv2.contourArea(contour)
-        if area > 1500 and area < 16000:    # discarding contours by area
+        if area > 1500 and area < 17000:    # discarding contours by area
             x1,y1,w,h = cv2.boundingRect(contour) 
             xyz=[]
 
@@ -88,6 +110,9 @@ def segment_by_contour(msg):
             inf_contour = [contour, i, norma]
             temp.append(inf_contour)
        
+    if len(contours) < 1:
+        print("no contours candidates")
+    
     if objects_on_stage:
         cents, normas=np.asarray(cents), np.asarray(normas)
         min_dist = np.amin(normas)
@@ -139,6 +164,7 @@ def segment_by_contour(msg):
 
 
 
+
 def contour_point_cloud(img_bgr, mask_ero):  
     mask_ero = cv2.cvtColor(mask_ero, cv2.COLOR_BGR2GRAY)
     img_with_mask = cv2.bitwise_and(img_bgr,img_bgr, mask=mask_ero)
@@ -172,74 +198,168 @@ def cloud_obj(pixels_array, x_points, y_points, z_points, rgb_array):
 
 
 
-def pca(x_points, y_points, z_points, frame_id, centroide_cam):    # Expects as argument ONE point cloud of the contoured object separated in x,y,z
+def pca(x_points, y_points, z_points, frame_id, centroide_cam):    
+    """
+        Expects as argument one point cloud of the contoured object in the frame_id and return
+        eigenvectors and eigenvalues.
+    """
     point_cloud =  {"x": x_points, "y": y_points,"z": z_points}
-    point_cloud = pd.DataFrame(StandardScaler().fit_transform(pd.DataFrame(point_cloud)), columns=["x","y","z"])
+    # sin estandar scaler
+    point_cloud = pd.DataFrame(pd.DataFrame(point_cloud), columns=["x","y","z"])
     eig_val, eig_vect = eig(point_cloud.cov())  # Eigenvalues and eigenvectors from Point Cloud Covariance Matrix
 
     # Ordering from largest to smallest eigenvalues
     mayor, menor = np.amax(eig_val), np.amin(eig_val)
-    index, ind_M , ind_m = 0, 0, 0 
+    eig_value_list = eig_val.tolist()
+    ind_M = eig_value_list.index(mayor)
+    ind_m = eig_value_list.index(menor)
+    ind_sec = 3 - ind_m - ind_M
 
-    for element in eig_val:
-        if mayor == element: ind_M = index
-        if menor == element: ind_m = index
-        else: ind_sec = index 
-        index = index+1
-
+    #print("M,s,m", ind_M, ind_sec, ind_m)
     # each column of eig_vect corresponds to an eigenvector
-    Eig_vect1 = [ eig_vect[:,ind_sec] , eig_vect[:,ind_M] , eig_vect[:,ind_m]]
+    Eig_vect = [eig_vect[:,ind_M]* np.sqrt(eig_val[ind_M]), 
+                eig_vect[:,ind_sec]*np.sqrt(eig_val[ind_sec]),  
+                eig_vect[:,ind_m]*np.sqrt(eig_val[ind_m])]
 
-    Eig_vect = [eig_vect[:,ind_M]* np.sqrt(eig_val[ind_M]), eig_vect[:,ind_sec]*np.sqrt(eig_val[ind_sec]) ,  eig_vect[:,ind_m]*np.sqrt(eig_val[ind_m])]
-    R = [[Eig_vect1[0][0], Eig_vect1[1][0], Eig_vect1[2][0], 0], [Eig_vect1[0][1], Eig_vect1[1][1], Eig_vect1[2][1], 0],[Eig_vect1[0][2], Eig_vect1[1][2], Eig_vect1[2][2], 0], [0, 0, 0, 1]]
+    m = eig_vect[:,ind_m]
+    M = eig_vect[:,ind_M]
+    s = eig_vect[:,ind_sec]
 
-    r,p,y = tft.euler_from_matrix(np.asarray(R))
-    q1 = tft.quaternion_from_euler(r, p, y)
-    pose_obj = object_pose(centroide_cam, q1)   
-
-    point_1, point_2, point_3 = Point(), Point(), Point()
-    array_points = [point_1, point_2, point_3]
-
-    for i in range(3):
-        array_points[i].x = Eig_vect[i][0]
-        array_points[i].y = Eig_vect[i][1]
-        array_points[i].z = Eig_vect[i][2]
-
-    return ([array_points[0], array_points[1], array_points[2]], pose_obj, [eig_val[ind_M] , eig_val[ind_sec], eig_val[ind_m]])  # Regresa las componentes pricipales
-
-
-
-
-def object_pose(centroid, PCA_q):  # Requests as arguments coordinates of the centroid and quaternions of the PCA frame    global tfBuffer
-    # construct frame object with respect to realsense frame
-    # normalize quaternions
-    d = np.sqrt(PCA_q[0]**2 + PCA_q[1]**2 + PCA_q[2]**2 + PCA_q[3]**2)
-
-    br = tf2_ros.TransformBroadcaster()
-    t = geometry_msgs.msg.TransformStamped()
-
-    t.header.frame_id = "realsense_link"
-    t.child_frame_id = "object" 
-    t.header.stamp = rospy.Time.now()
-    t.transform.translation.x = centroid[0]
-    t.transform.translation.y = centroid[1]
-    t.transform.translation.z = centroid[2]
+    #MT = np.asarray([M, s, m])  # Matriz de transformacion con eigenvectores ordenados de mayor a menor
+    MT = np.asarray(eig_vect) 
+    # ESTIMACION DEL TAMANIO DEL OBJETO SEGMENTADO  object_size_estimation******************
+    pts_frame_PCA = pd.DataFrame(point_cloud.values @ MT,#eig_vect.T, 
+                                 columns=["x","y","z"])
     
-    t.transform.rotation.x = PCA_q[0]/d
-    t.transform.rotation.y = PCA_q[1]/d
-    t.transform.rotation.z = PCA_q[2]/d
-    t.transform.rotation.w = PCA_q[3]/d
+    pts_frame_PCA = pts_frame_PCA.to_numpy()
+    h_min, h_max = pts_frame_PCA[0, 0] , pts_frame_PCA[-1, 0] #H[0] , H[-1]
+    l_min, l_max = pts_frame_PCA[0, 1] , pts_frame_PCA[-1, 1]
+    w_min, w_max = pts_frame_PCA[0, 2] , pts_frame_PCA[-1, 2]
+    H = abs( h_max - h_min )
+    L = abs( l_min - l_max )
+    W = 2*abs( w_max - w_min )
+    # Approximate size of the object is H, L, W
+    size_obj = Vector3()
+    size_obj.x = H
+    size_obj.y = W
+    size_obj.z = L
     
-    br.sendTransform(t)
+    return [M, s, m], [eig_val[ind_M], eig_val[ind_sec], eig_val[ind_m]], size_obj
+
+
+
+
+
+def object_pose(centroid, principle_axis, frame_id):  # modificar a pointStamped cada punto
+    """
+        Esta funcion determina el frame orientacion del objeto, recibe la primera componente del 
+        analisis de PCA en 'realsense_link' y devuelve un objeto Pose, ademas genera el frame obj
+        EL FRAME DEBE GENERARSE EN BASE LINK... (el dia 21 de febrero)
+
+
+        Construction of the coordinate system of the object
+        All points is in the frame_id
+    
+        Pp = a random point on principle axis
+        Ps = position of the frame in which the cloud points is obtained = (0,0,0)
+        
+        Oc_y = Oc_Ps x Oc_Pp , ahora eje x sera el de la componente principal
+        Oc_z = Oc_y x Oc_x 
+    """
+    global listener 
+    principle_axis  = np.asarray(principle_axis)    # vector in frame "realsense_link"
+    # transformacion de vector en frame camera a frame base_link*************************
+
+    v_msg = Vector3Stamped()
+    v_msg.header.frame_id = 'realsense_link'   # Sistema coordenado de vector
+    v_msg.header.stamp = rospy.Time(0) 
+    v_msg.vector.x, v_msg.vector.y , v_msg.vector.z = principle_axis[0], principle_axis[1], principle_axis[2]
+    target_frame = 'base_link'
+    vector_principal_base_link = listener.transformVector3(target_frame, v_msg)
+
+    # Cambiar punto de centroide a frame base_link*********************************************
+    centroid = points_actual_to_points_target( centroid , 'realsense_link', 'base_link')
+    principle_axis = np.asarray([vector_principal_base_link.vector.x , vector_principal_base_link.vector.y , vector_principal_base_link.vector.z ])
+    
+    
+    if principle_axis[2] < 0: 
+        principle_axis = -1 * principle_axis
+    
+    
+    Oc_Pp  = np.asarray(principle_axis) 
+    # asignamos el eje principal a eje x base link
+    
+
+    # axis x,y,z quedan en el frame base_link
+    Oc_Ps = np.asarray([ centroid[0] , centroid[1] , centroid[2] ])
+
+    Obj_y = np.cross(Oc_Ps , Oc_Pp)
+
+    Obj_y = Obj_y /np.linalg.norm( np.cross(Oc_Ps , Oc_Pp ) )
+    Obj_x = principle_axis /np.linalg.norm( principle_axis )    # Eje principal en x
+    Obj_z = np.cross(Obj_y , Obj_x ) /np.linalg.norm( np.cross(Obj_x , Obj_y ) )
+
+    axis_x_obj, axis_y_obj, axis_z_obj = Point(), Point(), Point()
+    axis_x_obj.x, axis_x_obj.y, axis_x_obj.z = Obj_x[0], Obj_x[1], Obj_x[2]
+    axis_y_obj.x, axis_y_obj.y, axis_y_obj.z = Obj_y[0], Obj_y[1], Obj_y[2]
+    axis_z_obj.x, axis_z_obj.y, axis_z_obj.z = Obj_z[0], Obj_z[1], Obj_z[2]
+    
+    # con los vectores que representan a los ejes se forma la matriz de rotacion (columnas) y a partir de ella se obtienen
+    # los cuaterniones necesarios para generar el frame del objeto
+    comb = [[Obj_x, Obj_y , Obj_z],[Obj_y, Obj_x , Obj_z],[Obj_z, Obj_y , Obj_x],[Obj_x, Obj_z , Obj_y],[Obj_z, Obj_x , Obj_y]]
+    RM = np.asarray( comb[3])
+    RM = RM.T
+    TM = [[RM[0,0], RM[0,1] , RM[0,2], 0],
+         [RM[1,0], RM[1,1] , RM[1,2], 0],
+         [RM[2,0], RM[2,1] , RM[2,2], 0], 
+         [0, 0, 0, 1]]
+
+    r,p,y = tft.euler_from_matrix(np.asarray(TM))
+    q_obj = tft.quaternion_from_euler(r, p, y)
+    same_tf = tft.is_same_transform(np.asarray(TM), np.asarray( tft.quaternion_matrix(q_obj)))
+    print("same tf?", same_tf )
+
+    d = np.sqrt(q_obj[0]**2 + q_obj[1]**2 + q_obj[2]**2 + q_obj[3]**2)
 
     obj_pose = Pose()
     obj_pose.position.x, obj_pose.position.y, obj_pose.position.z = centroid[0], centroid[1], centroid[2]
-    obj_pose.orientation.x = PCA_q[0]/d
-    obj_pose.orientation.y = PCA_q[1]/d
-    obj_pose.orientation.z = PCA_q[2]/d
-    obj_pose.orientation.w = PCA_q[3]/d
+    obj_pose.orientation.x = q_obj[0]/d
+    obj_pose.orientation.y = q_obj[1]/d
+    obj_pose.orientation.z = q_obj[2]/d
+    obj_pose.orientation.w = q_obj[3]/d
 
-    return obj_pose
+    # cambiar de frame
+    #pose_base_link = frame_actual_to_frame_target(obj_pose , 'realsense_link', 'base_link')
+
+
+    # la pose debe salir en el sistema base_link y cancelar la funcion de arriba
+
+    return obj_pose , axis_x_obj, axis_y_obj, axis_z_obj , centroid
+
+
+
+
+def broadcaster_frame_object(frame, child_frame, pose):
+    """
+        Emite la transformacion en el frame base_link, entre pose en frame base_link
+    """
+    br = tf2_ros.TransformBroadcaster()
+    t = geometry_msgs.msg.TransformStamped()
+
+    t.header.frame_id = frame
+    t.child_frame_id = child_frame 
+    t.header.stamp = rospy.Time.now()
+
+    t.transform.translation.x = pose.position.x
+    t.transform.translation.y = pose.position.y
+    t.transform.translation.z = pose.position.z
+    
+    t.transform.rotation.x = pose.orientation.x
+    t.transform.rotation.y = pose.orientation.y
+    t.transform.rotation.z = pose.orientation.z
+    t.transform.rotation.w = pose.orientation.w
+    
+    br.sendTransform(t)
 
 
 
@@ -258,34 +378,27 @@ def centroid_marker(centroide_cam, frame_id):
 
 
 
-def arow_marker(centroide_cam, p1,p2,p3, frame_id_point_cloud):  # P1 y P2
+
+
+def arow_marker(centroide_cam, p1 ,p2,p3, frame_id_point_cloud):  # P1 y P2
     #centroide
     p0 = PointStamped()
     p0.header.frame_id = frame_id_point_cloud
     p0.point.x , p0.point.y, p0.point.z = centroide_cam[0], centroide_cam[1], centroide_cam[2]
-    # Arrow
     frame = frame_id_point_cloud
-    ns = ['orientation_obj_1','orientation_obj_2','orientation_obj_3']
+    ns = ['axis_obj_x','axis_obj_y','axis_obj_z']
     points = [p0,p1,p2,p3]
-
-    #marker_1, marker_2, marker_3 = Marker(), Marker(), Marker()
-    #marker_1.id = 0
     marker = Marker()
-    #marker_array = [marker_1, marker_2, marker_3]
-
-    #marker_pub_array = [marker_pub_1, marker_pub_2, marker_pub_3]
-
+ 
     for i in range(3):
         marker.header.frame_id = frame
         marker.type = Marker.ARROW
         marker.ns = ns[i]
         marker.header.stamp = rospy.Time.now()
         marker.action = marker.ADD
-        marker.id = i+10
-
+        marker.id = i#+10
         # body radius, Head radius, hight head
         marker.scale.x, marker.scale.y, marker.scale.z = 0.02, 0.1, 0.04 
-        # Set the color
         marker.color.r , marker.color.g , marker.color.b, marker.color.a = 0, 100.0, 100.0, 1.0
         point = Point()
         point.x = points[0].point.x + (points[i+1].x) 
@@ -298,9 +411,91 @@ def arow_marker(centroide_cam, p1,p2,p3, frame_id_point_cloud):  # P1 y P2
 
 
 
+
+def object_category(fpc, spc, thpc):
+    """
+        esta funcion pide como argumento los eigenvalores obtenidos mendiante PCA y atraves de 
+        la relacion entre ellos estima la forma geometrica del objeto y regresa una cadena.
+
+        Establish similarity coefficients (sc) between the principal components
+    """
+    c21 =  spc * ( 100 / fpc)
+    c31 = thpc * ( 100 / fpc)
+    c32 = thpc * ( 100 / spc)
+
+    # Examine the main components and decide how to grab the object
+    if c21 >= 70:    # Means 1PC and 2PC are similar
+        if c31 > 70:    # Means 2PC and 3PC are similar
+            print("cube_or_sphere")
+            return "1"
+
+        if c32 < 40:    # Means 2PC is much bigger than 3PC
+            print("box")
+            return "2"
+
+    elif c21 < 70:    # Means 1PC is much bigger than 2PC
+        print("cylinder_or_prism")
+        return "3"
+
+    else:
+        print("Could not determine the shape of the object...")
+        return "0"
+
+
+
+
+
+def frame_actual_to_frame_target(pos_in, f_actual, f_target):
+    """
+        Dado un frame y una pose de entrada, retorna una Pose en el frame objetivo
+    """
+    global pose_in, listener_base
+
+    # Empaqueta msg, convierte orientacion de frame 'realsense_link' a frame 'base_link'
+    poseStamped_msg = PoseStamped()  
+    poseStamped_msg.header.frame_id = f_actual   # frame de origen
+    poseStamped_msg.header.stamp = rospy.Time(0)  # la ultima transformacion
+    pose_in = pos_in
+   
+    #poseStamped_msg.pose = Pose()
+    poseStamped_msg.pose = pose_in
+    pose_frame_base_link = listener_base.transformPose(f_target, poseStamped_msg)
+    new_pose = pose_frame_base_link.pose
+
+    return new_pose
+
+
+
+
+
+def points_actual_to_points_target(point_in, f_actual, f_target):
+    """
+        Dado un frame y una pose de entrada, retorna una Pose en el frame objetivo
+    """
+    global listener_base
+
+    # Empaqueta msg, convierte orientacion de frame 'realsense_link' a frame 'base_link'
+    point_msg = PointStamped()  
+    point_msg.header.frame_id = f_actual   # frame de origen
+    point_msg.header.stamp = rospy.Time(0)  # la ultima transformacion
+   
+    point_msg.point.x = point_in[0]
+    point_msg.point.y = point_in[1]
+    point_msg.point.z = point_in[2]
+    point_target_frame = listener_base.transformPoint(f_target, point_msg)
+    new_point = point_target_frame.point
+
+    return [ new_point.x , new_point.y , new_point.z ]
+
+
+
+
 def callback_RecognizeObject(req):  # Request is a PointCloud2
+    global pca1
+
     msg = req.point_cloud
     print("the service has been requested **************")
+    # centroide cam in 
     obj_in_stage, centroide_cam, x_points, y_points, z_points, recog_obj_img, img_with_mask, cloud_msg = segment_by_contour(msg)
     frame_id_point_cloud = msg.header.frame_id
     resp = RecognizeObjectResponse()
@@ -308,28 +503,36 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
     if obj_in_stage:
         print("An object was detected")
 
-        pca_vectors, obj_pose, eig_val = pca(x_points, y_points, z_points, msg.header.frame_id, centroide_cam)
-        arow_marker( centroide_cam, pca_vectors[0], pca_vectors[1], pca_vectors[2], frame_id_point_cloud)
-        centroid_marker(centroide_cam, frame_id_point_cloud)
+        pca_vectors, eig_val, size_obj = pca(x_points, y_points, z_points, msg.header.frame_id, centroide_cam)
+        c_obj = object_category(eig_val[0], eig_val[1], eig_val[2])
+        
+        obj_pose, axis_x_obj, axis_y_obj, axis_z_obj, centroid = object_pose(centroide_cam, pca_vectors[0], frame_id_point_cloud)
+        arow_marker( centroid, axis_x_obj, axis_y_obj, axis_z_obj, 'base_link')
+        #centroid_marker(centroide_cam, frame_id_point_cloud)
+        # cambiar la pose de frame
+        #pose_base_link = frame_actual_to_frame_target(obj_pose , 'realsense_link', 'base_link')
+        broadcaster_frame_object("base_link", "object", obj_pose)
+        print("size object", size_obj)
 
+        # Rellenando msg
+        resp.recog_object.category = c_obj
         resp.recog_object.header = req.point_cloud.header
         resp.recog_object.point_cloud = cloud_msg
-        resp.recog_object.size.x, resp.recog_object.size.y, resp.recog_object.size.z = eig_val[0], eig_val[1], eig_val[2]
-        resp.recog_object.pose = obj_pose
-        print(obj_pose)
+        resp.recog_object.size = size_obj
+        resp.recog_object.pose = obj_pose  # envia la pose en el frame 'base_link'      
         resp.recog_object.image.data = img_with_mask.flatten().tolist()
         resp.recog_object.image.height = 480
         resp.recog_object.image.width = 640
-
-        resp.recog_object.graspable = True
+        resp.recog_object.graspable = obj_in_stage
         #resp.image.data = recog_obj_img_list
         resp.image.height = 480
         resp.image.width = 640
 
         #cv2.imshow('final obj', img_with_mask)
-        #cv2.waitKey(2)
+        #cv2.waitKey(1)
         #cv2.imshow('detected object', recog_obj_img)
-        #cv2.waitKey(2) 
+        #cv2.waitKey(0.1) 
+        
         return resp
 
     else:
@@ -342,11 +545,13 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
 def main():
     print("Node to segment objects in a image from camera...ʕ•ᴥ•ʔ")
     rospy.init_node("object_pose")
-    global pub_point, marker_pub, marker_pub_2, marker_pub_3
+    global pub_point, marker_pub, listener_base, listener, pca1
     
     rospy.Service("/vision/obj_reco/recognize_object", RecognizeObject, callback_RecognizeObject) 
     pub_point = rospy.Publisher('/vision/detected_object', PointStamped, queue_size=10)
-    marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 2) 
+    marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10) 
+    listener_base = tf.TransformListener()
+    listener = tf.TransformListener()
 
     loop = rospy.Rate(30)
     while not rospy.is_shutdown():
