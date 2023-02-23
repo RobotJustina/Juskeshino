@@ -9,7 +9,7 @@ public:
     static cv::Mat get_horizontal_normals(cv::Mat& cloud, float normal_min_z, bool debug=false);
     static std::vector<cv::Vec3f> get_horizontal_planes(cv::Mat& cloud, float normal_min_z, float dist_threshold, float min_area,
                                                         cv::Mat& output_img_mask, bool debug=false);
-    static std::vector<cv::Vec3f> above_horizontal_plane(cv::Mat& cloud, cv::Mat img_bgr, std::vector<cv::Vec3f> plane, float dist_threshold,
+    static std::vector<cv::Vec3f> above_horizontal_plane(cv::Mat& cloud, std::vector<cv::Vec3f> plane, float dist_threshold,
                                                          cv::Mat& output_img_mask, bool debug);
     
     static std::vector<cv::Vec3f> plane_from_points(cv::Vec3f p1, cv::Vec3f p2, cv::Vec3f p3);

@@ -9,6 +9,7 @@
 #include "visualization_msgs/MarkerArray.h"
 #include "Utils.h"
 #include "GeometricFeatures.h"
+#include "ObjectRecognizer.h"
 
 tf::TransformListener* tf_listener;
 ros::Publisher pubMarkers;
@@ -27,6 +28,7 @@ float hough_step_theta = 0.03;
 float hough_threshold  = 400;
 float plane_dist_threshold = 0.05;
 float plane_min_area = 0.5;
+int   histogram_size = 18;
 std::string training_dir;
 
 bool callback_find_table_edge(vision_msgs::FindLines::Request& req, vision_msgs::FindLines::Response& resp)
@@ -68,20 +70,21 @@ bool callback_recog_objs(vision_msgs::RecognizeObjects::Request& req, vision_msg
     Utils::transform_cloud_wrt_base(req.point_cloud, img, cloud, tf_listener);
     Utils::filter_by_distance(cloud, img, cloud, img);
     std::vector<cv::Vec3f> plane = GeometricFeatures::get_horizontal_planes(cloud, normal_min_z, plane_dist_threshold, plane_min_area, output_mask, debug);
-    std::vector<cv::Vec3f> points = GeometricFeatures::above_horizontal_plane(cloud, img, plane, plane_dist_threshold+0.005, output_mask, debug);
-    cv::imshow("Detected objects", img);
-
-    cv::RNG rng(12345);
-    std::vector<std::vector<cv::Point> > contours;
-    std::vector<cv::Vec4i> hierarchy;
-    cv::findContours(output_mask, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE );
-    cv::Mat drawing = cv::Mat::zeros( output_mask.size(), CV_8UC3 );
-    for( size_t i = 0; i< contours.size(); i++ )
+    std::vector<cv::Vec3f> points = GeometricFeatures::above_horizontal_plane(cloud, plane, plane_dist_threshold+0.005, output_mask, debug);
+    if(points.size() < 1)
     {
-        cv::Scalar color = cv::Scalar( rng.uniform(0, 256), rng.uniform(0,256), rng.uniform(0,256) );
-        drawContours( drawing, contours, (int)i, color, 2, cv::LINE_8, hierarchy, 0 );
+        std::cout << "ObjReco.->Cannot find points above a plane" << std::endl;
+        return false;
     }
-    cv::imshow( "Contours", drawing );
+    std::vector<cv::Mat> objects_bgr;
+    std::vector<cv::Mat> objects_xyz;
+    std::vector<cv::Mat> objects_masks;
+    bool success = ObjectRecognizer::segment_by_contours(cloud, img, output_mask, 1000, objects_bgr, objects_xyz, objects_masks, debug);
+    for(int i=0; i<objects_bgr.size(); i++){
+        std::string recognized;
+        ObjectRecognizer::recognize(objects_bgr[i], objects_masks[i], histogram_size, recognized);
+    }
+    cv::imshow("Points above plane", img);
     return false;
 }
 
@@ -100,8 +103,25 @@ bool callback_train_object(vision_msgs::TrainObject::Request& req, vision_msgs::
      	std::cout << "ObjReco.->ERROR!: objects must have a name to be trained" << std::endl;
         return false;
     }
-    cv::Mat img, cloud;
-    //transform_cloud_wrt_base(req.point_cloud, img, cloud);
+    cv::Mat img, cloud, output_mask;   
+    Utils::transform_cloud_wrt_base(req.point_cloud, img, cloud, tf_listener);
+    Utils::filter_by_distance(cloud, img, cloud, img);
+    std::vector<cv::Vec3f> plane = GeometricFeatures::get_horizontal_planes(cloud, normal_min_z, plane_dist_threshold, plane_min_area, output_mask, debug);
+    std::vector<cv::Vec3f> points = GeometricFeatures::above_horizontal_plane(cloud, plane, plane_dist_threshold+0.005, output_mask, debug);
+    if(points.size() < 1)
+    {
+        std::cout << "ObjReco.->Cannot find points above a plane" << std::endl;
+        return false;
+    }
+    std::vector<cv::Mat> objects_bgr, objects_xyz, objects_masks;
+    bool success = ObjectRecognizer::segment_by_contours(cloud, img, output_mask, 1000, objects_bgr, objects_xyz, objects_masks, debug);
+    if(objects_bgr.size() != 1)
+    {
+        std::cout << "ObjReco.->ERROR! Only one object can be placed above a plane to be stored. " << std::endl;
+        return false;
+    }
+    if(!ObjectRecognizer::store_object_example(objects_bgr[0], objects_masks[0], req.name, training_dir, debug))
+        return false;
     return true;
 }
 
@@ -162,7 +182,10 @@ int main(int argc, char** argv)
         ros::param::get("~plane_dist_threshold", plane_dist_threshold);
     if(ros::param::has("~plane_min_area"))
         ros::param::get("~plane_min_area", plane_min_area);
+    if(ros::param::has("~histogram_size"))
+        ros::param::get("~histogram_size", histogram_size);
 
+    ObjectRecognizer::train_from_folder(training_dir, histogram_size);
     while(ros::ok() && cv::waitKey(10) != 27)
     {
         ros::spinOnce();
