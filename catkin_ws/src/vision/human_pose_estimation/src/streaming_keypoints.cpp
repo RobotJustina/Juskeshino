@@ -118,8 +118,8 @@ void HumanDetector::pclCallback(const sensor_msgs::PointCloud2ConstPtr& pcl_topi
       }
     }
     hca.coordinates_array.push_back(hc);
-    pub.publish(hca); 
   }
+  pub.publish(hca); 
   cv::imshow("HumanPoseEstimator",image);
   cv::waitKey(1);
 }

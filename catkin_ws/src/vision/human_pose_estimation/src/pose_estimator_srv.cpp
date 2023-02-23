@@ -108,10 +108,9 @@ bool srvCallback(vision_msgs::HumanPoseEstimatorResult::Request &req,vision_msgs
       }
     }
     hca.coordinates_array.push_back(hc);
-    res.coordinates_array = hca;
-    frame++;
   }
-
+res.coordinates_array = hca;
+frame++;
 cv::imshow("HumanPoseEstimator",image);
 cv::waitKey(0); // debug -> 0 , non-debug -> comment out
 return true;
