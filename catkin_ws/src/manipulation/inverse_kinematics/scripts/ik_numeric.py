@@ -10,6 +10,12 @@ from std_msgs.msg import Float64MultiArray
 from manip_msgs.srv import *
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
+
+
+"""
+    para 17 de febrero revisar la cinematica inversa y corregirla si es posible
+"""
+
 prompt = ""
 
 def get_model_info(joint_names):
@@ -138,24 +144,32 @@ def get_trajectory_time(p1, p2, speed_factor):
     return m/speed_factor + 0.5
 
 def callback_ik_for_trajectory(req):
+    
     global max_iterations
+    # entra una Pose
     print(prompt+"Calculating inverse kinematics and trajectory for " + str([req.x, req.y, req.z, req.roll, req.pitch, req.yaw]))
+    # si no hay suposicion inicial toma la pose actual de brazo
     if len(req.initial_guess) <= 0 or req.initial_guess == None:
         initial_guess = rospy.wait_for_message("/hardware/arm/current_pose", Float64MultiArray)
         initial_guess = initial_guess.data
     else:
         initial_guess = req.initial_guess
+
+    # obtenemos la pose supuesta a cinematica directa, es el punto inicial
     p1 = forward_kinematics(initial_guess)
+    # el punto final de la trayectoria es el punto o pose objetivo
     p2 = [req.x, req.y, req.z, req.roll, req.pitch, req.yaw]
     t  = req.duration if req.duration > 0 else get_trajectory_time(p1, p2, 0.25)
     dt = req.time_step if req.time_step > 0 else 0.05
+    # obtiene la trayectoria que lleva de punto inicial a punto final (objetivo)
     X,T = get_polynomial_trajectory_multi_dof(p1, p2, duration=t, time_step=dt)
     trj = JointTrajectory()
     trj.header.stamp = rospy.Time.now()
     q = initial_guess
-    for i in range(len(X)):
-        x, y, z, roll, pitch, yaw = X[i]
-        success, q = inverse_kinematics(x, y, z, roll, pitch, yaw, q, max_iterations)
+    for i in range(len(X)): # para cada ....
+        x, y, z, roll, pitch, yaw = X[i]    # punto de la trayectoria en espacio cartesiano
+        # ik para cada punto de la trayectoria
+        success, q = inverse_kinematics(x, y, z, roll, pitch, yaw, q, max_iterations)  
         if not success:
             return False
         p = JointTrajectoryPoint()
