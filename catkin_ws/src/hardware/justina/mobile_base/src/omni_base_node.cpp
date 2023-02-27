@@ -238,7 +238,7 @@ void callbackCmdVel(const geometry_msgs::Twist::ConstPtr &msg)
 
         try
         {
-            rcFrontal->SpeedAccelM1M2(rcAddressFrontal, QPPS_LEFT/2, leftSpeed, rightSpeed); 
+            rcFrontal->SpeedAccelM1M2(rcAddressFrontal, QPPS_LEFT/2, (int)leftSpeed, (int)rightSpeed); 
         }
         catch(std::exception &e)
         {
@@ -247,7 +247,7 @@ void callbackCmdVel(const geometry_msgs::Twist::ConstPtr &msg)
         }
         try
         {
-            rcLateral->SpeedAccelM1M2(rcAddressLateral, QPPS_FRONT/2, frontSpeed, rearSpeed); 
+            rcLateral->SpeedAccelM1M2(rcAddressLateral, QPPS_FRONT/2, (int)frontSpeed, (int)rearSpeed); 
         }
         catch(std::exception &e)
         {

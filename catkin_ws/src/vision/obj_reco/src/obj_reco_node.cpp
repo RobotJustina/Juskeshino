@@ -15,6 +15,12 @@ tf::TransformListener* tf_listener;
 ros::Publisher pubMarkers;
 
 bool  debug = false;
+float min_x =  0.3;
+float min_y = -2.0;
+float min_z =  0.3;
+float max_x =  2.0;
+float max_y =  2.0;
+float max_z =  2.0;
 float normal_min_z = 0.8;
 int   canny_threshold1  = 30;
 int   canny_threshold2  = 100;
@@ -29,6 +35,7 @@ float hough_threshold  = 400;
 float plane_dist_threshold = 0.05;
 float plane_min_area = 0.5;
 int   histogram_size = 18;
+int   min_points_per_object = 1000;
 std::string training_dir;
 
 bool callback_find_table_edge(vision_msgs::FindLines::Request& req, vision_msgs::FindLines::Response& resp)
@@ -38,7 +45,7 @@ bool callback_find_table_edge(vision_msgs::FindLines::Request& req, vision_msgs:
     std::vector<cv::Vec3f> edge_line;
         
     Utils::transform_cloud_wrt_base(req.point_cloud, img, cloud, tf_listener);
-    Utils::filter_by_distance(cloud, img, cloud, img);
+    Utils::filter_by_distance(cloud, img, min_x, min_y, min_z, max_x, max_y, max_z, cloud, img);
     edge_line = GeometricFeatures::find_table_edge(cloud, normal_min_z, canny_threshold1, canny_threshold2, canny_window_size, hough_min_rho, hough_max_rho,
                                                    hough_step_rho, hough_min_theta, hough_max_theta, hough_step_theta, hough_threshold, img, debug);
     resp.lines = Utils::get_lines_msg(edge_line);
@@ -54,12 +61,12 @@ bool callback_find_planes(vision_msgs::FindPlanes::Request& req, vision_msgs::Fi
     cv::Mat img, cloud, output_mask;
         
     Utils::transform_cloud_wrt_base(req.point_cloud, img, cloud, tf_listener);
-    Utils::filter_by_distance(cloud, img, cloud, img);
+    Utils::filter_by_distance(cloud, img, min_x, min_y, min_z, max_x, max_y, max_z, cloud, img);
     std::vector<cv::Vec3f> plane = GeometricFeatures::get_horizontal_planes(cloud, normal_min_z, plane_dist_threshold, plane_min_area, output_mask, debug);
     pubMarkers.publish(Utils::get_plane_marker(plane));
     if(plane.size() > 0) std::cout << "ObjReco.->Found Plane. Center: " << plane[0] << " Normal: " << plane[1] <<std::endl;
     else std::cout << "ObjReco.->Cannot find plane. " << std::endl;
-    return true;
+    return plane.size() > 0;
 }
 
 bool callback_recog_objs(vision_msgs::RecognizeObjects::Request& req, vision_msgs::RecognizeObjects::Response& resp)
@@ -68,18 +75,13 @@ bool callback_recog_objs(vision_msgs::RecognizeObjects::Request& req, vision_msg
     cv::Mat img, cloud, output_mask;
         
     Utils::transform_cloud_wrt_base(req.point_cloud, img, cloud, tf_listener);
-    Utils::filter_by_distance(cloud, img, cloud, img);
+    Utils::filter_by_distance(cloud, img, min_x, min_y, min_z, max_x, max_y, max_z, cloud, img);
     std::vector<cv::Vec3f> plane = GeometricFeatures::get_horizontal_planes(cloud, normal_min_z, plane_dist_threshold, plane_min_area, output_mask, debug);
     std::vector<cv::Vec3f> points = GeometricFeatures::above_horizontal_plane(cloud, plane, plane_dist_threshold+0.005, output_mask, debug);
-    if(points.size() < 1)
-    {
-        std::cout << "ObjReco.->Cannot find points above a plane" << std::endl;
-        return false;
-    }
-    std::vector<cv::Mat> objects_bgr;
-    std::vector<cv::Mat> objects_xyz;
-    std::vector<cv::Mat> objects_masks;
-    bool success = ObjectRecognizer::segment_by_contours(cloud, img, output_mask, 1000, objects_bgr, objects_xyz, objects_masks, debug);
+    if(points.size() < 10) return false;
+    std::vector<cv::Mat> objects_bgr, objects_xyz, objects_masks;
+    if(!ObjectRecognizer::segment_by_contours(cloud, img, output_mask, min_points_per_object, objects_bgr, objects_xyz, objects_masks, debug)) return false;
+    
     for(int i=0; i<objects_bgr.size(); i++){
         std::string recognized;
         ObjectRecognizer::recognize(objects_bgr[i], objects_masks[i], histogram_size, recognized);
@@ -105,7 +107,7 @@ bool callback_train_object(vision_msgs::TrainObject::Request& req, vision_msgs::
     }
     cv::Mat img, cloud, output_mask;   
     Utils::transform_cloud_wrt_base(req.point_cloud, img, cloud, tf_listener);
-    Utils::filter_by_distance(cloud, img, cloud, img);
+    Utils::filter_by_distance(cloud, img, min_x, min_y, min_z, max_x, max_y, max_z, cloud, img);
     std::vector<cv::Vec3f> plane = GeometricFeatures::get_horizontal_planes(cloud, normal_min_z, plane_dist_threshold, plane_min_area, output_mask, debug);
     std::vector<cv::Vec3f> points = GeometricFeatures::above_horizontal_plane(cloud, plane, plane_dist_threshold+0.005, output_mask, debug);
     if(points.size() < 1)
@@ -114,7 +116,7 @@ bool callback_train_object(vision_msgs::TrainObject::Request& req, vision_msgs::
         return false;
     }
     std::vector<cv::Mat> objects_bgr, objects_xyz, objects_masks;
-    bool success = ObjectRecognizer::segment_by_contours(cloud, img, output_mask, 1000, objects_bgr, objects_xyz, objects_masks, debug);
+    bool success = ObjectRecognizer::segment_by_contours(cloud, img, output_mask, min_points_per_object, objects_bgr, objects_xyz, objects_masks, debug);
     if(objects_bgr.size() != 1)
     {
         std::cout << "ObjReco.->ERROR! Only one object can be placed above a plane to be stored. " << std::endl;
@@ -145,17 +147,17 @@ int main(int argc, char** argv)
     if(ros::param::has("~training_dir"))
         ros::param::get("~training_dir", training_dir);
     if(ros::param::has("~min_x"))
-        ros::param::get("~min_x", Utils::min_x);
+        ros::param::get("~min_x", min_x);
     if(ros::param::has("~max_x"))
-        ros::param::get("~max_x", Utils::max_x);
+        ros::param::get("~max_x", max_x);
     if(ros::param::has("~min_y"))
-        ros::param::get("~min_y", Utils::min_y);
+        ros::param::get("~min_y", min_y);
     if(ros::param::has("~max_y"))
-        ros::param::get("~max_y", Utils::max_y);
+        ros::param::get("~max_y", max_y);
     if(ros::param::has("~min_z"))
-        ros::param::get("~min_z", Utils::min_z);
+        ros::param::get("~min_z", min_z);
     if(ros::param::has("~max_z"))
-        ros::param::get("~max_z", Utils::max_z);
+        ros::param::get("~max_z", max_z);
     if(ros::param::has("~normal_min_z"))
         ros::param::get("~normal_min_z", normal_min_z);
     if(ros::param::has("~canny_threshold1"))
@@ -184,6 +186,8 @@ int main(int argc, char** argv)
         ros::param::get("~plane_min_area", plane_min_area);
     if(ros::param::has("~histogram_size"))
         ros::param::get("~histogram_size", histogram_size);
+    if(ros::param::has("~min_points_per_object"))
+        ros::param::get("~min_points_per_object", min_points_per_object);
 
     ObjectRecognizer::train_from_folder(training_dir, histogram_size);
     while(ros::ok() && cv::waitKey(10) != 27)

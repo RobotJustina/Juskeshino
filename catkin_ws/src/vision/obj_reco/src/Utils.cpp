@@ -1,12 +1,6 @@
 #include "Utils.h"
 
 bool  Utils::debug = false;
-float Utils::min_x =  0.3;
-float Utils::min_y = -2.0;
-float Utils::min_z =  0.3;
-float Utils::max_x =  2.0;
-float Utils::max_y =  2.0;
-float Utils::max_z =  2.0;
 
 void Utils::pointcloud_msg2_cv_mat(sensor_msgs::PointCloud2& pc_msg, cv::Mat& bgr_dest, cv::Mat& pc_dest)
 {
@@ -57,13 +51,14 @@ void Utils::transform_cloud_wrt_base(sensor_msgs::PointCloud2& cloud, cv::Mat& b
 }
 
 
-void Utils::filter_by_distance(cv::Mat& cloud, cv::Mat& img, cv::Mat& filtered_cloud, cv::Mat& filtered_img)
+void Utils::filter_by_distance(cv::Mat& cloud, cv::Mat& img, float min_x, float min_y, float min_z, float max_x,
+                                   float max_y, float max_z, cv::Mat& filtered_cloud, cv::Mat& filtered_img)
 {
-    // This function is intended to keep point only in a given bounding box, e.g., to remove floot and distant walls
+    // This function is intended to keep point only in a given bounding box, e.g., to remove floor and distant walls
     // The function DOES NOT return a smaller point cloud. It returns a cloud with all non valid points set to zero. 
     cv::Mat valid_points;
-    cv::inRange(cloud, cv::Scalar(Utils::min_x, Utils::min_y, Utils::min_z),
-                cv::Scalar(Utils::max_x, Utils::max_y, Utils::max_z), valid_points);
+    cv::inRange(cloud, cv::Scalar(min_x, min_y, min_z),
+                cv::Scalar(max_x, max_y, max_z), valid_points);
     filtered_cloud = cloud.clone();
     filtered_img   = img.clone();
     for(size_t i=0; i<img.rows; i++)
