@@ -1,7 +1,7 @@
 <launch>
   <param name="robot_description" command="$(find xacro)/xacro '$(find justina_description)/urdf/justina.xacro'"/>
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
-  <include file="$(find surge_et_ambula)/launch/hardware/justina_base.launch"/>
+  <include file="$(find surge_et_ambula)/launch/justina/hardware/justina_base.launch"/>
   <node name="gmapping" pkg="gmapping" type="slam_gmapping" args="scan:=/hardware/scan" output="screen">
     <param name="map_update_interval" value="1.0" />
     <param name="maxUrange" value="5.4"/>

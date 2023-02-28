@@ -14,8 +14,8 @@ int main(int argc, char ** argv){
     ros::Rate rate(30);
     
     //std::string names[5] = {"spine_connect","waist_connect","shoulders_connect", "shoulders_left_connect", "shoulders_right_connect"};
-    float positions[5] = {0, 0, 0, 0, 0};
-    float deltaPose[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+    //float positions[5] = {0, 0, 0, 0, 0};
+    //float deltaPose[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
 
     sensor_msgs::JointState jointStates;
     jointStates.name.push_back("spine_connect");
@@ -23,7 +23,7 @@ int main(int argc, char ** argv){
 
     while(ros::ok()){
         jointStates.header.stamp = ros::Time::now();
-        jointStates.position[0] = positions[0];
+        jointStates.position[0] = 0.0;
         pubJointState.publish(jointStates);
         rate.sleep();
         ros::spinOnce();

@@ -1,6 +1,6 @@
 <launch>
-  <include file="$(find surge_et_ambula)/launch/hardware/justina_base.launch"/>
-  <include file="$(find surge_et_ambula)/launch/hardware/justina_upper_actuators.launch"/>
+  <include file="$(find surge_et_ambula)/launch/justina/hardware/justina_base.launch"/>
+  <include file="$(find surge_et_ambula)/launch/justina/hardware/justina_upper_actuators.launch"/>
   <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
     <arg name="color_width"  value="640"/>
     <arg name="color_height" value="480"/>
