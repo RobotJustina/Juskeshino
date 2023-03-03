@@ -228,7 +228,7 @@ def CondepParser(text):
                         #print(prim+'((ACTOR Robot)(OBJ nil))')
                     else:
                         if pron_list_sen[-1] in ["a", "an", "the"]:
-                            dependencies_list.append(prim+'(ACTOR Robot)(OBJ nil))')
+                            dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil))')
                             #print(prim+'((ACTOR Robot)(OBJ nil))')
                         else:
                             obj = pron_list_sen[-1]
@@ -243,7 +243,7 @@ def CondepParser(text):
                         #print(prim+'((ACTOR Robot)(OBJ nil))')
                     else:
                         if pron_list_sen[-1] in ["a", "an", "the"]:
-                            dependencies_list.append(prim+'(ACTOR Robot)(OBJ nil))')
+                            dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil))')
                             #print(prim+'((ACTOR Robot)(OBJ nil))')
                         else:
                             obj = pron_list_sen[-1]
@@ -305,8 +305,8 @@ def CondepParser(text):
                     #print(len(text_list_sen))
                     if verb_list_sen[-1] == "tell" and len(text_list_sen)==1: 
                         sent = "nil"
-                        dependencies_list.append(prim+'((OBJ nil)(TO nil)')
-                        #print(prim+'((OBJ nil)(TO nil)')
+                        dependencies_list.append(prim+'((OBJ nil)(TO nil))')
+                        #print(prim+'((OBJ nil)(TO nil))')
                     elif verb_list_sen[-1] == "tell" and len(text_list_sen)>1: 
                         #print(pos_list_sen[1])
                         #print(text_list_sen[1])
@@ -317,15 +317,15 @@ def CondepParser(text):
                             #print(len(sent))
                             #print(sent)
                             if len(sent)!=0:
-	                            dependencies_list.append(prim+'((OBJ '+sent+')(TO '+person+')')
-	                            #print(prim+'((OBJ '+sent+')(TO '+person+')')
+	                            dependencies_list.append(prim+'((OBJ '+sent+')(TO '+person+'))')
+	                            #print(prim+'((OBJ '+sent+')(TO '+person+'))')
                             else:
-	                            dependencies_list.append(prim+'((OBJ nil)(TO '+person+')')
-	                            #print(prim+'((OBJ nil)(TO '+person+')')
+	                            dependencies_list.append(prim+'((OBJ nil)(TO '+person+'))')
+	                            #print(prim+'((OBJ nil)(TO '+person+'))')
                         else:
                             sent = sen.replace(text_list_sen[0] , "")
-                            dependencies_list.append(prim+'((OBJ '+sent+')(TO nil)')
-                            #print(prim+'((OBJ '+sent+')(TO nil)')
+                            dependencies_list.append(prim+'((OBJ '+sent+')(TO nil))')
+                            #print(prim+'((OBJ '+sent+')(TO nil))')
 
                     elif verb_list_sen[-1] == "say" and len(text_list_sen)<=1:
                         #say [something]
@@ -363,8 +363,8 @@ def CondepParser(text):
                         for wd in range(ind2):
                             sent2 = sent2.replace((text_list_sen[wd])+" ", "")
 
-                    dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+sent2+')(from '+ source +')(to '+ goal +'))')
-                    #print(prim+'((ACTOR Robot)(OBJ '+sent2+')(from '+ source +')(to '+ goal +'))')
+                    dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+sent2+')(from '+source+')(to '+goal+'))')
+                    #print(prim+'((ACTOR Robot)(OBJ '+sent2+')(from '+source+')(to '+goal+'))')
             
             print("====================================================================")
         
