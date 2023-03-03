@@ -421,14 +421,31 @@
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
     ;(assert (plan (name ptrans)(id ?*plan_number* )(number 1 )(actions goto ?room-human ?zone-human)) )
-    ;(assert (plan (name ptrans)(id ?*plan_number* )(number 2 )(actions find-object ?human)) )
-    ;(assert (attempt (name ptrans)(id ?*plan_number* )(move ?actor)(room ?room-human)(zone ?zone-human)(on room)(number 2 )))
+    ;(assert (attempt (name ptrans)(id ?*plan_number* )(move ?actor)(room ?room-human)(zone ?zone-human)(number 2 )))
     ;(assert (finish-planner ptrans ?*plan_number* ?*plan_number_new*))
+    
+    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-human " " ?zone-human "))" crlf)
+)
+
+
+(defrule exec-attend-human-ROS
+    ?f   <- (num-sentences 1)
+    ?f1  <- (attend (actor ?actor)(obj ?human))
+    (item (type Robot)(name ?actor))
+    (item (type Human)(name ?human)(room ?room-human&:(neq ?room-human nil))(zone ?zone-human&:(neq ?zone-human nil)))
+    =>
+    ; it sends the robot to the ?human location and finds the person
+    (retract ?f ?f1)
+    (bind ?*plan_number* (+ 1 ?*plan_number*))
+    (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
+    ;(assert (plan (name attend)(id ?*plan_number* )(number 1 )(actions goto ?room-human ?zone-human)) )
+    ;(assert (plan (name attend)(id ?*plan_number* )(number 2 )(actions find-object ?human)) )
+    ;(assert (attempt (name attend)(id ?*plan_number* )(move ?actor)(room ?room-human)(zone ?zone-human)(to ?human)(number 2 )))
+    ;(assert (finish-planner attend ?*plan_number* ?*plan_number_new*))
     
     (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-human " " ?zone-human "))" crlf)
     (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
 )
-
 
 (defrule exec-atrans-object-recepient-ROS
     ?f  <- (num-sentences 1)
