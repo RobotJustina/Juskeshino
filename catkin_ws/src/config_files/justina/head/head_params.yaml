@@ -5,7 +5,7 @@ servo_ids:
   - 1
 servo_zeros:
   - 2000
-  - 2600
+  - 2580
 servo_directions:
   - 1
   - 1

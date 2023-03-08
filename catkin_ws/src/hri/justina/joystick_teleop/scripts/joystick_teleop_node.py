@@ -62,7 +62,7 @@ def callbackJoy(msg):
     magnitudTiggerDiference = math.sqrt((leftTigger*leftTigger) + (rightTigger*rightTigger))
     #print "diference: " + str(magnitudTiggerDiference)
     if magnitudTiggerDiference > 0.15:
-        speedY = (leftTigger - rightTigger)/2
+        speedY = (leftTigger - rightTigger)/4
     else:
         speedY = 0
 
@@ -80,8 +80,8 @@ def callbackJoy(msg):
     rightStickY = msg.axes[4]
     magnitudRight = math.sqrt(rightStickX*rightStickX + rightStickY*rightStickY)
     if magnitudRight > 0.1:
-        speedX = 0.5*rightStickY
-        yaw = rightStickX
+        speedX = 0.25*rightStickY
+        yaw = 0.5*rightStickX
     else:
         speedX = 0
         yaw = 0

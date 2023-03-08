@@ -381,11 +381,13 @@ int main(int argc, char **argv)
         }
 
         //Get current servo position and publish the corresponding topics 
-        if(!get_current_position_bits(groupBulkReadPosition, servo_ids, current_position_bits))
+        if(get_current_position_bits(groupBulkReadPosition, servo_ids, current_position_bits))
+            joint_states.position = positions_bits_to_radians(current_position_bits, servo_zeros, servo_directions);
+        else
             std::cout<<prompt << "Cannot get arm current position..." << std::endl;
         if(!get_current_voltage_bits(groupBulkReadVoltages, servo_ids, msg_voltage.data))
             std::cout<<prompt<< "Cannot get arm current voltage"<< std::endl;
-        joint_states.position = positions_bits_to_radians(current_position_bits, servo_zeros, servo_directions);
+        
         joint_states.header.stamp = ros::Time::now();
         for(int i=0; i<servo_arm_ids.size(); i++) msg_current_pose.data[i] = joint_states.position[i];
         msg_current_gripper.data  = joint_states.position[servo_arm_ids.size()    ] * servo_gripper_directions[0];

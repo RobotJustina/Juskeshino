@@ -27,8 +27,9 @@ from mmap import MAP_SHARED
 
 import rospy
 import rospkg
-from ros_vosk.msg import speech_recognition
+from ros_whisper_vosk.msg import speech_recognition
 from std_msgs.msg import String, Bool
+from ros_whisper_vosk.srv import SetGrammarVosk, SetGrammarVoskResponse
 
 import vosk_ros_model_downloader as downloader
 
@@ -36,17 +37,21 @@ class vosk_sr():
     def __init__(self):
         rospack = rospkg.RosPack()
         rospack.list()
-        package_path = rospack.get_path('ros_vosk')
+        package_path = rospack.get_path('ros_whisper_vosk')
         
         model_path = '/models/'
         model_dir = package_path + model_path
-        model = "None" #change the name of the model to match the downloaded model's name
+        # model = "None" #change the name of the model to match the downloaded model's name
+        # model = "vosk-model-en-us-0.22"
+        model = "vosk-model-small-en-us-0.15" # for restaurant
         
         if not os.path.exists(model_dir+model):
             print ("No model found! Please use the GUI to download a model...")
             model_downloader = downloader.model_downloader()
             model_downloader.execute()
-            model = model_downloader.model_to_download
+            model = model_downloader.model_to_downloaored
+
+        self.model_name = model            
         
         self.tts_status = False
 
@@ -59,10 +64,6 @@ class vosk_sr():
         self.rate = rospy.Rate(100)
 
         rospy.on_shutdown(self.cleanup)
-
-        model_name = rospy.get_param('vosk/model',model)
-        if not rospy.has_param('vosk/model'):
-            rospy.set_param('vosk/model', model_name)
 
         self.msg = speech_recognition()
 
@@ -79,10 +80,15 @@ class vosk_sr():
         self.samplerate = int(device_info['default_samplerate'])
         rospy.set_param('vosk/sample_rate', self.samplerate)
 
-        self.model = vosk.Model(model_dir+model_name)
+        self.model = vosk.Model(model_dir+self.model_name)
+
+        self.rec = None
+        self.set_grammar_srv = rospy.Service('set_grammar_vosk', SetGrammarVosk, self.set_grammar)        
 
         #TODO GPUInit automatically selects a CUDA device and allows multithreading.
         # gpu = vosk.GpuInit() #TODO
+
+        self.format_grammar = None
 
     
     def cleanup(self):
@@ -100,19 +106,45 @@ class vosk_sr():
     def tts_status_listenner(self):
         rospy.Subscriber('/tts/status', Bool, self.tts_get_status)
 
-    def speech_recognize(self):    
+    def set_grammar(self, data):
+        try:
+            if not self.rec:
+                return SetGrammarVoskResponse(False)
+            print(data)
+
+            self.rec.Reset()
+            
+            # rec.SetGrammar('["one zero one two three oh", "four five six", "seven eight nine zero", "[unk]"]')
+            unk_phrase = "[unk]"
+            grammar_list = data.grammar
+            grammar_list.append(unk_phrase)
+            format_grammar = str(list(grammar_list))
+            print(format_grammar)
+            self.format_grammar = format_grammar.replace("'", '"')
+            print("SET GRAMMR -> ", self.format_grammar)
+            
+            # self.rec.SetGrammar(format_grammar)
+
+            return SetGrammarVoskResponse(True)
+
+        except:
+            import traceback
+            traceback.print_exc()
+            return SetGrammarVoskResponse(False)
+
+    def speech_recognize(self):
         try:
 
             with sd.RawInputStream(samplerate=self.samplerate, blocksize=16000, device=self.input_dev_num, dtype='int16',
                                channels=1, callback=self.stream_callback):
                 rospy.logdebug('Started recording')
                 
-                rec = vosk.KaldiRecognizer(self.model, self.samplerate)
+                self.rec = vosk.KaldiRecognizer(self.model, self.samplerate)
+
                 print("Vosk is ready to listen!")
                 isRecognized = False
                 isRecognized_partially = False
                 
-            
                 while not rospy.is_shutdown():
                     self.tts_status_listenner()
 
@@ -120,29 +152,34 @@ class vosk_sr():
                         # If the text to speech is operating, clear the queue
                         with self.q.mutex:
                             self.q.queue.clear()
-                        rec.Reset()
+                        self.rec.Reset()
 
                     elif self.tts_status == False:
                         data = self.q.get()
-                        if rec.AcceptWaveform(data):
+                        if self.rec.AcceptWaveform(data):
 
                             # In case of final result
-                            result = rec.FinalResult()
+                            result = self.rec.FinalResult()
 
                             diction = json.loads(result)
                             lentext = len(diction["text"])
 
                             if lentext > 2:
                                 result_text = diction["text"]
-                                rospy.loginfo(result_text)
+                                #rospy.loginfo(result_text)
                                 isRecognized = True
                             else:
                                 isRecognized = False
                             # Resets current results so the recognition can continue from scratch
-                            rec.Reset()
+
+                            if self.format_grammar != None and "vosk-model-small-en-us-0.15" == self.model_name:
+                                rospy.loginfo('called')
+                                self.rec.SetGrammar(self.format_grammar)
+                            self.rec.Reset()
+                            
                         else:
                             # In case of partial result
-                            result_partial = rec.PartialResult()
+                            result_partial = self.rec.PartialResult()
                             if (len(result_partial) > 20):
 
                                 isRecognized_partially = True

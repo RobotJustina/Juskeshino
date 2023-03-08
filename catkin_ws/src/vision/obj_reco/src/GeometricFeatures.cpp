@@ -64,6 +64,7 @@ std::vector<cv::Vec3f> GeometricFeatures::above_horizontal_plane(cv::Mat& cloud,
             }
         }
     if(debug) cv::imshow("Points above plane mask", output_img_mask);
+    if(points.size() < 10) std::cout << "ObjReco.->WARNING! Too few points above a plane. Not enough for object recognition" << std::endl;
     return points;
 }
 

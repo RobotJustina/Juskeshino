@@ -15,6 +15,13 @@
   <arg name="lidar_points_threshold" default="20"/>
   <arg name="max_linear_speed" default="0.5"/>
   <arg name="max_angular_speed" default="0.8"/>
+  <arg name="min_x" default="0.3"/>
+  <arg name="max_x" default="0.85"/>
+  <arg name="min_y" default="-0.30"/>
+  <arg name="max_y" default="0.30"/>
+  <arg name="min_z" default="0.05"/>
+  <arg name="max_z" default="1.30"/>
+  <arg name="obs_detector_debug" default="False"/>
 
   <node name="path_planner" pkg="path_planner" type="path_planner_node" output="screen">
     <param name="diagonal_paths" value="False"/>
@@ -38,8 +45,13 @@
     <param name="cloud_downsampling" value="$(arg cloud_downsampling)"/>
     <param name="lidar_points_threshold" value="$(arg lidar_points_threshold)"/>
     <param name="cloud_points_threshold" value="$(arg cloud_points_threshold)"/>
-    <param name="min_z" value="0.04"/>
-    <param name="obs_detector_debug" value="False"/>
+    <param name="max_x" value="$(arg max_x)"/>
+    <param name="min_x" value="$(arg min_x)"/>
+    <param name="max_y" value="$(arg max_y)"/>
+    <param name="min_y" value="$(arg min_y)"/>
+    <param name="max_z" value="$(arg max_z)"/>
+    <param name="min_z" value="$(arg min_z)"/>
+    <param name="obs_detector_debug" value="$(arg obs_detector_debug)"/>
   </node>
 
   <node name="map_augmenter"  pkg="map_augmenter"  type="map_augmenter_node"  output="screen">
@@ -52,6 +64,12 @@
     <param name="cloud_downsampling" value="$(arg cloud_downsampling)"/>
     <param name="inflation_radius" value="0.2"/>
     <param name="cost_radius" value="0.5"/>
+    <param name="max_x" value="$(arg max_x)"/>
+    <param name="min_x" value="$(arg min_x)"/>
+    <param name="max_y" value="$(arg max_y)"/>
+    <param name="min_y" value="$(arg min_y)"/>
+    <param name="max_z" value="$(arg max_z)"/>
+    <param name="min_z" value="$(arg min_z)"/>
   </node>
 
   <node name="mvn_pln"  pkg="mvn_pln"  type="mvn_pln_node"  output="screen">

@@ -22,7 +22,7 @@ int main(int argc, char** argv)
 
     std::cout << "JustinaGUI.->Waiting for arms initial positions..." << std::endl;
     std_msgs::Float64MultiArray::ConstPtr la_q0, ra_q0;
-    int counter = 50;
+    int counter = 5;
     while((la_q0 == NULL || ra_q0 == NULL) && ros::ok() && --counter > 0)
     {
         la_q0 = ros::topic::waitForMessage<std_msgs::Float64MultiArray>

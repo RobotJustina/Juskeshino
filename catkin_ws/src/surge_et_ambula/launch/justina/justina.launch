@@ -1,14 +1,16 @@
 <launch>
+  <arg name="obs_detector_debug" default="False"/>
+  
   <param name="base_link_name" value="base_link"/>
   <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
   <param name="robot_description" command="$(find xacro)/xacro '$(find justina_description)/urdf/justina.xacro'"/>
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
   
-  <include file="$(find surge_et_ambula)/launch/hardware/justina_hardware.launch"/>
+  <include file="$(find surge_et_ambula)/launch/justina/hardware/justina_hardware.launch"/>
   
-  <include file="$(find surge_et_ambula)/launch/navigation.launch">
-    <arg name="static_map_file"  value="$(find config_files)/maps/Blank.yaml"/>
-    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/Blank.yaml"/>
+  <include file="$(find surge_et_ambula)/launch/justina/navigation.launch">
+    <arg name="static_map_file"  value="$(find config_files)/maps/LabBiorobotica.yaml"/>
+    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/LabBiorobotica.yaml"/>
     <arg name="initial_pose_x" value="0.0"/>
     <arg name="initial_pose_y" value="0.0"/>
     <arg name="initial_pose_a" value="0.0"/>
@@ -20,17 +22,24 @@
     <arg name="cloud_downsampling" value="9"/>
     <arg name="cloud_points_threshold" value="50"/>
     <arg name="lidar_points_threshold" value="5"/>
+    <arg name="min_x" value="0.3"/>
+    <arg name="max_x" value="0.75"/>
+    <arg name="min_y" value="-0.30"/>
+    <arg name="max_y" value="0.30"/>
+    <arg name="min_z" value="0.00"/>
+    <arg name="max_z" value="1.30"/>
+    <arg name="obs_detector_debug" value="$(arg obs_detector_debug)"/>
   </include>
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/navigation.rviz"/>
 
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_navigation.rviz"/>
   <node name="justina_gui" pkg="justina_gui" type="justina_gui_node" output="screen">
-    <param name="la_predefined" value="$(find config_files)/manipulation/la_predefined.yaml"/>
-    <param name="ra_predefined" value="$(find config_files)/manipulation/ra_predefined.yaml"/>
-    <param name="hd_predefined" value="$(find config_files)/manipulation/hd_predefined.yaml"/>
+    <param name="la_predefined" value="$(find config_files)/justina/manipulation/la_predefined.yaml"/>
+    <param name="ra_predefined" value="$(find config_files)/justina/manipulation/ra_predefined.yaml"/>
+    <param name="hd_predefined" value="$(find config_files)/justina/manipulation/hd_predefined.yaml"/>
   </node>
 
-  <include file="$(find surge_et_ambula)/launch/manipulation.launch"/>
-  <!-- <node name="obj_reco" pkg="obj_reco" type="obj_reco_node" output="screen"/> -->
+  <include file="$(find surge_et_ambula)/launch/justina/manipulation.launch"/>
+  <include file="$(find surge_et_ambula)/launch/justina/vision.launch"/>
   
   <!--node name="sound_play" pkg="sound_play" type="soundplay_node.py" output="screen"/>
   <node name="speech_recog" pkg="sprec_pocketsphinx" type="asr.py">
