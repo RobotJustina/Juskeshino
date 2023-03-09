@@ -25,27 +25,33 @@ def callback_goal(msg):
     return
 
 def callback_pointcloud(msg):
+    global obs_aux
+    obs_aux=False
     arr=ros_numpy.point_cloud2.pointcloud2_to_array(msg)
     m,n=arr.shape
     ang=-0.62
     contador=0
-    for i in range(m//4,3*m//4):
-        for j in range(n//2,n):
+    min=-10
+    for i in range(m//8,7*m//8):
+        for j in range(2*n//5,n):
             x,y,z=arr[i,j][0], arr[i,j][1], arr[i,j][2] ##Datos como se entregan por la cámara
             if(math.isnan(x) or math.isnan(y) or math.isnan(z)):
                 continue
             x=z*math.cos(ang)+y*math.sin(ang)
             y=-z*math.sin(ang)+y*math.cos(ang)
+            x=z
             z=-y
-            x= z
-            #print(x,z)
-            if(x< 1 and z>-0.7):
+            # max -0.74
+            #z min -1.59
+            if(x < 1.15 and z>-1.1):
                 contador+=1
-    print(contador)
+    if contador >=1000:
+        obs_aux=True
     return
 
 def callback_laser_scan(msg):
     global edo
+    global obs_aux
     edo=0
     obstacle_left=False
     obstacle_right=False
@@ -58,7 +64,7 @@ def callback_laser_scan(msg):
        obstacle_right=obstacle_right or temp
     for i in range(46,138):
        temp=msg.ranges[i]<1.05
-       obstacle=obstacle or temp
+       obstacle=obstacle or temp or obs_aux
     if not(obstacle)  and not(obstacle_left) and not(obstacle_right):
         edo=0
     elif obstacle  and not(obstacle_left) and not(obstacle_right):
@@ -203,6 +209,7 @@ def main():
     global epsilon
     global Q
     global next
+    global obs_aux
     edo=0
     next=False
     Q = np.zeros((8,4))
