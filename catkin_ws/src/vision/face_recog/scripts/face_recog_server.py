@@ -4,8 +4,8 @@
 
 from cv_bridge import CvBridge
 #from object_classification.srv import Classify,ClassifyResponse, ClassifyRequest
-from face_recog .msg import *
-from face_recog .srv import *
+from face_recog.msg import *
+from face_recog.srv import *
 from rospy.numpy_msg import numpy_msg
 from std_msgs.msg import String
 import rospy
@@ -17,7 +17,7 @@ import face_recognition
 import cv2
 import os
 
-path_for_faces='/home/takeshi/Pictures/faces_for_recognition/'
+path_for_faces='/home/robocup/Pictures/faces_for_recognition/'
 #path_for_faces='/home/roboworks/Pictures/faces_for_recognition/'
 
 ids=[]

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import math
 import time
 import rospy
@@ -11,6 +11,10 @@ from geometry_msgs.msg import PointStamped
 from manip_msgs.srv import *
 from tf.transformations import euler_from_quaternion
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+
+#THIS NODE RECEIVES A TRAJECTORY FOR THE ARM AND SENDS POSITION ONE BY ONE
+#THIS NODE IS INTENDED TO BE USED ONLY IN SIMULATION MODE,
+#TRAJECTORY TRACKING FOR REAL AMRS IS PERFORMED IN THE ARMS NODE.
 
 def la_trajectory_tracking(joint_trajectory):
 
