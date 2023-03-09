@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 
 from time import sleep
 import pyaudio

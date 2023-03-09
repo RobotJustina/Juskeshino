@@ -4,10 +4,14 @@
 ### mover al frente simple_move/goal_dist
 import rospy
 import numpy as np
+import ros_numpy
+import math
 from sensor_msgs.msg   import LaserScan
+from sensor_msgs.msg import PointCloud2
 from std_msgs.msg import Float32
 from std_msgs.msg import Empty
 from actionlib_msgs.msg import GoalStatus
+from std_msgs.msg import Float64MultiArray
 
 def Last_pub():
     pub_stop.publish(Empty())
@@ -20,8 +24,34 @@ def callback_goal(msg):
         next=True
     return
 
+def callback_pointcloud(msg):
+    global obs_aux
+    obs_aux=False
+    arr=ros_numpy.point_cloud2.pointcloud2_to_array(msg)
+    m,n=arr.shape
+    ang=-0.62
+    contador=0
+    min=-10
+    for i in range(m//8,7*m//8):
+        for j in range(2*n//5,n):
+            x,y,z=arr[i,j][0], arr[i,j][1], arr[i,j][2] ##Datos como se entregan por la cámara
+            if(math.isnan(x) or math.isnan(y) or math.isnan(z)):
+                continue
+            x=z*math.cos(ang)+y*math.sin(ang)
+            y=-z*math.sin(ang)+y*math.cos(ang)
+            x=z
+            z=-y
+            # max -0.74
+            #z min -1.59
+            if(x < 1.15 and z>-1.1):
+                contador+=1
+    if contador >=1000:
+        obs_aux=True
+    return
+
 def callback_laser_scan(msg):
     global edo
+    global obs_aux
     edo=0
     obstacle_left=False
     obstacle_right=False
@@ -34,7 +64,7 @@ def callback_laser_scan(msg):
        obstacle_right=obstacle_right or temp
     for i in range(46,138):
        temp=msg.ranges[i]<1.05
-       obstacle=obstacle or temp
+       obstacle=obstacle or temp or obs_aux
     if not(obstacle)  and not(obstacle_left) and not(obstacle_right):
         edo=0
     elif obstacle  and not(obstacle_left) and not(obstacle_right):
@@ -72,10 +102,13 @@ def do_action(act):
 
 rospy.init_node("RL")
 rospy.Subscriber("/hardware/scan", LaserScan, callback_laser_scan)
+rospy.Subscriber("/hardware/realsense/points",PointCloud2, callback_pointcloud)
 rospy.Subscriber("/simple_move/goal_reached", GoalStatus, callback_goal)
 pub_lat = rospy.Publisher("/simple_move/goal_dist_lateral", Float32, queue_size=10)
 pub_fro = rospy.Publisher("/simple_move/goal_dist", Float32, queue_size=10)
 pub_stop = rospy.Publisher("/simple_move/stop", Empty, queue_size=10)
+pub_head =rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=10)
+
 loop = rospy.Rate(0.5)
 rospy.on_shutdown(Last_pub)
 
@@ -176,6 +209,7 @@ def main():
     global epsilon
     global Q
     global next
+    global obs_aux
     edo=0
     next=False
     Q = np.zeros((8,4))
@@ -194,6 +228,10 @@ def main():
         prueba.data=-0.03
         pub_fro.publish(prueba)
         loop.sleep()
+
+    prueba=Float64MultiArray()
+    prueba.data=[0.0, -0.62]
+    pub_head.publish(prueba)
 
     for x in range(total_episodes):
         if(rospy.is_shutdown()):
