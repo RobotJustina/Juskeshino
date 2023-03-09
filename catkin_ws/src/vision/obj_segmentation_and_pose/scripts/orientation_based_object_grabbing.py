@@ -139,12 +139,13 @@ def grip_rules(obj_pose, type_obj):
     print("type object", type_obj)
 
     
-    y_object = 0.07
+    y_object = 0.03 # radio de la circunferencia
     epsilon = y_object
     coord_centroid = np.asarray([obj_pose[0] , obj_pose[1], obj_pose[2]])
-    z_centroid = obj_pose[2]
     x_centroid = obj_pose[0]
     y_centroid = obj_pose[1]
+    z_centroid = obj_pose[2]
+
     grasp_candidates_quaternion = []
     grasp_candidates_rpy = []
     
@@ -156,10 +157,12 @@ def grip_rules(obj_pose, type_obj):
     # Step 2: rango (y,-y), (0,x)
     # Step 3:
 
-    offset_theta = np.deg2rad(120)
+    #offset_theta = np.deg2rad(120)
+    offset_theta = np.deg2rad(0)    # donde inicia la generacion de agarres candidatos
     theta = 0 + offset_theta
-    step_size = np.deg2rad(10)
-    range_points = np.pi
+    step_size = np.deg2rad(10)  
+    #range_points = np.pi    
+    range_points = np.pi *2           # rango dentro del cual se generan los candidatos 360 grados
     num_points = int(range_points / step_size)
     print("number points", num_points)
     temp = 0
@@ -192,7 +195,7 @@ def grip_rules(obj_pose, type_obj):
 
         r,p,y = tft.euler_from_matrix(np.asarray(TM))
         """
-        R = obj_pose[3] + np.deg2rad(180) + temp
+        R = obj_pose[3] + temp#np.deg2rad(180) + temp
         P = obj_pose[4]
         Y = obj_pose[5]
 
@@ -263,11 +266,12 @@ def callback(req):
         broadcaster_frame_object('base_link', 'candidate' , pos )
 
     """
-    broadcaster_frame_object('base_link', 'candidate1' , pose_list_q[0] )
-    broadcaster_frame_object('base_link', 'candidate2' , pose_list_q[1] )
-    broadcaster_frame_object('base_link', 'candidate3' , pose_list_q[2] )
-    broadcaster_frame_object('base_link', 'candidate4' , pose_list_q[3] )
-    broadcaster_frame_object('base_link', 'candidate5' , pose_list_q[4] )
+    offset = 20
+    broadcaster_frame_object('base_link', 'candidate1' , pose_list_q[0+offset] )
+    broadcaster_frame_object('base_link', 'candidate2' , pose_list_q[1+offset] )
+    broadcaster_frame_object('base_link', 'candidate3' , pose_list_q[2+offset] )
+    broadcaster_frame_object('base_link', 'candidate4' , pose_list_q[3+offset] )
+    broadcaster_frame_object('base_link', 'candidate5' , pose_list_q[4+offset] )
     """
     broadcaster_frame_object('base_link', 'candidate2' , pose_list[5] )
     broadcaster_frame_object('base_link', 'candidate3' , pose_list[6] )
@@ -290,25 +294,33 @@ def callback(req):
         new_pose_rpy_list.append(pose_shoulder_frame)
         
     print("*****************")
-    print(new_pose_rpy_list)
-    """
-    # Prepara msg request para el servicio /manipulation/ik_pose
-    ik_msg = InverseKinematicsPose2PoseRequest()
+    #print(new_pose_rpy_list)
+    
+    # Prepara msg request para el servicio /manipulation/ik_trajectory
+    ik_msg = InverseKinematicsPose2TrajRequest()
     # Rellenar msg pose to pose
+    
     ik_msg.x = new_pose_rpy_list[0][0]
     ik_msg.y = new_pose_rpy_list[0][1]
     ik_msg.z = new_pose_rpy_list[0][2]
     ik_msg.roll = new_pose_rpy_list[0][3]
     ik_msg.pitch = new_pose_rpy_list[0][4]
     ik_msg.yaw = new_pose_rpy_list[0][5]
-
-    # result_ik_srv = ik_srv(ik_msg)
-
-    #print("RESULT:")
-    #print(result_ik_srv)
-    """
     
-    resp.q = []
+    while(1):
+        try:
+            result_ik_srv = ik_srv(ik_msg)
+            break
+
+        except AttributeError:
+            print("Oops!  That was no valid number.  Try again...")
+
+
+    
+    print("lolo")
+    
+    
+    resp.q = [0,0,0,0,0,0,0]
 
     return resp
 
@@ -321,9 +333,9 @@ def main():
     rospy.init_node("gripper_orientation_for_grasping")
     rospy.Service("/vision/gripper_orientation_grasping", InverseKinematicsPose2Pose, callback)
     listener = tf.TransformListener()
-    # se suscribe al servicio /manipulation/ik_pose
-    rospy.wait_for_service( '/manipulation/ik_pose' )
-    ik_srv = rospy.ServiceProxy( '/manipulation/ik_pose' , InverseKinematicsPose2Pose )
+    # se suscribe al servicio /manipulation/ik_trajectory
+    rospy.wait_for_service( '/manipulation/la_ik_trajectory' )
+    ik_srv = rospy.ServiceProxy( '/manipulation/la_ik_trajectory' , InverseKinematicsPose2Traj )
     
 
     loop = rospy.Rate(30)

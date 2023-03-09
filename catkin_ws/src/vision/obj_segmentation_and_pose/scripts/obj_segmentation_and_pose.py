@@ -284,6 +284,7 @@ def object_pose(centroid, principle_axis, frame_id):  # modificar a pointStamped
     
     if principle_axis[2] < 0: 
         principle_axis = -1 * principle_axis
+        print("principal axis is negative")
     
     
     Oc_Pp  = np.asarray(principle_axis) 
@@ -528,10 +529,10 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
         resp.image.height = 480
         resp.image.width = 640
 
-        #cv2.imshow('final obj', img_with_mask)
-        #cv2.waitKey(1)
-        #cv2.imshow('detected object', recog_obj_img)
-        #cv2.waitKey(0.1) 
+        cv2.imshow('final obj', img_with_mask)
+        cv2.waitKey(1)
+        cv2.imshow('detected object', recog_obj_img)
+        cv2.waitKey(1) 
         
         return resp
 
