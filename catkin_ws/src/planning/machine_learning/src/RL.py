@@ -39,19 +39,52 @@ def callback_pointcloud(msg):
                 continue
             x=z*math.cos(ang)+y*math.sin(ang)
             y=-z*math.sin(ang)+y*math.cos(ang)
+            temp=x
             x=z
             z=-y
+            y=-x
             # max -0.74
             #z min -1.59
-            if(x < 1.15 and z>-1.1):
+            if(x < 1.15 and z>-1.1 and(y<=0.65 and y>=-0.65)):
                 contador+=1
     if contador >=1000:
         obs_aux=True
+        print("Cuidado al frente")
+    return
+
+def get_votes(msg):
+    #Array=np.zeros((186,2))
+    vote=np.zeros(9)
+    for i in range(185):
+        if( math.isnan(msg.ranges[i]) ):
+            vote[8]+=1
+            continue
+        ang=i*math.pi/185
+        y=-msg.ranges[i]*math.cos(ang)
+        x=msg.ranges[i]*math.sin(ang)
+        if x<0.4 and (y<= 1.8 and y>=0.3):
+            vote[0]+=1
+        elif x<0.4 and (y>=-1.8 and y<=-0.3):
+            vote[1]+=1
+        elif (x>=0.4 and x< 1.6) and (y<= 1.8 and y>0.6):
+            vote[2]+=1
+        elif (x>=0.4 and x< 1.6) and (y<= 0.6 and y>-0.6):
+            vote[3]+=1
+        elif (x>=0.4 and x< 1.6) and (y<= -0.6 and y>=-1.8):
+            vote[4]+=1 ##Regiones 6 7 8
+        elif (x>=1.6 and x<= 2.8) and (y<= 1.8 and y>0.6):
+            vote[5]+=1
+        elif (x>=1.6 and x<= 2.8) and (y<= 0.6 and y>=-0.6):
+            vote[6]+=1
+        elif (x>=1.6 and x<= 2.8) and (y<= -0.6 and y>=-1.8):
+            vote[7]+=1
+    print(vote)
     return
 
 def callback_laser_scan(msg):
     global edo
     global obs_aux
+    get_votes(msg)
     edo=0
     obstacle_left=False
     obstacle_right=False
@@ -87,16 +120,16 @@ def do_action(act):
     goal_lateral=Float32()
     goal=Float32()
     if (act==0): #ir hacia el frente
-         goal.data=0.08
+         goal.data=0.15
          pub_fro.publish(goal)
     elif(act==1): #ir a la izquierda
-         goal_lateral.data=0.08
+         goal_lateral.data=0.1
          pub_lat.publish(goal_lateral)
     elif(act==2): #ir  a la derecha
-         goal_lateral=-0.08
+         goal_lateral=-0.1
          pub_lat.publish(goal_lateral)
     else: ###ir hacia atrás
-         goal.data=-0.08
+         goal.data=-0.05
          pub_fro.publish(goal)
     return
 
