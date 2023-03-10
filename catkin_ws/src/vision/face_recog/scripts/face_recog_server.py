@@ -17,7 +17,15 @@ import face_recognition
 import cv2
 import os
 
-path_for_faces='/home/robocup/Pictures/faces_for_recognition/'
+
+
+from rospkg import RosPack
+
+rp = RosPack()
+path_for_faces = rp.get_path('config_files')+'/faces_for_recognition/'
+
+
+#path_for_faces='/home/robocup/Pictures/faces_for_recognition/'
 #path_for_faces='/home/roboworks/Pictures/faces_for_recognition/'
 
 ids=[]
