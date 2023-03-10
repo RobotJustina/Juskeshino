@@ -254,7 +254,7 @@ def broadcaster_frame_object(frame, child_frame, pose):
 
 def callback(req):
     global pose_in, listener, ik_srv
-    resp = InverseKinematicsPose2PoseResponse()
+    resp = InverseKinematicsPose2TrajResponse()
     cartesian_pose = [req.x, req.y, req.z, req.roll, req.pitch, req.yaw]
     type_obj = req.initial_guess
     # retorna el ang entre piso y pc1
@@ -262,22 +262,20 @@ def callback(req):
     pose_list_q = grip_rules(cartesian_pose , type_obj) # solo para cilindro 
     # Step 5:
     """
-    for pos in pose_list:
+    for pos in pose_list_q:
         broadcaster_frame_object('base_link', 'candidate' , pos )
+        rospy.sleep(1)
+        print("pose")
 
     """
-    offset = 20
+    offset = 0
     broadcaster_frame_object('base_link', 'candidate1' , pose_list_q[0+offset] )
     broadcaster_frame_object('base_link', 'candidate2' , pose_list_q[1+offset] )
     broadcaster_frame_object('base_link', 'candidate3' , pose_list_q[2+offset] )
     broadcaster_frame_object('base_link', 'candidate4' , pose_list_q[3+offset] )
     broadcaster_frame_object('base_link', 'candidate5' , pose_list_q[4+offset] )
-    """
-    broadcaster_frame_object('base_link', 'candidate2' , pose_list[5] )
-    broadcaster_frame_object('base_link', 'candidate3' , pose_list[6] )
-    broadcaster_frame_object('base_link', 'candidate4' , pose_list[7] )
-    broadcaster_frame_object('base_link', 'candidate5' , pose_list[8] )
-    """
+    
+    
     # Step 6:
     new_pose_q_list = []
     new_pose_rpy_list = []
@@ -293,34 +291,37 @@ def callback(req):
         pose_shoulder_frame = np.asarray([x ,y ,z , roll, pitch , yaw])
         new_pose_rpy_list.append(pose_shoulder_frame)
         
-    print("*****************")
-    #print(new_pose_rpy_list)
-    
     # Prepara msg request para el servicio /manipulation/ik_trajectory
     ik_msg = InverseKinematicsPose2TrajRequest()
     # Rellenar msg pose to pose
-    
-    ik_msg.x = new_pose_rpy_list[0][0]
-    ik_msg.y = new_pose_rpy_list[0][1]
-    ik_msg.z = new_pose_rpy_list[0][2]
-    ik_msg.roll = new_pose_rpy_list[0][3]
-    ik_msg.pitch = new_pose_rpy_list[0][4]
-    ik_msg.yaw = new_pose_rpy_list[0][5]
-    
-    while(1):
-        try:
-            result_ik_srv = ik_srv(ik_msg)
-            break
+    successful_candidate_trajectories = []
+    successful_candidate_pose_list = []
+    print("Evaluating the possibility of grip given the position of the object...")
 
-        except AttributeError:
-            print("Oops!  That was no valid number.  Try again...")
+    for pose in new_pose_rpy_list:   
+        ik_msg.x = pose[0]
+        ik_msg.y = pose[1]
+        ik_msg.z = pose[2]
+        ik_msg.roll = pose[3]
+        ik_msg.pitch = pose[4]
+        ik_msg.yaw = pose[5]
+    
+        try: 
+            successful_candidate_trajectories.append(ik_srv(ik_msg) )   #trajectory_msgs/JointTrajectory
+            #successful_candidate_pose_list.append(pose)
 
+        except :
+            print("...")
+            continue
 
-    
-    print("lolo")
-    
-    
-    resp.q = [0,0,0,0,0,0,0]
+    print("there are" , len(successful_candidate_trajectories) , " possible ways to grab an object with left arm")
+
+    # Prepara la respuesta al servicio /vision/gripper_orientation_grasping
+    resp = InverseKinematicsPose2TrajResponse()
+
+    #print("candidate: ",  successful_candidate_pose_list)
+    resp.articular_trajectory = successful_candidate_trajectories[0]
+    #resp.articular_trajectory.joint_names = "la"
 
     return resp
 
@@ -331,7 +332,7 @@ def main():
     global pose_obj_frame_base, image_seg_service, pose_in, listener , ik_srv
     print("Node to grab objects based on their orientation...")
     rospy.init_node("gripper_orientation_for_grasping")
-    rospy.Service("/vision/gripper_orientation_grasping", InverseKinematicsPose2Pose, callback)
+    rospy.Service("/vision/gripper_orientation_grasping", InverseKinematicsPose2Traj, callback)
     listener = tf.TransformListener()
     # se suscribe al servicio /manipulation/ik_trajectory
     rospy.wait_for_service( '/manipulation/la_ik_trajectory' )
