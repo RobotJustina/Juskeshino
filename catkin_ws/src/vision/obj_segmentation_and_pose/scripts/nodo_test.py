@@ -17,6 +17,7 @@ from std_msgs.msg import Float64MultiArray
 from tf.transformations import euler_from_quaternion
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
+pubLaGoalPose = None
 
 
 """
@@ -118,7 +119,7 @@ def callback(msg):
 
     # seguimiento de trayectoria ***********************************************
         print("Realizando el seguimiento de trayectoria.....")
-        la_trajectory_tracking( articular_trajectory )
+        #la_trajectory_tracking( articular_trajectory.articular_trajectory )
 
            
 
@@ -138,8 +139,8 @@ def main():
     rospy.wait_for_service("/vision/gripper_orientation_grasping")
     best_grip_srv = rospy.ServiceProxy("/vision/gripper_orientation_grasping", InverseKinematicsPose2Traj )
 
-    rospy.wait_for_service("/manipulation/trajectory_tracking" )
-    traj_tracking_srv = rospy.ServiceProxy("/manipulation/trajectory_tracking" , InverseKinematicsPose2Traj )
+    #rospy.wait_for_service("/manipulation/trajectory_tracking" )
+    #traj_tracking_srv = rospy.ServiceProxy("/manipulation/trajectory_tracking" , InverseKinematicsPose2Traj )
 
     pubLaGoalPose = rospy.Publisher("/hardware/left_arm/goal_pose" , Float64MultiArray, queue_size=10);
     pubRaGoalPose = rospy.Publisher("/hardware/right_arm/goal_pose", Float64MultiArray, queue_size=10);
