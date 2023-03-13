@@ -45,19 +45,20 @@ def callback_pointcloud(msg):
             #x=z
             #y=-x
             #z=-temp
-            if( (x < 1.2 and x>=0.1) and z>-1.2 and(y<=0.35 and y>=-0.35)):
+            #zmin=-1.59
+            if( (x < 1 and x>=0.1) and z>-1.2 and(y<=0.28 and y>=-0.28)):
                 contador+=1
     if contador>=1000:
         obs_aux=True
-        print("Cuidado al frente")
     return
 
 def get_votes(msg):
     #Array=np.zeros((186,2))
     Array=np.zeros((3,3))
-    xmin=-0.799 #distancia minima en x
-    ymin=-1.799 #distancia minima en y
-    d=1.2 # distancia entre los intervalos de las regiones
+    ##Xmin=frontera1-d
+    xmin=-0.699 #distancia minima en x
+    ymin=-1.499 #distancia minima en y
+    d=1 # distancia entre los intervalos de las regiones
     #c=(1.8+d)//1.2
     for i in range(185):
         ang=i*math.pi/185
@@ -88,7 +89,7 @@ def callback_laser_scan(msg):
     th=1
     A=get_votes(msg) ##Se obtiene la matriz devotos
     A=threshold_votes(A,th) ##Se le aplica un threshold a la matriz de votos
-    #print(A)
+    print(A)
     R1=A[0,0]
     R2=A[0,2]
     R3=A[1,0]
@@ -97,7 +98,7 @@ def callback_laser_scan(msg):
         R4=int(1)
     R5=A[1,2]
     edo=int(16*R1+8*R2+4*R3+2*R4+R5)
-    #print(edo)
+    print(edo)
     return
 
 def do_action(act):
@@ -135,7 +136,40 @@ loop = rospy.Rate(0.5)
 rospy.on_shutdown(Last_pub)
 
 def Q_values():
-    Q=np.zeros((8,4))
+    Q=np.zeros((32,5))
+    Q[0,:]=[ 11.51063084,-14.03753175, 2.33909794, -10.35623247, -17.87102057]
+    Q[1,:]= [ 15.36375 ,0., 0. , -6.14916562, -18.17691068]
+    Q[2,:]=[ -8.5 ,  0. ,    0. ,  0.  ,  1.63625   ]
+    Q[3,:]=[-29.7345935 ,   2.41148252, -19.81327787 , 19.34620767 , -4.4756173 ]
+    Q[4,:]=[ 20.50106416 ,-18.88023142,  -6.65017363 ,  0.      ,    -9.775     ]
+    Q[5,:]=[  8.5 ,       -24.68811402,  -4.36053017,  -9.775  ,    -15.36375   ]
+    Q[6,:]=[-10.84137813 ,-10.69671019,   9.76805922,  -1.63625,     -9.775     ]
+    Q[7,:]=[ -4.14168282 , 19.54236327 ,  3.10944078 ,  1.51025463 ,  8.7454375 ]
+    Q[8,:]=[ 15.36375    ,  0.  ,        -9.775 ,     -26.97374657 , -8.5       ]
+    Q[9,:]=[  8.9366875 ,   0.     ,    -16.63875 ,   -16.63875 ,   -23.47499981]
+    Q[10,:]=[  0.   ,        8.5 ,        -9.47070423, -16.83  ,     -16.65174371]
+    Q[11,:]=[-11.23499447,  -6.2918891,  -13.38831005 , -2.96059272, -19.98016966]
+    Q[12,:]=[  0.   ,        0.   ,        0.   ,        0.  ,         0.        ]
+    Q[13,:]=[  3.28562187 ,  0.     ,     -8.5,          2.72714671 ,-15.36375   ]
+    Q[14,:]=[ -8.5 ,         0. ,          0. ,         -1.63625  ,    0.        ]
+    Q[15,:]=[ -8.5 ,        17.46879574,  -9.775  ,     -2.45200524, -10.95899688]
+    Q[16,:]=[  8.5  ,        0.  ,         0.    ,       0.  ,         0.        ]
+    #Q[17,:]=[  0.           0.           0.           0.           0.        ]
+    #Q[18,:]=[  0.           0.           0.           0.           0.        ]
+    #[  0.           0.           0.           0.           0.        ]
+    Q[20,:]=[ -8.5 ,         0.  ,        -8.5  ,        0.   ,        0.13734228]
+    Q[21,:]=[  8.35524208, -10.8045625,  -11.65427921 , -8.5    ,      0.        ]
+    Q[22,:]=[ -8.5      ,    0.    ,       0.    ,       0.   ,        9.775     ]
+    Q[23,:]=[-14.31731337,  -9.775   ,     0.    ,      -8.5  ,       -2.82941891]
+    #[  0.           0.           0.           0.           0.        ]
+    #[  0.           0.           0.           0.           0.        ]
+    #[  0.           0.           0.           0.           0.        ]
+    #[  0.           0.           0.           0.           0.        ]
+    #[  0.           0.           0.           0.           0.        ]
+    Q[29,:]=[  8.5   ,     -15.36375 ,   -10.55428015 , -1.8816875  ,  0.        ]
+    #[  0.           0.           0.           0.           0.        ]
+    Q[31,:]=[  0.     ,      0.     ,     -8.5       ,  -9.775      ,  8.5       ]
+
     return Q
 
 def R_values():
@@ -197,8 +231,8 @@ def main():
     obs_aux=False
     edo=0
     next=False
-    Q = np.zeros((32,5))
-    #Q=Q_values()
+    #Q = np.zeros((32,5))
+    Q=Q_values()
     R=R_values()
     epsilon = 0.9
     total_episodes = 10000
