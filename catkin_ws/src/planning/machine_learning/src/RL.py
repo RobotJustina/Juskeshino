@@ -32,23 +32,22 @@ def callback_pointcloud(msg):
     m,n=arr.shape
     ang=-0.62
     contador=0
-    min=-10
+    min=10
     for i in range(m//8,7*m//8):
-        for j in range(2*n//5,n):
+        for j in range(5*n//8,n):
             x,y,z=arr[i,j][0], arr[i,j][1], arr[i,j][2] ##Datos como se entregan por la cámara
             if(math.isnan(x) or math.isnan(y) or math.isnan(z)):
                 continue
-            x=z*math.cos(ang)+y*math.sin(ang)
+            z=z*math.cos(ang)+y*math.sin(ang)
             y=-z*math.sin(ang)+y*math.cos(ang)
-            temp=x
-            x=z
-            z=-y
-            y=-x
-            # max -0.74
-            #z min -1.59
-            if(x < 1.15 and z>-1.1 and(y<=0.35 and y>=-0.35)):
+            #temp=y
+            x,y,z=z,-x,-y
+            #x=z
+            #y=-x
+            #z=-temp
+            if( (x < 1.2 and x>=0.1) and z>-1.2 and(y<=0.35 and y>=-0.35)):
                 contador+=1
-    if contador >=1000:
+    if contador>=1000:
         obs_aux=True
         print("Cuidado al frente")
     return
@@ -68,8 +67,7 @@ def get_votes(msg):
         c=(y-ymin)//d
         if r<=2 and r>=0 and c<=2 and c>=0:
             Array[int(r),int(2-c)]+=1
-    print(Array)
-
+    #print(Array)
     return Array
 
 def threshold_votes(Array, threshold):
@@ -80,8 +78,8 @@ def threshold_votes(Array, threshold):
                 Array[i,j]=0
             else:
                 Array[i,j]=1
-    print("----------")
-    print(Array)
+    #print("----------")
+    #print(Array)
     return Array
 
 def callback_laser_scan(msg):
@@ -89,10 +87,17 @@ def callback_laser_scan(msg):
     global obs_aux
     th=1
     A=get_votes(msg) ##Se obtiene la matriz devotos
-    A=threshold_votes(A,3) ##Se le aplica un threshold a la matriz de votos
+    A=threshold_votes(A,th) ##Se le aplica un threshold a la matriz de votos
     #print(A)
-    edo=int(16*A[0,0]+8*A[0,2]+4*A[1,0]+2*A[1,1]+A[1,2])
-    print(edo)
+    R1=A[0,0]
+    R2=A[0,2]
+    R3=A[1,0]
+    R4=A[1,1]
+    if R4==0 and A[0,1]==1 or obs_aux:
+        R4=int(1)
+    R5=A[1,2]
+    edo=int(16*R1+8*R2+4*R3+2*R4+R5)
+    #print(edo)
     return
 
 def do_action(act):
@@ -100,7 +105,7 @@ def do_action(act):
     goal=Float32()
     goal_ang=Float32MultiArray()
     if (act==0): #ir hacia el frente
-         goal.data=0.15
+         goal.data=0.1
          pub_fro.publish(goal)
     elif(act==1): #ir a la izquierda
          goal_lateral.data=0.1
@@ -137,8 +142,8 @@ def R_values():
     R=np.zeros((32,5))
     R[0,:]=[10,-1,-1,-10,-10] #0
     R[1,:]=[10,-1,-10,-10,-10] #1
-    R[2,:]=[10,-10,-1,-10,-10] #2
-    R[3,:]=[10,-10,-10,-10,-10] #3
+    R[2,:]=[-10,10,10,10,10] #2
+    R[3,:]=[-10,10,-10,10,-10] #3
     R[4,:]=[10,-10,-1,-10,-10] #4
     R[5,:]=[10,-10,-10,-10,-10] #5
     R[6,:]=[-10,-10,10,-10,-10] #6
@@ -150,10 +155,14 @@ def R_values():
     R[12,:]=[10,-10,-10,-10,-10] #12
     R[13,:]=[10,-10,-10,-10,-10] #13
     R[14,:]=[-10,10,-10,-10, 10] #14
-    R[15,:]=[-10,10,-10,-10, 10] #15
-    R[16,:]=[10,-1,-1,-10,-10] #16
+
+    R[15,:]=[-10,10,-10,10,-10] #15
+
+    R[16,:]=[10,-10,-1,-10,-10] #16
+
     R[17,:]=[10,-10,-10,-10,-10] #17
-    R[18,:]=[-10,-10,10,-10,-10] #18
+
+    R[18,:]=[-10,-10,10,10,-10] #18
     R[19,:]=[-10,-10,10,-10,-10] #19
     R[20,:]=[10,-10,-1,-10,-10] #20
     R[21,:]=[10,-10,-10,-10,-10] #21
@@ -185,6 +194,7 @@ def main():
     global Q
     global next
     global obs_aux
+    obs_aux=False
     edo=0
     next=False
     Q = np.zeros((32,5))
@@ -195,7 +205,7 @@ def main():
     max_steps = 50
     alpha = 0.85
     gamma = 0.95
-    steps=-3
+    steps=-2
     while steps <0:
         steps=steps+1
         prueba=Float32()
