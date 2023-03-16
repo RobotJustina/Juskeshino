@@ -18,9 +18,6 @@
 ;*                                      *
 ;****************************************
 
-
-
-
 ;#######################################
 ;      Global Rules
 
@@ -51,7 +48,7 @@
     ?f1 <- (qtrans (obj ?obj)(question where))
     (item (type Objects)(name ?obj)(room ?room-object)(zone ?zone-object))
     =>
-    ; it answer where is the objects
+    ; it answer where is the object
     (retract ?f ?f1)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
@@ -85,7 +82,7 @@
     ?f1 <- (qtrans (obj ?obj)(question who))
     (item (type Objects)(name ?obj)(possession ?human)(zone ?zone-object))
     =>
-    ; it answer who has the objects
+    ; it answer who has the object
     (retract ?f ?f1)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
@@ -169,7 +166,7 @@
     (item (type Robot)(name ?actor))
     (item (type Objects)(name ?obj)(room ?room-object&:(neq ?room-object nil))(zone ?zone-object&:(neq ?zone-object nil))(upper nothing))
     =>
-    ; it sends the robot to the ?human location and finds the person
+    ; it sends the robot to the ?obj location and takes the object
     (retract ?f ?f1)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
@@ -190,7 +187,7 @@
     (item (type Human)(name ?human)(room ?room-human&:(neq ?room-human nil))(zone ?zone-human&:(neq ?zone-human nil)))
     (item (type Objects)(name ?obj)(room ?room-object&:(neq ?room-object nil))(zone ?zone-object&:(neq ?zone-object nil))(upper nothing))
     =>
-    ; it give ?obj to ?human
+    ; it gives ?obj to ?human
     (retract ?f ?f1)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
@@ -291,7 +288,7 @@
     (atrans (actor ?actor)(to nil))
     (item (type Robot)(name ?actor))
     =>
-    ; it asks who is the human to receive the object
+    ; it asks who is the human that receives the object
     (retract ?f)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
@@ -309,7 +306,7 @@
     (item (type Robot) (name ?actor))
     (item (type Objects)(name ?obj)(room nil)(upper nothing))
     =>
-    ; it asks where the objects is
+    ; it asks where is objects
     (retract ?f)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
