@@ -12,10 +12,12 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   tf
   std_msgs
+  pcl_ros
+  cv_bridge
 )
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(OpenCV)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -118,7 +120,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
 # include
-  ${catkin_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -148,9 +150,8 @@ add_dependencies(get_votes ${get_votes_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGE
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(get_votes
-   ${catkin_LIBRARIES}
+   ${catkin_LIBRARIES} ${OpenCV_LIBS} 
 )
-
 #############
 ## Install ##
 #############
