@@ -15,33 +15,40 @@ import geometry_msgs.msg
 
 
 """
-    Node that receives the position and orientation of an object in the base_link coordinate system, 
-    in cartesian coordinates, and returns the orientation that the gripper must have to pick up the object, 
-    in Cartesian coordinates.
-
      Reglas para la construccion del sistema coordenado del gripper(frame 'base_link') :
 
         1: Se toma como eje x a la componente principal resultante de PCA
-        2. Se define la ecuacion parametrica de un circulo en en plano Z = Z_centroide cuyo radio es epsilon
+
+        2. Se define tamanio de paso para la generacion de puntos de candidatos de agarre y se almacenan en una lista.
+        
+        3. Se define el rango dentro del cual se generan los candidatos.
+         
+        4. Se define la ecuacion parametrica de una circunferencia, dada por la interseccion de un plano pi normal a 
+           la componente principal resultante del PCA y una esfera de radio r y centro en centroide.
+
+           Ecuacion del plano: a(x-x1) + b(y-y1) + c(z-z1) + d = 0
+           vector N: 1PCA
+           punto perteneciente al plano: se obtiene de la 2PCA
+
+           Ecuacion de la esfera: (x-h)² + (y-k)² + (z-l)² = r²
+            centroide = (h,k,l)
+
+           Ecuacion de la circunferencia:  
             x = epsilon * np.cos(theta)
             y = epsilon * np.sin(theta)
             z = z_centroid 
-
-        3. Se define tamanio de paso para la generacion de puntos de candidatos de agarre y se almacenan en una lista.
-        4. Para cada punto se genera un sistema coordenado y se almacena en una lista:
-            eje x = eje x del objeto trasladado al punto.
+        
+        5. Para cada punto se genera un sistema coordenado y se almacena en una lista:
+            eje x = componente principal resultante del PCA.
             eje z = vector formado por el punto de centroide y punto, en direccion externa a la circunferencia.
             eje y = producto cruz entre eje x y eje z.
 
-        5. Se verifican las orientaciones de forma grafica.
+        6. Se verifican las orientaciones de forma grafica.
         
-        6. Se prueba la validez de los candidatos de agarre enviandolos a la cinematica inversa, en el frame shoulders. 
+        7. Se prueba la validez de los candidatos de agarre enviandolos a la cinematica inversa, en el frame shoulders. 
             Los puntos validos se almacenan en una nueva lista.
-            
-        
 
-        7. Se elije el mejor candidato de agarre conforme a un criterio y se envia para la pose de gripper.
-
+        8. Se elije el mejor candidato de agarre conforme a un criterio y se envia para la pose de gripper.
 """
 
 
@@ -52,36 +59,7 @@ def box(obj_pose):
 
 
 def cube_or_sphere(obj_pose):
-    print("take cube or sphere")
-
-
-
-
-def cylinder_or_prism(obj_pose):
-    print("take cylinder or prism")
-   
-    q1, q2, q3, q4 = obj_pose.orientation.x, obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w
-    R, P, Y =tft.euler_from_quaternion([ q1, q2, q3, q4])
-
-    R = tft.quaternion_matrix([q1, q2, q3, q4])
-    #print("R obj")
-    #print(R)
-    #Matriz de rotacion deseada para el gripper
-
-
-
-    Rd = np.zeros((4,4)) 
-    Rd[:,0] = -1*R[:,1]   
-    Rd[:,3] = R[:,3]
-
-
-    #print("Rgd")
-    #print(Rd)
-
-    rd,pd,yd = tft.euler_from_matrix(R)
-    #print("Orientacion deseada ... eje X gripper")
-    #print(rd, pd, yd)
-    
+    print("take cube or sphere")   
 
 
 
@@ -104,10 +82,10 @@ def pose_actual_to_pose_target(pose, f_actual, f_target):
 
 
 
-def angle_pca_floor(obj_pose):
-    MT = tft.quaternion_matrix([ obj_pose.orientation.x , obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w])
-    R,P,Y = tft.euler_from_quaternion([obj_pose.orientation.x , obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w])
-    pc1 = np.asarray( [MT[0,1], MT[1,1], MT[2,1]])
+def angle_pca_floor(cartesian_pose):  
+    MT = tft.euler_matrix( cartesian_pose[3] , cartesian_pose[4], cartesian_pose[5]) 
+    pc1 = np.asarray( [MT[0,0], MT[1,0], MT[2,0]])   # eje principal
+
     # componente principal esta en eje x
     if pc1[0] < 0:
         pc1[0] = pc1[0]*-1
@@ -117,13 +95,13 @@ def angle_pca_floor(obj_pose):
     ang_pc1_pixy = np.arcsin( np.dot(pc1 , eje_z) / (np.linalg.norm(pc1) * 1) )
     print("angulo pc1", np.rad2deg( ang_pc1_pixy ) )
 
-    return ang_pc1_pixy, pc1 # en radianes
+    return ang_pc1_pixy # en radianes
 
 
 
 
 
-def grip_rules(obj_pose, type_obj):
+def grip_rules(obj_pose, type_obj, angle_obj):
     """
     Esta funcion calcula la pose adecuada de la pinza para tomar el objeto,
     recibe como argumento la pose del objeto en el frame base_link 
@@ -134,79 +112,97 @@ def grip_rules(obj_pose, type_obj):
     if type_obj == 2:
         print("box")
 
-    if type_obj ==3:
-        print("cylinder_or_prism")
-    print("type object", type_obj)
-
+    if type_obj == 3:
+        print("take cylinder or prism") 
+        grasp_candidates_quaternion = cylinder_or_prism(obj_pose, angle_obj)
+        return grasp_candidates_quaternion
     
+    return 
+
+
+
+
+def cylinder_or_prism(obj_pose, angle_obj ):   
     y_object = 0.03 # ancho del objeto
     epsilon = y_object # radio de la circunferencia
+
     coord_centroid = np.asarray([obj_pose[0] , obj_pose[1], obj_pose[2]]) # origen de la circunferencia
     x_centroid = obj_pose[0] 
     y_centroid = obj_pose[1]
     z_centroid = obj_pose[2]
-
     grasp_candidates_quaternion = []
     grasp_candidates_rpy = []
     
-    # Step 1:
     MT = tft.euler_matrix( obj_pose[3] , obj_pose[4], obj_pose[5]) 
 
+    # Step 1: *****************************************************************************************
     axis_x_obj = np.asarray( [MT[0,0], MT[1,0], MT[2,0]])   # eje principal
 
-    # Step 2: rango (y,-y), (0,x)
-    # Step 3:
-
-    #offset_theta = np.deg2rad(120)
-    offset_theta = np.deg2rad(0)    # donde inicia la generacion de agarres candidatos
-    theta = 0 + offset_theta
-    step_size = np.deg2rad(10)  
-    #range_points = np.pi    
-    range_points = np.pi *2           # rango dentro del cual se generan los candidatos 360 grados
-    num_points = int(range_points / step_size)
-    print("number points", num_points)
-    temp = 0
-    
-    
-    for i in range( num_points + 1):     # (-pi/2, pi/2)
+    if (angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150)):
+        print("Prisma horizontal*****************************")
+        # Step 2: *****************************************************************************************
+        offset_theta = np.deg2rad(0)    # donde inicia la generacion de agarres candidatos
+        theta = 0 + offset_theta
+        step_size = np.deg2rad(10)   
         
-        # obtencion de origen de frame candidato
+        # Step 3:
+        range_points = np.deg2rad(3600)          # rango dentro del cual se generan los candidatos 360 grados
+        num_points = int(range_points / step_size)
+        print("number points", num_points)
+        temp = 0
+
+    else: 
+        print("Prisma vertical*******************************")
+        # Step 2: *****************************************************************************************
+        offset_theta = np.deg2rad(90)    # donde inicia la generacion de agarres candidatos
+        theta = 0 + offset_theta
+        step_size = np.deg2rad(10)   
+        
+        # Step 3:
+        range_points = np.deg2rad(270)          # rango dentro del cual se generan los candidatos 360 grados
+        num_points = int(range_points / step_size)
+        print("number points", num_points)
+        temp = 0
+
+
+    
+    # obtencion de origen de frame candidato
+    for i in range( num_points + 1):   
+    # Step 3: *****************************************************************************************
         point = np.asarray([ epsilon*np.cos(theta) + x_centroid , epsilon*np.sin(theta) + y_centroid , z_centroid ])
-        """
         # obtencion de eje x
         axis_x_point = axis_x_obj / np.linalg.norm( (axis_x_obj) )
-        # Step 4: obtencion de eje z
+
+        # Step 4:*******************************************************************************
+        # obtencion de eje z
         axis_z_point = (point - coord_centroid ) / np.linalg.norm( (point - coord_centroid ) )
+        
         # obtencion de eje y
         axis_y_point = np.cross(axis_z_point , axis_x_point) / np.linalg.norm( np.cross(axis_z_point , axis_x_point) )
-        
+
         # los cuaterniones necesarios para generar el frame del objeto
         comb = [[axis_x_point, axis_y_point, axis_z_point],[ axis_y_point , axis_x_point , axis_z_point],
                 [ axis_z_point , axis_y_point , axis_x_point ],[ axis_x_point , axis_z_point , axis_y_point ],
-                [ axis_z_point , axis_x_point , axis_y_point ]]
+                [ axis_z_point , axis_x_point , axis_y_point ],[ axis_y_point , axis_z_point , axis_x_point ]]
         
-        # 1
-        RM = np.asarray( comb[0] )
+        RM = np.asarray( comb[0] ) 
         RM = RM.T
         TM = [[RM[0,0], RM[0,1] , RM[0,2], 0],
-            [RM[1,0], RM[1,1] , RM[1,2], 0],
-            [RM[2,0], RM[2,1] , RM[2,2], 0], 
-            [0, 0, 0, 1]]
+              [RM[1,0], RM[1,1] , RM[1,2], 0],
+              [RM[2,0], RM[2,1] , RM[2,2], 0], 
+              [      0,        0,       0, 1]]
 
         r,p,y = tft.euler_from_matrix(np.asarray(TM))
-        """
-        # Se extrae la pose original***************************************************
-        R = obj_pose[3] + temp#np.deg2rad(180) + temp
-        P = obj_pose[4]
-        Y = obj_pose[5]
+        R, P, Y = r, p ,y
 
         q_gripper = tft.quaternion_from_euler( R , P , Y )
-        
-        #same_tf = tft.is_same_transform(np.asarray(TM), np.asarray( tft.quaternion_matrix(q_gripper)))
-        #print("same tf?", same_tf )
+        q_gripper = tft.quaternion_from_matrix ( TM )
         
         # lista de poses para la cinematica inversa
         candidate_rpy = np.asarray([point[0], point[1] , point[2]  ,R , P , Y])
+
+
+        
         # lista de poses para graficos
         candidate_grasp = Pose()
         d = np.sqrt(q_gripper[0]**2 + q_gripper[1]**2 + q_gripper[2]**2 + q_gripper[3]**2)
@@ -220,7 +216,7 @@ def grip_rules(obj_pose, type_obj):
         grasp_candidates_quaternion.append(candidate_grasp)
         grasp_candidates_rpy.append( candidate_rpy )
 
-        theta = theta + step_size
+        theta = theta + step_size 
         temp = temp + step_size
 
     return grasp_candidates_quaternion
@@ -254,25 +250,34 @@ def broadcaster_frame_object(frame, child_frame, pose):
 
 def callback(req):
     global pose_in, listener, ik_srv
-    resp = InverseKinematicsPose2TrajResponse()
     cartesian_pose = [req.x, req.y, req.z, req.roll, req.pitch, req.yaw]
-    type_obj = req.initial_guess
+    type_obj = req.initial_guess[0]
+
+    ang_pc1_pixy = angle_pca_floor(cartesian_pose) 
+    pose_list_q = grip_rules(cartesian_pose , type_obj, ang_pc1_pixy) # solo para cilindro 
     # retorna el ang entre piso y pc1
-    #ang_pc1_pixy, pc1 = angle_pca_floor(obj_pose_in_base_link)  
-    pose_list_q = grip_rules(cartesian_pose , type_obj) # solo para cilindro 
-    # Step 5:
+     
     
-
+    # Step 5:****************************************************************
     offset = 0
-    broadcaster_frame_object('base_link', 'candidate1' , pose_list_q[0] )
-    broadcaster_frame_object('base_link', 'candidate2' , pose_list_q[1] )
-    broadcaster_frame_object('base_link', 'candidate3' , pose_list_q[17] )
-    #broadcaster_frame_object('base_link', 'candidate4' , pose_list_q[2+offset] )
-    #broadcaster_frame_object('base_link', 'candidate5' , pose_list_q[3+offset] )
-    #broadcaster_frame_object('base_link', 'candidate6' , pose_list_q[4+offset] )
-    
+    broadcaster_frame_object('base_link', 'candidate1' , pose_list_q[0+offset] )
+    broadcaster_frame_object('base_link', 'candidate2' , pose_list_q[2] )
+    broadcaster_frame_object('base_link', 'candidate3' , pose_list_q[4] )
+    broadcaster_frame_object('base_link', 'candidate4' , pose_list_q[6] )
+    broadcaster_frame_object('base_link', 'candidate5' , pose_list_q[8] )
+    broadcaster_frame_object('base_link', 'candidate6' , pose_list_q[10] )
+    broadcaster_frame_object('base_link', 'candidate7' , pose_list_q[12] )
+    broadcaster_frame_object('base_link', 'candidate7' , pose_list_q[15] )
+    broadcaster_frame_object('base_link', 'candidate9' , pose_list_q[17] )
+    """
+    broadcaster_frame_object('base_link', 'candidate10' , pose_list_q[20] )
+    broadcaster_frame_object('base_link', 'candidate11' , pose_list_q[22] )
+    broadcaster_frame_object('base_link', 'candidate12' , pose_list_q[26] )
+    broadcaster_frame_object('base_link', 'candidate13' , pose_list_q[30] )
+    broadcaster_frame_object('base_link', 'candidate14' , pose_list_q[34] )
+    """
 
-    # Step 6:
+    # Step 6:***************************************************************
     new_pose_q_list = []
     new_pose_rpy_list = []
     i = 0
@@ -286,15 +291,16 @@ def callback(req):
         
         pose_shoulder_frame = np.asarray([x ,y ,z , roll, pitch , yaw])
         new_pose_rpy_list.append(pose_shoulder_frame)
-        
+   
     # Prepara msg request para el servicio /manipulation/ik_trajectory
     ik_msg = InverseKinematicsPose2TrajRequest()
     # Rellenar msg pose to pose
     successful_candidate_trajectories = []
     successful_candidate_pose_list = []
     indx_list = []
-    print("Evaluating the possibility of grip given the position of the object...")
 
+    # Step 7 **************************************************************
+    print("Evaluating the possibility of grip given the position of the object...")
     for pose in new_pose_rpy_list:  
         ik_msg.x = pose[0]
         ik_msg.y = pose[1]
@@ -307,10 +313,9 @@ def callback(req):
             successful_candidate_trajectories.append(ik_srv(ik_msg) )   #trajectory_msgs/JointTrajectory
             i = i + 1
             indx_list.append(i)
-
+            print("..............")
         except :
             i = i + 1
-            print("..............................")
             continue
 
 
