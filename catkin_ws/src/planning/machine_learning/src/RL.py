@@ -115,6 +115,7 @@ def choose_action(state):
     action=0
     if np.random.uniform(0, 1)<epsilon or(Q[state,0]==Q[state,1] and Q[state,1]==Q[state,2] and Q[state,2]==Q[state,3] and Q[state,3]==Q[state,4]) :
         action=np.random.randint(0,5)
+        #print("random action")
     else:
         action = np.argmax(Q[state, :])
     return action
@@ -130,7 +131,7 @@ def main():
     next=False
     #Q=Q_values()
     R=R_values()
-    epsilon = 0.9
+    epsilon = 0.25
     total_episodes = 10000
     max_steps = 50
     alpha = 0.85

@@ -97,7 +97,7 @@ int main(int argc, char** argv){
     std_msgs::Float64MultiArray msg_head;
     msg_head.data.resize(2);
     msg_head.data[0] = 0;
-    msg_head.data[1] = -1.2;
+    msg_head.data[1] = -1.5;
     pub.publish(msg_head);
     while(ros::ok()){
         ros::spinOnce();
