@@ -7,8 +7,8 @@ import numpy as np
 import ros_numpy
 import math
 import glob
-#from sensor_msgs.msg   import LaserScan
-#from sensor_msgs.msg import PointCloud2
+import os
+from pathlib import Path
 from std_msgs.msg import Float32
 from std_msgs.msg import Empty
 from actionlib_msgs.msg import GoalStatus
@@ -135,27 +135,34 @@ def main():
     max_steps = 50
     alpha = 0.85
     gamma = 0.95
-    outfile="Entrenamiento.npz"
-    file_list=glob.glob('./*.npz')
+    steps=0
+
+    path=str(Path(__file__).resolve().parent)+"/*.npz"
+    #print(Path(__file__).resolve())  # /home/skovorodkin/stack/scripts/1.py
+
+    outfile=str(Path(__file__).resolve().parent)+"/Entrenamiento.npz"
+    file_list=glob.glob(path)
+    #file_list=glob.glob('./*.npz')
     if len(file_list)>=1:
         print("Se encontraron datos de entrenamiento")
         npzfile = np.load(outfile)
         first_episode=npzfile['x']
         Q=npzfile['Q']
-        first_episode+=1
         print("Episodio "+str(first_episode))
+        first_episode+=1
         print(Q)
     else:
         print("No hay datos de entrenamiento")
         Q = np.zeros((32,5))
         first_episode=0
-    steps=-2
-    while steps <0:
-        steps=steps+1
-        prueba=Float32()
-        prueba.data=-0.03
-        pub_fro.publish(prueba)
-        loop.sleep()
+    loop.sleep()
+    #while steps <0:
+     #   loop.sleep()
+      #  steps=steps+1
+       # prueba=Float32()
+        #prueba.data=-0.03
+        #pub_fro.publish(prueba)
+        #loop.sleep()
 
     for x in range(first_episode, total_episodes):
         if(rospy.is_shutdown()):

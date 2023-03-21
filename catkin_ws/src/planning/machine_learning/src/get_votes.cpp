@@ -7,13 +7,13 @@
 #include "std_msgs/Float64MultiArray.h"
 #include "std_msgs/Int32MultiArray.h"
 
-tf::TransformListener* tf_listener;
 //sensor_msgs::PointCloud2::Ptr point_cloud_ptr2;
 sensor_msgs::PointCloud2 pc_msg;
 cv::Mat bgr_dest;
 cv::Mat pc_dest;
 int info=0;
 //int votes[3][3]={};
+tf::TransformListener* tf_listener;
 ros::Publisher pub_votes;
 
 void callback_pointcloud(sensor_msgs::PointCloud2 msg){
@@ -89,11 +89,11 @@ void callback_pointcloud(sensor_msgs::PointCloud2 msg){
 int main(int argc, char** argv){
     ros::init(argc, argv, "get_votes");
     ros::NodeHandle n;
+    tf_listener = new tf::TransformListener();
     ros::Subscriber sub = n.subscribe("/hardware/realsense/points", 10, callback_pointcloud);
     ros::Publisher pub =  n.advertise<std_msgs::Float64MultiArray>("/hardware/head/goal_pose", 10);
     pub_votes=n.advertise<std_msgs::Int32MultiArray>("/votes", 10);
     ros::Rate loop(20);
-    tf_listener = new tf::TransformListener();
     std_msgs::Float64MultiArray msg_head;
     msg_head.data.resize(2);
     msg_head.data[0] = 0;
