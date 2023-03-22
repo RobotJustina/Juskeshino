@@ -29,6 +29,10 @@ def main():
     print("test node... ʕ•ᴥ•ʔ")
     rospy.init_node("nodo_test")
 
+    # se suscribe al servicio de cinematica directa
+    rospy.wait_for_service( '/manipulation/takeshi_forward_kinematics' )
+    fk_srv = rospy.ServiceProxy( '/manipulation/takeshi_forward_kinematics' , ForwardKinematics )
+
     # se suscribe al servicio /manipulation/takeshi_ik_pose
     rospy.wait_for_service( '/manipulation/takeshi_ik_pose' )
     ik_pose_srv = rospy.ServiceProxy( '/manipulation/takeshi_ik_pose' , InverseKinematicsPose2Pose )
@@ -43,6 +47,13 @@ def main():
 
     while not rospy.is_shutdown():
 
+        # Mensaje para servicio de cinematica directa********************
+        fk_msg = ForwardKinematicsRequest()
+        fk_msg.q = [0.1,0,0,0,0]
+        cartesian_pose = fk_srv(fk_msg)
+
+        print("cinematica directa")
+        print(cartesian_pose)
 
         # Mensaje para servicio ik pose**********************************
         ik_pp_msg = InverseKinematicsPose2PoseRequest()
@@ -53,11 +64,11 @@ def main():
         ik_pp_msg.roll = 0
         ik_pp_msg.pitch = 0
         ik_pp_msg.yaw = 0
-        #ik_pp_msg.initial_guess = [0,0,0,0,0]
+        ik_pp_msg.initial_guess = [0,0,0,0,0]
         # Retorna arreglo de q's
         q_array = ik_pose_srv(ik_pp_msg)
         # retorno de msg ***********************************************
-        print("q_array.......................")
+        print("Cinematica inversa pose2pose .......................")
         print(q_array)
 
         """
