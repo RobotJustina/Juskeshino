@@ -119,7 +119,7 @@ def callback(msg):
 
     # seguimiento de trayectoria ***********************************************
         print("Realizando el seguimiento de trayectoria.....")
-        #la_trajectory_tracking( articular_trajectory.articular_trajectory )
+        la_trajectory_tracking( articular_trajectory.articular_trajectory )
 
            
 

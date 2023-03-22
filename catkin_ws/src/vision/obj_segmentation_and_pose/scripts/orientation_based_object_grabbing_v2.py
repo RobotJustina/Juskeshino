@@ -11,20 +11,18 @@ import ros_numpy
 from vision_msgs.srv import *
 from manip_msgs.srv import *
 from std_msgs.msg import String
+from visualization_msgs.msg import Marker
 import geometry_msgs.msg
+
 
 
 """
      Reglas para la construccion del sistema coordenado del gripper(frame 'base_link') :
 
         1: Se toma como eje x a la componente principal resultante de PCA
-
-        2. Se define tamanio de paso para la generacion de puntos de candidatos de agarre y se almacenan en una lista.
-        
-        3. Se define el rango dentro del cual se generan los candidatos.
          
-        4. Se define la ecuacion parametrica de una circunferencia, dada por la interseccion de un plano pi normal a 
-           la componente principal resultante del PCA y una esfera de radio r y centro en centroide.
+        2. Se define la ecuacion parametrica de una circunferencia, dada por la interseccion de un plano pi normal a 
+           la componente principal resultante del PCA y una esfera de radio r(epsilon) y centro en centroide.
 
            Ecuacion del plano: a(x-x1) + b(y-y1) + c(z-z1) + d = 0
            vector N: 1PCA
@@ -37,6 +35,10 @@ import geometry_msgs.msg
             x = epsilon * np.cos(theta)
             y = epsilon * np.sin(theta)
             z = z_centroid 
+
+        3. Se define tamanio de paso para la generacion de puntos de candidatos de agarre y se almacenan en una lista.
+        
+        4. Se define el rango dentro del cual se generan los candidatos.
         
         5. Para cada punto se genera un sistema coordenado y se almacena en una lista:
             eje x = componente principal resultante del PCA.
@@ -136,7 +138,23 @@ def cylinder_or_prism(obj_pose, angle_obj ):
     MT = tft.euler_matrix( obj_pose[3] , obj_pose[4], obj_pose[5]) 
 
     # Step 1: *****************************************************************************************
-    axis_x_obj = np.asarray( [MT[0,0], MT[1,0], MT[2,0]])   # eje principal
+    axis_x_obj = np.asarray( [MT[0,0], MT[1,0], MT[2,0]])   # eje principal, vector normal
+    # Step 2
+    # v2 y v3 componente es necesaria para formar el plano cuyo vector normal es paralelo a la 1ra componente
+    vector2 = np.asarray( [MT[0,1], MT[1,1], MT[2,1]]) 
+    vector3 = np.asarray( [MT[0,2], MT[1,2], MT[2,2]]) 
+    # ecuacion del plano r(s,t) = A +tAB + sAB
+    t,s=1,1
+    x_pi = x_centroid + t*(x_centroid+vector2[0]) + s*(x_centroid+vector3[0])
+    y_pi = y_centroid + t*(y_centroid+vector2[1]) + s*(y_centroid+vector3[1])
+    z_pi = z_centroid + t*(z_centroid+vector2[2]) + s*(z_centroid+vector3[2])
+
+    print("v2, v3", type(vector2), vector3)
+
+
+    arow_marker( coord_centroid, vector2, vector3, 'base_link')
+
+
 
     if (angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150)):
         print("Prisma horizontal*****************************")
@@ -223,6 +241,52 @@ def cylinder_or_prism(obj_pose, angle_obj ):
 
 
 
+
+
+def arow_marker(centroide, p1,p2, frame_id):  # P1 y P2
+    point0 = Point()
+    point0.x = centroide[0] 
+    point0.y = centroide[1] 
+    point0.z = centroide[2] 
+
+    marker1 = Marker()
+    marker1.header.frame_id = frame_id
+    marker1.type = Marker.ARROW
+    marker1.ns = 'v1'
+    marker1.header.stamp = rospy.Time.now()
+    marker1.action = marker1.ADD
+    marker1.id = 5
+    # body radius, Head radius, hight head
+    marker1.scale.x, marker1.scale.y, marker1.scale.z = 0.02, 0.1, 0.04 
+    marker1.color.r , marker1.color.g , marker1.color.b, marker1.color.a = 100.0, 0.0, 100.0, 1.0
+    point1 = Point()
+    point1.x = centroide[0] + p1[0]
+    point1.y = centroide[1] + p1[1]
+    point1.z = centroide[2] + p1[2]
+    marker1.points = [point0, point1]
+    marker_pub.publish(marker1)
+
+    marker2 = Marker()
+    marker2.header.frame_id = frame_id
+    marker2.type = Marker.ARROW
+    marker2.ns = 'v2'
+    marker2.header.stamp = rospy.Time.now()
+    marker2.action = marker2.ADD
+    marker2.id = 6#+10
+    # body radius, Head radius, hight head
+    marker2.scale.x, marker2.scale.y, marker2.scale.z = 0.02, 0.1, 0.04  
+    marker2.color.r , marker2.color.g , marker2.color.b, marker2.color.a = 0, 100.0, 0.0, 1.0
+    point2 = Point()
+    point2.x = centroide[0] + p2[0] 
+    point2.y = centroide[1] + p2[1]
+    point2.z = centroide[2] + p2[2]
+    marker2.points = [point0, point2]
+    marker_pub.publish(marker2)
+
+
+
+
+
 def broadcaster_frame_object(frame, child_frame, pose):
     """
         Step 5:
@@ -256,11 +320,13 @@ def callback(req):
     ang_pc1_pixy = angle_pca_floor(cartesian_pose) 
     pose_list_q = grip_rules(cartesian_pose , type_obj, ang_pc1_pixy) # solo para cilindro 
     # retorna el ang entre piso y pc1
-     
+    print("pose_list_q", len(pose_list_q))
+    
     
     # Step 5:****************************************************************
+    print("graficando frames en Rviz...")
     offset = 0
-    broadcaster_frame_object('base_link', 'candidate1' , pose_list_q[0+offset] )
+    broadcaster_frame_object('base_link', 'candidate1' , pose_list_q[0] )
     broadcaster_frame_object('base_link', 'candidate2' , pose_list_q[2] )
     broadcaster_frame_object('base_link', 'candidate3' , pose_list_q[4] )
     broadcaster_frame_object('base_link', 'candidate4' , pose_list_q[6] )
@@ -296,7 +362,7 @@ def callback(req):
     ik_msg = InverseKinematicsPose2TrajRequest()
     # Rellenar msg pose to pose
     successful_candidate_trajectories = []
-    successful_candidate_pose_list = []
+    successful_candidate_cartesian_pose_list = []
     indx_list = []
 
     # Step 7 **************************************************************
@@ -304,7 +370,7 @@ def callback(req):
     for pose in new_pose_rpy_list:  
         ik_msg.x = pose[0]
         ik_msg.y = pose[1]
-        ik_msg.z = pose[2]
+        ik_msg.z = pose[2] + 0.05   # offset debido a la fuerza de gravedad que altera la posición deseada de gripper
         ik_msg.roll = pose[3]
         ik_msg.pitch = pose[4]
         ik_msg.yaw = pose[5]
@@ -313,6 +379,7 @@ def callback(req):
             successful_candidate_trajectories.append(ik_srv(ik_msg) )   #trajectory_msgs/JointTrajectory
             i = i + 1
             indx_list.append(i)
+            successful_candidate_cartesian_pose_list.append(np.asarray([pose[0],pose[1],pose[2],pose[3], pose[4], pose[5]]))
             print("..............")
         except :
             i = i + 1
@@ -320,30 +387,21 @@ def callback(req):
 
 
     print("there are" , len(successful_candidate_trajectories) , " possible ways to grab an object with left arm")
-    #print("indices de poses aprobadas", indx_list)
+    print(" poses cartesianas aprobadas", successful_candidate_cartesian_pose_list)
 
     # Prepara la respuesta al servicio /vision/gripper_orientation_grasping
     resp = InverseKinematicsPose2TrajResponse()
 
     resp = successful_candidate_trajectories[0]
     #resp.articular_trajectory.articular_trajectory.joint_names = "la"
-    print("graficando frames en Rviz...")
-
-    """
-    broadcaster_frame_object('base_link', 'candidate1' , pose_list_q[ indx_list[0]] )
-    broadcaster_frame_object('base_link', 'candidate2' , pose_list_q[ indx_list[1] ] )
-    broadcaster_frame_object('base_link', 'candidate3' , pose_list_q[ indx_list[2] ] )
-    broadcaster_frame_object('base_link', 'candidate4' , pose_list_q[ indx_list[3] ] )
-    broadcaster_frame_object('base_link', 'candidate5' , pose_list_q[ indx_list[4] ] )
-    """
+    
 
     return resp
 
 
 
-
 def main():
-    global pose_obj_frame_base, image_seg_service, pose_in, listener , ik_srv
+    global pose_obj_frame_base, image_seg_service, pose_in, listener , ik_srv, marker_pub
     print("Node to grab objects based on their orientation...")
     rospy.init_node("gripper_orientation_for_grasping")
     rospy.Service("/vision/gripper_orientation_grasping", InverseKinematicsPose2Traj, callback)
@@ -351,6 +409,7 @@ def main():
     # se suscribe al servicio /manipulation/ik_trajectory
     rospy.wait_for_service( '/manipulation/la_ik_trajectory' )
     ik_srv = rospy.ServiceProxy( '/manipulation/la_ik_trajectory' , InverseKinematicsPose2Traj )
+    marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10) 
     
 
     loop = rospy.Rate(30)
