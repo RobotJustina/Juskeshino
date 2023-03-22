@@ -79,6 +79,7 @@ def la_trajectory_tracking(joint_trajectory):
 
 
 
+
 def callback(msg):
     global recog_obj_srv, best_grip_srv
 
@@ -119,7 +120,7 @@ def callback(msg):
 
     # seguimiento de trayectoria ***********************************************
         print("Realizando el seguimiento de trayectoria.....")
-        #la_trajectory_tracking( articular_trajectory.articular_trajectory )
+        la_trajectory_tracking( articular_trajectory.articular_trajectory )
 
            
 
@@ -139,11 +140,18 @@ def main():
     rospy.wait_for_service("/vision/gripper_orientation_grasping")
     best_grip_srv = rospy.ServiceProxy("/vision/gripper_orientation_grasping", InverseKinematicsPose2Traj )
 
+
+    # se suscribe al servicio /manipulation/ik_trajectory
+    rospy.wait_for_service( '/manipulation/la_ik_trajectory' )
+    ik_srv = rospy.ServiceProxy( '/manipulation/la_ik_trajectory' , InverseKinematicsPose2Traj )
+
+
     #rospy.wait_for_service("/manipulation/trajectory_tracking" )
     #traj_tracking_srv = rospy.ServiceProxy("/manipulation/trajectory_tracking" , InverseKinematicsPose2Traj )
 
     pubLaGoalPose = rospy.Publisher("/hardware/left_arm/goal_pose" , Float64MultiArray, queue_size=10);
     pubRaGoalPose = rospy.Publisher("/hardware/right_arm/goal_pose", Float64MultiArray, queue_size=10);
+
 
     listener = tf.TransformListener()
 
