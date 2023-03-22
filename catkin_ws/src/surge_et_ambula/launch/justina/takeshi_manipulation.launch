@@ -1,0 +1,13 @@
+<launch>
+  <arg name="takeshi_ik_params"  default="$(find config_files)/justina/manipulation/takeshi_inverse_kinematics.yaml"/>
+
+  
+  <node name="ra_inverse_kinematics" pkg="inverse_kinematics" type="ik_numeric.py" output="screen">
+    <rosparam command="load" file="$(arg takeshi_ik_params)"/>
+    <remap from="/manipulation/forward_kinematics" to="/manipulation/takeshi_forward_kinematics"/>
+    <remap from="/manipulation/ik_trajectory"      to="/manipulation/takeshi_ik_trajectory"     />
+    <remap from="/manipulation/ik_pose"            to="/manipulation/takeshi_ik_pose"           />
+    <remap from="/hardware/arm/current_pose"       to="/hardware/right_arm/current_pose"/>
+  </node>
+
+</launch>

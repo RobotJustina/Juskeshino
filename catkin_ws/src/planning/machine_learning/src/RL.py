@@ -6,12 +6,14 @@ import rospy
 import numpy as np
 import ros_numpy
 import math
-from sensor_msgs.msg   import LaserScan
-from sensor_msgs.msg import PointCloud2
+import glob
+import os
+from pathlib import Path
 from std_msgs.msg import Float32
 from std_msgs.msg import Empty
 from actionlib_msgs.msg import GoalStatus
 from std_msgs.msg import Float64MultiArray
+from std_msgs.msg import Int32MultiArray
 from std_msgs.msg import Float32MultiArray
 
 def Last_pub():
@@ -25,80 +27,14 @@ def callback_goal(msg):
         next=True
     return
 
-def callback_pointcloud(msg):
-    global obs_aux
-    obs_aux=False
-    arr=ros_numpy.point_cloud2.pointcloud2_to_array(msg)
-    m,n=arr.shape
-    ang=-0.62
-    contador=0
-    min=10
-    for i in range(m//8,7*m//8):
-        for j in range(5*n//8,n):
-            x,y,z=arr[i,j][0], arr[i,j][1], arr[i,j][2] ##Datos como se entregan por la cámara
-            if(math.isnan(x) or math.isnan(y) or math.isnan(z)):
-                continue
-            z=z*math.cos(ang)+y*math.sin(ang)
-            y=-z*math.sin(ang)+y*math.cos(ang)
-            #temp=y
-            x,y,z=z,-x,-y
-            #x=z
-            #y=-x
-            #z=-temp
-            #zmin=-1.59
-            if( (x < 1 and x>=0.1) and z>-1.2 and(y<=0.28 and y>=-0.28)):
-                contador+=1
-    if contador>=1000:
-        obs_aux=True
-    return
-
-def get_votes(msg):
-    #Array=np.zeros((186,2))
-    Array=np.zeros((3,3))
-    ##Xmin=frontera1-d
-    xmin=-0.699 #distancia minima en x
-    ymin=-1.499 #distancia minima en y
-    d=1 # distancia entre los intervalos de las regiones
-    #c=(1.8+d)//1.2
-    for i in range(185):
-        ang=i*math.pi/185
-        y=-msg.ranges[i]*math.cos(ang)
-        x=msg.ranges[i]*math.sin(ang)
-        r=(x-xmin)//d
-        c=(y-ymin)//d
-        if r<=2 and r>=0 and c<=2 and c>=0:
-            Array[int(r),int(2-c)]+=1
-    #print(Array)
-    return Array
-
-def threshold_votes(Array, threshold):
-    r,c=Array.shape
-    for i in range(r):
-        for j in range(c):
-            if(Array[i,j]<=threshold):
-                Array[i,j]=0
-            else:
-                Array[i,j]=1
-    #print("----------")
-    #print(Array)
-    return Array
-
-def callback_laser_scan(msg):
+def callback_votes(msg):
     global edo
-    global obs_aux
-    th=1
-    A=get_votes(msg) ##Se obtiene la matriz devotos
-    A=threshold_votes(A,th) ##Se le aplica un threshold a la matriz de votos
-    print(A)
-    R1=A[0,0]
-    R2=A[0,2]
-    R3=A[1,0]
-    R4=A[1,1]
-    if R4==0 and A[0,1]==1 or obs_aux:
-        R4=int(1)
-    R5=A[1,2]
+    R1=msg.data[0]
+    R2=msg.data[2]
+    R3=msg.data[3]
+    R4=msg.data[4]
+    R5=msg.data[5]
     edo=int(16*R1+8*R2+4*R3+2*R4+R5)
-    print(edo)
     return
 
 def do_action(act):
@@ -123,54 +59,15 @@ def do_action(act):
     return
 
 rospy.init_node("RL")
-rospy.Subscriber("/hardware/scan", LaserScan, callback_laser_scan)
-rospy.Subscriber("/hardware/realsense/points",PointCloud2, callback_pointcloud)
+#rospy.Subscriber("/hardware/scan", LaserScan, callback_laser_scan)
+rospy.Subscriber("/votes", Int32MultiArray , callback_votes)
 rospy.Subscriber("/simple_move/goal_reached", GoalStatus, callback_goal)
 pub_lat = rospy.Publisher("/simple_move/goal_dist_lateral", Float32, queue_size=10)
 pub_fro = rospy.Publisher("/simple_move/goal_dist", Float32, queue_size=10)
 pub_stop = rospy.Publisher("/simple_move/stop", Empty, queue_size=10)
-pub_head =rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=10)
 pub_ang =rospy.Publisher("/simple_move/goal_dist_angle", Float32MultiArray, queue_size=10)
-
 loop = rospy.Rate(0.5)
 rospy.on_shutdown(Last_pub)
-
-def Q_values():
-    Q=np.zeros((32,5))
-    Q[0,:]=[ 11.51063084,-14.03753175, 2.33909794, -10.35623247, -17.87102057]
-    Q[1,:]= [ 15.36375 ,0., 0. , -6.14916562, -18.17691068]
-    Q[2,:]=[ -8.5 ,  0. ,    0. ,  0.  ,  1.63625   ]
-    Q[3,:]=[-29.7345935 ,   2.41148252, -19.81327787 , 19.34620767 , -4.4756173 ]
-    Q[4,:]=[ 20.50106416 ,-18.88023142,  -6.65017363 ,  0.      ,    -9.775     ]
-    Q[5,:]=[  8.5 ,       -24.68811402,  -4.36053017,  -9.775  ,    -15.36375   ]
-    Q[6,:]=[-10.84137813 ,-10.69671019,   9.76805922,  -1.63625,     -9.775     ]
-    Q[7,:]=[ -4.14168282 , 19.54236327 ,  3.10944078 ,  1.51025463 ,  8.7454375 ]
-    Q[8,:]=[ 15.36375    ,  0.  ,        -9.775 ,     -26.97374657 , -8.5       ]
-    Q[9,:]=[  8.9366875 ,   0.     ,    -16.63875 ,   -16.63875 ,   -23.47499981]
-    Q[10,:]=[  0.   ,        8.5 ,        -9.47070423, -16.83  ,     -16.65174371]
-    Q[11,:]=[-11.23499447,  -6.2918891,  -13.38831005 , -2.96059272, -19.98016966]
-    Q[12,:]=[  0.   ,        0.   ,        0.   ,        0.  ,         0.        ]
-    Q[13,:]=[  3.28562187 ,  0.     ,     -8.5,          2.72714671 ,-15.36375   ]
-    Q[14,:]=[ -8.5 ,         0. ,          0. ,         -1.63625  ,    0.        ]
-    Q[15,:]=[ -8.5 ,        17.46879574,  -9.775  ,     -2.45200524, -10.95899688]
-    Q[16,:]=[  8.5  ,        0.  ,         0.    ,       0.  ,         0.        ]
-    #Q[17,:]=[  0.           0.           0.           0.           0.        ]
-    #Q[18,:]=[  0.           0.           0.           0.           0.        ]
-    #[  0.           0.           0.           0.           0.        ]
-    Q[20,:]=[ -8.5 ,         0.  ,        -8.5  ,        0.   ,        0.13734228]
-    Q[21,:]=[  8.35524208, -10.8045625,  -11.65427921 , -8.5    ,      0.        ]
-    Q[22,:]=[ -8.5      ,    0.    ,       0.    ,       0.   ,        9.775     ]
-    Q[23,:]=[-14.31731337,  -9.775   ,     0.    ,      -8.5  ,       -2.82941891]
-    #[  0.           0.           0.           0.           0.        ]
-    #[  0.           0.           0.           0.           0.        ]
-    #[  0.           0.           0.           0.           0.        ]
-    #[  0.           0.           0.           0.           0.        ]
-    #[  0.           0.           0.           0.           0.        ]
-    Q[29,:]=[  8.5   ,     -15.36375 ,   -10.55428015 , -1.8816875  ,  0.        ]
-    #[  0.           0.           0.           0.           0.        ]
-    Q[31,:]=[  0.     ,      0.     ,     -8.5       ,  -9.775      ,  8.5       ]
-
-    return Q
 
 def R_values():
     R=np.zeros((32,5))
@@ -218,6 +115,7 @@ def choose_action(state):
     action=0
     if np.random.uniform(0, 1)<epsilon or(Q[state,0]==Q[state,1] and Q[state,1]==Q[state,2] and Q[state,2]==Q[state,3] and Q[state,3]==Q[state,4]) :
         action=np.random.randint(0,5)
+        #print("random action")
     else:
         action = np.argmax(Q[state, :])
     return action
@@ -231,27 +129,43 @@ def main():
     obs_aux=False
     edo=0
     next=False
-    #Q = np.zeros((32,5))
-    Q=Q_values()
+    #Q=Q_values()
     R=R_values()
-    epsilon = 0.9
+    epsilon = 0.25
     total_episodes = 10000
     max_steps = 50
     alpha = 0.85
     gamma = 0.95
-    steps=-2
-    while steps <0:
-        steps=steps+1
-        prueba=Float32()
-        prueba.data=-0.03
-        pub_fro.publish(prueba)
-        loop.sleep()
+    steps=0
 
-    prueba=Float64MultiArray() #La cámara apunta al suelo
-    prueba.data=[0.0, -0.62]
-    pub_head.publish(prueba)
+    path=str(Path(__file__).resolve().parent)+"/*.npz"
+    #print(Path(__file__).resolve())  # /home/skovorodkin/stack/scripts/1.py
 
-    for x in range(total_episodes):
+    outfile=str(Path(__file__).resolve().parent)+"/Entrenamiento.npz"
+    file_list=glob.glob(path)
+    #file_list=glob.glob('./*.npz')
+    if len(file_list)>=1:
+        print("Se encontraron datos de entrenamiento")
+        npzfile = np.load(outfile)
+        first_episode=npzfile['x']
+        Q=npzfile['Q']
+        print("Episodio "+str(first_episode))
+        first_episode+=1
+        print(Q)
+    else:
+        print("No hay datos de entrenamiento")
+        Q = np.zeros((32,5))
+        first_episode=0
+    loop.sleep()
+    #while steps <0:
+     #   loop.sleep()
+      #  steps=steps+1
+       # prueba=Float32()
+        #prueba.data=-0.03
+        #pub_fro.publish(prueba)
+        #loop.sleep()
+
+    for x in range(first_episode, total_episodes):
         if(rospy.is_shutdown()):
             break
         G=0 ##Ganancia acumulada
@@ -271,8 +185,10 @@ def main():
             G=G+R[edo_ant,act_ant]
             edo_ant, act_ant = edo, act
             steps=steps+1
-        print("Episodio "+str(x)+" Ganancia total "+str(G))
-        print(Q)
+        if not(rospy.is_shutdown()):
+            np.savez(outfile, x=x, Q=Q)
+            print("Episodio "+str(x)+" Ganancia total "+str(G))
+            print(Q)
 
 if __name__ == '__main__':
     try:

@@ -9,28 +9,32 @@ import urdf_parser_py.urdf
 from std_msgs.msg import Float64MultiArray
 from manip_msgs.srv import *
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from sensor_msgs.msg import JointState
 
-
-
-"""
-    para 17 de febrero revisar la cinematica inversa y corregirla si es posible
-"""
 
 prompt = ""
 
 def get_model_info(joint_names):
+    print(joint_names)
     robot_model = urdf_parser_py.urdf.URDF.from_parameter_server()
     joints = []
     transforms = []
     for name in joint_names:
         for joint in robot_model.joints:
+            
             if joint.name == name:
                 joints.append(joint)
     for joint in joints:
         T = tft.translation_matrix(joint.origin.xyz)
         R = tft.euler_matrix(joint.origin.rpy[0], joint.origin.rpy[1], joint.origin.rpy[2])
         transforms.append(tft.concatenate_matrices(T,R))
+        print(T)
+        print(R)
+    #print(joints)
+    #print(transforms)
     return joints, transforms
+
+
 
 def angles_in_joint_limits(q):
     for i in range(len(q)):
@@ -44,7 +48,7 @@ def forward_kinematics(q):
     H = tft.identity_matrix()
     for i in range(len(q)):
         H  = tft.concatenate_matrices(H, transforms[i], tft.rotation_matrix(q[i], joints[i].axis))
-    H  = tft.concatenate_matrices(H, transforms[7])
+    #H  = tft.concatenate_matrices(H, transforms[7])
     return numpy.asarray([H[0,3], H[1,3], H[2,3]] + list(tft.euler_from_matrix(H)))
 
 def jacobian(q):
@@ -130,9 +134,9 @@ def get_polynomial_trajectory_multi_dof(Q_start, Q_end, Qp_start=[], Qp_end=[], 
     return Q,T
 
 def callback_forward_kinematics(req):
-    if len(req.q) != 7:
-        print(prompt+"By the moment, only 7-DOF arm is supported")
-        return False
+    #if len(req.q) != 7:
+    #    print(prompt+"By the moment, only 7-DOF arm is supported")
+    #    return False
     resp = ForwardKinematicsResponse()
     resp.x, resp.y, resp.z, resp.roll, resp.pitch, resp.yaw = forward_kinematics(req.q)
     return resp
@@ -143,15 +147,25 @@ def get_trajectory_time(p1, p2, speed_factor):
     m = max(numpy.absolute(p1 - p2))
     return m/speed_factor + 0.5
 
+
+
+
+
 def callback_ik_for_trajectory(req):
-    
     global max_iterations
     # entra una Pose
     print(prompt+"Calculating inverse kinematics and trajectory for " + str([req.x, req.y, req.z, req.roll, req.pitch, req.yaw]))
     # si no hay suposicion inicial toma la pose actual de brazo
+
     if len(req.initial_guess) <= 0 or req.initial_guess == None:
-        initial_guess = rospy.wait_for_message("/hardware/arm/current_pose", Float64MultiArray)
-        initial_guess = initial_guess.data
+        #initial_guess = rospy.wait_for_message("/hardware/arm/current_pose", Float64MultiArray)
+        #print("initial_guess position", initial_guess)
+
+        initial_guess = rospy.wait_for_message("/hsrb/joint_states", JointState)
+        initial_guess = [initial_guess.position[1] , initial_guess.position[0] , initial_guess.position[2] , initial_guess.position[11] , initial_guess.position[12] ]
+        print("initial_guess position", initial_guess)
+        
+
     else:
         initial_guess = req.initial_guess
 
@@ -185,8 +199,15 @@ def callback_ik_for_pose(req):
     global max_iterations
     print(prompt+"Calculating inverse kinematics for pose: " + str([req.x, req.y, req.z, req.roll, req.pitch, req.yaw]))
     if len(req.initial_guess) <= 0 or req.initial_guess == None:
-        initial_guess = rospy.wait_for_message("/hardware/arm/current_pose", Float64MultiArray, 5.0)
-        initial_guess = initial_guess.data
+
+        initial_guess = rospy.wait_for_message("/hsrb/joint_states", JointState)
+        initial_guess = [initial_guess.position[1] , initial_guess.position[0] , initial_guess.position[2] , initial_guess.position[11] , initial_guess.position[12] ]
+        print("initial_guess position", initial_guess)
+        
+
+        #initial_guess = rospy.wait_for_message("/hardware/arm/current_pose", Float64MultiArray, 5.0)
+        #initial_guess = initial_guess.data
+        #print(initial_guess)
     else:
         initial_guess = req.initial_guess
     resp = InverseKinematicsPose2PoseResponse()
@@ -208,7 +229,7 @@ def main():
     print(prompt+"max_iterations: " + str(max_iterations))
 
     joints, transforms = get_model_info(joint_names)
-    if not (len(joints) > 6 and len(transforms) > 6):
+    if not (len(joints) > 4 and len(transforms) > 4):
         print("Inverse kinematics.->Cannot get model info from parameter server")
         sys.exit(-1)
 
