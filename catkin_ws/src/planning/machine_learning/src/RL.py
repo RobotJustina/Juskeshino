@@ -157,15 +157,9 @@ def main():
         Q = np.zeros((32,5))
         first_episode=0
     loop.sleep()
-    #while steps <0:
-     #   loop.sleep()
-      #  steps=steps+1
-       # prueba=Float32()
-        #prueba.data=-0.03
-        #pub_fro.publish(prueba)
-        #loop.sleep()
+    loop.sleep()
 
-    for x in range(first_episode, total_episodes):
+    for x in range(first_episode, first_episode+total_episodes):
         if(rospy.is_shutdown()):
             break
         G=0 ##Ganancia acumulada
@@ -178,7 +172,6 @@ def main():
             do_action(act_ant)
             while(not(next) and not(rospy.is_shutdown())):
                 pass
-                #loop.sleep()
             act=choose_action(edo)
             next=False
             Q[edo_ant,act_ant]=Q[edo_ant,act_ant]+alpha*(R[edo_ant,act_ant]+gamma*Q[edo,act]-Q[edo_ant,act_ant])
