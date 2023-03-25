@@ -78,8 +78,6 @@ def la_trajectory_tracking(joint_trajectory):
 
 
 
-
-
 def callback(msg):
     global recog_obj_srv, best_grip_srv
 
@@ -89,6 +87,7 @@ def callback(msg):
     # servicio reconocimiento de objetos ***************************************
     print("Reconocimiento del objeto.....")
     result_recog_obj = recog_obj_srv(RecognizeObject_msg )
+    """
     # Desempaqueta datos
     if result_recog_obj.recog_object.graspable:
         # Orientacion y posicion del objeto detectado:
@@ -121,7 +120,7 @@ def callback(msg):
     # seguimiento de trayectoria ***********************************************
         print("Realizando el seguimiento de trayectoria.....")
         la_trajectory_tracking( articular_trajectory.articular_trajectory )
-
+        """
            
 
 

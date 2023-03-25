@@ -48,8 +48,13 @@ def segment_by_contour(msg):
     r,g,b = ((rgb_array >> 16) & 255), ((rgb_array >> 8) & 255), (rgb_array & 255)  # 480 x 640 c/u
     img_bgr = cv2.merge((np.asarray(b,dtype='uint8'),np.asarray(g,dtype='uint8'),np.asarray(r,dtype='uint8')))
     img_bgr_copy = img_bgr
+    cv2.imshow('Imagen original', img_bgr)  #***************************************
+    cv2.waitKey(1)
 
     img_hsv = cv2.cvtColor(img_bgr,cv2.COLOR_BGR2HSV)   # Change the color space from BGR to HSV
+    cv2.imshow('Imagen hsv', img_hsv)   #*******************************************
+    cv2.waitKey(1)
+
     values=img_bgr.reshape((-1,3))  # (M,3=BGR), M = num of pixels
 
     values= np.float32(values)
@@ -59,21 +64,32 @@ def segment_by_contour(msg):
     _ , labels , cc =cv2.kmeans(values , k ,None,criteria,30,cv2.KMEANS_RANDOM_CENTERS) 
     # convert into uint8, and make original image
     cc=np.uint8(cc) # Image with reduced colors, conversion to the format with which cv2 works
+    cv2.imshow('Imagen cuantizada', cc)
+    cv2.waitKey(1)
+
     segmented_image= cc[labels.flatten()]
+    cv2.imshow('Imagen aplanada', segmented_image)
+    cv2.waitKey(1)
     segmented_image=segmented_image.reshape(img_hsv.shape)
+    cv2.imshow('Imagen aplanada2', segmented_image)
+    cv2.waitKey(1)
     # Change the color space from BGR to grayscale
     image_gray = cv2.cvtColor(segmented_image, cv2.COLOR_BGR2GRAY)
+    cv2.imshow('Imagen escala grises', image_gray )
+    cv2.waitKey(1)
     img_bin = cv2.adaptiveThreshold(image_gray,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,15)
     kernel = np.ones((3,3),np.uint8)    # Define a kernel for erosion
+    cv2.imshow('Imagen binaria', img_bin)
+    cv2.waitKey(1)
     img_erode=cv2.erode(img_bin , kernel,iterations=4)  #4 eroded image
-    #cv2.imshow('erod', img_erode)
-    #cv2.waitKey(1) 
+    cv2.imshow('Imagen erosionada', img_erode)
+    cv2.waitKey(1) 
     img_dilate = cv2.dilate(img_erode , kernel, iterations=2) 
-    #cv2.imshow('dilat', img_dilate)
-    #cv2.waitKey(1) 
+    cv2.imshow('dilacion', img_dilate)
+    cv2.waitKey(1) 
     edged = cv2.Canny(img_dilate, 100, 20)
-    #cv2.imshow('contours', edged)
-    #cv2.waitKey(1) 
+    cv2.imshow('contours', edged)
+    cv2.waitKey(1) 
     #edged = img_dilate
     #Finding contours in the image, each individual contour is a Numpy array of (x,y) coordinates of boundary points of the object
     contours, hierarchy = cv2.findContours(edged.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
@@ -155,6 +171,11 @@ def segment_by_contour(msg):
         centroid_z = z_c/len(pixels_array)
         cloud_msg = cloud_obj(pixels_array, X_array, Y_array, Z_array,0)
         X_array, Y_array, Z_array = np.asarray(X_array), np.asarray(Y_array), np.asarray(Z_array)
+
+        cv2.imshow('objeto con contorno ', recog_obj_img)
+        cv2.waitKey(1)
+        cv2.imshow('Objeto', img_with_mask)
+        cv2.waitKey(1)
 
         return(objects_on_stage ,[centroid_x, centroid_y, centroid_z] ,X_array, Y_array, Z_array, recog_obj_img, img_with_mask, cloud_msg)
         
@@ -529,11 +550,12 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
         resp.image.height = 480
         resp.image.width = 640
 
+        """
         cv2.imshow('final obj', img_with_mask)
         cv2.waitKey(1)
         cv2.imshow('detected object', recog_obj_img)
         cv2.waitKey(1) 
-        
+        """
         return resp
 
     else:

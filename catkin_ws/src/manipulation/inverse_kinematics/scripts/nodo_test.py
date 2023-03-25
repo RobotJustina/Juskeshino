@@ -49,47 +49,61 @@ def main():
 
         # Mensaje para servicio de cinematica directa********************
         fk_msg = ForwardKinematicsRequest()
-        fk_msg.q = [0.1,0,0,0,0]
-        cartesian_pose = fk_srv(fk_msg)
+        fk_msg.q = [0,0,-1.56,-1.57,0]  # articular
+        cartesian_pose = fk_srv(fk_msg) # cartesiano
 
         print("cinematica directa")
         print(cartesian_pose)
-
+        """
         # Mensaje para servicio ik pose**********************************
         ik_pp_msg = InverseKinematicsPose2PoseRequest()
         # Rellenar msg pose to pose
-        ik_pp_msg.x =  0.146
-        ik_pp_msg.y = 0.0781
-        ik_pp_msg.z = 0.685
-        ik_pp_msg.roll = 0
-        ik_pp_msg.pitch = 0
-        ik_pp_msg.yaw = 0
-        ik_pp_msg.initial_guess = [0,0,0,0,0]
+        ik_pp_msg.x =  cartesian_pose.x
+        ik_pp_msg.y = cartesian_pose.y
+        ik_pp_msg.z = cartesian_pose.z
+        ik_pp_msg.roll = cartesian_pose.roll
+        ik_pp_msg.pitch = cartesian_pose.pitch
+        ik_pp_msg.yaw = cartesian_pose.yaw
+        ik_pp_msg.initial_guess = fk_msg.q
         # Retorna arreglo de q's
         q_array = ik_pose_srv(ik_pp_msg)
         # retorno de msg ***********************************************
         print("Cinematica inversa pose2pose .......................")
         print(q_array)
-
         """
         # Mensaje para servicio ik traj**********************************
         ik_pt_msg = InverseKinematicsPose2TrajRequest()
         # Rellenar msg pose to traj
-        ik_pt_msg.x =  0.246
-        ik_pt_msg.y = 0.08
-        ik_pt_msg.z = 0.685
-        ik_pt_msg.roll = 0
-        ik_pt_msg.pitch = 0
-        ik_pt_msg.yaw = 0
+        ik_pt_msg.x =  cartesian_pose.x 
+        ik_pt_msg.y = cartesian_pose.y 
+        ik_pt_msg.z = cartesian_pose.z 
+        ik_pt_msg.roll = cartesian_pose.roll + np.deg2rad(10)
+        ik_pt_msg.pitch = cartesian_pose.pitch
+        ik_pt_msg.yaw = cartesian_pose.yaw + np.deg2rad(10)
+        ik_pt_msg.initial_guess = fk_msg.q
         # Retorna arreglo de q's
 
-        print("*********antes de servicio********")
         q_traj = ik_traj_srv(ik_pt_msg)
 
         # retorno de msg ***********************************************
-        print("q_traj.......................")
-        print(q_traj)
-        """
+        #print(q_traj)
+        #print(type( np.asarray(q_traj.articular_trajectory.points[-1].positions)))
+        #print(q_traj.articular_trajectory.points[-1].positions)
+        
+        fk_msg2 = ForwardKinematicsRequest()
+        q1 = q_traj.articular_trajectory.points[-1].positions[0]
+        q2 = q_traj.articular_trajectory.points[-1].positions[1]
+        q3 = q_traj.articular_trajectory.points[-1].positions[2]
+        q4 = q_traj.articular_trajectory.points[-1].positions[3]
+        q5 = q_traj.articular_trajectory.points[-1].positions[4]
+    
+
+        fk_msg2.q = [q1,q2,q3,q4,q5] 
+        cartesian_pose2 = fk_srv(fk_msg2) # cartesiano
+        print("cinematica directa despues****************")
+        print(cartesian_pose2)
+        
+        
             
         loop.sleep()
 
