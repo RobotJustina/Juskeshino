@@ -3,6 +3,8 @@ import numpy as np
 import spacy
 import rospy
 
+import traceback
+
 import os
 
 CD_structures = { "go" : "PTRANS",
@@ -98,8 +100,8 @@ def CondepParser(text):
                     if p == "PROPN":
                         pers_list.append(pron)
             
-        	#print(acus_list)
-        	#print(pers_list)
+            #print(acus_list)
+            #print(pers_list)
             
             d = []
             for f in range(len(acus_list)):
@@ -111,8 +113,9 @@ def CondepParser(text):
                         ind = poc
                 txt = txt.replace(pron_list[acus_list[f]],pron_list[pers_list[ind]])
             
-            txt = txt.replace(",", ".")
+            txt = txt.replace(", and", ".")
             txt = txt.replace(" and", ".")
+            txt = txt.replace(",", ".")
             doc = nlp(txt)
             assert doc.has_annotation("SENT_START")
             list_sentences =[sent.text for sent in doc.sents]
@@ -252,18 +255,36 @@ def CondepParser(text):
                 
                 #==============================RELEASE=======================================
                 elif prim == "RELEASE":
-                    #RELEASE -----> [an object]
-                    if len(pron_list_sen) == 0:
-                        dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil))')
-                        #print(prim+'((ACTOR Robot)(OBJ nil))')
+                    #print(pron_list_sen)
+                    for serc_noun in pron_list_sen:
+                        chop_noun = serc_noun.split()
+                        len_noun = len(chop_noun)
+                        #print(len_noun)
+                        f_noun = chop_noun[-1]
+                        idx3 = text_list_sen.index(f_noun) 
+                        idx4 = idx3-len_noun
+                        #print(text_list_sen[idx4])
+                        
+                        if text_list_sen[idx4] in ["on", "at", "over", "in", "to"]:
+                            place = serc_noun
+                            pron_list_sen.remove(serc_noun)
+                            #print("place: ", place)
+                            #print(pron_list_sen)
+                            #break
+                        else: 
+                            place = "nil"
+                    
+                    if len(pron_list_sen) != 0 and pron_list_sen[-1] not in ["an", "a", "the"]:
+                        obj = pron_list_sen[-1]
+                    elif len(pron_list_sen) != 0 and pron_list_sen[-1] in ["an", "a", "the"]:
+                        obj = "nil"
                     else:
-                        if pron_list_sen[-1] in ["a", "an", "the"]:
-                            dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil))')
-                            #print(prim+'((ACTOR Robot)(OBJ nil))')
-                        else:
-                            obj = pron_list_sen[-1]
-                            dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+'))')
-                            #print(prim+'((ACTOR Robot)(OBJ '+obj+'))')
+                        obj = "nil"
+
+                    #print("place: ", place)
+                    #print("object: ", obj)
+                    dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+')(TO '+place+'))')
+                    #print(prim+'((ACTOR Robot)(OBJ '+obj+')(TO '+place+'))')
                 
                 #==============================PROPEL=======================================
                 elif prim == "PROPEL":
@@ -277,7 +298,7 @@ def CondepParser(text):
                             #print(prim+'((ACTOR Robot)(OBJ nil))')
                         else:
                             obj = pron_list_sen[-1]
-                            dependencies_list.append(prim+'((OBJ Robot)(QUESTION '+obj+'))')
+                            dependencies_list.append(prim+'((ACTOR Robot)(OBJ +'obj+'))')
                             #print(prim+'((ACTOR Robot)(OBJ '+obj+'))')
                 
                 #==============================QTRANS=======================================
