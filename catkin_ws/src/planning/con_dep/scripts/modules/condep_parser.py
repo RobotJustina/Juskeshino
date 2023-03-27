@@ -298,7 +298,7 @@ def CondepParser(text):
                             #print(prim+'((ACTOR Robot)(OBJ nil))')
                         else:
                             obj = pron_list_sen[-1]
-                            dependencies_list.append(prim+'((ACTOR Robot)(OBJ +'obj+'))')
+                            dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+'))')
                             #print(prim+'((ACTOR Robot)(OBJ '+obj+'))')
                 
                 #==============================QTRANS=======================================
