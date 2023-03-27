@@ -100,8 +100,8 @@ def CondepParser(text):
                     if p == "PROPN":
                         pers_list.append(pron)
             
-            #print(acus_list)
-            #print(pers_list)
+        	#print(acus_list)
+        	#print(pers_list)
             
             d = []
             for f in range(len(acus_list)):
@@ -185,11 +185,11 @@ def CondepParser(text):
 		        		#print(text_list_sen[index])
                         if text_list_sen[index-l] == "to":
                             location = pron_list_sen[-1]
-                            dependencies_list.append(prim+'((ACTOR Robot)(OBJ Robot)(FROM robot place)(TO '+location+'))')
-                            #print(prim+'((ACTOR Robot)(OBJ Robot)(FROM Robots place)(TO '+location+'))')
+                            dependencies_list.append(prim+'((ACTOR Robot)(OBJ Robot)(TO '+location+'))')
+                            #print(prim+'((ACTOR Robot)(OBJ Robot)(TO '+location+'))')
                     else:
-                        dependencies_list.append(prim+'((ACTOR Robot)(OBJ Robot)(FROM robot place)(TO nil))')
-                        #print(prim+'((ACTOR Robot)(OBJ Robot)(FROM Robots place)(TO nil))')
+                        dependencies_list.append(prim+'((ACTOR Robot)(OBJ Robot)(TO nil))')
+                        #print(prim+'((ACTOR Robot)(OBJ Robot)(TO nil))')
                     
         	    	#ATRANS ------> a / an [object], [person]
                 
@@ -206,22 +206,22 @@ def CondepParser(text):
                         if person != 'nil': #There is a person
                             if len(pron_list_sen) != 0 and pron_list_sen[-1] not in ["an", "a", "the"]: #There is a person and a valid object
                                 obj = pron_list_sen[-1]
-                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+')(FROM '+obj+' place)(TO '+person+'))')
-                                #print(prim+'((ACTOR Robot)(OBJ '+obj+')(FROM '+obj+' place)(TO '+person+'))') 
+                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+')(TO '+person+'))')
+                                #print(prim+'((ACTOR Robot)(OBJ '+obj+')(TO '+person+'))') 
                             else: #There is a person but no an object
-                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil)(FROM nil)(TO '+person+'))')
-                                #print(prim+'((ACTOR Robot)(OBJ nil)(FROM nil)(TO '+person+'))')
+                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil)(TO '+person+'))')
+                                #print(prim+'((ACTOR Robot)(OBJ nil)(TO '+person+'))')
                         else:
                             if len(pron_list_sen) != 0 and pron_list_sen[-1] in ["an", "a", "the"]: #There is no person and the obj in an/a/the
-                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil)(FROM nil)(TO nil))')
+                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil)(TO nil))')
                                 #print(prim+'((ACTOR Robot)(OBJ nil)(FROM nil)(TO nil))')
                             elif len(pron_list_sen) !=0  and pron_list_sen[-1] not in ["an", "a", "the"]:
                                 obj = pron_list_sen[-1]
-                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+')(FROM '+obj+' place)(TO nil))')
+                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+')(TO nil))')
                                 #print(prim+'((ACTOR Robot)(OBJ '+obj+')(FROM '+obj+' place)(TO nil))')
                     else:
-                        dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil)(FROM nil)(TO nil))') #There is no person and no obj
-                        #print(prim+'((ACTOR Robot)(OBJ nil)(FROM nil)(TO nil))')
+                        dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil)(TO nil))') #There is no person and no obj
+                        #print(prim+'((ACTOR Robot)(OBJ nil)(TO nil))')
                 
                 #==============================GRAB=======================================
                 elif prim == "GRAB":
