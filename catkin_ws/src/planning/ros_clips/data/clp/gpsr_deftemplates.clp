@@ -4,8 +4,11 @@
 ;*                                      *
 ;*          University of Mexico        *
 ;*          Jesus Savage-Carmona        *
+;*          November 2022               *
 ;*                                      *
-;*          20 Dec 2022                 *
+;*          Tamagawa University         *
+;*          Luis Contreras              *
+;*          March 2023                  *
 ;*                                      *
 ;****************************************
 
