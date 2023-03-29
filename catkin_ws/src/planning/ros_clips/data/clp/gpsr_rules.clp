@@ -102,7 +102,7 @@
     )
     =>
     (retract ?f ?f1)
-    ; it sends the robot to ?place
+    ; it sends the robot to ?target
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
     ;(assert (attempt (name ptrans)(id ?*plan_number*)(move robot)(room ?room-target)(zone ?zone-target)(on room)(number 0 )))
@@ -117,7 +117,7 @@
     (item (type Robot)(name ?actor))
     (item (type ?type)(name ?target)(room ?room-target&:(neq ?room-target nil))(zone ?zone-target&:(neq ?zone-target nil))(upper nothing))
     =>
-    ; it sends the robot to the ?human location and finds the person
+    ; it sends the robot to the ?target location and finds the ?target
     (retract ?f ?f1)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
@@ -224,6 +224,17 @@
     (printout t "(plan (name state)(id " ?*plan_number* ")(number 1)(actions ask human recipient))" crlf)
 )
 
+(defrule state-atrans-recipient-ROS
+    (declare (salience 300))
+    (num-sentences 1)
+    ?f1 <- (atrans (actor ?actor)(to nil))
+    ?f2 <- (state (attribute recipient)(value ?human))
+    =>
+    (retract ?f2)
+    ; it modifies the atrans recipient
+    (modify ?f1 (to ?human))
+)
+
 
 (defrule exec-atrans-object-unknown-ROS
     ?f  <- (num-sentences 1)
@@ -240,20 +251,7 @@
     (printout t "(plan (name state)(id " ?*plan_number* ")(number 1)(actions ask object location " ?obj "))" crlf)
 )
 
-
-(defrule state-recipient-ROS
-    (declare (salience 300))
-    (num-sentences 1)
-    ?f1 <- (atrans (actor ?actor)(to nil))
-    ?f2 <- (state (attribute recipient)(value ?human))
-    =>
-    (retract ?f2)
-    ; it modifies the object position
-    (modify ?f1 (to ?human))
-)
-
-
-(defrule state-location-ROS
+(defrule state-object-location-ROS
     (declare (salience 300))
     ?f  <- (num-sentences 1)
     ?f2 <-(state (attribute location)(obj ?object)(value ?place))
@@ -261,6 +259,6 @@
     (room (name ?place)(room ?room-place)(zone ?zone-place))
     =>
     (retract ?f2)
-    ; it modifies the object position
+    ; it modifies the object location
     (modify ?f1 (room ?room-place)(zone ?zone-place))
 )

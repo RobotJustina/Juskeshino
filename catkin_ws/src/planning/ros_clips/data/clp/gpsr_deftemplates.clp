@@ -53,6 +53,10 @@
 		(type SYMBOL)
 		(default nobody)
 	)
+	(multifield objs
+                 (type SYMBOL)
+                 (default nil)
+        )
 	(multifield status
 		(type SYMBOL)
 		(default nil)
