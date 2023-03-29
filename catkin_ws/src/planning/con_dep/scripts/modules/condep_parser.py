@@ -182,7 +182,7 @@ def CondepParser(text):
                         sn = sn[-1]
                         
                         index = text_list_sen.index(sn)
-		        		#print(text_list_sen[index])
+                        #print(text_list_sen[index])
                         if text_list_sen[index-l] == "to":
                             location = pron_list_sen[-1]
                             dependencies_list.append(prim+'((ACTOR Robot)(OBJ Robot)(TO '+location+'))')
@@ -191,14 +191,14 @@ def CondepParser(text):
                         dependencies_list.append(prim+'((ACTOR Robot)(OBJ Robot)(TO nil))')
                         #print(prim+'((ACTOR Robot)(OBJ Robot)(TO nil))')
                     
-        	    	#ATRANS ------> a / an [object], [person]
+                #ATRANS ------> a / an [object], [person]
                 
                 #==============================ATRANS=======================================
                 elif prim == 'ATRANS':
                     if len(pron_list_sen) != 0:
                         person='nil'
                         for pron in range(len(pron_list_sen)):
-                            if pos_list_sen1[pron][-1] == 'PROPN':
+                            if pos_list_sen1[pron][-1] == 'PROPN' or pron_list[pron] == "me":
                                 person=pron_list_sen[pron]
                                 pron_list_sen = np.delete(pron_list_sen, pron)
                                 break
@@ -218,7 +218,24 @@ def CondepParser(text):
                             elif len(pron_list_sen) !=0  and pron_list_sen[-1] not in ["an", "a", "the"]:
                                 obj = pron_list_sen[-1]
                                 dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+')(TO nil))')
-                                #print(prim+'((ACTOR Robot)(OBJ '+obj+')(FROM '+obj+' place)(TO nil))')
+                            elif len(pron_list_sen) >1:
+                                for ex in pron_list_sen:
+                                    chop_noun3 = ex.split()
+                                    len_noun4 = len(chop_noun3)
+                                    f_noun4 = chop_noun3[-1]
+                                    idx5 = text_list_sen.index(f_noun4)
+                                    idx6 = idx5-len_noun4
+                                    if text_list_sen[idx6] in ["on", "at", "over", "in", "to"]:
+                                        place = ex
+                                        pron_list_sen.remove(ex)
+                                        
+                                        if pron_list_sen[-1] not in ["an", "a", "the"]:
+                                                obj = pron_list_sen[-1]
+                                        else:
+                                                obj = "nil"
+                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+')(FROM '+obj+' place)(TO '+place+'))')
+                                #print(prim+'((ACTOR Robot)(OBJ '+obj+')(FROM '+obj+' place)(TO '+place+'))')	
+				
                     else:
                         dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil)(TO nil))') #There is no person and no obj
                         #print(prim+'((ACTOR Robot)(OBJ nil)(TO nil))')
