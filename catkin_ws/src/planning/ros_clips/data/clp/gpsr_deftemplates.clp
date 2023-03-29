@@ -18,7 +18,11 @@
 		(type SYMBOL)
 		(default nil)
 	)
-	(multifield status
+	(field room
+		(type SYMBOL)
+		(default nil)
+	)
+	(field zone
 		(type SYMBOL)
 		(default nil)
 	)
@@ -30,7 +34,39 @@
 		(type NUMBER)
 		(default 0 0 0)
 	)
+	(field lower
+		(type SYMBOL)
+		(default base)
+	)
+	(field upper
+		(type SYMBOL)
+		(default nothing)
+	)
 	(field grasp
+		(type SYMBOL)
+		(default nil)
+	)
+	(field possession
+		(type SYMBOL)
+		(default nobody)
+	)
+	(multifield status
+		(type SYMBOL)
+		(default nil)
+	)
+	(field num
+		(type NUMBER)
+		(default 1)
+	)
+)
+
+
+(deftemplate room
+	(field type
+		(type SYMBOL)
+		(default Room)
+	)
+	(field name
 		(type SYMBOL)
 		(default nil)
 	)
@@ -42,103 +78,35 @@
 		(type SYMBOL)
 		(default nil)
 	)
-	(field possession
-		(type SYMBOL)
-		(default nobody)
-	)
-	(field image
-		(type SYMBOL)
-		(default nil)
-	)
-	(field script
-		(type SYMBOL)
-		(default nil)
-	)
-	(field num
-		(type NUMBER)
-		(default 1)
-	)
-	(field shared
-		(type SYMBOL)
-		(default false)
-	)
 	(multifield zones
-		(type SYMBOL)
-		(default nil)
-	)
-	(multifield hands
-		(type SYMBOL)
-		(default nil)
-	)
-	(multifield objs
-		(type SYMBOL)
-		(default nil)
-	)
-	(field lower
-		(type SYMBOL)
-		(default base)
-	)
-	(field upper
-		(type SYMBOL)
-		(default nothing)
-	)
-)
-
-
-(deftemplate Room
-	(field name
-		(type SYMBOL)
-		(default nil)
-	)
-	(field status
 		(type SYMBOL)
 		(default nil)
 	)
 	(multifield attributes
 		(type SYMBOL)
 		(default nil)
-	)
-	(field grasp
-		(type SYMBOL)
-		(default nil)
-	)
-	(field zone
-		(type SYMBOL)
-		(default nil)
-	)
-	(multifield zones
-		(type SYMBOL)
-		(default nil)
-	)
-	(field possession
-		(type SYMBOL)
-		(default nobody)
-	)
-	(field image
-		(type SYMBOL)
-		(default nil)
-	)
-	(field script
-		(type SYMBOL)
-		(default nil)
-	)
-	(field num
-		(type NUMBER)
-		(default 1)
-	)
-	(field shared
-		(type SYMBOL)
-		(default false)
 	)
 	(multifield center
 		(type NUMBER)
 		(default 0 0 0 0)
 	)
+	(field num
+		(type NUMBER)
+		(default 1)
+	)
 )
 
 
-(deftemplate Arm
+(deftemplate arm
+	(field type
+		(type SYMBOL)
+		(default Arm)
+	)
 	(field name
+		(type SYMBOL)
+		(default nil)
+	)
+	(field obj
 		(type SYMBOL)
 		(default nil)
 	)
@@ -146,30 +114,18 @@
 		(type SYMBOL)
 		(default nil)
 	)
-	(multifield attributes
-		(type SYMBOL)
-		(default nil)
-	)
-	(field possession
-		(type SYMBOL)
-		(default nobody)
-	)
-	(field grasp
-		(type SYMBOL)
-		(default nil)
-	)
 	(field num
 		(type NUMBER)
 		(default 1)
-	)
-	(field flag
-		(type SYMBOL)
-		(default nil)
 	)
 )
 
 
 (deftemplate state
+	(field type
+		(type SYMBOL)
+		(default State)
+	)
 	(field attribute
 		(type SYMBOL)
 		(default nil)
