@@ -215,7 +215,7 @@ def CondepParser(text):
                             if len(pron_list_sen) != 0 and pron_list_sen[-1] in ["an", "a", "the"]: #There is no person and the obj in an/a/the
                                 dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil)(TO nil))')
                                 #print(prim+'((ACTOR Robot)(OBJ nil)(FROM nil)(TO nil))')
-                            elif len(pron_list_sen) !=0  and pron_list_sen[-1] not in ["an", "a", "the"]:
+                            elif len(pron_list_sen) == 0  and pron_list_sen[-1] not in ["an", "a", "the"]:
                                 obj = pron_list_sen[-1]
                                 dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+')(TO nil))')
                             elif len(pron_list_sen) >1:

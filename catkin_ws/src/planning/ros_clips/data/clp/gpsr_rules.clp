@@ -22,6 +22,15 @@
 ;****************************************
 
 ;#######################################
+;      Global Functions
+(deffunction oneof (?v $?values)
+    (if (member$ ?v ?values)
+        then ?v
+        else (not ?v)
+    )
+)
+
+;#######################################
 ;      Global Rules
 
 
@@ -56,15 +65,24 @@
     (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
     ;(assert (attempt (name answer)(id ?*plan_number* )(question where)(zone ?zone-target)(number 1 )))
     
-    (if (eq ?type Objects)
-        then
-        (printout t "(plan (name state)(id " ?*plan_number* ")(number 1)(actions answer where object " ?target " " ?room-target " " ?zone-target "))" crlf)
-        else
-        if (eq ?type Human)
+    (switch ?type
+        (case Objects
+            then
+            (printout t "(plan (name state)(id " ?*plan_number* ")(number 1)(actions answer where object " ?target " " ?room-target " " ?zone-target "))" crlf)
+        )
+        (case Human
             then
             (printout t "(plan (name state)(id " ?*plan_number* ")(number 1)(actions answer where human " ?target " " ?room-target " " ?zone-target "))" crlf)
+        )
     )
 )
+
+
+   (switch ?student
+      (case (oneof ?student stu1 stu2 stu3)
+         then B-)
+      (case stu4
+         then A+)))
 
 
 (defrule qtrans-who-object-ROS
@@ -123,15 +141,17 @@
     (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
     ;(assert (attempt (name attend)(id ?*plan_number* )(move ?actor)(room ?room-target)(zone ?zone-target)(to ?target)(number 0 )))
     
-    (if (eq ?type Objects)
-        then
-        (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-target " " ?zone-target"))" crlf)
-        (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 2)(actions find-object " ?target "))" crlf)
-        else
-        if (eq ?type Human)
+    (switch ?type
+        (case Objects
+            then
+            (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-target " " ?zone-target"))" crlf)
+            (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 2)(actions find-object " ?target "))" crlf)
+        )
+        (case Human
             then
             (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-target " " ?zone-target "))" crlf)
             (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?target "))" crlf)
+        )
     )
 )
 
@@ -158,13 +178,15 @@
     (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
     (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 3)(actions goto " ?room-target " " ?zone-target"))" crlf)
     
-    (if (eq ?type Room)
-        then
-        (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 4)(actions find-space))" crlf)
-        else
-        if (eq ?type Human)
+    (switch ?type
+        (case Room
+            then
+            (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 4)(actions find-space))" crlf)
+        )
+        (case Human
             then
             (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 4)(actions deliver-object " ?target "))" crlf)
+        )
     )
 )
 
@@ -236,7 +258,7 @@
 )
 
 
-(defrule exec-atrans-object-unknown-ROS
+(defrule exec-atrans-no-object-location-ROS
     ?f  <- (num-sentences 1)
     ?f1 <- (atrans (actor ?actor)(obj ?obj)(to ?place))
     (item (type Robot) (name ?actor))
