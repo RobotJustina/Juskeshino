@@ -3,6 +3,8 @@ import numpy as np
 import spacy
 import rospy
 
+import traceback
+
 import os
 
 CD_structures = { "go" : "PTRANS",
@@ -111,8 +113,9 @@ def CondepParser(text):
                         ind = poc
                 txt = txt.replace(pron_list[acus_list[f]],pron_list[pers_list[ind]])
             
-            txt = txt.replace(",", ".")
+            txt = txt.replace(", and", ".")
             txt = txt.replace(" and", ".")
+            txt = txt.replace(",", ".")
             doc = nlp(txt)
             assert doc.has_annotation("SENT_START")
             list_sentences =[sent.text for sent in doc.sents]
@@ -179,23 +182,23 @@ def CondepParser(text):
                         sn = sn[-1]
                         
                         index = text_list_sen.index(sn)
-		        		#print(text_list_sen[index])
+                        #print(text_list_sen[index])
                         if text_list_sen[index-l] == "to":
                             location = pron_list_sen[-1]
-                            dependencies_list.append(prim+'((ACTOR Robot)(OBJ Robot)(FROM robot place)(TO '+location+'))')
-                            #print(prim+'((ACTOR Robot)(OBJ Robot)(FROM Robots place)(TO '+location+'))')
+                            dependencies_list.append(prim+'((ACTOR Robot)(OBJ Robot)(TO '+location+'))')
+                            #print(prim+'((ACTOR Robot)(OBJ Robot)(TO '+location+'))')
                     else:
-                        dependencies_list.append(prim+'((ACTOR Robot)(OBJ Robot)(FROM robot place)(TO nil))')
-                        #print(prim+'((ACTOR Robot)(OBJ Robot)(FROM Robots place)(TO nil))')
+                        dependencies_list.append(prim+'((ACTOR Robot)(OBJ Robot)(TO nil))')
+                        #print(prim+'((ACTOR Robot)(OBJ Robot)(TO nil))')
                     
-        	    	#ATRANS ------> a / an [object], [person]
+                #ATRANS ------> a / an [object], [person]
                 
                 #==============================ATRANS=======================================
                 elif prim == 'ATRANS':
                     if len(pron_list_sen) != 0:
                         person='nil'
                         for pron in range(len(pron_list_sen)):
-                            if pos_list_sen1[pron][-1] == 'PROPN':
+                            if pos_list_sen1[pron][-1] == 'PROPN' or pron_list[pron] == "me":
                                 person=pron_list_sen[pron]
                                 pron_list_sen = np.delete(pron_list_sen, pron)
                                 break
@@ -203,22 +206,39 @@ def CondepParser(text):
                         if person != 'nil': #There is a person
                             if len(pron_list_sen) != 0 and pron_list_sen[-1] not in ["an", "a", "the"]: #There is a person and a valid object
                                 obj = pron_list_sen[-1]
-                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+')(FROM '+obj+' place)(TO '+person+'))')
-                                #print(prim+'((ACTOR Robot)(OBJ '+obj+')(FROM '+obj+' place)(TO '+person+'))') 
+                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+')(TO '+person+'))')
+                                #print(prim+'((ACTOR Robot)(OBJ '+obj+')(TO '+person+'))') 
                             else: #There is a person but no an object
-                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil)(FROM nil)(TO '+person+'))')
-                                #print(prim+'((ACTOR Robot)(OBJ nil)(FROM nil)(TO '+person+'))')
+                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil)(TO '+person+'))')
+                                #print(prim+'((ACTOR Robot)(OBJ nil)(TO '+person+'))')
                         else:
                             if len(pron_list_sen) != 0 and pron_list_sen[-1] in ["an", "a", "the"]: #There is no person and the obj in an/a/the
-                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil)(FROM nil)(TO nil))')
+                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil)(TO nil))')
                                 #print(prim+'((ACTOR Robot)(OBJ nil)(FROM nil)(TO nil))')
-                            elif len(pron_list_sen) !=0  and pron_list_sen[-1] not in ["an", "a", "the"]:
+                            elif len(pron_list_sen) == 0  and pron_list_sen[-1] not in ["an", "a", "the"]:
                                 obj = pron_list_sen[-1]
-                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+')(FROM '+obj+' place)(TO nil))')
-                                #print(prim+'((ACTOR Robot)(OBJ '+obj+')(FROM '+obj+' place)(TO nil))')
+                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+')(TO nil))')
+                            elif len(pron_list_sen) >1:
+                                for ex in pron_list_sen:
+                                    chop_noun3 = ex.split()
+                                    len_noun4 = len(chop_noun3)
+                                    f_noun4 = chop_noun3[-1]
+                                    idx5 = text_list_sen.index(f_noun4)
+                                    idx6 = idx5-len_noun4
+                                    if text_list_sen[idx6] in ["on", "at", "over", "in", "to"]:
+                                        place = ex
+                                        pron_list_sen.remove(ex)
+                                        
+                                        if pron_list_sen[-1] not in ["an", "a", "the"]:
+                                                obj = pron_list_sen[-1]
+                                        else:
+                                                obj = "nil"
+                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+')(FROM '+obj+' place)(TO '+place+'))')
+                                #print(prim+'((ACTOR Robot)(OBJ '+obj+')(FROM '+obj+' place)(TO '+place+'))')	
+				
                     else:
-                        dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil)(FROM nil)(TO nil))') #There is no person and no obj
-                        #print(prim+'((ACTOR Robot)(OBJ nil)(FROM nil)(TO nil))')
+                        dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil)(TO nil))') #There is no person and no obj
+                        #print(prim+'((ACTOR Robot)(OBJ nil)(TO nil))')
                 
                 #==============================GRAB=======================================
                 elif prim == "GRAB":
@@ -252,18 +272,36 @@ def CondepParser(text):
                 
                 #==============================RELEASE=======================================
                 elif prim == "RELEASE":
-                    #RELEASE -----> [an object]
-                    if len(pron_list_sen) == 0:
-                        dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil))')
-                        #print(prim+'((ACTOR Robot)(OBJ nil))')
+                    #print(pron_list_sen)
+                    for serc_noun in pron_list_sen:
+                        chop_noun = serc_noun.split()
+                        len_noun = len(chop_noun)
+                        #print(len_noun)
+                        f_noun = chop_noun[-1]
+                        idx3 = text_list_sen.index(f_noun) 
+                        idx4 = idx3-len_noun
+                        #print(text_list_sen[idx4])
+                        
+                        if text_list_sen[idx4] in ["on", "at", "over", "in", "to"]:
+                            place = serc_noun
+                            pron_list_sen.remove(serc_noun)
+                            #print("place: ", place)
+                            #print(pron_list_sen)
+                            #break
+                        else: 
+                            place = "nil"
+                    
+                    if len(pron_list_sen) != 0 and pron_list_sen[-1] not in ["an", "a", "the"]:
+                        obj = pron_list_sen[-1]
+                    elif len(pron_list_sen) != 0 and pron_list_sen[-1] in ["an", "a", "the"]:
+                        obj = "nil"
                     else:
-                        if pron_list_sen[-1] in ["a", "an", "the"]:
-                            dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil))')
-                            #print(prim+'((ACTOR Robot)(OBJ nil))')
-                        else:
-                            obj = pron_list_sen[-1]
-                            dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+'))')
-                            #print(prim+'((ACTOR Robot)(OBJ '+obj+'))')
+                        obj = "nil"
+
+                    #print("place: ", place)
+                    #print("object: ", obj)
+                    dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+')(TO '+place+'))')
+                    #print(prim+'((ACTOR Robot)(OBJ '+obj+')(TO '+place+'))')
                 
                 #==============================PROPEL=======================================
                 elif prim == "PROPEL":
@@ -277,7 +315,7 @@ def CondepParser(text):
                             #print(prim+'((ACTOR Robot)(OBJ nil))')
                         else:
                             obj = pron_list_sen[-1]
-                            dependencies_list.append(prim+'((OBJ Robot)(QUESTION '+obj+'))')
+                            dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+'))')
                             #print(prim+'((ACTOR Robot)(OBJ '+obj+'))')
                 
                 #==============================QTRANS=======================================

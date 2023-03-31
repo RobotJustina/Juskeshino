@@ -10,12 +10,20 @@ from geometry_msgs.msg import PointStamped, PoseStamped, Point, Pose
 from vision_msgs.srv import *
 from manip_msgs.srv import *
 from std_msgs.msg import String
+import time
+import urdf_parser_py.urdf
+from std_msgs.msg import Float64MultiArray
+
+from tf.transformations import euler_from_quaternion
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+
+pubLaGoalPose = None
 
 
 """
- Nodo de prueba que envia una nube de puntos y recibe msg vision obj
- Tambien se debe crear nodo (servicio) que recibe el vision obj y regresa un pose 
- para la cinematica inversa.
+    Nodo de prueba que envia una nube de puntos y recibe msg vision obj
+    Tambien se debe crear nodo (servicio) que recibe el vision obj y regresa un pose 
+    para la cinematica inversa.
 """
 
 def frame_actual_to_frame_target(x, y, z, R, P, Y, f_actual, f_target):
@@ -43,6 +51,33 @@ def frame_actual_to_frame_target(x, y, z, R, P, Y, f_actual, f_target):
 
 
 
+
+def la_trajectory_tracking(joint_trajectory):
+
+    global pubLaGoalPose
+    print("Starting left arm trajectory tracking with " + str(len(joint_trajectory.points) ) + "points")
+    i = 0
+    #ts = joint_trajectory.points[1].time_from_start
+    #print("ts=",joint_trajectory.points[1].time_from_start.nsecs)
+
+    ts = 0.05
+    #while not rospy.is_shutdown():
+    for point in joint_trajectory.points:
+        q1, q2, q3, q4, q5, q6, q7 = point.positions
+        msg = Float64MultiArray()
+        msg.data.append(q1)
+        msg.data.append(q2)
+        msg.data.append(q3)
+        msg.data.append(q4)
+        msg.data.append(q5)
+        msg.data.append(q6)
+        msg.data.append(q7)
+        pubLaGoalPose.publish(msg)
+        time.sleep(ts)  # Wait ts seconds while moving the arm to the desired position
+        i += 1
+
+
+
 def callback(msg):
     global recog_obj_srv, best_grip_srv
 
@@ -50,7 +85,9 @@ def callback(msg):
     RecognizeObject_msg.point_cloud = msg
 
     # servicio reconocimiento de objetos ***************************************
+    print("Reconocimiento del objeto.....")
     result_recog_obj = recog_obj_srv(RecognizeObject_msg )
+    """
     # Desempaqueta datos
     if result_recog_obj.recog_object.graspable:
         # Orientacion y posicion del objeto detectado:
@@ -66,57 +103,31 @@ def callback(msg):
 
         R,P,Y = tft.euler_from_quaternion([X, Y, Z, W])
 
-        Pose2Pose_msg = InverseKinematicsPose2PoseRequest()
+    # servicio de agarre de objetos *********************************************
+        print("Calculando la mejor orientacion del gripper.....")
+        Pose2traj_msg = InverseKinematicsPose2TrajRequest()
         # Rellenar msg pose to pose
-        Pose2Pose_msg.x = x
-        Pose2Pose_msg.y = y
-        Pose2Pose_msg.z = z
-        Pose2Pose_msg.roll = R
-        Pose2Pose_msg.pitch = P
-        Pose2Pose_msg.yaw = Y
-        Pose2Pose_msg.initial_guess = [float(type_obj)]
+        Pose2traj_msg.x = x
+        Pose2traj_msg.y = y
+        Pose2traj_msg.z = z
+        Pose2traj_msg.roll = R
+        Pose2traj_msg.pitch = P
+        Pose2traj_msg.yaw = Y
+        Pose2traj_msg.initial_guess = [float(type_obj)]
+        # Retorna trayectoria en el espacio articular
+        articular_trajectory = best_grip_srv( Pose2traj_msg )
 
-    # *****************************************************************************
-        # Retorna x,y,z,r,p,y en el sistema base_link, se debe transformar a sistema shoulder_left_link
-        result_best_grip = best_grip_srv(Pose2Pose_msg )
+    # seguimiento de trayectoria ***********************************************
+        print("Realizando el seguimiento de trayectoria.....")
+        la_trajectory_tracking( articular_trajectory.articular_trajectory )
         """
-        xd = result_best_grip.q[0]
-        yd = result_best_grip.q[1]
-        zd = result_best_grip.q[2]
-        rd = result_best_grip.q[3]
-        pd = result_best_grip.q[4]
-        yd = result_best_grip.q[5]
-
-        
-        pose_stamp_left_sh = frame_actual_to_frame_target(x_bl , y_bl , z_bl , r_bl, p_bl , yaw_bl, 
-                                     'base_link' , 'shoulders_left_link' )
-        R_l_sh, P_l_sh, Y_l_sh =tft.euler_from_quaternion([ pose_stamp_left_sh.orientation.x,
-                                                            pose_stamp_left_sh.orientation.y, 
-                                                            pose_stamp_left_sh.orientation.z, 
-                                                            pose_stamp_left_sh.orientation.w])
-        
-
-
-        print("Pose de gripper para toma de objetos en frame left shoulder"),
-        print("position")
-        print(xd, yd, zd)
-        print( "orientation RPY rad")
-        print(rd, pd, yd)
-        print("")
-        print("")
-        print( "orientation RPY grados")
-        print(np.rad2deg(rd) , np.rad2deg(pd) ,np.rad2deg(yd))
-        """
-        # con el resultado ya se puede orientar gripper para tomar un objeto
-
-        
-
-
+           
 
 
 
 def main():
-    global pose_obj_frame_base, recog_obj_srv, best_grip_srv ,listener
+    global pose_obj_frame_base, recog_obj_srv, best_grip_srv ,listener, traj_tracking_srv
+    global pubLaGoalPose, pubRaGoalPose
     print("test node... ʕ•ᴥ•ʔ")
     rospy.init_node("nodo_test")
 
@@ -126,8 +137,21 @@ def main():
     recog_obj_srv = rospy.ServiceProxy("/vision/obj_reco/recognize_object", RecognizeObject)
 
     rospy.wait_for_service("/vision/gripper_orientation_grasping")
-    best_grip_srv = rospy.ServiceProxy("/vision/gripper_orientation_grasping", InverseKinematicsPose2Pose)
-    
+    best_grip_srv = rospy.ServiceProxy("/vision/gripper_orientation_grasping", InverseKinematicsPose2Traj )
+
+
+    # se suscribe al servicio /manipulation/ik_trajectory
+    rospy.wait_for_service( '/manipulation/la_ik_trajectory' )
+    ik_srv = rospy.ServiceProxy( '/manipulation/la_ik_trajectory' , InverseKinematicsPose2Traj )
+
+
+    #rospy.wait_for_service("/manipulation/trajectory_tracking" )
+    #traj_tracking_srv = rospy.ServiceProxy("/manipulation/trajectory_tracking" , InverseKinematicsPose2Traj )
+
+    pubLaGoalPose = rospy.Publisher("/hardware/left_arm/goal_pose" , Float64MultiArray, queue_size=10);
+    pubRaGoalPose = rospy.Publisher("/hardware/right_arm/goal_pose", Float64MultiArray, queue_size=10);
+
+
     listener = tf.TransformListener()
 
     loop = rospy.Rate(30)

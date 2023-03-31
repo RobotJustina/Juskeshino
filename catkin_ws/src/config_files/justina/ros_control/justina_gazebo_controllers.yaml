@@ -24,25 +24,25 @@
   la_1_controller:
     type: effort_controllers/JointPositionController
     joint: la_1_joint
-    pid: {d: 4.64, i: 4.0200000000000005, p: 19.95}
+    pid: { p: 100.0, i: 0.0, d: 10.0}
     #pid: {d: 4.86, i: 170.5, p: 200.429999999999996}
     #pid: {d: 20, i: 40, p: 50}
   la_2_controller:
     type: effort_controllers/JointPositionController
     joint: la_2_joint
-    pid: {d: 4.28, i: 6.1, p: 20.32}       
+    pid: {p: 50.28, i: 0.0, d: 5.0}       
     #pid: {d: 3.1500000000000004, i: 110.669999999999998, p: 200.49}
     #pid: {d: 20, i: 40, p: 50}   
   la_3_controller:
     type: effort_controllers/JointPositionController
     joint: la_3_joint
-    pid: {d: 0.53, i: 5.0200000000000005, p: 10.169999999999998}
+    pid: {p: 50.28, i: 0.0, d: 5.0}
     #pid: {d: 0.53, i: 10.0200000000000005, p: 20.169999999999998}
     #pid: {d: 20, i: 40, p: 50}
   la_4_controller:
     type: effort_controllers/JointPositionController
     joint: la_4_joint
-    pid: {d: 1.02, i: 2.6900000000000004, p: 20.3}
+    pid: {p: 60.0, i: 0.0, d: 1.5}
     #pid: {d: 1.35, i: 200.349999999999998, p: 200.4}
     #pid: {d: 20, i: 40, p: 50}
   la_5_controller:
