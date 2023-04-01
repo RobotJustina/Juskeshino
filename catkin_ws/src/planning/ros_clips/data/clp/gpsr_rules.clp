@@ -4,8 +4,11 @@
 ;*                                      *
 ;*          University of Mexico        *
 ;*          Jesus Savage-Carmona        *
+;*          November 2022               *
 ;*                                      *
-;*          11/22/22                    *
+;*          Tamagawa University         *
+;*          Luis Contreras              *
+;*          March 2023                  *
 ;*                                      *
 ;****************************************
 
@@ -17,6 +20,15 @@
 ;*               Rules                  *
 ;*                                      *
 ;****************************************
+
+;#######################################
+;      Global Functions
+(deffunction oneof (?v $?values)
+    (if (member$ ?v ?values)
+        then ?v
+        else (not ?v)
+    )
+)
 
 ;#######################################
 ;      Global Rules
@@ -42,39 +54,35 @@
 ;#######################################
 ;      Question rules
 
-
-(defrule qtrans-object-ROS
+(defrule qtrans-where-ROS
     ?f  <- (num-sentences 1)
-    ?f1 <- (qtrans (obj ?obj)(question where))
-    (item (type Objects)(name ?obj)(room ?room-object)(zone ?zone-object))
+    ?f1 <- (qtrans (obj ?target)(question where))
+    (item (type ?type)(name ?target)(room ?room-target)(zone ?zone-target))
     =>
-    ; it answer where is the object
+    ; it answer where is the target
     (retract ?f ?f1)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
-    ;(assert (plan (name state)(id ?*plan_number* )(number 1 )(actions answer ?obj ?room-object ?zone-object)))
-    ;(assert (attempt (name answer)(id ?*plan_number* )(question where)(zone ?zone)(number 1 )))
-    ;(assert (finish-planner state ?*plan_number* ?*plan_number_new*))
+    ;(assert (attempt (name answer)(id ?*plan_number* )(question where)(zone ?zone-target)(number 1 )))
     
-    (printout t "(plan (name state)(id " ?*plan_number* ")(number 1)(actions answer where object " ?obj " " ?room-object " " ?zone-object "))" crlf)
+    (switch ?type
+        (case Objects
+            then
+            (printout t "(plan (name state)(id " ?*plan_number* ")(number 1)(actions answer where object " ?target " " ?room-target " " ?zone-target "))" crlf)
+        )
+        (case Human
+            then
+            (printout t "(plan (name state)(id " ?*plan_number* ")(number 1)(actions answer where human " ?target " " ?room-target " " ?zone-target "))" crlf)
+        )
+    )
 )
 
 
-(defrule qtrans-human-ROS
-    ?f  <- (num-sentences 1)
-    ?f1 <- (qtrans (obj ?human)(question where))
-    (item (type Human)(name ?human)(room ?room-human)(zone ?zone-human))
-    =>
-    ; it answer where is the human
-    (retract ?f ?f1)
-    (bind ?*plan_number* (+ 1 ?*plan_number*))
-    (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
-    ;(assert (plan (name state)(id ?*plan_number* )(number 1 )(actions answer ?human ?room-human ?zone-human)))
-    ;(assert (attempt (name answer)(id ?*plan_number* )(question where)(zone ?zone-human)(number 1 )))
-    ;(assert (finish-planner state ?*plan_number* ?*plan_number_new*))
-    
-    (printout t "(plan (name state)(id " ?*plan_number* ")(number 1)(actions answer where human " ?human " " ?room-human " " ?zone-human "))" crlf)
-)
+   (switch ?student
+      (case (oneof ?student stu1 stu2 stu3)
+         then B-)
+      (case stu4
+         then A+)))
 
 
 (defrule qtrans-who-object-ROS
@@ -86,9 +94,7 @@
     (retract ?f ?f1)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
-    ;(assert (plan (name state)(id ?*plan_number* )(number 1 )(actions answer ?obj ?human ?zone-object)))
     ;(assert (attempt (name answer)(id ?*plan_number* )(question who)(zone ?zone-object)(number 1 )))
-    ;(assert (finish-planner state ?*plan_number* ?*plan_number_new*))
     
     (printout t "(plan (name state)(id " ?*plan_number* ")(number 1)(actions answer who " ?obj " " ?human " " ?zone-object "))" crlf)
 )
@@ -100,139 +106,88 @@
 ;      General purpose rules
 
 
-
 ;;;;;;;;;;;;
 ; Single conceptual dependencies
 
-(defrule go-zone-not-same-zone-ROS
+(defrule exec-ptrans-target-ROS
     ?f   <- (num-sentences 1)
-    ?f1  <- (ptrans (actor ?actor)(obj ?actor)(to ?place))
-    ;(not (attend ))
-    (Room (name ?place)(zone ?zone-place))
+    ?f1  <- (ptrans (actor ?actor)(obj ?actor)(to ?target))
     (item (type Robot)(name ?actor))
+    
+    (or
+        (room (type ?type)(name ?target)(room ?room-target)(zone ?zone-target))
+        (item (type ?type)(name ?target)(room ?room-target&:(neq ?room-target nil))(zone ?zone-target&:(neq ?zone-target nil)))
+    )
     =>
     (retract ?f ?f1)
-    ; it sends the robot to ?place
+    ; it sends the robot to ?target
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
-    ;(assert (plan (name ptrans)(id ?*plan_number* )(number 1 )(actions goto ?place ?zone-place)) )
-    ;(assert (attempt (name ptrans)(id ?*plan_number*)(move robot)(room ?place)(zone ?zone-place)(on room)(number 1 )))
-    ;(assert (finish-planner ptrans ?*plan_number* ?*plan_number_new*))
+    ;(assert (attempt (name ptrans)(id ?*plan_number*)(move robot)(room ?room-target)(zone ?zone-target)(on room)(number 0 )))
     
-    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 1)(actions goto " ?place " " ?zone-place "))" crlf)
+    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-target " " ?zone-target "))" crlf)
 )
 
 
-(defrule exec-ptrans-human-ROS
+(defrule exec-attend-target-ROS
     ?f   <- (num-sentences 1)
-    ?f1  <- (ptrans (actor ?actor)(obj ?actor)(to ?human))
+    ?f1  <- (attend (actor ?actor)(obj ?target))
     (item (type Robot)(name ?actor))
-    (item (type Human)(name ?human)(room ?room-human&:(neq ?room-human nil))(zone ?zone-human&:(neq ?zone-human nil)))
+    (item (type ?type)(name ?target)(room ?room-target&:(neq ?room-target nil))(zone ?zone-target&:(neq ?zone-target nil))(upper nothing))
     =>
-    ; it sends the robot to the ?human
+    ; it sends the robot to the ?target location and finds the ?target
     (retract ?f ?f1)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
-    ;(assert (plan (name ptrans)(id ?*plan_number* )(number 1 )(actions goto ?room-human ?zone-human)) )
-    ;(assert (attempt (name ptrans)(id ?*plan_number* )(move ?actor)(room ?room-human)(zone ?zone-human)(number 2 )))
-    ;(assert (finish-planner ptrans ?*plan_number* ?*plan_number_new*))
+    ;(assert (attempt (name attend)(id ?*plan_number* )(move ?actor)(room ?room-target)(zone ?zone-target)(to ?target)(number 0 )))
     
-    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-human " " ?zone-human "))" crlf)
+    (switch ?type
+        (case Objects
+            then
+            (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-target " " ?zone-target"))" crlf)
+            (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 2)(actions find-object " ?target "))" crlf)
+        )
+        (case Human
+            then
+            (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-target " " ?zone-target "))" crlf)
+            (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?target "))" crlf)
+        )
+    )
 )
 
 
-(defrule exec-attend-human-ROS
-    ?f   <- (num-sentences 1)
-    ?f1  <- (attend (actor ?actor)(obj ?human))
-    (item (type Robot)(name ?actor))
-    (item (type Human)(name ?human)(room ?room-human&:(neq ?room-human nil))(zone ?zone-human&:(neq ?zone-human nil)))
-    =>
-    ; it sends the robot to the ?human location and finds the person
-    (retract ?f ?f1)
-    (bind ?*plan_number* (+ 1 ?*plan_number*))
-    (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
-    ;(assert (plan (name attend)(id ?*plan_number* )(number 1 )(actions goto ?room-human ?zone-human)) )
-    ;(assert (plan (name attend)(id ?*plan_number* )(number 2 )(actions find-object ?human)) )
-    ;(assert (attempt (name attend)(id ?*plan_number* )(move ?actor)(room ?room-human)(zone ?zone-human)(to ?human)(number 2 )))
-    ;(assert (finish-planner attend ?*plan_number* ?*plan_number_new*))
-    
-    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-human " " ?zone-human "))" crlf)
-    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
-)
-
-(defrule exec-attend-object-ROS
-    ?f   <- (num-sentences 1)
-    ?f1  <- (attend (actor ?actor)(obj ?obj))
-    (item (type Robot)(name ?actor))
-    (item (type Objects)(name ?obj)(room ?room-object&:(neq ?room-object nil))(zone ?zone-object&:(neq ?zone-object nil))(upper nothing))
-    =>
-    ; it sends the robot to the ?obj location and takes the object
-    (retract ?f ?f1)
-    (bind ?*plan_number* (+ 1 ?*plan_number*))
-    (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
-    ;(assert (plan (name attend)(id ?*plan_number* )(number 1 )(actions goto ?room-human ?zone-human)) )
-    ;(assert (plan (name attend)(id ?*plan_number* )(number 2 )(actions find-object ?human)) )
-    ;(assert (attempt (name attend)(id ?*plan_number* )(move ?actor)(room ?room-human)(zone ?zone-human)(to ?human)(number 2 )))
-    ;(assert (finish-planner attend ?*plan_number* ?*plan_number_new*))
-    
-    (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-object " " ?zone-object"))" crlf)
-    (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
-)
-
-(defrule exec-atrans-object-recepient-ROS
+(defrule exec-atrans-target-ROS
     ?f  <- (num-sentences 1)
-    ?f1 <- (atrans (actor ?actor)(obj ?obj)(to ?human))
+    ?f1 <- (atrans (actor ?actor)(obj ?obj)(to ?target))
     (not (attend))
     (item (type Robot)(name ?actor))
-    (item (type Human)(name ?human)(room ?room-human&:(neq ?room-human nil))(zone ?zone-human&:(neq ?zone-human nil)))
     (item (type Objects)(name ?obj)(room ?room-object&:(neq ?room-object nil))(zone ?zone-object&:(neq ?zone-object nil))(upper nothing))
+    
+    (or
+        (room (type ?type)(name ?target)(room ?room-target)(zone ?zone-target))
+        (item (type ?type)(name ?target)(room ?room-target&:(neq ?room-target nil))(zone ?zone-target&:(neq ?zone-target nil)))
+    )
     =>
-    ; it gives ?obj to ?human
+    ; it deliver ?obj to ?target
     (retract ?f ?f1)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
-    ;(assert (plan (name atrans)(id ?*plan_number* )(number 1 )(actions goto ?room-object ?zone-object)) )
-    ;(assert (plan (name atrans)(id ?*plan_number* )(number 2 )(actions find-object ?obj)) )
-    ;(assert (plan (name atrans)(id ?*plan_number* )(number 3 )(actions grab ?obj )) )
-    ;(assert (plan (name atrans)(id ?*plan_number* )(number 4 )(actions goto ?room-human ?zone-human)) )
-    ;(assert (plan (name atrans)(id ?*plan_number* )(number 5 )(actions find-object ?human)) )
-    ;(assert (plan (name atrans)(id ?*plan_number* )(number 6 )(actions go ?human )) )
-    ;(assert (plan (name atrans)(id ?*plan_number* )(number 7 )(actions drop ?obj )) )
-    ;(assert (attempt (name atrans)(id ?*plan_number* )(move ?obj)(room ?room-human)(zone ?zone-human)(on ?human)(number 7 )))
-    ;(assert (finish-planner atrans ?*plan_number* ?*plan_number_new*))
+    ;(assert (attempt (name atrans)(id ?*plan_number* )(move ?obj)(room ?room-target)(zone ?zone-target)(on ?target)(number 0 )))
     
     (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-object " " ?zone-object"))" crlf)
     (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
-    (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 3)(actions goto " ?room-human " " ?zone-human"))" crlf)
-    (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 4)(actions deliver-object " ?human "))" crlf)
-)
-
-
-(defrule exec-atrans-object-deposit-ROS
-    ?f   <- (num-sentences 1)
-    ?f1  <- (atrans (actor ?actor)(obj ?obj)(to ?place))
-    (item (type Robot) (name ?actor))
-    (item (type Objects)(name ?obj)(room ?room-object&:(neq ?room-object nil))(zone ?zone-object&:(neq ?zone-object nil))(upper nothing))
-    (Room (name ?place)(zone ?zone-place))
-    =>
-    ; it deliver ?obj to ?place
-    (retract ?f ?f1)
-    (bind ?*plan_number* (+ 1 ?*plan_number*))
-    (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
-    ;(assert (plan (name ptrans)(id ?*plan_number* )(number 1 )(actions goto ?room-object ?zone-object)) )
-    ;(assert (plan (name ptrans)(id ?*plan_number* )(number 2 )(actions find-object ?obj)) )
-    ;(assert (plan (name ptrans)(id ?*plan_number* )(number 3 )(actions grab ?obj )) )
-    ;(assert (plan (name ptrans)(id ?*plan_number* )(number 4 )(actions goto ?place ?zone-place)) )
-    ;(assert (plan (name ptrans)(id ?*plan_number* )(number 5 )(actions find-object freespace)) )
-    ;(assert (plan (name ptrans)(id ?*plan_number* )(number 6 )(actions go freespace )) )
-    ;(assert (plan (name ptrans)(id ?*plan_number* )(number 7 )(actions drop ?obj )) )
-    ;(assert (attempt (name atrans)(id ?*plan_number* ) (move ?obj)(room ?room-object)(zone ?zone-object)(on floor)(number 7 )))
-    ;(assert (finish-planner atrans ?*plan_number* ?*plan_number_new*))
+    (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 3)(actions goto " ?room-target " " ?zone-target"))" crlf)
     
-    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-object " " ?zone-object "))" crlf)
-    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
-    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 3)(actions goto " ?place " " ?zone-place"))" crlf)
-    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 4)(actions find-space))" crlf)
+    (switch ?type
+        (case Room
+            then
+            (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 4)(actions find-space))" crlf)
+        )
+        (case Human
+            then
+            (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 4)(actions deliver-object " ?target "))" crlf)
+        )
+    )
 )
 
 
@@ -248,31 +203,25 @@
 (defrule exec-ptrans-attend-atrans-ROS
     ;(declare (salience 200))
     ?f  <- (num-sentences 3)
+    
     ?f1 <- (ptrans (actor ?actor)(obj ?actor)(to ?place))
     (item (type Robot) (name ?actor))
-    (Room (name ?place)(zone ?zone-place))
+    (room (name ?place)(room ?room-place)(zone ?zone-place))
+    
     ?f2 <- (attend (actor ?actor)(obj ?human))
-    ;(item (type Human) (name ?human)(room ?room-human)(zone ?zone-human))
     (item (type Human) (name ?human)(room ?room-human)(zone ?zone-human))
+    
     ?f3 <- (atrans (actor ?actor)(obj ?obj)(to ?human))
-    ;(item (type Objects)(name ?obj)(room ?room-object)(upper nothing))
     (item (type Objects)(name ?obj)(room ?room-object&:(neq ?room-object nil))(zone ?zone-object&:(neq ?zone-object nil))(upper nothing))
     =>
     (retract ?f ?f1 ?f2 ?f3)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
-    ;(assert (plan (name ptrans-attend-atrans)(id ?*plan_number* )(number 1 )(actions goto ?place ?zone-place)) )
-    ;(assert (plan (name ptrans-attend-atrans)(id ?*plan_number* )(number 2 )(actions find-object ?obj)) )
-    ;(assert (plan (name ptrans-attend-atrans)(id ?*plan_number* )(number 3 )(actions grab ?obj )) )
-    ;(assert (plan (name ptrans-attend-atrans)(id ?*plan_number* )(number 4 )(actions find-object ?human)) )
-    ;(assert (plan (name ptrans-attend-atrans)(id ?*plan_number* )(number 5 )(actions go ?human )) )
-    ;(assert (plan (name ptrans-attend-atrans)(id ?*plan_number* )(number 6 )(actions drop ?obj )) )
-    ;(assert (attempt (name ptrans-attend-atrans)(id ?*plan_number* )(move ?obj)(room ?room-human)(zone ?zone-human)(on ?human)(number 6 )))
-    ;(assert (finish-planner ptrans-attend-atrans ?*plan_number* ?*plan_number_new*))
+    ;(assert (attempt (name ptrans-attend-atrans)(id ?*plan_number* )(move ?obj)(room ?room-human)(zone ?zone-human)(on ?human)(number 0 )))
     
     (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-object " " ?zone-object"))" crlf)
     (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
-    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 3)(actions goto " ?place " " ?zone-place"))" crlf)
+    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 3)(actions goto " ?room-place " " ?zone-place"))" crlf)
     (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 4)(actions find-human " ?human "))" crlf)
     (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 5)(actions deliver-object " ?human "))" crlf)
 )
@@ -292,51 +241,46 @@
     (retract ?f)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
-    ;(assert (plan (name state)(id ?*plan_number* )(number 1 )(actions ask human recipient)) )
-    ;(assert (attempt (name state)(id ?*plan_number* )(state recipient)(human unknown)(number 1 )))
-    ;(assert (finish-planner state ?*plan_number* ?*plan_number_new*))
+    ;(assert (attempt (name state)(id ?*plan_number* )(state recipient)(human unknown)(number 0 )))
     
     (printout t "(plan (name state)(id " ?*plan_number* ")(number 1)(actions ask human recipient))" crlf)
 )
 
-
-(defrule ptrans-object-unknown-ROS
-    ?f  <- (num-sentences 1)
-    ?f1 <- (ptrans (actor ?actor)(obj ?obj)(to ?place))
-    (item (type Robot) (name ?actor))
-    (item (type Objects)(name ?obj)(room nil)(upper nothing))
-    =>
-    ; it asks where is objects
-    (retract ?f)
-    (bind ?*plan_number* (+ 1 ?*plan_number*))
-    (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
-    ;(assert (plan (name state)(id ?*plan_number* )(number 1 )(actions ask ?obj room)) )
-    ;(assert (attempt (name state)(id ?*plan_number* ) (state ?obj)(room unknown)(zone any)(number 1 )))
-    ;(assert (finish-planner state ?*plan_number* ?*plan_number_new*))
-    
-    (printout t "(plan (name state)(id " ?*plan_number* ")(number 1)(actions ask room " ?obj "))" crlf)
-)
-
-
-(defrule state-recipient-ROS
+(defrule state-atrans-recipient-ROS
     (declare (salience 300))
     (num-sentences 1)
     ?f1 <- (atrans (actor ?actor)(to nil))
     ?f2 <- (state (attribute recipient)(value ?human))
     =>
     (retract ?f2)
-    ; it modifies the object position
+    ; it modifies the atrans recipient
     (modify ?f1 (to ?human))
 )
 
 
-(defrule state-location-ROS
+(defrule exec-atrans-no-object-location-ROS
+    ?f  <- (num-sentences 1)
+    ?f1 <- (atrans (actor ?actor)(obj ?obj)(to ?place))
+    (item (type Robot) (name ?actor))
+    (item (type Objects)(name ?obj)(zone nil))
+    =>
+    ; it asks where is the object
+    (retract ?f)
+    (bind ?*plan_number* (+ 1 ?*plan_number*))
+    (bind ?*plan_number_new* (+ 1 ?*plan_number_new*))
+    ;(assert (attempt (name state)(id ?*plan_number* ) (state ?obj)(room unknown)(zone any)(number 0 )))
+    
+    (printout t "(plan (name state)(id " ?*plan_number* ")(number 1)(actions ask object location " ?obj "))" crlf)
+)
+
+(defrule state-object-location-ROS
     (declare (salience 300))
     ?f  <- (num-sentences 1)
     ?f2 <-(state (attribute location)(obj ?object)(value ?place))
     ?f1 <- (item (type Objects)(name ?object))
+    (room (name ?place)(room ?room-place)(zone ?zone-place))
     =>
     (retract ?f2)
-    ; it modifies the object position
-    (modify ?f1 (room ?place))
+    ; it modifies the object location
+    (modify ?f1 (room ?room-place)(zone ?zone-place))
 )

@@ -1,3 +1,4 @@
+#include <math.h>
 #include <vector>
 #include <string>
 #include <iostream>
@@ -45,8 +46,7 @@ class HumanDetector{
   private:
     ros::NodeHandle nh;
     ros::Publisher pub;
-    ros::Subscriber sub;
- 
+    ros::Subscriber sub; 
   public:
     HumanDetector();
     void pclCallback(const sensor_msgs::PointCloud2ConstPtr& pcl_topic);
@@ -77,7 +77,7 @@ void HumanDetector::pclCallback(const sensor_msgs::PointCloud2ConstPtr& pcl_topi
   ptrack->track(poses);
 
   vision_msgs::HumanCoordinatesArray hca;
-  hca.header.frame_id = "/head_rgbd_sensor_rgb_frame";
+  hca.header.frame_id = "head_rgbd_sensor_rgb_frame";
   hca.header.stamp = ros::Time::now();
   hca.number_of_people = poses.size(); //how many people
 
@@ -93,11 +93,27 @@ void HumanDetector::pclCallback(const sensor_msgs::PointCloud2ConstPtr& pcl_topi
       //how to access
       //std::cout << kpt_names[i] << std::endl;
       //std::cout << poses[i].confidence << std::endl; //TODO
-      //std::cout << poses[i].track_id << std::endl; //orientaion?
+      //std::cout << poses[i].track_id <<std::endl; //orientaion?
       //std::cout << poses[i].bbox.x << std::endl;
       //std::cout << poses[i].keypoints << std::endl;
       //poses.size() //how many people
-     
+	  
+  
+      //### calcurate central position of hip 
+      //8 -> r_hip 11-> l_hip  18 -> c_hip
+      
+//      int centroid_x = (poses[people].keypoints[8].x + poses[people].keypoints[11].x) / 2;
+//      int centroid_y = (poses[people].keypoints[8].y + poses[people].keypoints[11].y) / 2;
+//     
+//      int pix_x = poses[people].keypoints[i].x;
+//      int pix_y = poses[people].keypoints[i].y;
+//
+//      if (centroid_x != -1 || centroid_y != -1){
+//        poses[people].keypoints[18].x = centroid_x;
+//        poses[people].keypoints[18].y = centroid_y;
+//      }
+//
+//
       int pix_x = poses[people].keypoints[i].x;
       int pix_y = poses[people].keypoints[i].y;
 
@@ -110,11 +126,10 @@ void HumanDetector::pclCallback(const sensor_msgs::PointCloud2ConstPtr& pcl_topi
 
 	  kp.keypoint_coordinates.position.x = p.x;
           kp.keypoint_coordinates.position.y = p.y;
-          kp.keypoint_coordinates.position.z = p.z;
-
+          kp.keypoint_coordinates.position.z = p.z; 
 	  kp.confidence = poses[people].confidence;
 	  hc.keypoints_array.push_back(kp);
-        }
+	}
       }
     }
     hca.coordinates_array.push_back(hc);
