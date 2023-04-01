@@ -30,7 +30,7 @@
 #include "vision_msgs/HumanPoseEstimatorResult.h"
 
 //static const std::string pcl_topic = "/hsrb/head_rgbd_sensor/depth_registered/rectified_points";
-static const std::string pcl_topic = "/camera/depth_registered/points";
+static const std::string pcl_topic = "/hardware/realsense/points";
 
 const std::vector<std::string> kpt_names{"nose", "neck",
 		"r_sho", "r_elb", "r_wri", "l_sho", "l_elb", "l_wri",
@@ -68,7 +68,7 @@ bool srvCallback(vision_msgs::HumanPoseEstimatorResult::Request &req,vision_msgs
   ptrack->track(poses);
 
   vision_msgs::HumanCoordinatesArray hca;
-  hca.header.frame_id = "/head_rgbd_sensor_rgb_frame";
+  hca.header.frame_id = cloud->header.frame_id;
   hca.header.stamp = ros::Time::now();
 
 
@@ -112,7 +112,7 @@ bool srvCallback(vision_msgs::HumanPoseEstimatorResult::Request &req,vision_msgs
   res.coordinates_array = hca;
   frame++;
   cv::imshow("HumanPoseEstimator",image);
-  cv::waitKey(0); // debug -> 0 , non-debug -> comment out
+  cv::waitKey(10); // debug -> 0 , non-debug -> comment out
   return true;
 }
   
@@ -129,6 +129,11 @@ int main(int argc,char **argv){
   ros::init (argc, argv,"PoseEstiomator");
   ros::NodeHandle nh;
   ros::ServiceServer service = nh.advertiseService("pose_estimator_srv", srvCallback);
-  ros::spin();
+  ros::Rate loop(10);
+  while(ros::ok() && cv::waitKey(10) != 27)
+  {
+      ros::spinOnce();
+      loop.sleep();
+  }
   return 0;
 }
