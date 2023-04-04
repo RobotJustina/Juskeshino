@@ -173,23 +173,22 @@
         (type SYMBOL)
         (default nil)
     )
-    (field aux-verb
-        (type SYMBOL)
-        (default nil)
-    )
-    (field verb
-        (type SYMBOL)
-        (default nil)
-    )
-    (field human
-        (type SYMBOL)
-        (default nil)
-    )
-    (multifield answer
-        (type SYMBOL)
-        (default nil)
-    )
 )
 
 
-;(PROPEL((ACTOR Robot)(OBJ ?obj)))
+;(PROPEL((ACTOR Robot)(OBJ ?obj)(ACTION ?action)))
+(deftemplate propel
+    (field actor
+        (type SYMBOL)
+        (default nil)
+    )
+    (field obj
+        (type SYMBOL)
+        (default nil)
+    )
+    (field action
+        (type SYMBOL)
+        (allowed-symbols open close nil)
+        (default nil)
+    )
+)

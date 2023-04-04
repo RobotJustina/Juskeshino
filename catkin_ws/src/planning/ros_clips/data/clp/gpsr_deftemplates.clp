@@ -128,6 +128,38 @@
 )
 
 
+(deftemplate memory
+	(field type
+		(type SYMBOL)
+		(default Memory)
+	)
+	(field name
+		(type SYMBOL)
+		(default nil)
+	)
+	(multifield msg
+		(type SYMBOL)
+		(default nil)
+	)
+	(field source
+		(type SYMBOL)
+		(default nil)
+	)
+	(field target 
+		(type SYMBOL)
+		(default nil)
+	)
+	(field status
+		(type SYMBOL)
+		(default nil)
+	)
+	(field num
+		(type NUMBER)
+		(default nil)
+	)
+)
+
+
 (deftemplate state
 	(field type
 		(type SYMBOL)
