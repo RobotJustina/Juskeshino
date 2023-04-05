@@ -55,7 +55,7 @@
 ;      Question rules
 
 ;;;{"where is", "who has"}
-;;;(QTRANS((OBJ ?obj)(QUESTION ?word))) #where  #who
+;;;(QTRANS((OBJ ?obj)(QUESTION ?word))) #where
 (defrule qtrans-where-ROS
     ?f  <- (num-sentences 1)
     ?f1 <- (qtrans (obj ?target)(question where))
@@ -78,14 +78,6 @@
     )
 )
 
-
-   (switch ?student
-      (case (oneof ?student stu1 stu2 stu3)
-         then B-)
-      (case stu4
-         then A+)))
-
-
 (defrule qtrans-who-object-ROS
     ?f  <- (num-sentences 1)
     ?f1 <- (qtrans (obj ?obj)(question who))
@@ -105,9 +97,9 @@
 ;#######################################
 ;      General purpose rules
 
-
 ;;;;;;;;;;;;
 ; Single conceptual dependencies
+
 
 ;;;{"go", "navigate", "walk", "lead", "guide"} #to somewhere
 ;;;(PTRANS((ACTOR Robot)(OBJ Robot)(TO ?location)))
@@ -128,6 +120,9 @@
     
     (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-target " " ?zone-target "))" crlf)
 )
+
+
+
 
 
 ;;;{"find", "look"} #someone/at something
@@ -156,6 +151,9 @@
         )
     )
 )
+
+
+
 
 
 ;;;{"bring", "give", deliver"} #the object #to a person
@@ -193,6 +191,9 @@
 )
 
 
+
+
+
 ;;;{"take", "grasp"} 
 ;;;(GRAB((ACTOR Robot)(OBJ ?obj)))
 (defrule exec-grab-target-ROS
@@ -210,6 +211,9 @@
     (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-obj " " ?zone-obj"))" crlf)
     (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
 )
+
+
+
 
 
 ;;;{"deposit"} #something, somewhere
@@ -232,6 +236,9 @@
     (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 3)(actions goto " ?room-place " " ?zone-place"))" crlf)
     (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 4)(actions find-space))" crlf)
 )
+
+
+
 
 
 ;;;{"tell", "say"}
@@ -263,6 +270,9 @@
     (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
     (printout t "(plan (name speak)(id " ?*plan_number* ")(number 3)(actions say-string " ?text "))" crlf)
 )
+
+
+
 
 
 ;;;{"remind"}
@@ -301,6 +311,9 @@
 )
 
 
+
+
+
 ;;;{"open", "close"} #something
 ;;;(PROPEL((ACTOR Robot)(OBJ ?target)(ACTION ?action)))
 (defrule exec-propel-obj-ROS
@@ -320,13 +333,16 @@
 )
 
 
+
+
+
 ;;;;;;;;;;;;
 ; Consecutive conceptual dependencies
 
 ; Go to the studio, find mother, and give her a book
-; (ptrans (actor robot)(obj robot)(to studio))
-; (attend (actor robot)(obj mother)(from studio))
-; (atrans (actor robot)(obj book)(to mother))
+; (PTRANS (ACTOR robot)(OBJ robot)(TO ?place))
+; (ATTEND (ACTOR robot)(OBJ ?human))
+; (ATRANS (ACTOR robot)(OBJ ?obj)(TO ?human))
 (defrule exec-ptrans-attend-atrans-ROS
     ;(declare (salience 200))
     ?f  <- (num-sentences 3)
@@ -355,9 +371,11 @@
 
 
 
+
 ;;;;;;;;;;;;
 ; Incomplete conceptual dependencies
 
+;;;(ATRANS (ACTOR robot)(TO nil))
 (defrule exec-atrans-no-recipient-ROS
     ?f <- (num-sentences 1)
     (atrans (actor ?actor)(to nil))
@@ -383,6 +401,8 @@
 )
 
 
+;;;(ATRANS (ACTOR robot)(OBJ ?obj)(TO ?place))
+;;;(item (type Objects)(name ?obj)(zone nil))
 (defrule exec-atrans-no-object-location-ROS
     ?f  <- (num-sentences 1)
     ?f1 <- (atrans (actor ?actor)(obj ?obj)(to ?place))
