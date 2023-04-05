@@ -14,13 +14,12 @@ cv::Mat bgr_dest;
 cv::Mat pc_dest;
 bool cam_ready=false;
 // Variable that wait for goal_reached
-bool goal=true;
 //int votes[3][3]={};
 tf::TransformListener* tf_listener;
 ros::Publisher pub_votes;
 ros::Publisher pub_ready;
 int edo=1;
-
+int count=0;
 //Create message global message msg_head-->head goal
 std_msgs::Float64MultiArray msg_head;
 //Global array to save the last votes
@@ -29,9 +28,6 @@ std::vector<std::vector<int>> Last_votes = {
     {0, 0, 0},
     {0, 0, 0}
 };
-//msg_head.data.resize(2);
-//msg_head.data[0] = 0;
-//msg_head.data[1] = -1.5;
 
 std::vector<std::vector<int>> Pointcloud_to_Array(sensor_msgs::PointCloud2 msg) {
     std::vector<std::vector<int>> Array(3, std::vector<int>(3, 0));
@@ -91,7 +87,7 @@ std::vector<std::vector<int>> Pointcloud_to_Array(sensor_msgs::PointCloud2 msg) 
 
 void callback_pointcloud(sensor_msgs::PointCloud2 msg){
     if(cam_ready && (edo==1 || edo==2 || edo==3 || edo==4) ){
-        std::cout<<edo<<std::endl;
+        //std::cout<<edo<<std::endl;
         std::vector<std::vector<int>> votes = Pointcloud_to_Array(msg);
         //Last_votes=
         for(int i=0; i<=2; i++)
@@ -109,23 +105,19 @@ void callback_pointcloud(sensor_msgs::PointCloud2 msg){
         else
             edo+=1;
         cam_ready=false;
-    }
-    else if(edo==5){
-        std::cout<<"Publicar topicos"<<std::endl;
-        std_msgs::Int32MultiArray msg_votes;
-        msg_votes.data.resize(6);
-        msg_votes.data[0] = Last_votes[0][0];
-        msg_votes.data[1] = Last_votes[0][1];
-        msg_votes.data[2] = Last_votes[0][2];
-        msg_votes.data[3] = Last_votes[1][0];
-        msg_votes.data[4] = Last_votes[1][1];
-        msg_votes.data[5] = Last_votes[1][2];
-        pub_votes.publish(msg_votes);
-        edo=0;
-        Last_votes = { {0, 0, 0},{0, 0, 0},{0, 0, 0} };
-        actionlib_msgs::GoalStatus msg_ready;
-        msg_ready.status=3;
-        pub_ready.publish(msg_ready);
+        if(edo==5){
+            std::cout<<"Publicar topicos"<<std::endl;
+            std_msgs::Int32MultiArray msg_votes;
+            msg_votes.data.resize(6);
+            msg_votes.data[0] = Last_votes[0][0];
+            msg_votes.data[1] = Last_votes[0][1];
+            msg_votes.data[2] = Last_votes[0][2];
+            msg_votes.data[3] = Last_votes[1][0];
+            msg_votes.data[4] = Last_votes[1][1];
+            msg_votes.data[5] = Last_votes[1][2];
+            pub_votes.publish(msg_votes);
+            Last_votes = { {0, 0, 0},{0, 0, 0},{0, 0, 0} };
+        }
     }
 
 }
@@ -138,8 +130,12 @@ void callback_goal(actionlib_msgs::GoalStatus msg){
 void callback_head(std_msgs::Float64MultiArray msg){
     float tol=0.02;
     //msg_head is the goal, if the Error between the goal and the current pose is less than the tolerance info=1
-    if(msg.data[0]<msg_head.data[0]+tol && msg.data[0]>msg_head.data[0]-tol && msg.data[1]<msg_head.data[1]+tol && msg.data[1]>msg_head.data[1]-tol)
+    if (count ==6){
+        count=0;
         cam_ready=true;
+    }
+    else if(msg.data[0]<msg_head.data[0]+tol && msg.data[0]>msg_head.data[0]-tol && msg.data[1]<msg_head.data[1]+tol && msg.data[1]>msg_head.data[1]-tol && edo!=0)
+        count+=1;
 }
 
 int main(int argc, char** argv){
@@ -156,6 +152,7 @@ int main(int argc, char** argv){
 
     //std_msgs::Float64MultiArray msg_head;
     msg_head.data.resize(2);
+    actionlib_msgs::GoalStatus msg_ready;
     //msg_head.data[0] = 0;
     //msg_head.data[1] = -1.15;
     while(ros::ok()){
@@ -163,24 +160,33 @@ int main(int argc, char** argv){
         loop.sleep();
         switch(edo){
             case 1:
+                std::cout<<"Centro"<<std::endl;
                 msg_head.data[0] = 0;
                 msg_head.data[1] = -1.15;
                 pub.publish(msg_head);
             break;
             case 2:
-                msg_head.data[0] = -0.7;
+                std::cout<<"Derecha estado 2"<<std::endl;
+                msg_head.data[0] = -0.75;
                 msg_head.data[1] = -1.15;
                 pub.publish(msg_head);
             break;
             case 3:
-                msg_head.data[0] = 0.7;
+                std::cout<<"Izquierda"<<std::endl;
+                msg_head.data[0] = 0.75;
                 msg_head.data[1] = -1.15;
                 pub.publish(msg_head);
             break;
             case 4:
-                msg_head.data[0] = -0.7;
+                std::cout<<"Derecha estado 4"<<std::endl;
+                msg_head.data[0] = -0.75;
                 msg_head.data[1] = -1.15;
                 pub.publish(msg_head);
+            break;
+            case 5:
+                msg_ready.status=3;
+                pub_ready.publish(msg_ready);
+                edo=0;
             break;
             default: break;
         }
