@@ -61,7 +61,7 @@ def do_action(act):
 rospy.init_node("RL")
 #rospy.Subscriber("/hardware/scan", LaserScan, callback_laser_scan)
 rospy.Subscriber("/votes", Int32MultiArray , callback_votes)
-rospy.Subscriber("/simple_move/goal_reached", GoalStatus, callback_goal)
+rospy.Subscriber("/ready", GoalStatus, callback_goal)
 pub_lat = rospy.Publisher("/simple_move/goal_dist_lateral", Float32, queue_size=10)
 pub_fro = rospy.Publisher("/simple_move/goal_dist", Float32, queue_size=10)
 pub_stop = rospy.Publisher("/simple_move/stop", Empty, queue_size=10)
