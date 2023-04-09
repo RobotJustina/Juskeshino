@@ -11,13 +11,16 @@ from actionlib_msgs.msg import GoalStatus
 def callback_global_goal(msg):
     global goal_x
     global goal_y
-    global pub_off
+    #global pub_off
+    global msg_offset
+
     goal_x=msg.point.x
     goal_y=msg.point.y
     offset=set_offset()
-    msg_offset=Int32()
+    #msg_offset=Int32()
     msg_offset.data=int(offset)
-    pub_off.publish(msg_offset)
+
+    #pub_off.publish(msg_offset)
 
     #print("Calculating path from robot pose to " + str([msg.point.x, msg.point.y]))
     #[robot_x, robot_y, robot_a] = get_robot_pose(listener)
@@ -57,32 +60,37 @@ def set_offset():
         offset=96
     return offset
 
-def callback_goal(msg):
-    global pub_off
-    if(msg.status==3):
-        offset=set_offset()
-        msg_offset=Int32()
-        msg_offset.data=int(offset)
-        pub_off.publish(msg_offset)
+#def callback_goal(msg):
+ #   global pub_off
+  #  if(msg.status==3):
+   #     offset=set_offset()
+    #    msg_offset=Int32()
+     #   msg_offset.data=int(offset)
+      #  pub_off.publish(msg_offset)
 
 def main():
     global listener
     global goal_x
     global goal_y
-    global pub_off
+    global msg_offset
+    msg_offset=Int32()
+    #global pub_off
     goal_y=0
     goal_x=0
     rospy.init_node("get_direction")
     rospy.Subscriber('/clicked_point', PointStamped, callback_global_goal)
-    rospy.Subscriber("/simple_move/goal_reached", GoalStatus, callback_goal);
+    #rospy.Subscriber("/simple_move/goal_reached", GoalStatus, callback_goal);
     pub_off = rospy.Publisher("/offset", Int32, queue_size=10)
     listener = tf.TransformListener()
-    loop = rospy.Rate(0.1)
+    loop = rospy.Rate(10)
     #rospy.spin()
     while( not rospy.is_shutdown()):
         #set_offset()
         #print(str(robot_x) +" "+ str(robot_y)+" "+str(robot_a)+" "+str(ang))
         #print(ang)
+        offset=set_offset()
+        msg_offset.data=int(offset)
+        pub_off.publish(msg_offset)
         loop.sleep()
 
 if __name__ == '__main__':
