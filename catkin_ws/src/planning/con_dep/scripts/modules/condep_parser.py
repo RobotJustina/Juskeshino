@@ -393,18 +393,18 @@ def CondepParser(text):
 
                     if pos_list1[w-1] == "PRON" or pos_list1[w-1] == "PROPN":
                         goal = text_list_sen[w-1]
-                        source = "robots"
+                        source = "robot"
                     
                     else:
-                        goal = "robots"
-                        source = "humans"
+                        goal = "robot"
+                        source = "nil"
                     
                     if w != 1000:
                         sent2 = sen
                         for wd in range(ind2):
                             sent2 = sent2.replace((text_list_sen[wd])+" ", "")
                     
-                    sent2 = sent.strip()
+                    sent2 = sent2.strip()
                     dependencies_list.append(prim+'((ACTOR Robot)(MSG '+sent2+')(FROM '+source+')(TO '+goal+'))')
                     #print(prim+'((ACTOR Robot)(MSG '+sent2+')(FROM '+source+')(TO '+goal+'))')
             

@@ -155,7 +155,7 @@
 	)
 	(field num
 		(type NUMBER)
-		(default nil)
+		(default 1)
 	)
 )
 
