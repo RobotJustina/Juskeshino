@@ -6,18 +6,31 @@
 #include "opencv2/opencv.hpp"
 #include "std_msgs/Float64MultiArray.h"
 #include "std_msgs/Int32MultiArray.h"
+#include "actionlib_msgs/GoalStatus.h"
 
 //sensor_msgs::PointCloud2::Ptr point_cloud_ptr2;
 sensor_msgs::PointCloud2 pc_msg;
 cv::Mat bgr_dest;
 cv::Mat pc_dest;
-int info=0;
+bool cam_ready=false;
+// Variable that wait for goal_reached
 //int votes[3][3]={};
 tf::TransformListener* tf_listener;
 ros::Publisher pub_votes;
+ros::Publisher pub_ready;
+int edo=1;
+int count=0;
+//Create message global message msg_head-->head goal
+std_msgs::Float64MultiArray msg_head;
+//Global array to save the last votes
+std::vector<std::vector<int>> Last_votes = {
+    {0, 0, 0},
+    {0, 0, 0},
+    {0, 0, 0}
+};
 
-void callback_pointcloud(sensor_msgs::PointCloud2 msg){
-    int votes[3][3]={};
+std::vector<std::vector<int>> Pointcloud_to_Array(sensor_msgs::PointCloud2 msg) {
+    std::vector<std::vector<int>> Array(3, std::vector<int>(3, 0));
     float xmin=-0.549;
     float ymin=-1.199;
     float d=0.8;
@@ -56,34 +69,73 @@ void callback_pointcloud(sensor_msgs::PointCloud2 msg){
             int c= (pc_dest.at<cv::Vec3f>(j, i)[1]-ymin)/d;
             float h= pc_dest.at<cv::Vec3f>(j, i)[2];
             if(r<=2 && r>=0 && c<=2 && c>=0 && h>0.2)
-                votes[r][int(2-c)]+=1;
+                //votes[r][int(2-c)]+=1;
+                Array[r][int(2-c)]+=1;
 
         }
-    //for(size_t i=0; i < bgr_dest.cols; i++)
-        //for(size_t j=0; j < bgr_dest.rows; j++){
-            //int r= (pc_dest.at<cv::Vec3f>(j, i)[0]-xmin)/d;
-            //int c= (pc_dest.at<cv::Vec3f>(j, i)[1]-ymin)/d;
-            //float h= pc_dest.at<cv::Vec3f>(j, i)[2];
-            //if(r<=2 && r>=0 && c<=2 && c>=0 && h>0.2)
-                //votes[r][int(2-c)]+=1;
-    //}
-    info=1;
     for(int i=0; i<=2; i++)
         for(int j=0; j<=2; j++){
-            if(votes[i][j]>=10)
-                votes[i][j]=1;
+            if(Array[i][j]>=10)
+                Array[i][j]=1;
             else
-                votes[i][j]=0;
+                Array[i][j]=0;
     }
-    std_msgs::Int32MultiArray msg_votes;
-    msg_votes.data.resize(6);
-    msg_votes.data[0] = votes[0][0];
-    msg_votes.data[1] = votes[0][1];
-    msg_votes.data[2] = votes[0][2];
-    msg_votes.data[3] = votes[1][0];
-    msg_votes.data[4] = votes[1][1];
-    msg_votes.data[5] = votes[1][2];
-    pub_votes.publish(msg_votes);
+    //std::cout << Array[0][0]<<""<< Array[0][1]<<""<< Array[0][0] << std::endl;
+    return Array;
+}
+
+
+void callback_pointcloud(sensor_msgs::PointCloud2 msg){
+    if(cam_ready && (edo==1 || edo==2 || edo==3 || edo==4) ){
+        //std::cout<<edo<<std::endl;
+        std::vector<std::vector<int>> votes = Pointcloud_to_Array(msg);
+        //Last_votes=
+        for(int i=0; i<=2; i++)
+            for(int j=0; j<=2; j++)
+                if(Last_votes[i][j]==1 || votes[i][j]==1)
+                    Last_votes[i][j]=1;
+        if(Last_votes[0][0]==0 && edo==1 && Last_votes[0][2]==0)
+            edo=2;
+        else if(Last_votes[0][2]==0 && edo==1)
+            edo=4;
+        else if(Last_votes[0][0]==0 && edo==1)
+            edo=3;
+        else if( (Last_votes[0][0]==1 && edo==1 && Last_votes[0][2]==1) || edo==3)
+            edo=5;
+        else
+            edo+=1;
+        cam_ready=false;
+        if(edo==5){
+            std::cout<<"Publicar topicos"<<std::endl;
+            std_msgs::Int32MultiArray msg_votes;
+            msg_votes.data.resize(6);
+            msg_votes.data[0] = Last_votes[0][0];
+            msg_votes.data[1] = Last_votes[0][1];
+            msg_votes.data[2] = Last_votes[0][2];
+            msg_votes.data[3] = Last_votes[1][0];
+            msg_votes.data[4] = Last_votes[1][1];
+            msg_votes.data[5] = Last_votes[1][2];
+            pub_votes.publish(msg_votes);
+            Last_votes = { {0, 0, 0},{0, 0, 0},{0, 0, 0} };
+        }
+    }
+
+}
+
+void callback_goal(actionlib_msgs::GoalStatus msg){
+    if(msg.status==3)
+        edo=1;
+}
+
+void callback_head(std_msgs::Float64MultiArray msg){
+    float tol=0.02;
+    //msg_head is the goal, if the Error between the goal and the current pose is less than the tolerance info=1
+    if (count ==6){
+        count=0;
+        cam_ready=true;
+    }
+    else if(msg.data[0]<msg_head.data[0]+tol && msg.data[0]>msg_head.data[0]-tol && msg.data[1]<msg_head.data[1]+tol && msg.data[1]>msg_head.data[1]-tol && edo!=0)
+        count+=1;
 }
 
 int main(int argc, char** argv){
@@ -91,20 +143,52 @@ int main(int argc, char** argv){
     ros::NodeHandle n;
     tf_listener = new tf::TransformListener();
     ros::Subscriber sub = n.subscribe("/hardware/realsense/points", 10, callback_pointcloud);
+    ros::Subscriber sub_pose = n.subscribe("/hardware/head/current_pose", 10, callback_head);
+    ros::Subscriber sub_goal = n.subscribe("/simple_move/goal_reached", 10, callback_goal);
     ros::Publisher pub =  n.advertise<std_msgs::Float64MultiArray>("/hardware/head/goal_pose", 10);
-    pub_votes=n.advertise<std_msgs::Int32MultiArray>("/votes", 10);
+    pub_ready = n.advertise<actionlib_msgs::GoalStatus>("/ready", 10);
+    pub_votes = n.advertise<std_msgs::Int32MultiArray>("/votes", 10);
     ros::Rate loop(20);
-    std_msgs::Float64MultiArray msg_head;
+
+    //std_msgs::Float64MultiArray msg_head;
     msg_head.data.resize(2);
-    msg_head.data[0] = 0;
-    msg_head.data[1] = -1.5;
-    pub.publish(msg_head);
+    actionlib_msgs::GoalStatus msg_ready;
+    //msg_head.data[0] = 0;
+    //msg_head.data[1] = -1.15;
     while(ros::ok()){
         ros::spinOnce();
         loop.sleep();
-        if(info==0){
-            std::cout<<"Moviendo cámara"<<std::endl;
-            pub.publish(msg_head);
+        switch(edo){
+            case 1:
+                std::cout<<"Centro"<<std::endl;
+                msg_head.data[0] = 0;
+                msg_head.data[1] = -1.15;
+                pub.publish(msg_head);
+            break;
+            case 2:
+                std::cout<<"Derecha estado 2"<<std::endl;
+                msg_head.data[0] = -0.75;
+                msg_head.data[1] = -1.15;
+                pub.publish(msg_head);
+            break;
+            case 3:
+                std::cout<<"Izquierda"<<std::endl;
+                msg_head.data[0] = 0.75;
+                msg_head.data[1] = -1.15;
+                pub.publish(msg_head);
+            break;
+            case 4:
+                std::cout<<"Derecha estado 4"<<std::endl;
+                msg_head.data[0] = -0.75;
+                msg_head.data[1] = -1.15;
+                pub.publish(msg_head);
+            break;
+            case 5:
+                msg_ready.status=3;
+                pub_ready.publish(msg_ready);
+                edo=0;
+            break;
+            default: break;
         }
             //continue;
         //cv::imshow("Visualizar",pc_dest);

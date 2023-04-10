@@ -282,7 +282,7 @@ def CondepParser(text):
                         idx4 = idx3-len_noun
                         #print(text_list_sen[idx4])
                         
-                        if text_list_sen[idx4] in ["on", "at", "over", "in", "to"]:
+                        if text_list_sen[idx4] in ["on", "at", "over", "in", "to", "into"]:
                             place = serc_noun
                             pron_list_sen.remove(serc_noun)
                             #print("place: ", place)
@@ -343,8 +343,8 @@ def CondepParser(text):
                     #print(len(text_list_sen))
                     if verb_list_sen[-1] == "tell" and len(text_list_sen)==1: 
                         sent = "nil"
-                        dependencies_list.append(prim+'((OBJ nil)(TO nil))')
-                        #print(prim+'((OBJ nil)(TO nil))')
+                        dependencies_list.append(prim+'((MSG nil)(TO nil))')
+                        #print(prim+'((MSG nil)(TO nil))')
                     elif verb_list_sen[-1] == "tell" and len(text_list_sen)>1: 
                         #print(pos_list_sen[1])
                         #print(text_list_sen[1])
@@ -352,36 +352,39 @@ def CondepParser(text):
                             person = text_list_sen[1]
                             sent = sen.replace((text_list_sen[0])+" ", "")
                             sent = sent.replace((text_list_sen[1])+" ", "")
+                            sent = sent.strip()
                             #print(len(sent))
                             #print(sent)
                             if len(sent)!=0:
-	                            dependencies_list.append(prim+'((OBJ '+sent+')(TO '+person+'))')
-	                            #print(prim+'((OBJ '+sent+')(TO '+person+'))')
+                                dependencies_list.append(prim+'((MSG '+sent+')(TO '+person+'))')
+                                #print(prim+'((MSG '+sent+')(TO '+person+'))')
                             else:
-	                            dependencies_list.append(prim+'((OBJ nil)(TO '+person+'))')
-	                            #print(prim+'((OBJ nil)(TO '+person+'))')
+                                dependencies_list.append(prim+'((MSG nil)(TO '+person+'))')
+                                #print(prim+'((MSG nil)(TO '+person+'))')
                         else:
                             sent = sen.replace(text_list_sen[0] , "")
-                            dependencies_list.append(prim+'((OBJ '+sent+')(TO nil))')
-                            #print(prim+'((OBJ '+sent+')(TO nil))')
+                            sent = sent.strip()
+                            dependencies_list.append(prim+'((MSG '+sent+')(TO nil))')
+                            #print(prim+'((MSG '+sent+')(TO nil))')
 
                     elif verb_list_sen[-1] == "say" and len(text_list_sen)<=1:
                         #say [something]
                         sent = "nil"
-                        dependencies_list.append(prim+'((OBJ '+sent+'))')
-                        #print(prim+'((OBJ '+sent+'))')
+                        dependencies_list.append(prim+'((MSG '+sent+'))')
+                        #print(prim+'((MSG '+sent+'))')
                     else:
                         sent = sen.replace(text_list_sen[0] , "")
-                        dependencies_list.append(prim+'((OBJ '+sent+'))')
-                        #print(prim+'((OBJ '+sent+'))')		    
+                        sent = sent.strip()
+                        dependencies_list.append(prim+'((MSG '+sent+'))')
+                        #print(prim+'((MSG '+sent+'))')		    
 			    
-			    #==============================MTRANS=======================================
+                #==============================MTRANS=======================================
                 elif prim == "MTRANS":
-                    #(MTRANS (ACTOR Robot)(OBJ sentence)(FROM source)(TO goal))
+                    #(MTRANS (ACTOR Robot)(MSG sentence)(FROM source)(TO goal))
                     #"Robot, please remind to call John"
-                    #(mtrans (actor robot)(obj call John)(from human)(to robot's memory))
+                    #(mtrans (actor robot)(msg call John)(from human)(to robot's memory))
                     #"Robot, please remind me to call John"
-                    #(mtrans (actor robot)(obj call John)(from robots memory)(to humans memory))
+                    #(mtrans (actor robot)(msg call John)(from robots memory)(to humans memory))
                     ind = 1000
                     for w in range(len(text_list_sen)):
                         if text_list_sen[w] == "to":
@@ -390,19 +393,20 @@ def CondepParser(text):
 
                     if pos_list1[w-1] == "PRON" or pos_list1[w-1] == "PROPN":
                         goal = text_list_sen[w-1]
-                        source = "robots"
+                        source = "robot"
                     
                     else:
-                        goal = "robots"
-                        source = "humans"
+                        goal = "robot"
+                        source = "nil"
                     
                     if w != 1000:
                         sent2 = sen
                         for wd in range(ind2):
                             sent2 = sent2.replace((text_list_sen[wd])+" ", "")
-
-                    dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+sent2+')(from '+source+')(to '+goal+'))')
-                    #print(prim+'((ACTOR Robot)(OBJ '+sent2+')(from '+source+')(to '+goal+'))')
+                    
+                    sent2 = sent2.strip()
+                    dependencies_list.append(prim+'((ACTOR Robot)(MSG '+sent2+')(FROM '+source+')(TO '+goal+'))')
+                    #print(prim+'((ACTOR Robot)(MSG '+sent2+')(FROM '+source+')(TO '+goal+'))')
             
             print("====================================================================")
         
