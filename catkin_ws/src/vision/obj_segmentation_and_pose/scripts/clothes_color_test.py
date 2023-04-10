@@ -117,15 +117,12 @@ def clothes_color(msg):
     keypoint3 = msg.coordinates_array.coordinates_array[0].keypoints_array[3].keypoint_coordinates.position  
     # rodillas
     keypoint4 = Point() #l_knee
-    keypoint4 = msg.coordinates_array.coordinates_array[0].keypoints_array[12].keypoint_coordinates.position 
-    keypoint5 = Point() #r_knee
-    keypoint5 = msg.coordinates_array.coordinates_array[0].keypoints_array[9].keypoint_coordinates.position 
+    keypoint4 = msg.coordinates_array.coordinates_array[0].keypoints_array[12].keypoint_coordinates.position  
 
     point_ra     = point_actual2point_target(keypoint1, 'realsense_link' ,'base_link')
     point_la     = point_actual2point_target(keypoint2, 'realsense_link' ,'base_link')
     point_r_elb  = point_actual2point_target(keypoint3, 'realsense_link' ,'base_link')
     point_l_knee = point_actual2point_target(keypoint4, 'realsense_link' ,'base_link')
-    point_r_knee = point_actual2point_target(keypoint5, 'realsense_link' ,'base_link')
 
     # TORSO
     # obteniendo rangos a partir del servicio pose_estimator
@@ -140,7 +137,6 @@ def clothes_color(msg):
     z1_min = point_r_elb.z  
     z1_max = point_ra.z
 
-
     # PANTS 
     x2_min = point_l_knee.x 
     x2_max = point_l_knee.x + 0.09
@@ -151,25 +147,11 @@ def clothes_color(msg):
     z2_min = point_l_knee.z  
     z2_max = point_l_knee.z + 0.2
 
-    x_min = point_r_knee.x - 0.8
-    x_max = point_r_knee.x
-    # derecha = max,   izquierdo = min
-    y_min = point_r_knee.y - 0.4
-    y_max = point_r_knee.y + 0.04
-    # altura de rodilla + 0,1 m
-    z_min = point_r_knee.z  
-    z_max = point_r_knee.z + 0.2
-
-
-
     min_valor_torso = np.array([x1_min, y1_min, z1_min]) 
     max_valor_torso = np.array([x1_max, y1_max, z1_max])
 
     min_valor_leg_l = np.array([x2_min, y2_min, z2_min]) 
     max_valor_leg_l = np.array([x2_max, y2_max, z2_max])
-
-    min_valor_leg_r = np.array([x_min, y_min, z_min]) 
-    max_valor_leg_r = np.array([x_max, y_max, z_max])
 
     # rango de la matriz de coordenadas
     torso_mask = cv2.inRange(new_pc , min_valor_torso, max_valor_torso)
