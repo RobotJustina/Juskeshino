@@ -1,0 +1,38 @@
+<launch>
+  <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
+  <arg name="world" value="appartment_changed"/>
+  </include>
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina.rviz"/>
+  
+  <node name="justina_gui" pkg="justina_gui" type="justina_gui_node" output="screen">
+    <param name="la_predefined" value="$(find config_files)/justina/manipulation/la_predefined.yaml"/>
+    <param name="ra_predefined" value="$(find config_files)/justina/manipulation/ra_predefined.yaml"/>
+    <param name="hd_predefined" value="$(find config_files)/justina/manipulation/hd_predefined.yaml"/>
+    <remap from="/camera/depth_registered/points" to="/hardware/realsense/points"/>
+  </node>
+
+  <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/>
+  <include file="$(find surge_et_ambula)/launch/justina/navigation.launch">
+    <arg name="static_map_file"  value="$(find config_files)/maps/appartment.yaml"/>
+    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/appartment.yaml"/>
+    <arg name="initial_pose_x" value="3.25"/>
+    <arg name="initial_pose_y" value="6.30"/>
+    <arg name="initial_pose_a" value="-1.57"/>
+    <arg name="max_linear_speed" value="0.9"/>
+    <arg name="max_angular_speed" value="1.2"/>
+    <arg name="laser_scan_topic" value="/hardware/scan"/>
+    <arg name="point_cloud_topic" value="/hardware/realsense/points"/>
+    <arg name="use_lidar" value="True"/>
+    <arg name="use_sonars" value="False"/>
+    <arg name="use_point_cloud" value="True"/>
+    <arg name="cloud_downsampling" value="9"/>
+    <arg name="cloud_points_threshold" value="50"/>
+    <arg name="lidar_points_threshold" value="5"/>
+  </include>
+
+  <include file="$(find surge_et_ambula)/launch/justina/justina_manipulation.launch"/>
+  <node name="traj_tracking" pkg="trajectory_tracking" type="traj_tracking.py" output="screen"/>
+  
+  <include file="$(find surge_et_ambula)/launch/justina/speech.launch"/>
+</launch>
