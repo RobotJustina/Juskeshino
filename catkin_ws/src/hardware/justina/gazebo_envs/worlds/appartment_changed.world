@@ -224,7 +224,7 @@
     </include>
     <include>
       <static>1</static>
-      <pose>9 7.2 0 0 0 -3.1416</pose>
+      <pose>9.15 7.2 0 0 0 -3.1416</pose>
       <uri>model://wagon</uri>
       <name>wagon_1</name>
     </include>
@@ -242,13 +242,13 @@
     </include>
     <include>
       <static>1</static>
-      <pose>9.5 7.3 0 0 0 0</pose>
+      <pose>9.65 7.3 0 0 0 0</pose>
       <uri>model://office_desk</uri>
       <name>office_desk02</name>
     </include>
     <include>
       <static>1</static>
-      <pose>9.1 7.8 0 0 0 0</pose>
+      <pose>9.25 7.8 0 0 0 0</pose>
       <uri>model://kitchen_chair</uri>
       <name>chair01</name>
     </include>
@@ -260,7 +260,7 @@
     </include>
     <include>
       <static>1</static>
-      <pose>9.3 6.1 0 0 0 0</pose>
+      <pose>9.45 6.1 0 0 0 0</pose>
       <uri>model://kitchen_table</uri>
       <name>table01</name>
     </include>
