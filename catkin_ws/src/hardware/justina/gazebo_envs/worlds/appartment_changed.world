@@ -224,15 +224,51 @@
     </include>
     <include>
       <static>1</static>
-      <pose>4.6 6 0 0 0 0</pose>
+      <pose>9 7.2 0 0 0 -3.1416</pose>
+      <uri>model://wagon</uri>
+      <name>wagon_1</name>
+    </include>
+    <include>
+      <static>1</static>
+      <pose>8 6.8 0 0 0 0</pose>
       <uri>model://wagon</uri>
       <name>wagon_2</name>
     </include>
     <include>
-      <static>0</static>
-      <pose>4.5 1.38 0.69 0 0 0</pose>
-      <uri>model://nasal_inflammation_capsul</uri>
-      <name>nasal_cupsul</name>
+      <static>1</static>
+      <pose>7.5 8.5 0 0 0 -3.1416</pose>
+      <uri>model://office_desk</uri>
+      <name>office_desk01</name>
+    </include>
+    <include>
+      <static>1</static>
+      <pose>9.5 7.3 0 0 0 0</pose>
+      <uri>model://office_desk</uri>
+      <name>office_desk02</name>
+    </include>
+    <include>
+      <static>1</static>
+      <pose>9.1 7.8 0 0 0 0</pose>
+      <uri>model://kitchen_chair</uri>
+      <name>chair01</name>
+    </include>
+    <include>
+      <static>1</static>
+      <pose>7.9 8.0 0 0 0 -3.1416</pose>
+      <uri>model://kitchen_chair</uri>
+      <name>chair02</name>
+    </include>
+    <include>
+      <static>1</static>
+      <pose>9.3 6.1 0 0 0 0</pose>
+      <uri>model://kitchen_table</uri>
+      <name>table01</name>
+    </include>
+    <include>
+      <static>1</static>
+      <pose>7.7 6.1 0 0 0 0</pose>
+      <uri>model://kitchen_table</uri>
+      <name>table02</name>
     </include>
     <include>
       <static>1</static>
@@ -245,66 +281,6 @@
       <pose>1.56 3.56 0 0 0 -1.5708</pose>
       <uri>model://sofa-fix</uri>
       <name>sofa02</name>
-    </include>
-    <include>
-      <static>1</static>
-      <pose>1.56 2.58 0 0 0 1.5708</pose>
-      <uri>model://kitchen_lowtable</uri>
-      <name>kitchen_lowtable</name>
-    </include>
-    <include>
-      <static>1</static>
-      <pose>8.5 2.5 0 0 0 -1.5708</pose>
-      <uri>model://office_desk</uri>
-      <name>office_desk01</name>
-    </include>
-    <include>
-      <static>1</static>
-      <pose>7.2 2.5 0 0 0 -1.5708</pose>
-      <uri>model://office_desk</uri>
-      <name>office_desk02</name>
-    </include>
-    <include>
-      <static>1</static>
-      <pose>7.2 5.7 0 0 0 -1.5708</pose>
-      <uri>model://office_desk</uri>
-      <name>office_desk06</name>
-    </include>
-    <include>
-      <static>1</static>
-      <pose>6.0184 3.0000 0.0000 0 0 -1.5708</pose>
-      <uri>model://kitchen_chair</uri>
-      <name>chair00</name>
-    </include>
-    <include>
-      <static>1</static>
-      <pose>7.9 3.0 0 0 0 -1.5708</pose>
-      <uri>model://kitchen_chair</uri>
-      <name>chair01</name>
-    </include>
-    <include>
-      <static>1</static>
-      <pose>9.2 3.0 0 0 0 -1.5708</pose>
-      <uri>model://kitchen_chair</uri>
-      <name>chair02</name>
-    </include>
-    <include>
-      <static>1</static>
-      <pose>7.9 6.3 0 0 0 -1.5708</pose>
-      <uri>model://kitchen_chair</uri>
-      <name>chair05</name>
-    </include>
-    <include>
-      <static>0</static>
-      <pose>1.9 0.47 0 0 0 1.5708</pose>
-      <uri>model://openable_living_sideboard</uri>
-      <name>living_sideboard</name>
-    </include>
-    <include>
-      <static>0</static>
-      <pose>0.997 0.274 0.505 0 0 0</pose>
-      <uri>model://wallet</uri>
-      <name>wallet</name>
     </include>
     <include>
       <static>1</static>
@@ -331,62 +307,8 @@
       <name>high_shelf03</name>
     </include>
     <include>
-      <static>0</static>
-      <pose>4.5749 3.5577 1.1127 0 0 1</pose>
-      <uri>model://hsr_orange</uri>
-      <name>hsr_orange_02</name>
-    </include>
-    <include>
-      <static>0</static>
-      <pose>4.3370 12.9994 0.7714 0 0 1</pose>
-      <uri>model://hsr_pringles</uri>
-      <name>hsr_pringles_01</name>
-    </include>
-    <include>
-      <static>0</static>
-      <pose>4.6676 3.8933 1.1625 0 0 1.7557</pose>
-      <uri>model://hsr_pringles</uri>
-      <name>hsr_pringles_02</name>
-    </include>
-    <include>
-      <static>0</static>
-      <pose>7.47 5.8 0.85 0 0 1.7557</pose>
-      <uri>model://hsr_pringles</uri>
-      <name>hsr_pringles_03</name>
-    </include>
-    <include>
-      <static>0</static>
-      <pose>7.62 5.8 0.85 0 0 1.7557</pose>
-      <uri>model://apple</uri>
-      <name>apple_01</name>
-    </include>
-    <include>
-      <static>0</static>
-      <pose>7.77 5.8 0.85 0 0 1.7557</pose>
-      <uri>model://hsr_orange</uri>
-      <name>hsr_orange_03</name>
-    </include>
-    <include>
-      <static>0</static>
-      <pose>4.6797 13.0506 1.05 0 0 1</pose>
-      <uri>model://apple</uri>
-      <name>apple_02</name>
-    </include>
-    <include>
-      <static>0</static>
-      <pose>3.7459 12.9549 0.75 0.0185 0.2284 -1.0179</pose>
-      <uri>model://banana</uri>
-      <name>banana_01</name>
-    </include>
-    <include>
-      <static>0</static>
-      <pose>3.8116 13.0323 1.05 0.00 0.00 0.00</pose>
-      <uri>model://pear</uri>
-      <name>pear_01</name>
-    </include>
-    <include>
       <static>1</static>
-      <pose>8.9 5.0 0 0 0 0</pose>
+      <pose>9.2 5.0 0 0 0 0</pose>
       <uri>model://construction_cone</uri>
       <name>waypoint_01</name>
     </include>
@@ -401,6 +323,48 @@
       <pose>11.45 13.0 0 0 0 0</pose>
       <uri>model://construction_cone</uri>
       <name>startpoint_02</name>
+    </include>
+    <include>
+      <static>1</static>
+      <pose>1.56 2.58 0 0 0 1.5708</pose>
+      <uri>model://kitchen_lowtable</uri>
+      <name>kitchen_lowtable</name>
+    </include>
+    <include>
+      <static>1</static>
+      <pose>8.5 2.5 0 0 0 -1.5708</pose>
+      <uri>model://office_desk</uri>
+      <name>office_desk03</name>
+    </include>
+    <include>
+      <static>1</static>
+      <pose>7.2 2.5 0 0 0 -1.5708</pose>
+      <uri>model://office_desk</uri>
+      <name>office_desk04</name>
+    </include>
+    <include>
+      <static>1</static>
+      <pose>6.0184 3.0000 0.0000 0 0 -1.5708</pose>
+      <uri>model://kitchen_chair</uri>
+      <name>chair03</name>
+    </include>
+    <include>
+      <static>1</static>
+      <pose>7.9 3.0 0 0 0 -1.5708</pose>
+      <uri>model://kitchen_chair</uri>
+      <name>chair04</name>
+    </include>
+    <include>
+      <static>1</static>
+      <pose>9.2 3.0 0 0 0 -1.5708</pose>
+      <uri>model://kitchen_chair</uri>
+      <name>chair05</name>
+    </include>
+    <include>
+      <static>0</static>
+      <pose>1.9 0.47 0 0 0 1.5708</pose>
+      <uri>model://openable_living_sideboard</uri>
+      <name>living_sideboard</name>
     </include>
     <include>
       <static>1</static>

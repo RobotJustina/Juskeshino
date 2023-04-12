@@ -31,9 +31,9 @@ std::vector<std::vector<int>> Last_votes = {
 
 std::vector<std::vector<int>> Pointcloud_to_Array(sensor_msgs::PointCloud2 msg) {
     std::vector<std::vector<int>> Array(3, std::vector<int>(3, 0));
-    float xmin=-0.549;
-    float ymin=-1.199;
-    float d=0.8;
+    float xmin=-0.249;
+    float ymin=-0.749;
+    float d=0.5;
     pcl_ros::transformPointCloud("base_link", msg, pc_msg, *tf_listener);
     int offset_x = 0;
     int offset_y = 4;
@@ -167,19 +167,19 @@ int main(int argc, char** argv){
             break;
             case 2:
                 std::cout<<"Derecha estado 2"<<std::endl;
-                msg_head.data[0] = -0.75;
+                msg_head.data[0] = -0.9;
                 msg_head.data[1] = -1.15;
                 pub.publish(msg_head);
             break;
             case 3:
                 std::cout<<"Izquierda"<<std::endl;
-                msg_head.data[0] = 0.75;
+                msg_head.data[0] = 0.9;
                 msg_head.data[1] = -1.15;
                 pub.publish(msg_head);
             break;
             case 4:
                 std::cout<<"Derecha estado 4"<<std::endl;
-                msg_head.data[0] = -0.75;
+                msg_head.data[0] = -0.9;
                 msg_head.data[1] = -1.15;
                 pub.publish(msg_head);
             break;
