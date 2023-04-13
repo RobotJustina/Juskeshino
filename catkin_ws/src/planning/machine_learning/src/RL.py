@@ -24,7 +24,13 @@ def Last_pub():
 
 def callback_offset(msg):
     global offset
+    global wait
     offset=msg.data
+    if offset>=500:
+        offset=offset-500
+        wait=True
+    else:
+        wait=False
     return
 
 def callback_goal(msg):
@@ -229,13 +235,12 @@ def main():
     global epsilon
     global Q
     global next
-    global obs_aux
     global offset
+    global wait
+    wait=True
     offset=0
-    obs_aux=False
     edo=0
     next=False
-    #Q=Q_values()
     R=R_values()
     epsilon = 0.25
     total_episodes = 10000
@@ -264,7 +269,9 @@ def main():
         first_episode=0
     loop.sleep()
     loop.sleep()
-
+    while(wait and not(rospy.is_shutdown()) ):
+        pass
+    print("Siguiente")
     for x in range(first_episode, first_episode+total_episodes):
         if(rospy.is_shutdown()):
             break
@@ -276,7 +283,7 @@ def main():
         while steps<max_steps and not(rospy.is_shutdown()):
             #Se realiza la accion anterior y se escoge una nueva dependiendo del estado
             do_action(act_ant)
-            while(not(next) and not(rospy.is_shutdown())):
+            while( (wait or not(next)) and not(rospy.is_shutdown())):
                 pass
             act=choose_action(edo)
             next=False
