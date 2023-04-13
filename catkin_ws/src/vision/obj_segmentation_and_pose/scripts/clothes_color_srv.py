@@ -31,6 +31,8 @@ def point_actual2point_target(pointxyz, f_actual, f_target):
 
 
 def transformPointCloud2(pc):
+    sensor_frame = 'head_rgbd_sensor_gazebo_frame'
+    base_link = 'base_link'
     # tranformar la nube de puntos al sistema  "base_link'
     x_arr = pc['x']
     y_arr = pc['y']
@@ -43,7 +45,7 @@ def transformPointCloud2(pc):
             if np.isnan(x_arr[i,j]) or np.isnan(y_arr[i,j]) or np.isnan(z_arr[i,j]): 'print("punto nan")'
             else: 
                 p.x, p.y, p.z = x_arr[i,j], y_arr[i,j] , z_arr[i,j]
-                new_frame_p = point_actual2point_target(p, 'realsense_link','base_link')
+                new_frame_p = point_actual2point_target(p, sensor_frame, base_link)
                 x_arr[i,j], y_arr[i,j] , z_arr[i,j] = new_frame_p.x, new_frame_p.y, new_frame_p.z
 
     new_pc = cv2.merge((np.asarray(x_arr),np.asarray(y_arr),np.asarray(z_arr)))
@@ -118,7 +120,10 @@ def callback(req):
 
     pe_msg = HumanPoseEstimatorResultRequest()
     msg = pe_srv(pe_msg)
-    pc = rospy.wait_for_message("/hardware/realsense/points", PointCloud2)
+    # PARA JUSTINA
+    #pc = rospy.wait_for_message("/hardware/realsense/points", PointCloud2)
+    # PARA TAKESHI
+    pc = rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", PointCloud2)
     arr_pc = ros_numpy.point_cloud2. pointcloud2_to_array(pc)
 
     print(" Numero de personas detectadas: ",len(msg.coordinates_array.coordinates_array))
@@ -182,10 +187,14 @@ def callback(req):
     keypoint4 = Point() #l_knee
     keypoint4 = guy.keypoints_array[12].keypoint_coordinates.position  
 
-    point_ra     = point_actual2point_target(keypoint1, 'realsense_link' ,'base_link')
-    point_la     = point_actual2point_target(keypoint2, 'realsense_link' ,'base_link')
-    point_r_elb  = point_actual2point_target(keypoint3, 'realsense_link' ,'base_link')
-    point_l_knee = point_actual2point_target(keypoint4, 'realsense_link' ,'base_link')
+    base_link = 'base_link'
+    #sensor_frame = 'realsense_link'
+    sensor_frame = 'head_rgbd_sensor_gazebo_frame'
+
+    point_ra     = point_actual2point_target(keypoint1, sensor_frame ,base_link)
+    point_la     = point_actual2point_target(keypoint2, sensor_frame ,base_link)
+    point_r_elb  = point_actual2point_target(keypoint3, sensor_frame ,base_link)
+    point_l_knee = point_actual2point_target(keypoint4, sensor_frame ,base_link)
 
     # TORSO
     # obteniendo rangos a partir del servicio pose_estimator
