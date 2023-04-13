@@ -24,6 +24,7 @@ add_message_files(
   HumanCoordinatesArray.msg
   VisionObject.msg
   VisionObjects.msg
+  Person.msg
 )
 
 
@@ -36,6 +37,7 @@ add_service_files(
   RecognizeObjects.srv
   RecognizeObject.srv
   TrainObject.srv
+  FindPerson.srv
 )
 
 ## Generate actions in the 'action' folder
