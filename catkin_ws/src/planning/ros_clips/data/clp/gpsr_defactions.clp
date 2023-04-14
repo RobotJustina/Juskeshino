@@ -192,3 +192,16 @@
         (default nil)
     )
 )
+
+
+;(FOLLOW((ACTOR Robot)(OBJ ?obj)))
+(deftemplate follow
+    (field actor
+        (type SYMBOL)
+        (default nil)
+    )
+    (field obj
+        (type SYMBOL)
+        (default nil)
+    )
+)

@@ -101,9 +101,9 @@
 ; Single conceptual dependencies
 
 
-;;;{"go", "navigate", "walk", "lead", "guide"} #to somewhere
+;;;{"go", "navigate", "walk"} #to somewhere
 ;;;(PTRANS((ACTOR Robot)(OBJ Robot)(TO ?location)))
-(defrule exec-ptrans-target-ROS
+(defrule exec-ptrans-robot-target-ROS
     ?f   <- (num-sentences 1)
     ?f1  <- (ptrans (actor ?actor)(obj ?actor)(to ?target))
     (item (type Robot)(name ?actor))
@@ -119,6 +119,29 @@
     ;(assert (attempt (name ptrans)(id ?*plan_number*)(move robot)(room ?room-target)(zone ?zone-target)(on room)(number 0 )))
     
     (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-target " " ?zone-target "))" crlf)
+)
+
+;;;{"lead", "guide"} #to somewhere
+;;;(PTRANS((ACTOR Robot)(OBJ ?human)(TO ?location)))
+(defrule exec-ptrans-person-target-ROS
+    ?f   <- (num-sentences 1)
+    ?f1  <- (ptrans (actor ?actor)(obj ?actor)(to ?target))
+    (item (type Robot)(name ?actor))
+    (item (type Human)(name ?human)(room ?room-human)(zone ?zone-human))
+    
+    (or
+        (room (type ?type)(name ?target)(room ?room-target)(zone ?zone-target))
+        (item (type ?type)(name ?target)(room ?room-target&:(neq ?room-target nil))(zone ?zone-target&:(neq ?zone-target nil)))
+    )
+    =>
+    (retract ?f ?f1)
+    ; guides human to ?target
+    (bind ?*plan_number* (+ 1 ?*plan_number*))
+    ;(assert (attempt (name ptrans)(id ?*plan_number*)(guide ?human)(room ?room-target)(zone ?zone-target)(on room)(number 0 )))
+    
+    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 1)(actions find-human " ?human "))" crlf)
+	(printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 2)(actions say-string [I will take you to " ?zone-target ". Please, follow me.]))" crlf)
+    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 3)(actions goto " ?room-target " " ?zone-target "))" crlf)
 )
 
 
@@ -338,7 +361,7 @@
     (item (type Robot)(name ?actor))
     (room (type Room)(name ?target)(room ?room-target&:(neq ?room-target nil))(zone ?zone-target&:(neq ?zone-target nil)))
     =>
-    ; it says a ?text
+    ; it propels ?action to ?target
     (retract ?f ?f1)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     (bind ?*mem_number* (+ 1 ?*mem_number*))
@@ -346,6 +369,25 @@
     
     (printout t "(plan (name propel)(id " ?*plan_number* ")(number 1)(actions goto " ?room-target " " ?zone-target"))" crlf)
     (printout t "(plan (name propel)(id " ?*plan_number* ")(number 2)(actions propel " ?action " " ?target "))" crlf)
+)
+
+
+
+
+
+;;;(FOLLOW((ACTOR Robot)(obj ?human)))
+(defrule exec-follow-person-ROS
+    ?f  <- (num-sentences 1)
+    ?f1 <- (follow (actor ?robot)(obj ?human))
+    (item (type Robot)(name ?robot))
+    (item (type Human)(name ?human)(room ?room-human)(zone ?zone-human))
+    =>
+    ; it follows ?human
+    (retract ?f ?f1)
+    (bind ?*plan_number* (+ 1 ?*plan_number*))
+    ;(assert (attempt (name follow)(id ?*plan_number* )(follow ?human)))
+    
+    (printout t "(plan (name follow)(id " ?*plan_number* ")(number 1)(actions follow " ?human "))" crlf)
 )
 
 
