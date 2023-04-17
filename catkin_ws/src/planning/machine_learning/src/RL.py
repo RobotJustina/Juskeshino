@@ -245,7 +245,7 @@ def main():
     epsilon = 0.25
     total_episodes = 10000
     max_steps = 50
-    alpha = 0.85
+    alpha = 0.4 ##Learning rate
     gamma = 0.95
     steps=0
 
