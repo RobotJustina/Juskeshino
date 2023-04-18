@@ -30,7 +30,7 @@ CD_structures = { "go" : "PTRANS",
 "tell" : "SPEAK",
 "say" : "SPEAK",
 "remind" : "MTRANS", #<------- remind
-
+"follow" : "FTRANS",
     }
 
 def CondepParser(text):
@@ -136,6 +136,7 @@ def CondepParser(text):
                 pos_list_sen = [token.pos_ for token in doc1]
                 pron_list_sen = [chunk.text for chunk in doc1.noun_chunks]
                 pos_list_sen1 = [[t.pos_ for t in chunk]for chunk in doc1.noun_chunks]
+                verb_list_sen = [token.lemma_ for token in doc1 if token.pos_ == "VERB"]
                 
                 #========================================================================
                 #                          VERB OR QUESTION?                             
@@ -306,17 +307,18 @@ def CondepParser(text):
                 #==============================PROPEL=======================================
                 elif prim == "PROPEL":
                     #PROPEL -----> [an object]
+                    action = verb_list_sen[-1]
                     if len(pron_list_sen) == 0:
-                        dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil))')
-                        #print(prim+'((ACTOR Robot)(OBJ nil))')
+                        dependencies_list.append(prim+'((ACTION '+action+')(ACTOR Robot)(OBJ nil))')
+                        #print(prim+'((ACTION '+action+')((ACTOR Robot)(OBJ nil))')
                     else:
                         if pron_list_sen[-1] in ["a", "an", "the"]:
-                            dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil))')
-                            #print(prim+'((ACTOR Robot)(OBJ nil))')
+                            dependencies_list.append(prim+'((ACTION '+action+')((ACTOR Robot)(OBJ nil))')
+                            #print(prim+'((ACTION '+action+')((ACTOR Robot)(OBJ nil))')
                         else:
                             obj = pron_list_sen[-1]
-                            dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+obj+'))')
-                            #print(prim+'((ACTOR Robot)(OBJ '+obj+'))')
+                            dependencies_list.append(prim+'((ACTION '+action+')((ACTOR Robot)(OBJ '+obj+'))')
+                            #print(prim+'((ACTION '+action+')((ACTOR Robot)(OBJ '+obj+'))')
                 
                 #==============================QTRANS=======================================
                 elif prim == "QTRANS":
@@ -397,17 +399,28 @@ def CondepParser(text):
                     
                     else:
                         goal = "robot"
-                        source = "nil"
+                        source = "human"
                     
                     if w != 1000:
                         sent2 = sen
                         for wd in range(ind2):
                             sent2 = sent2.replace((text_list_sen[wd])+" ", "")
                     
-                    sent2 = sent2.strip()
+                    sent2 = sent.strip()
                     dependencies_list.append(prim+'((ACTOR Robot)(MSG '+sent2+')(FROM '+source+')(TO '+goal+'))')
                     #print(prim+'((ACTOR Robot)(MSG '+sent2+')(FROM '+source+')(TO '+goal+'))')
-            
+
+                #============================FTRANS==FOLLOW=================================
+                elif prim == "FTRANS":
+                    #print(text_list_sen)
+                    #print(pron_list_sen)
+                    
+                    if len(pron_list_sen) != 0 and pron_list_sen[-1] not in ["an", "a", "the"]:
+                        obj = pron_list_sen[-1]
+                        dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+ obj+'))')
+                    else:
+                        dependencies_list.append(prim+'((ACTOR Robot)(OBJ nil))')
+                
             print("====================================================================")
         
         for i in range(len(dependencies_list)):

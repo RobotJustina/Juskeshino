@@ -194,8 +194,8 @@
 )
 
 
-;(FOLLOW((ACTOR Robot)(OBJ ?obj)))
-(deftemplate follow
+;(FTRANS((ACTOR Robot)(OBJ ?obj)))
+(deftemplate ftrans
     (field actor
         (type SYMBOL)
         (default nil)
@@ -205,3 +205,4 @@
         (default nil)
     )
 )
+

@@ -125,7 +125,7 @@
 ;;;(PTRANS((ACTOR Robot)(OBJ ?human)(TO ?location)))
 (defrule exec-ptrans-person-target-ROS
     ?f   <- (num-sentences 1)
-    ?f1  <- (ptrans (actor ?actor)(obj ?actor)(to ?target))
+    ?f1  <- (ptrans (actor ?actor)(obj ?human)(to ?target))
     (item (type Robot)(name ?actor))
     (item (type Human)(name ?human)(room ?room-human)(zone ?zone-human))
     
@@ -140,8 +140,7 @@
     ;(assert (attempt (name ptrans)(id ?*plan_number*)(guide ?human)(room ?room-target)(zone ?zone-target)(on room)(number 0 )))
     
     (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 1)(actions find-human " ?human "))" crlf)
-	(printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 2)(actions say-string [I will take you to " ?zone-target ". Please, follow me.]))" crlf)
-    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 3)(actions goto " ?room-target " " ?zone-target "))" crlf)
+    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 2)(actions guide-human " ?room-target " " ?zone-target "))" crlf)
 )
 
 
@@ -375,19 +374,21 @@
 
 
 
-;;;(FOLLOW((ACTOR Robot)(obj ?human)))
-(defrule exec-follow-person-ROS
+;;;(FTRANS((ACTOR Robot)(obj ?human)))
+(defrule exec-ftrans-person-ROS
     ?f  <- (num-sentences 1)
-    ?f1 <- (follow (actor ?robot)(obj ?human))
+    ?f1 <- (ftrans (actor ?robot)(obj ?human))
     (item (type Robot)(name ?robot))
-    (item (type Human)(name ?human)(room ?room-human)(zone ?zone-human))
+    (item (type Human)(name ?human)(room ?room-human&:(neq ?room-human nil))(zone ?zone-human&:(neq zone-human nil)))
     =>
     ; it follows ?human
     (retract ?f ?f1)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
-    ;(assert (attempt (name follow)(id ?*plan_number* )(follow ?human)))
+    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
     
-    (printout t "(plan (name follow)(id " ?*plan_number* ")(number 1)(actions follow " ?human "))" crlf)
+    (printout t "(plan (name ftrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-human " " ?zone-human"))" crlf)
+    (printout t "(plan (name ftrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
+    (printout t "(plan (name ftrans)(id " ?*plan_number* ")(number 3)(actions follow " ?human "))" crlf)
 )
 
 
@@ -424,6 +425,86 @@
     (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 3)(actions goto " ?room-place " " ?zone-place"))" crlf)
     (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 4)(actions find-human " ?human "))" crlf)
     (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 5)(actions deliver-object " ?human "))" crlf)
+)
+
+
+
+
+; Find Luis and follow him
+; (ATTEND (ACTOR robot)(OBJ ?human))
+; (FTRANS((ACTOR Robot)(obj ?human)))
+(defrule exec-attend-ftrans-ROS
+    ?f  <- (num-sentences 2)
+    
+    ?f1 <- (attend (actor ?robot)(obj ?human))
+    ?f2 <- (ftrans (actor ?robot)(obj ?human))
+    
+    (item (type Robot)(name ?robot))
+    (item (type Human)(name ?human)(room ?room-human)(zone ?zone-human))
+    =>
+    ; it follows ?human
+    (retract ?f ?f1 ?f2)
+    (bind ?*plan_number* (+ 1 ?*plan_number*))
+    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    
+    (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 1)(actions find-human " ?human "))" crlf)
+    (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 2)(actions follow " ?human "))" crlf)
+)
+
+
+
+
+
+; Go to the kitchen and follow Luis
+; (PTRANS (ACTOR robot)(OBJ ?robot)(TO ?place))
+; (FTRANS((ACTOR Robot)(obj ?human)))
+(defrule exec-ptrans-ftrans-ROS
+    ?f  <- (num-sentences 2)
+    
+    ?f1 <- (ptrans (actor ?robot)(obj ?robot)(to ?place))
+    (item (type Robot) (name ?robot))
+    (room (name ?place)(room ?room-place)(zone ?zone-place))
+    
+    ?f2 <- (ftrans (actor ?robot)(obj ?human))
+    (item (type Human)(name ?human)(room ?room-human)(zone ?zone-human))
+    =>
+    ; it follows ?human
+    (retract ?f ?f1 ?f2)
+    (bind ?*plan_number* (+ 1 ?*plan_number*))
+    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    
+    (printout t "(plan (name ptrans-ftrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-place " " ?zone-place"))" crlf)
+    (printout t "(plan (name ptrans-ftrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
+    (printout t "(plan (name ptrans-ftrans)(id " ?*plan_number* ")(number 3)(actions follow " ?human "))" crlf)
+)
+
+
+
+
+
+; go to the studio, find Luis, and follow him
+; (PTRANS (ACTOR robot)(OBJ robot)(TO ?place))
+; (ATTEND (ACTOR robot)(OBJ ?human))
+; (FTRANS((ACTOR Robot)(obj ?human)))
+(defrule exec-ptrans-attend-ftrans-ROS
+    ?f  <- (num-sentences 3)
+    
+    ?f1 <- (ptrans (actor ?robot)(obj ?robot)(to ?place))
+    (item (type Robot) (name ?robot))
+    (room (name ?place)(room ?room-place)(zone ?zone-place))
+    
+    ?f2 <- (attend (actor ?robot)(obj ?human))
+    ?f3 <- (ftrans (actor ?robot)(obj ?human))
+    (item (type Human)(name ?human)(room ?room-human)(zone ?zone-human))
+    =>
+    ; it follows ?human
+    (retract ?f ?f1 ?f2 ?f3)
+    (bind ?*plan_number* (+ 1 ?*plan_number*))
+    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    
+    (printout t "(plan (name ptrans-attend-ftrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-place " " ?zone-place"))" crlf)
+    (printout t "(plan (name ptrans-attend-ftrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
+    (printout t "(plan (name ptrans-attend-ftrans)(id " ?*plan_number* ")(number 3)(actions follow " ?human "))" crlf)
 )
 
 
