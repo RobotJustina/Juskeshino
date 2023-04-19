@@ -54,8 +54,8 @@
 		(default nobody)
 	)
 	(multifield objs
-                 (type SYMBOL)
-                 (default nil)
+        (type SYMBOL)
+        (default nil)
         )
 	(multifield status
 		(type SYMBOL)
