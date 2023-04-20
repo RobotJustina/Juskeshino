@@ -52,6 +52,7 @@ def CondepParser(text):
     
     #Remove the word "Robot" in order to obtain a clean separation of the types of "obj"
     text = text.replace('Robot, ', '')
+    text = text.lower()
     
     #Extracting tokens from the sentence
     nlp = None
@@ -118,6 +119,7 @@ def CondepParser(text):
             txt = txt.replace(", and", ".")
             txt = txt.replace(" and", ".")
             txt = txt.replace(",", ".")
+            
             doc = nlp(txt)
             assert doc.has_annotation("SENT_START")
             list_sentences =[sent.text for sent in doc.sents]
