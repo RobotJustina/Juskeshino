@@ -186,7 +186,7 @@ def CondepParser(text):
                 
                 #==============================PTRANS=======================================
                 if prim == 'PTRANS':
-                    person = "nil"
+                    person = "robot"
                     for pron in range(len(pron_list_sen)):
                         if pos_list_sen1[pron][-1] == 'PROPN' or pron_list[pron] == "me":
                             person=pron_list_sen[pron]
