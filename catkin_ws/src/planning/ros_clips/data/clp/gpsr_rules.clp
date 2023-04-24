@@ -101,9 +101,9 @@
 ; Single conceptual dependencies
 
 
-;;;{"go", "navigate", "walk"} #to somewhere
+;;;{"go", "navigate", "walk"} #to someone/somewhere
 ;;;(PTRANS((ACTOR Robot)(OBJ Robot)(TO ?location)))
-(defrule exec-ptrans-robot-target-ROS
+(defrule exec-ptrans-robot-to-ROS
     ?f   <- (num-sentences 1)
     ?f1  <- (ptrans (actor ?actor)(obj ?actor)(to ?target))
     (item (type Robot)(name ?actor))
@@ -122,25 +122,43 @@
 )
 
 ;;;{"lead", "guide"} #to somewhere
-;;;(PTRANS((ACTOR Robot)(OBJ ?human)(TO ?location)))
-(defrule exec-ptrans-person-target-ROS
+;;;(PTRANS((ACTOR Robot)(OBJ ?human)(FROM nil)(TO ?location)))
+(defrule exec-ptrans-person-to-ROS
     ?f   <- (num-sentences 1)
-    ?f1  <- (ptrans (actor ?actor)(obj ?human)(to ?target))
+    ?f1  <- (ptrans (actor ?actor)(obj ?human)(from nil)(to ?target))
     (item (type Robot)(name ?actor))
     (item (type Human)(name ?human)(room ?room-human)(zone ?zone-human))
     
-    (or
-        (room (type ?type)(name ?target)(room ?room-target)(zone ?zone-target))
-        (item (type ?type)(name ?target)(room ?room-target&:(neq ?room-target nil))(zone ?zone-target&:(neq ?zone-target nil)))
-    )
+    (room (type Room)(name ?target)(room ?room-target)(zone ?zone-target))
     =>
     (retract ?f ?f1)
     ; guides human to ?target
     (bind ?*plan_number* (+ 1 ?*plan_number*))
-    ;(assert (attempt (name ptrans)(id ?*plan_number*)(guide ?human)(room ?room-target)(zone ?zone-target)(on room)(number 0 )))
+    ;(assert (attempt (name ptrans)(id ?*plan_number*)(guide ?human)(from ?zone-human)(to ?zone-target)(number 0 )))
     
-    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 1)(actions find-human " ?human "))" crlf)
-    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 2)(actions guide-human " ?room-target " " ?zone-target "))" crlf)
+    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-human " " ?zone-human "))" crlf)
+    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
+    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 3)(actions guide-human " ?room-target " " ?zone-target "))" crlf)
+)
+
+;;;(PTRANS((ACTOR Robot)(OBJ ?human)(FROM place)(TO ?location)))
+(defrule exec-ptrans-person-from_to-ROS
+    ?f   <- (num-sentences 1)
+    ?f1  <- (ptrans (actor ?actor)(obj ?human)(from ?place)(to ?target))
+    (item (type Robot)(name ?actor))
+    (item (type Human)(name ?human)(room ?room-human)(zone ?zone-human))
+    
+    (room (type Room)(name ?place)(room ?room-place)(zone ?zone-place))
+    (room (type Room)(name ?target)(room ?room-target)(zone ?zone-target))
+    =>
+    (retract ?f ?f1)
+    ; guides human to ?target
+    (bind ?*plan_number* (+ 1 ?*plan_number*))
+    ;(assert (attempt (name ptrans)(id ?*plan_number*)(guide ?human)(from ?zone-place)(to ?zone-target)(number 0 )))
+    
+    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-place " " ?zone-place "))" crlf)
+    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
+    (printout t "(plan (name ptrans)(id " ?*plan_number* ")(number 3)(actions guide-human " ?room-target " " ?zone-target "))" crlf)
 )
 
 

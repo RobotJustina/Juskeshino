@@ -52,7 +52,6 @@ def CondepParser(text):
     
     #Remove the word "Robot" in order to obtain a clean separation of the types of "obj"
     text = text.replace('Robot, ', '')
-    #text = text.lower()
     
     #Extracting tokens from the sentence
     nlp = None
@@ -62,10 +61,8 @@ def CondepParser(text):
         os.system("python -m spacy download en_core_web_sm")
         nlp = spacy.load("en_core_web_sm")
 
-    #initial_doc = nlp(text)
-    #initial_text = [token.text for token in initial_doc]
     res = text.split()
-    verbs = ["follow", "meet", "find"] 
+    verbs = ["go", "walk", "lead", "guide","follow", "bring", "give", "deliver", "take", "grasp", "find", "look", "meet", "deposit", "open", "close", "tell", "say", "remind", "follow"]
     for x in res:
         if x.lower() in verbs:
             text = text.replace(x, x.lower())
@@ -189,40 +186,51 @@ def CondepParser(text):
                 
                 #==============================PTRANS=======================================
                 if prim == 'PTRANS':
-                    if verb_list_sen[-1] in ["guide", "lead"]:
-                        person = "nil"
-                        for pron in range(len(pron_list_sen)):
-                            if pos_list_sen1[pron][-1] == 'PROPN' or pron_list[pron] == "me":
-                                person=pron_list_sen[pron]
-                                pron_list_sen = np.delete(pron_list_sen, pron)
-                                break
-                        #print(person)
-                        location = "nil"
-                        if len(pron_list_sen)!=0 and pron_list_sen[-1] not in ["an", "a", "the"]:
-                            location=pron_list_sen[-1]
-                        #print(location)
-                        dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+person+')(FROM '+person+' place)(TO '+location+'))')
-                        #print(prim+'((ACTOR Robot)(OBJ '+person+')(FROM '+person+' place)(TO '+location+'))')
+                    person = "nil"
+                    for pron in range(len(pron_list_sen)):
+                        if pos_list_sen1[pron][-1] == 'PROPN' or pron_list[pron] == "me":
+                            person=pron_list_sen[pron]
+                            pron_list_sen.remove(person)
+                            break
+
+                    loc2 = "nil"
+                    for ex in pron_list_sen:
+                        chop_noun3 = ex.split()
+                        len_noun4 = len(chop_noun3)
+                        f_noun4 = chop_noun3[-1]
+                        idx5 = text_list_sen.index(f_noun4)
+                        idx6 = idx5-len_noun4
+                        if text_list_sen[idx6] == "to" and ex not in ["the", "a", "an"]:
+                            loc2 = ex
+                            pron_list_sen.remove(ex)
+
+                    loc1 = "nil"
+                    for ex in pron_list_sen:
+                        chop_noun3 = ex.split()
+                        len_noun4 = len(chop_noun3)
+                        f_noun4 = chop_noun3[-1]
+                        idx5 = text_list_sen.index(f_noun4)
+                        idx6 = idx5-len_noun4
+                        if text_list_sen[idx6] == "from" and ex not in ["the", "a", "an"]:
+                            loc1 = ex
+                            pron_list_sen.remove(ex)
+
+
+                    if verb_list_sen[-1] in ["go", "walk", "navigate"] and len(pron_list_sen)!= 0:
+                        if person == "nil" and loc1 == "nil":
+                            person = "Robot"
+                            loc1 = "Robot place"
+                        elif person == "nil" and loc1 != "nil":
+                            person = "Robot"
+
+
                     
-                    else:
-                        if check_prim != 0 and pron_list_sen[-1] != "the":
-                            l = len(pos_list_sen1[-1])
-                            sn = pron_list_sen[-1].split()
-                            sn = sn[-1]
-                            
-                            index = text_list_sen.index(sn)
-                            #print(text_list_sen[index])
-                            if text_list_sen[index-l] == "to":
-                                location = pron_list_sen[-1]
-                                dependencies_list.append(prim+'((ACTOR Robot)(OBJ Robot)(TO '+location+'))')
-                                #print(prim+'((ACTOR Robot)(OBJ Robot)(TO '+location+'))')
-                        else:
-                            dependencies_list.append(prim+'((ACTOR Robot)(OBJ Robot)(TO nil))')
-                            #print(prim+'((ACTOR Robot)(OBJ Robot)(TO nil))')
-                    
-                #ATRANS ------> a / an [object], [person]
+                    dependencies_list.append(prim+'((ACTOR Robot)(OBJ '+person+')(FROM '+loc1+')(TO '+loc2+'))')
+                    #print(prim+'((ACTOR Robot)(OBJ '+person+')(FROM '+loc1+')(TO '+loc2+'))')
+
                 
                 #==============================ATRANS=======================================
+                #ATRANS ------> a / an [object], [person]
                 elif prim == 'ATRANS':
                     if len(pron_list_sen) != 0:
                         person='nil'
