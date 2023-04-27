@@ -64,31 +64,37 @@ def clothes_color(hsv):
     s = hsv[1]
     v = hsv[2]
 
+    """
     color = ['red','orange','yellow','green','blue','purple']
     h // 180
     s // 255
     v // 255
-
+    """
+    
     # de negro a blanco
-    if (h <= 0):
+    
+    if (s <= 5):
         if (s < 11):
-            if (v <= 70 ): color = 'black'
-            if (v >= 220 ): color = 'white'
-            else: color = 'gray'
-
+            if (v >= 0 ) and (v < 27) : color = 'black'
+            if (h >= 27 ) and (v < 92) : color = 'gray'
+            else: color = 'white'
+        return color
 
     else:
-        if (h >= 0 ) and (h < 30): color = 'red'
-        
-        if (h >= 30) and (h < 60): color = 'orange'
-        
-        if (h >= 60) and (h < 90): color = 'yellow'
-                    
-        if (h >= 90 ) and (h < 120): color = 'green'
-        
-        if (h >= 120) and (h < 150): color = 'blue'
-        
-        if (h >= 150) and (h < 180): color = 'purple'
+    
+        if (h >= 0 ) and (h < 10) : color = 'red'
+            
+        if (h >= 10) and (h < 25): color = 'orange'
+            
+        if (h >= 25) and (h < 34): color = 'yellow'
+                        
+        if (h >= 34 ) and (h < 70): color = 'green'
+            
+        if (h >= 70) and (h < 125): color = 'blue'
+            
+        if (h >= 125) and (h < 160): color = 'purple'
+
+        if (h >= 160 ) and (h < 180) : color = 'red'
                 
     return color
         
@@ -98,22 +104,24 @@ def color_histogram(img_bgr, mask):
     # Obtener histograma de color de la imagen para cada canal
     img_hsv = cv2.cvtColor(img_bgr,cv2.COLOR_BGR2HSV)
     Hh = cv2.calcHist([img_hsv],[0], mask ,[180],[0,180])
-    Sh = cv2.calcHist([img_hsv],[1], mask ,[256],[0,256])4
+    Sh = cv2.calcHist([img_hsv],[1], mask ,[256],[0,256])
     Vh = cv2.calcHist([img_hsv],[2], mask ,[256],[0,256])
 
+    #print("Hh, Sh, Vh", Hh, Sh, Vh)
     h = Hh.flatten().tolist() 
     s = Sh.flatten().tolist() 
     v = Vh.flatten().tolist()
+    #print("h,s,v mayor valor", h,s,v)
     maxh = max(h)  #lista
     maxs = max(s)  #lista
-    maxv = max(v)  #lista
+    maxv = max(v)  #list
     
     H = h.index(maxh)   #lista
     S = s.index(maxs)   #lista
     V = v.index(maxv)   #lista
+    #print("indice de mayor valor", H,S,V)
 
     return [H,S,V]
-
 
 
 
@@ -185,9 +193,12 @@ def callback(req):
     # codo
     keypoint3 = Point()
     keypoint3 = guy.keypoints_array[3].keypoint_coordinates.position  
+
     # rodillas
+    """
     keypoint4 = Point() #l_knee
     keypoint4 = guy.keypoints_array[12].keypoint_coordinates.position  
+    """
 
     base_link = 'base_link'
     #sensor_frame = 'realsense_link'
@@ -198,14 +209,14 @@ def callback(req):
     point_ra     = point_actual2point_target(keypoint1, sensor_frame ,base_link)
     point_la     = point_actual2point_target(keypoint2, sensor_frame ,base_link)
     point_r_elb  = point_actual2point_target(keypoint3, sensor_frame ,base_link)
-    point_l_knee = point_actual2point_target(keypoint4, sensor_frame ,base_link)
+    #point_l_knee = point_actual2point_target(keypoint4, sensor_frame ,base_link)
 
     # TORSO
     # obteniendo rangos a partir del servicio pose_estimator
     # Hombro derecho - hombro izquierdo..............................yr-yl
     # profundidad, medida experimental     
     x1_min = point_ra.x - 0.2
-    x1_max = point_ra.x 
+    x1_max = point_ra.x + 0.2
     # de hombro derecho a izquierdo
     y1_min = point_la.y
     y1_max = point_ra.y
@@ -214,6 +225,7 @@ def callback(req):
     z1_max = point_ra.z
 
     # PANTS 
+    """
     x2_min = point_l_knee.x 
     x2_max = point_l_knee.x + 0.09
     # derecha = max,   izquierdo = min
@@ -222,38 +234,42 @@ def callback(req):
     # altura de rodilla + 0,1 m
     z2_min = point_l_knee.z  
     z2_max = point_l_knee.z + 0.2
+    """
 
     min_valor_torso = np.array([x1_min, y1_min, z1_min]) 
     max_valor_torso = np.array([x1_max, y1_max, z1_max])
 
+    """
     min_valor_leg_l = np.array([x2_min, y2_min, z2_min]) 
     max_valor_leg_l = np.array([x2_max, y2_max, z2_max])
+    """
 
     # rango de la matriz de coordenadas
     torso_mask = cv2.inRange(new_pc , min_valor_torso, max_valor_torso)
-    leg_l_mask = cv2.inRange(new_pc , min_valor_leg_l , max_valor_leg_l)
+
+    #leg_l_mask = cv2.inRange(new_pc , min_valor_leg_l , max_valor_leg_l)
 
     img_shirt = cv2.bitwise_and(img_bgr,img_bgr, mask=torso_mask)
-    img_pants = cv2.bitwise_and(img_bgr,img_bgr, mask=leg_l_mask)
-    cv2.imshow("shirt", img_shirt)
-    cv2.waitKey(0) 
-    cv2.imshow("leg ", img_pants )
-    cv2.waitKey(0)
-
+    #img_pants = cv2.bitwise_and(img_bgr,img_bgr, mask=leg_l_mask)
+    #cv2.imshow("shirt", img_shirt)
+    #cv2.waitKey(0) 
+    #cv2.imshow("leg ", img_pants )
+    #cv2.waitKey(0)
+    print("*************************************")
     hsv_shirt = color_histogram(img_bgr, torso_mask)
-    hsv_pants = color_histogram(img_bgr, leg_l_mask)
-    print("hist1 , hist2: ", hsv_shirt, hsv_pants )
+    #hsv_pants = color_histogram(img_bgr, leg_l_mask)
+    print("hist: ", hsv_shirt)
 
     color_shirt = clothes_color(hsv_shirt)
-    color_pants = clothes_color(hsv_pants)
+    #color_pants = clothes_color(hsv_pants)
 
     print("color shirt", color_shirt)
-    print("color pants", color_pants)
+    #print("color pants", color_pants)
 
     #color_clothes = [hsv_shirt, hsv_pants]
 
     resp = FindPersonResponse()
-    resp.person.shirt = 'color_shirt'
+    resp.person.shirt = color_shirt
     resp.person.pants = 'color_pants'
     
     return resp
