@@ -96,7 +96,7 @@
 )
 
 
-;(ATTEND((ACTOR Robot)(OBJ ?obj)))
+;(ATTEND((ACTOR Robot)(OBJ ?obj)(AT ?location)))
 (deftemplate attend
     (field actor
         (type SYMBOL)
@@ -106,11 +106,7 @@
         (type SYMBOL)
         (default nil)
     )
-    (field from
-        (type SYMBOL)
-        (default nil)
-    )
-    (field to
+    (field at
         (type SYMBOL)
         (default nil)
     )
@@ -192,3 +188,25 @@
         (default nil)
     )
 )
+
+
+;(FTRANS((ACTOR Robot)(OBJ ?obj)(FROM ?place)(TO ?destination)))
+(deftemplate ftrans
+    (field actor
+        (type SYMBOL)
+        (default nil)
+    )
+    (field obj
+        (type SYMBOL)
+        (default nil)
+    )
+    (field from
+        (type SYMBOL)
+        (default nil)
+        )
+    (field to
+        (type SYMBOL)
+        (default nil)
+    )
+)
+

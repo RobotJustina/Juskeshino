@@ -14,8 +14,8 @@
 
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/>
   <include file="$(find surge_et_ambula)/launch/justina/navigation.launch">
-    <arg name="static_map_file"  value="$(find config_files)/maps/appartment.yaml"/>
-    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/appartment.yaml"/>
+    <arg name="static_map_file"  value="$(find config_files)/maps/appartment_changed.yaml"/>
+    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/appartment_changed.yaml"/>
     <arg name="initial_pose_x" value="3.25"/>
     <arg name="initial_pose_y" value="6.30"/>
     <arg name="initial_pose_a" value="-1.57"/>
