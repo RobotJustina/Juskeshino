@@ -29,8 +29,10 @@
 #include "vision_msgs/HumanCoordinatesArray.h"
 #include "vision_msgs/HumanPoseEstimatorResult.h"
 
-//static const std::string pcl_topic = "/hsrb/head_rgbd_sensor/depth_registered/rectified_points";
-static const std::string pcl_topic = "/hardware/realsense/points";
+//Para Takeshi
+static const std::string pcl_topic = "/hsrb/head_rgbd_sensor/depth_registered/rectified_points";
+//para Justina
+//static const std::string pcl_topic = "/hardware/realsense/points";
 
 const std::vector<std::string> kpt_names{"nose", "neck",
 		"r_sho", "r_elb", "r_wri", "l_sho", "l_elb", "l_wri",

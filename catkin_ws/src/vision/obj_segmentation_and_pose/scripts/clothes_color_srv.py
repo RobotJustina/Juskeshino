@@ -31,7 +31,8 @@ def point_actual2point_target(pointxyz, f_actual, f_target):
 
 
 def transformPointCloud2(pc):
-    sensor_frame = 'head_rgbd_sensor_gazebo_frame'
+    #sensor_frame = 'realsense_link'
+    sensor_frame = 'head_rgbd_sensor_link'
     base_link = 'base_link'
     # tranformar la nube de puntos al sistema  "base_link'
     x_arr = pc['x']
@@ -69,24 +70,25 @@ def clothes_color(hsv):
     v // 255
 
     # de negro a blanco
-    if (s < 11):
-        if (v <= 70 ): color = 'black'
-        if (v >= 220 ): color = 'white'
-        else: color = 'gray'
+    if (h <= 0):
+        if (s < 11):
+            if (v <= 70 ): color = 'black'
+            if (v >= 220 ): color = 'white'
+            else: color = 'gray'
 
 
-
-    if (h >= 0 ) and (h < 30): color = 'red'
-    
-    if (h >= 30) and (h < 60): color = 'orange'
-    
-    if (h >= 60) and (h < 90): color = 'yellow'
-                
-    if (h >= 0 ) and (h < 120): color = 'green'
-    
-    if (h >= 30) and (h < 150): color = 'blue'
-    
-    if (h >= 60) and (h < 180): color = 'purple'
+    else:
+        if (h >= 0 ) and (h < 30): color = 'red'
+        
+        if (h >= 30) and (h < 60): color = 'orange'
+        
+        if (h >= 60) and (h < 90): color = 'yellow'
+                    
+        if (h >= 90 ) and (h < 120): color = 'green'
+        
+        if (h >= 120) and (h < 150): color = 'blue'
+        
+        if (h >= 150) and (h < 180): color = 'purple'
                 
     return color
         
@@ -96,7 +98,7 @@ def color_histogram(img_bgr, mask):
     # Obtener histograma de color de la imagen para cada canal
     img_hsv = cv2.cvtColor(img_bgr,cv2.COLOR_BGR2HSV)
     Hh = cv2.calcHist([img_hsv],[0], mask ,[180],[0,180])
-    Sh = cv2.calcHist([img_hsv],[1], mask ,[256],[0,256])
+    Sh = cv2.calcHist([img_hsv],[1], mask ,[256],[0,256])4
     Vh = cv2.calcHist([img_hsv],[2], mask ,[256],[0,256])
 
     h = Hh.flatten().tolist() 
@@ -189,7 +191,9 @@ def callback(req):
 
     base_link = 'base_link'
     #sensor_frame = 'realsense_link'
-    sensor_frame = 'head_rgbd_sensor_gazebo_frame'
+    
+    #sensor_frame = 'head_rgbd_sensor_gazebo_frame'
+    sensor_frame = 'head_rgbd_sensor_link'
 
     point_ra     = point_actual2point_target(keypoint1, sensor_frame ,base_link)
     point_la     = point_actual2point_target(keypoint2, sensor_frame ,base_link)
@@ -231,18 +235,22 @@ def callback(req):
 
     img_shirt = cv2.bitwise_and(img_bgr,img_bgr, mask=torso_mask)
     img_pants = cv2.bitwise_and(img_bgr,img_bgr, mask=leg_l_mask)
-    #cv2.imshow("shirt", img_shirt)
-    #cv2.waitKey(0) 
-    #cv2.imshow("leg ", img_pants )
-    #cv2.waitKey(0)
+    cv2.imshow("shirt", img_shirt)
+    cv2.waitKey(0) 
+    cv2.imshow("leg ", img_pants )
+    cv2.waitKey(0)
 
     hsv_shirt = color_histogram(img_bgr, torso_mask)
     hsv_pants = color_histogram(img_bgr, leg_l_mask)
     print("hist1 , hist2: ", hsv_shirt, hsv_pants )
 
     color_shirt = clothes_color(hsv_shirt)
+    color_pants = clothes_color(hsv_pants)
 
-    color_clothes = [hsv_shirt, hsv_pants]
+    print("color shirt", color_shirt)
+    print("color pants", color_pants)
+
+    #color_clothes = [hsv_shirt, hsv_pants]
 
     resp = FindPersonResponse()
     resp.person.shirt = 'color_shirt'

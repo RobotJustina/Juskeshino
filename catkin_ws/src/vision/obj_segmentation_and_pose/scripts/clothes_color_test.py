@@ -20,7 +20,8 @@ def main():
 
     #mensaje*****************************************************************
     fp_msg = FindPersonRequest()
-    pc = rospy.wait_for_message("/hardware/realsense/points", PointCloud2)
+    #pc = rospy.wait_for_message("/hardware/realsense/points", PointCloud2)
+    pc = rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", PointCloud2)
     fp_msg.cloud = pc
 
     resp = fp_srv(fp_msg)
@@ -30,11 +31,12 @@ def main():
   
     loop = rospy.Rate(10)
     while not rospy.is_shutdown():
-        pc = rospy.wait_for_message("/hardware/realsense/points", PointCloud2)
+        #pc = rospy.wait_for_message("/hardware/realsense/points", PointCloud2)
+        pc = rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", PointCloud2)
         fp_msg.cloud = pc
 
         resp = fp_srv(fp_msg)
-        print("*******",resp)
+        print("*****lolo**",resp)
 
         loop.sleep()
 
