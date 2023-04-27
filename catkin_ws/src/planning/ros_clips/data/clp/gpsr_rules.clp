@@ -208,7 +208,7 @@
     ?f1  <- (attend (actor ?actor)(obj ?target)(at ?place))
     (item (type Robot)(name ?actor))
     (item (type ?type)(name ?target)(room ?room-target)(zone ?zone-target)(upper nothing))
-	(room (type Room)(name ?place)(room ?room-place&:(neq room-place nil))(zone ?zone-place&:(neq ?zone-place nil)))
+	(room (type Room)(name ?place)(room ?room-place&:(neq ?room-place nil))(zone ?zone-place&:(neq ?zone-place nil)))
     =>
     ; it sends the robot to the ?target or ?place location and finds the ?target
     (retract ?f ?f1)
@@ -544,6 +544,42 @@
     
     (printout t "(plan (name ptrans-grab)(id " ?*plan_number* ")(number 1)(actions goto " ?room-place " " ?zone-place"))" crlf)
     (printout t "(plan (name ptrans-grab)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
+)
+
+
+
+
+
+; Go to the studio and find the chips
+; (PTRANS (ACTOR robot)(OBJ robot)(TO ?place))
+; (ATTEND((ACTOR Robot)(OBJ ?obj)(AT nil)))
+(defrule exec-ptrans_robot-attend-ROS
+    ?f   <- (num-sentences 2)
+	
+	?f1 <- (ptrans (actor ?actor)(obj ?actor)(to ?place))
+    (item (type Robot) (name ?actor))
+    (room (name ?place)(room ?room-place)(zone ?zone-place))
+    
+	?f2  <- (attend (actor ?actor)(obj ?target)(at nil))
+    (item (type ?type)(name ?target)(room ?room-target)(zone ?zone-target)(upper nothing))
+    =>
+    ; it sends the robot to the ?target or ?place location and finds the ?target
+    (retract ?f ?f1 ?f2)
+    (bind ?*plan_number* (+ 1 ?*plan_number*))
+    ;(assert (attempt (name attend)(id ?*plan_number* )(move ?actor)(room ?room-target)(zone ?zone-target)(to ?target)(number 0 )))
+    
+    (switch ?type
+        (case Objects
+            then
+            (printout t "(plan (name ptrans-attend)(id " ?*plan_number* ")(number 1)(actions goto " ?room-place " " ?zone-place"))" crlf)
+            (printout t "(plan (name ptrans-attend)(id " ?*plan_number* ")(number 2)(actions find-object " ?target "))" crlf)
+        )
+        (case Human
+            then
+            (printout t "(plan (name ptrans-attend)(id " ?*plan_number* ")(number 1)(actions goto " ?room-place " " ?zone-place"))" crlf)
+            (printout t "(plan (name ptrans-attend)(id " ?*plan_number* ")(number 2)(actions find-human " ?target "))" crlf)
+        )
+    )
 )
 
 
