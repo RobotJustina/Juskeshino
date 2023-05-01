@@ -56,10 +56,10 @@ def CondepParser(text):
     #Extracting tokens from the sentence
     nlp = None
     try:
-        nlp = spacy.load("en_core_web_sm")
+        nlp = spacy.load("en_core_web_trf")
     except:
-        os.system("python -m spacy download en_core_web_sm")
-        nlp = spacy.load("en_core_web_sm")
+        os.system("python -m spacy download en_core_web_trf")
+        nlp = spacy.load("en_core_web_trf")
 
     res = text.split()
     verbs = ["go", "walk", "lead", "guide","follow", "bring", "give", "deliver", "take", "grasp", "find", "look", "meet", "deposit", "open", "close", "tell", "say", "remind", "follow"]
@@ -97,6 +97,7 @@ def CondepParser(text):
         else:
             print("FINDING THE SENTENCES: ")
             txt = text
+            
             #Sentences where her o him are included, ex: ... and give an apple to her
             #Check for the words "her" or "him" and replace them with the last PROPN
             acus_list = []
@@ -121,9 +122,9 @@ def CondepParser(text):
                         ind = poc
                 txt = txt.replace(pron_list[acus_list[f]],pron_list[pers_list[ind]])
             
-            txt = txt.replace(", and", ".")
-            txt = txt.replace(" and", ".")
-            txt = txt.replace(",", ".")
+            txt = txt.replace(", and", ". ")
+            txt = txt.replace(" and", ". ")
+            txt = txt.replace(",", ". ")
             
             doc = nlp(txt)
             assert doc.has_annotation("SENT_START")

@@ -608,8 +608,7 @@
     (printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-object " " ?zone-object"))" crlf)
     (printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
 	(printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 3)(actions goto " ?room-human " " ?zone-human"))" crlf)
-    (printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 4)(actions find-human " ?human "))" crlf)
-    (printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 5)(actions deliver-object " ?human "))" crlf)
+    (printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 4)(actions deliver-object " ?human "))" crlf)
 )
 
 
@@ -639,8 +638,7 @@
     (printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-object " " ?zone-object"))" crlf)
     (printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
 	(printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 3)(actions goto " ?room-place " " ?zone-place"))" crlf)
-    (printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 4)(actions find-human " ?human "))" crlf)
-    (printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 5)(actions deliver-object " ?human "))" crlf)
+    (printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 4)(actions deliver-object " ?human "))" crlf)
 )
 
 
@@ -670,8 +668,7 @@
     (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-object " " ?zone-object"))" crlf)
     (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
     (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 3)(actions goto " ?room-place " " ?zone-place"))" crlf)
-    (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 4)(actions find-human " ?human "))" crlf)
-    (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 5)(actions deliver-object " ?human "))" crlf)
+    (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 4)(actions deliver-object " ?human "))" crlf)
 )
 
 
@@ -704,8 +701,7 @@
     (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-object " " ?zone-object"))" crlf)
     (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
     (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 3)(actions goto " ?room-place " " ?zone-place"))" crlf)
-    (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 4)(actions find-human " ?human "))" crlf)
-    (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 5)(actions deliver-object " ?human "))" crlf)
+    (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 4)(actions deliver-object " ?human "))" crlf)
 )
 
 
