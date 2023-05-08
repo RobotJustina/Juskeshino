@@ -1045,7 +1045,7 @@
     ; it follows ?human
     (retract ?f ?f1 ?f2 ?f3)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
-    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    ;(assert (attempt (name ptrans-attend-ftrans)(id ?*plan_number* )(follow ?human)))
     
     (printout t "(plan (name ptrans-attend-ftrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-place " " ?zone-place"))" crlf)
     (printout t "(plan (name ptrans-attend-ftrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
@@ -1067,12 +1067,133 @@
     ; it follows ?human
     (retract ?f ?f1 ?f2 ?f3)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
-    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    ;(assert (attempt (name ptrans-attend-ftrans)(id ?*plan_number* )(follow ?human)))
     
     (printout t "(plan (name ptrans-attend-ftrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-place " " ?zone-place"))" crlf)
     (printout t "(plan (name ptrans-attend-ftrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
     (printout t "(plan (name ptrans-attend-ftrans)(id " ?*plan_number* ")(number 3)(actions say-string [Please, take me to " ?destination ".]))" crlf)
     (printout t "(plan (name ptrans-attend-ftrans)(id " ?*plan_number* ")(number 4)(actions follow " ?human "))" crlf)
+)
+
+
+
+; Find Luis [at the studio] and follow him [from the studio] [to the office]
+; (ATTEND (ACTOR robot)(OBJ ?human)(AT ?location))
+; (FTRANS((ACTOR Robot)(obj ?human)(FROM ?place)(TO ?destination)))
+(defrule exec-attend-ftrans-ROS
+    ?f  <- (num-sentences 2)
+    
+    ?f1 <- (attend (actor ?robot)(obj ?human)(at nil))
+    ?f2 <- (ftrans (actor ?robot)(obj ?human)(from nil)(to nil))
+    
+    (item (type Robot)(name ?robot))
+    (item (type Human)(name ?human)(room ?room-human)(zone ?zone-human))
+    =>
+    ; it follows ?human
+    (retract ?f ?f1 ?f2)
+    (bind ?*plan_number* (+ 1 ?*plan_number*))
+    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    
+	(if (and (neq ?room-human nil)
+	         (neq ?zone-human nil))
+	   then
+       (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-human " " ?zone-human"))" crlf)
+       (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
+       (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 3)(actions follow " ?human "))" crlf)
+	   else
+       (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 1)(actions find-human " ?human "))" crlf)
+       (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 2)(actions follow " ?human "))" crlf)
+	)
+)
+
+(defrule exec-attend_at-ftrans-ROS
+    ?f  <- (num-sentences 2)
+    
+    ?f1 <- (attend (actor ?robot)(obj ?human)(at ?location))
+    ?f2 <- (ftrans (actor ?robot)(obj ?human)(to nil))
+    
+    (item (type Robot)(name ?robot))
+    (item (type Human)(name ?human)(room ?room-human)(zone ?zone-human))
+	(room (type Room)(name ?location)(room ?room-loc&:(neq ?room-loc nil))(zone ?zone-loc&:(neq ?zone-loc nil)))
+    =>
+    ; it follows ?human
+    (retract ?f ?f1 ?f2)
+    (bind ?*plan_number* (+ 1 ?*plan_number*))
+    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    
+    (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-loc " " ?zone-loc"))" crlf)
+    (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
+    (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 3)(actions follow " ?human "))" crlf)
+)
+
+; Find Luis [at place] and say a message
+?f1 <- (attend (actor ?robot)(obj ?human)(at nil))
+; (ATTEND (ACTOR robot)(OBJ ?human)(AT ?location))
+; (SPEAK((MSG ?text))
+(defrule exec-attend-speak-message-ROS
+    ?f  <- (num-sentences 2)
+    ?f1 <- (attend (actor ?robot)(obj ?human)(at nil))
+    
+    (item (type Robot)(name ?robot))
+    (item (type Human)(name ?human)(room ?room-human)(zone ?zone-human))
+    
+    ?f2 <- (speak (msg $?text))
+    =>
+    ; it says a ?text to ?human
+    (retract ?f ?f1 ?f2)
+    (bind ?*plan_number* (+ 1 ?*plan_number*))
+    ;(assert (attempt (name speak)(id ?*plan_number* )(say ?text)(number 0 )))
+    
+	(if (and (neq ?room-human nil)
+	         (neq ?zone-human nil))
+	   then
+       (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-human " " ?zone-human"))" crlf)
+       (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
+       (printout t "(plan (name speak)(id " ?*plan_number* ")(number 1)(actions say-string [" (implode$ ?text) "]))" crlf)
+	   else
+       (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 1)(actions find-human " ?human "))" crlf)
+       (printout t "(plan (name speak)(id " ?*plan_number* ")(number 1)(actions say-string [" (implode$ ?text) "]))" crlf)
+	) 
+)
+
+(defrule exec-attend_at-speak-ROS
+    ?f  <- (num-sentences 2)
+    
+    ?f1 <- (attend (actor ?robot)(obj ?human)(at ?location))
+    ?f2 <- (speak (msg $?text))
+    
+    (item (type Robot)(name ?robot))
+    (item (type Human)(name ?human)(room ?room-human)(zone ?zone-human))
+	(room (type Room)(name ?location)(room ?room-loc&:(neq ?room-loc nil))(zone ?zone-loc&:(neq ?zone-loc nil)))
+    =>
+    ; it says a ?text to ?human at ?location
+    (retract ?f ?f1 ?f2)
+    (bind ?*plan_number* (+ 1 ?*plan_number*))
+    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    
+    (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-loc " " ?zone-loc"))" crlf)
+    (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
+    (printout t "(plan (name speak)(id " ?*plan_number* ")(number 1)(actions say-string [" (implode$ ?text) "]))" crlf)
+)
+
+
+
+
+
+;;;(SPEAK((MSG ?text)(TO ?human))
+(defrule exec-speak-message-to-ROS
+    ?f  <- (num-sentences 1)
+    ?f1 <- (speak (msg $?text)(to ?human))
+    (item (type Human)(name ?human)(room ?room-human&:(neq ?room-human nil))(zone ?zone-human&:(neq ?zone-human nil)))
+    =>
+    ; it says a ?text to ?human
+    (retract ?f ?f1)
+    (bind ?*plan_number* (+ 1 ?*plan_number*))
+    ;(assert (attempt (name speak)(id ?*plan_number* )(say ?text)(room ?room-human)(zone ?zone-human)(to ?human)(number 0 )))
+    
+    (printout t "(plan (name speak)(id " ?*plan_number* ")(number 1)(actions goto " ?room-human " " ?zone-human"))" crlf)
+    (printout t "(plan (name speak)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
+    (printout t "(plan (name speak)(id " ?*plan_number* ")(number 3)(actions say-string [" (implode$ ?text) "]))" crlf)
 )
 
 
