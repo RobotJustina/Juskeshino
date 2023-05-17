@@ -56,10 +56,10 @@ def CondepParser(text):
     #Extracting tokens from the sentence
     nlp = None
     try:
-        nlp = spacy.load("en_core_web_sm")
+        nlp = spacy.load("en_core_web_trf")
     except:
-        os.system("python -m spacy download en_core_web_sm")
-        nlp = spacy.load("en_core_web_sm")
+        os.system("python -m spacy download en_core_web_trf")
+        nlp = spacy.load("en_core_web_trf")
 
     res = text.split()
     verbs = ["go", "walk", "lead", "guide","follow", "bring", "give", "deliver", "take", "grasp", "find", "look", "meet", "deposit", "open", "close", "tell", "say", "remind", "follow"]
@@ -97,6 +97,7 @@ def CondepParser(text):
         else:
             print("FINDING THE SENTENCES: ")
             txt = text
+            
             #Sentences where her o him are included, ex: ... and give an apple to her
             #Check for the words "her" or "him" and replace them with the last PROPN
             acus_list = []
@@ -151,7 +152,7 @@ def CondepParser(text):
                 #                          VERB OR QUESTION?                             
                 #========================================================================
                 
-                verb_list_sen = [token.lemma_ for token in doc1 if token.pos_ == "VERB"]
+                verb_list_sen = [token.lemma_ for token in doc1 if (token.pos_ == "VERB" and token.lemma_ in CD_structures)]
                 flag1 = 0
                 for rem in verb_list_sen:
                     if rem == "remind":
@@ -173,12 +174,12 @@ def CondepParser(text):
                 
                 check_prim = len(pron_list_sen)
                 
-                verb_list_sen = [token.lemma_ for token in doc1 if token.pos_ == "VERB"]
+                """verb_list_sen = [token.lemma_ for token in doc1 if token.pos_ == "VERB"]
                 flag1 = 0
                 for rem in verb_list_sen:
                     if rem == "remind": 
                         flag1 = 1
-                        break
+                        break"""
                 
                 print("=====================================================================")
                 print("                    CONCEPTUAL DEPENDENCIES                          ")
@@ -198,8 +199,13 @@ def CondepParser(text):
                         chop_noun3 = ex.split()
                         len_noun4 = len(chop_noun3)
                         f_noun4 = chop_noun3[-1]
-                        idx5 = text_list_sen.index(f_noun4)
-                        idx6 = idx5-len_noun4
+                        if f_noun4 == "room":
+                            f_noun4 = chop_noun3[-2]
+                            idx5 = text_list_sen.index(f_noun4)
+                            idx6 = idx5-len_noun4+1
+                        else:
+                            idx5 = text_list_sen.index(f_noun4)
+                            idx6 = idx5-len_noun4
                         if text_list_sen[idx6] == "to" and ex not in ["the", "a", "an"]:
                             loc2 = ex
                             pron_list_sen.remove(ex)
@@ -209,8 +215,13 @@ def CondepParser(text):
                         chop_noun3 = ex.split()
                         len_noun4 = len(chop_noun3)
                         f_noun4 = chop_noun3[-1]
-                        idx5 = text_list_sen.index(f_noun4)
-                        idx6 = idx5-len_noun4
+                        if f_noun4 == "room":
+                            f_noun4 = chop_noun3[-2]
+                            idx5 = text_list_sen.index(f_noun4)
+                            idx6 = idx5-len_noun4+1
+                        else:
+                            idx5 = text_list_sen.index(f_noun4)
+                            idx6 = idx5-len_noun4
                         if text_list_sen[idx6] == "from" and ex not in ["the", "a", "an"]:
                             loc1 = ex
                             pron_list_sen.remove(ex)
@@ -365,25 +376,7 @@ def CondepParser(text):
                             obj = pron_list_sen[-1]
                             dependencies_list.append(prim+'((ACTION '+action+')((ACTOR Robot)(OBJ '+obj+'))')
                             #print(prim+'((ACTION '+action+')((ACTOR Robot)(OBJ '+obj+'))')
-                
-                #==============================QTRANS=======================================
-                elif prim == "QTRANS":
-                    for qsen in text_list_sen:
-                        qsen = qsen.lower()
-                        if qsen in ["where", "what", "who"]:
-                            question = qsen
-                            #print(question)
-                    if len(pron_list_sen) == 0:
-                        dependencies_list.append(prim+'((OBJ nil)(QUESTION '+question+'))')
-                        #print(prim+'((OBJ nil)(OBJ'+question+'))')
-                    elif len(pron_list_sen) != 0 and pron_list_sen[-1] in ["a", "an", "the"]:
-                        dependencies_list.append(prim+'((OBJ nil)(QUESTION '+question+'))')
-                        #print(prim+'((OBJ nil)(OBJ '+question+'))') 
-                    else:
-                        obj = pron_list_sen[-1]
-                        dependencies_list.append(prim+'((OBJ '+obj+')(QUESTION '+question+'))')
-                        #print(prim+'((OBJ '+obj+')(QUESTION '+question+'))')
-                
+                                
                 #==============================SPEAK=======================================
                 elif prim == "SPEAK": 
                     #tell [to someone] [something]
@@ -411,7 +404,7 @@ def CondepParser(text):
                                 #print(prim+'((MSG nil)(TO '+person+'))')
                         else:
                             sent = sen.replace(text_list_sen[0] , "")
-                            sent = sent.strip()
+                            #sent = sent.strip() #<------------------ O.o?
                             dependencies_list.append(prim+'((MSG '+sent+')(TO nil))')
                             #print(prim+'((MSG '+sent+')(TO nil))')
                     
@@ -426,6 +419,24 @@ def CondepParser(text):
                         dependencies_list.append(prim+'((MSG '+sent+'))')
                         #print(prim+'((MSG '+sent+'))')		    
                 
+                #==============================QTRANS=======================================
+                elif prim == "QTRANS":
+                    for qsen in text_list_sen:
+                        qsen = qsen.lower()
+                        if qsen in ["where", "what", "who"]:
+                            question = qsen
+                            #print(question)
+                    if len(pron_list_sen) == 0:
+                        dependencies_list.append(prim+'((OBJ nil)(QUESTION '+question+'))')
+                        #print(prim+'((OBJ nil)(OBJ'+question+'))')
+                    elif len(pron_list_sen) != 0 and pron_list_sen[-1] in ["a", "an", "the"]:
+                        dependencies_list.append(prim+'((OBJ nil)(QUESTION '+question+'))')
+                        #print(prim+'((OBJ nil)(OBJ '+question+'))') 
+                    else:
+                        obj = pron_list_sen[-1]
+                        dependencies_list.append(prim+'((OBJ '+obj+')(QUESTION '+question+'))')
+                        #print(prim+'((OBJ '+obj+')(QUESTION '+question+'))')
+
                 #==============================MTRANS=======================================
                 elif prim == "MTRANS":
                     #(MTRANS (ACTOR Robot)(MSG sentence)(FROM source)(TO goal))
@@ -465,8 +476,13 @@ def CondepParser(text):
                                     chop_noun3 = ex.split()
                                     len_noun4 = len(chop_noun3)
                                     f_noun4 = chop_noun3[-1]
-                                    idx5 = text_list_sen.index(f_noun4)
-                                    idx6 = idx5-len_noun4
+                                    if f_noun4 == "room":
+                                        f_noun4 = chop_noun3[-2]
+                                        idx5 = text_list_sen.index(f_noun4)
+                                        idx6 = idx5-len_noun4+1
+                                    else:
+                                        idx5 = text_list_sen.index(f_noun4)
+                                        idx6 = idx5-len_noun4
                                     #print(idx6)
                                     if text_list_sen[idx6] == "to":
                                         loc2 = ex
@@ -477,8 +493,13 @@ def CondepParser(text):
                                     chop_noun3 = ex.split()
                                     len_noun4 = len(chop_noun3)
                                     f_noun4 = chop_noun3[-1]
-                                    idx5 = text_list_sen.index(f_noun4)
-                                    idx6 = idx5-len_noun4
+                                    if f_noun4 == "room":
+                                        f_noun4 = chop_noun3[-2]
+                                        idx5 = text_list_sen.index(f_noun4)
+                                        idx6 = idx5-len_noun4+1
+                                    else:
+                                        idx5 = text_list_sen.index(f_noun4)
+                                        idx6 = idx5-len_noun4
                                     #print(idx6)
                                     if text_list_sen[idx6] == "from":
                                         loc1 = ex
