@@ -4,5 +4,5 @@ joint_names:
   - "arm_roll_joint"
   - "wrist_flex_joint"
   - "wrist_roll_joint"
-  - "hand_palm_link"
+  - "hand_palm_joint"
 max_iterations: 13
