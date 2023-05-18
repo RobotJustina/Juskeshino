@@ -86,10 +86,6 @@ def CondepParser(text):
             qu = qu.lower()
             if qu in ["where", "what", "who"]:
                 question_list.append(qu)
-        #print(question_list) #<------------------------NOTE
-        
-        #elif text_list[-1] == '?':
-            #verb_list = text_list[0]
         
         #If doesn't exist verb or nouns then send a request for a new sentece
         if len(verb_list) == 0 and len(question_list) == 0:
@@ -170,16 +166,10 @@ def CondepParser(text):
                 elif len(verb_list_sen) == 0 and len(question_list) != 0:
                     prim = "QTRANS"
                 elif len(verb_list_sen) != 0 and len(question_list) != 0:
-                    prim = "QTRANS"
+                    prim = CD_structures[verb_list_sen[-1]]
                 
                 check_prim = len(pron_list_sen)
                 
-                """verb_list_sen = [token.lemma_ for token in doc1 if token.pos_ == "VERB"]
-                flag1 = 0
-                for rem in verb_list_sen:
-                    if rem == "remind": 
-                        flag1 = 1
-                        break"""
                 
                 print("=====================================================================")
                 print("                    CONCEPTUAL DEPENDENCIES                          ")
@@ -378,10 +368,30 @@ def CondepParser(text):
                             #print(prim+'((ACTION '+action+')((ACTOR Robot)(OBJ '+obj+'))')
                                 
                 #==============================SPEAK=======================================
-                elif prim == "SPEAK": 
-                    #tell [to someone] [something]
-                    #tell hello? -> not correct
-                    #print(len(text_list_sen))
+                #tell [to someone] [something]
+                #tell hello? -> not correct
+                #print(len(text_list_sen))
+                elif prim == "SPEAK":
+
+                    for ex in pron_list_sen:
+                        chop_noun3 = ex.split()
+                        len_noun4 = len(chop_noun3)
+                        f_noun4 = chop_noun3[-1]
+                        idx5 = text_list_sen.index(f_noun4)
+                        idx6 = idx5-len_noun4
+
+                        if text_list_sen[idx6] == "to":
+                            person = ex
+                            pron_list_sen.remove(ex)
+                            tam = len(text_list_sen)
+                            list_remove = np.arange(idx6, tam, 1)
+
+                            for r in range(len(list_remove)):
+                                re = tam-r
+                                del text_list_sen[re-1]
+                    sent = ' '.join(str(e) for e in text_list_sen)
+
+
                     if verb_list_sen[-1] == "tell" and len(text_list_sen)==1: 
                         sent = "nil"
                         dependencies_list.append(prim+'((MSG nil)(TO nil))')
@@ -411,12 +421,12 @@ def CondepParser(text):
                     elif verb_list_sen[-1] == "say" and len(text_list_sen)<=1:
                         #say [something]
                         sent = "nil"
-                        dependencies_list.append(prim+'((MSG '+sent+'))')
+                        dependencies_list.append(prim+'((MSG '+sent+')(TO '+person+')')
                         #print(prim+'((MSG '+sent+'))')
                     else:
-                        sent = sen.replace(text_list_sen[0] , "")
-                        sent = sent.strip()
-                        dependencies_list.append(prim+'((MSG '+sent+'))')
+                        sent = sent.replace(text_list_sen[0] , "")
+                        #sent = sent.strip() #<----------------------- O.o?
+                        dependencies_list.append(prim+'((MSG '+sent+')(TO '+person+')')
                         #print(prim+'((MSG '+sent+'))')		    
                 
                 #==============================QTRANS=======================================
