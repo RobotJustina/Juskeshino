@@ -3,32 +3,34 @@
 std::map<std::string, ObjectPattern> ObjectRecognizer::obj_patterns;
 
 bool ObjectRecognizer::segment_by_contours(cv::Mat cloud, cv::Mat img_bgr, cv::Mat bin_mask, int min_points, std::vector<cv::Mat>& objects_bgr,
-                                           std::vector<cv::Mat>& objects_xyz, std::vector<cv::Mat>& object_masks, bool debug)
+                                           std::vector<cv::Mat>& objects_xyz, std::vector<cv::Mat>& objects_masks, bool debug)
 {
     std::vector<std::vector<cv::Point> > contours;
     std::vector<cv::Vec4i> hierarchy;
     cv::findContours(bin_mask, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
-    object_masks.resize(contours.size());    
-    std::vector<cv::Mat> detected_obj_masks_8UC3(contours.size());
-    std::vector<cv::Mat> detected_obj_masks_32FC3(contours.size());
+    std::vector<cv::Mat> contour_masks;
+    contour_masks.resize(contours.size());
+    for(int i=0; i<contour_masks.size(); i++) contour_masks[i] = cv::Mat::zeros(img_bgr.rows, img_bgr.cols, CV_8UC1);
+
     objects_bgr.clear();
     objects_xyz.clear();
-    for(int i=0; i< object_masks.size(); i++) object_masks[i] = cv::Mat::zeros(img_bgr.rows, img_bgr.cols, CV_8UC1);
+    objects_masks.clear();
+
     for( size_t i = 0; i< contours.size(); i++ )
     {
-        cv::drawContours(object_masks[i], contours, (int)i, 255, -1, cv::LINE_8, hierarchy, 0);
-        if(cv::countNonZero(object_masks[i]) < min_points)
+        cv::drawContours(contour_masks[i], contours, (int)i, 255, -1, cv::LINE_8, hierarchy, 0);
+        if(cv::countNonZero(contour_masks[i]) < min_points)
             continue;
-        cv::cvtColor(object_masks[i], detected_obj_masks_8UC3[i], cv::COLOR_GRAY2BGR);
-        detected_obj_masks_8UC3[i].convertTo(detected_obj_masks_32FC3[i], CV_32FC3);
-        cv::Mat obj_bgr, obj_xyz;
-        cv::bitwise_and(img_bgr, detected_obj_masks_8UC3[i] , obj_bgr);
-        cv::bitwise_and(cloud  , detected_obj_masks_32FC3[i], obj_xyz);
-        objects_bgr.push_back(obj_bgr.clone());
-        objects_xyz.push_back(obj_xyz.clone());
+        cv::Mat obj_bgr = img_bgr.clone().setTo(0, contour_masks[i]==0);
+        cv::Mat obj_xyz = cloud.clone().setTo(0, contour_masks[i]==0);
+        cv::Mat obj_msk = contour_masks[i].clone();
+        objects_bgr.push_back(obj_bgr);
+        objects_xyz.push_back(obj_xyz);
+        objects_masks.push_back(obj_msk);
         if(debug){
-            cv::imshow("Detected object " + std::to_string(i), obj_bgr);
-            cv::imshow("Detected object mask " + std::to_string(i), obj_bgr);
+            cv::imshow("Detected object bgr" + std::to_string(i), obj_bgr);
+            cv::imshow("Detected object cloud" + std::to_string(i), obj_xyz);
+            cv::imshow("Detected object mask " + std::to_string(i), obj_msk);
         }
     }
     return objects_bgr.size() > 0;
@@ -71,7 +73,7 @@ bool ObjectRecognizer::store_object_example(cv::Mat img_bgr, cv::Mat mask, std::
     return true;
 }
 
-bool ObjectRecognizer::train_from_folder(std::string training_folder, int histogram_size)
+bool ObjectRecognizer::train_from_folder(std::string training_folder, int histogram_size, bool debug)
 {
     if( !boost::filesystem::exists(training_folder))
     {
@@ -97,22 +99,29 @@ bool ObjectRecognizer::train_from_folder(std::string training_folder, int histog
                         for(int j=0; j<img_hsv.cols; j++)
                             if(img_hsv.at<cv::Vec3b>(i,j)[2] > 0)
                                 histogram.at<float>(0, img_hsv.at<cv::Vec3b>(i,j)[0]/(histogram_size-1))++;
-                    std::cout << histogram << std::endl;
                 }
             cv::normalize(histogram, histogram, 1.0, 0, cv::NORM_INF);
-            std::cout << histogram << std::endl;
+            if(debug) std::cout << histogram << std::endl;
             ObjectRecognizer::obj_patterns[obj_name] = ObjectPattern(obj_name, histogram);
         }
     return true;
 }
 
-bool ObjectRecognizer::recognize(cv::Mat img_bgr, cv::Mat mask, int hist_size, std::string& recognized)
+bool ObjectRecognizer::recognize(cv::Mat img_bgr, cv::Mat mask, int hist_size, std::string& recognized, double& similarity, bool debug)
 {
     cv::Mat hist = get_hue_histogram(img_bgr, mask, hist_size);
-    std::cout << "Histogram detected: " << hist << std::endl;
+    if(debug) std::cout << "Histogram detected: " << hist << std::endl;
+    similarity = -1;
+    recognized = "";
     for(std::map<std::string, ObjectPattern>::iterator it = ObjectRecognizer::obj_patterns.begin(); it!=ObjectRecognizer::obj_patterns.end(); it++)
     {
-        std::cout << "Comparison with " << it->first << ": " << cv::compareHist(hist, it->second.histogram, cv::HISTCMP_CORREL) << std::endl;
+        double obj_similarity = cv::compareHist(hist, it->second.histogram, cv::HISTCMP_CORREL);
+        if(obj_similarity > similarity)
+        {
+            recognized = it->first;
+            similarity = obj_similarity;
+        }
+        if(debug) std::cout << "Comparison with " << it->first << ": " << cv::compareHist(hist, it->second.histogram, cv::HISTCMP_CORREL) << std::endl;
     }
-    return true;
+    return recognized != "";
 }

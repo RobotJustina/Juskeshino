@@ -14,4 +14,4 @@ int32 y					     #top left y
 int32 width				     #top widht
 int32 height				     #top height
 bool graspable                               #graspable by the gripper
-geometry_msgs/Point color_rgb	             #Mean object's color
+std_msgs/ColorRGBA color_rgba	             #Mean object's color

@@ -122,7 +122,7 @@ std::vector<cv::Vec3f> GeometricFeatures::plane_by_ransac(cv::Mat cloud, cv::Mat
     for(int i=0; i<indices.size(); i++)
         points.at<cv::Vec3f>(i) = cloud.at<cv::Vec3f>(indices[i]);
     
-    std::cout << "ObjReco-GeometricFeatures.->Executing ransac with " << points.rows << " points"  << std::endl;
+    if(debug) std::cout << "ObjReco-GeometricFeatures.->Executing ransac with " << points.rows << " points"  << std::endl;
     std::vector<cv::Vec3f> planes, plane;
     if(points.rows < 3) return plane;
     cv::RNG rng(time(NULL));

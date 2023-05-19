@@ -252,7 +252,7 @@
     ;(assert (attempt (name atrans)(id ?*plan_number* )(move ?obj)(room ?room-target)(zone ?zone-target)(to ?target)(number 0 )))
     
     (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-object " " ?zone-object"))" crlf)
-    (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
+    (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 2)(actions take-object " ?obj "))" crlf)
     (printout t "(plan (name atrans)(id " ?*plan_number* ")(number 3)(actions goto " ?room-target " " ?zone-target"))" crlf)
     
     (switch ?type
@@ -285,7 +285,7 @@
     ;(assert (attempt (name grab)(id ?*plan_number* )(move ?actor)(room ?room-obj)(zone ?zone-obj)(to ?obj)(number 0 )))
     
     (printout t "(plan (name grab)(id " ?*plan_number* ")(number 1)(actions goto " ?room-obj " " ?zone-obj"))" crlf)
-    (printout t "(plan (name grab)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
+    (printout t "(plan (name grab)(id " ?*plan_number* ")(number 2)(actions take-object " ?obj "))" crlf)
 )
 
 
@@ -307,7 +307,7 @@
     ;(assert (attempt (name release)(id ?*plan_number* )(move ?obj)(room ?room-target)(zone ?zone-target)(to ?target)(number 0 )))
     
     (printout t "(plan (name release)(id " ?*plan_number* ")(number 1)(actions goto " ?room-object " " ?zone-object"))" crlf)
-    (printout t "(plan (name release)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
+    (printout t "(plan (name release)(id " ?*plan_number* ")(number 2)(actions take-object " ?obj "))" crlf)
     (printout t "(plan (name release)(id " ?*plan_number* ")(number 3)(actions goto " ?room-place " " ?zone-place"))" crlf)
     (printout t "(plan (name release)(id " ?*plan_number* ")(number 4)(actions find-space " ?place "))" crlf)
 )
@@ -543,7 +543,7 @@
     ;(assert (attempt (name ptrans-grab)(id ?*plan_number* )(move ?actor)(room ?room-place)(zone ?zone-place)(to ?obj)(number 0 )))
     
     (printout t "(plan (name ptrans-grab)(id " ?*plan_number* ")(number 1)(actions goto " ?room-place " " ?zone-place"))" crlf)
-    (printout t "(plan (name ptrans-grab)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
+    (printout t "(plan (name ptrans-grab)(id " ?*plan_number* ")(number 2)(actions take-object " ?obj "))" crlf)
 )
 
 
@@ -566,7 +566,7 @@
     ; it sends the robot to the ?target or ?place location and finds the ?target
     (retract ?f ?f1 ?f2)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
-    ;(assert (attempt (name attend)(id ?*plan_number* )(move ?actor)(room ?room-target)(zone ?zone-target)(to ?target)(number 0 )))
+    ;(assert (attempt (name ptrans-attend)(id ?*plan_number* )(move ?actor)(room ?room-target)(zone ?zone-target)(to ?target)(number 0 )))
     
     (switch ?type
         (case Objects
@@ -606,7 +606,7 @@
     ;(assert (attempt (name attend-atrans)(id ?*plan_number* )(move ?obj)(room ?room-human)(zone ?zone-human)(on ?human)(number 0 )))
     
     (printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-object " " ?zone-object"))" crlf)
-    (printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
+    (printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 2)(actions take-object " ?obj "))" crlf)
 	(printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 3)(actions goto " ?room-human " " ?zone-human"))" crlf)
     (printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 4)(actions deliver-object " ?human "))" crlf)
 )
@@ -636,7 +636,7 @@
     ;(assert (attempt (name attend-atrans)(id ?*plan_number* )(move ?obj)(room ?room-human)(zone ?zone-human)(on ?human)(number 0 )))
     
     (printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-object " " ?zone-object"))" crlf)
-    (printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
+    (printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 2)(actions take-object " ?obj "))" crlf)
 	(printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 3)(actions goto " ?room-place " " ?zone-place"))" crlf)
     (printout t "(plan (name attend-atrans)(id " ?*plan_number* ")(number 4)(actions deliver-object " ?human "))" crlf)
 )
@@ -663,12 +663,12 @@
 	;it gives ?obj to ?human 
     (retract ?f ?f1 ?f2)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
-    ;(assert (attempt (name ptrans-attend-atrans)(id ?*plan_number* )(move ?obj)(room ?room-human)(zone ?zone-human)(on ?human)(number 0 )))
+    ;(assert (attempt (name ptrans-atrans)(id ?*plan_number* )(move ?obj)(room ?room-human)(zone ?zone-human)(on ?human)(number 0 )))
     
-    (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-object " " ?zone-object"))" crlf)
-    (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
-    (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 3)(actions goto " ?room-place " " ?zone-place"))" crlf)
-    (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 4)(actions deliver-object " ?human "))" crlf)
+    (printout t "(plan (name ptrans-atrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-object " " ?zone-object"))" crlf)
+    (printout t "(plan (name ptrans-atrans)(id " ?*plan_number* ")(number 2)(actions take-object " ?obj "))" crlf)
+    (printout t "(plan (name ptrans-atrans)(id " ?*plan_number* ")(number 3)(actions goto " ?room-place " " ?zone-place"))" crlf)
+    (printout t "(plan (name ptrans-atrans)(id " ?*plan_number* ")(number 4)(actions deliver-object " ?human "))" crlf)
 )
 
 
@@ -699,7 +699,7 @@
     ;(assert (attempt (name ptrans-attend-atrans)(id ?*plan_number* )(move ?obj)(room ?room-human)(zone ?zone-human)(on ?human)(number 0 )))
     
     (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-object " " ?zone-object"))" crlf)
-    (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 2)(actions find-object " ?obj "))" crlf)
+    (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 2)(actions take-object " ?obj "))" crlf)
     (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 3)(actions goto " ?room-place " " ?zone-place"))" crlf)
     (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 4)(actions deliver-object " ?human "))" crlf)
 )
@@ -791,9 +791,9 @@
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     ;(assert (attempt (name ptrans-ptrans)(id ?*plan_number* )(move ?human)(room ?room-human)(zone ?zone-dst)(to ?destination)(number 0 )))
     
-    (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-place " " ?zone-place"))" crlf)
-    (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
-    (printout t "(plan (name ptrans-attend-ptrans)(id " ?*plan_number* ")(number 3)(actions guide-human " ?room-dst " " ?zone-dst "))" crlf)
+    (printout t "(plan (name ptrans-ptrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-place " " ?zone-place"))" crlf)
+    (printout t "(plan (name ptrans-ptrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
+    (printout t "(plan (name ptrans-ptrans)(id " ?*plan_number* ")(number 3)(actions guide-human " ?room-dst " " ?zone-dst "))" crlf)
 )
 
 
@@ -823,8 +823,8 @@
     (bind ?*plan_number* (+ 1 ?*plan_number*))
     ;(assert (attempt (name ptrans-attend-ptrans)(id ?*plan_number* )(move ?human)(room ?room-human)(zone ?zone-dst)(to ?destination)(number 0 )))
     
-    (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-place " " ?zone-place"))" crlf)
-    (printout t "(plan (name ptrans-attend-atrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
+    (printout t "(plan (name ptrans-attend-ptrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-place " " ?zone-place"))" crlf)
+    (printout t "(plan (name ptrans-attend-ptrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
     (printout t "(plan (name ptrans-attend-ptrans)(id " ?*plan_number* ")(number 3)(actions guide-human " ?room-dst " " ?zone-dst "))" crlf)
 )
 
@@ -847,7 +847,7 @@
     ; it follows ?human
     (retract ?f ?f1 ?f2)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
-    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    ;(assert (attempt (name attend-ftrans)(id ?*plan_number* )(follow ?human)))
     
 	(if (and (neq ?room-human nil)
 	         (neq ?zone-human nil))
@@ -874,7 +874,7 @@
     ; it follows ?human
     (retract ?f ?f1 ?f2)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
-    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    ;(assert (attempt (name attend-ftrans)(id ?*plan_number* )(follow ?human)))
     
     (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-loc " " ?zone-loc"))" crlf)
     (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
@@ -894,7 +894,7 @@
     ; it follows ?human
     (retract ?f ?f1 ?f2)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
-    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    ;(assert (attempt (name attend-ftrans)(id ?*plan_number* )(follow ?human)))
     
     (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-place " " ?zone-place"))" crlf)
     (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
@@ -914,7 +914,7 @@
     ; it follows ?human
     (retract ?f ?f1 ?f2)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
-    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    ;(assert (attempt (name attend-ftrans)(id ?*plan_number* )(follow ?human)))
     
 	(if (and (neq ?room-human nil)
 	         (neq ?zone-human nil))
@@ -944,7 +944,7 @@
     ; it follows ?human
     (retract ?f ?f1 ?f2)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
-    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    ;(assert (attempt (name attend-ftrans)(id ?*plan_number* )(follow ?human)))
     
     (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-loc " " ?zone-loc"))" crlf)
     (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
@@ -966,7 +966,7 @@
     ; it follows ?human
     (retract ?f ?f1 ?f2)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
-    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    ;(assert (attempt (name attend-ftrans)(id ?*plan_number* )(follow ?human)))
     
     (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-place " " ?zone-place"))" crlf)
     (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
@@ -994,7 +994,7 @@
     ; it follows ?human
     (retract ?f ?f1 ?f2)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
-    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    ;(assert (attempt (name ptrans-ftrans)(id ?*plan_number* )(follow ?human)))
     
     (printout t "(plan (name ptrans-ftrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-place " " ?zone-place"))" crlf)
     (printout t "(plan (name ptrans-ftrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
@@ -1015,7 +1015,7 @@
     ; it follows ?human
     (retract ?f ?f1 ?f2)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
-    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    ;(assert (attempt (name ptrans-ftrans)(id ?*plan_number* )(follow ?human)))
     
     (printout t "(plan (name ptrans-ftrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-place " " ?zone-place"))" crlf)
     (printout t "(plan (name ptrans-ftrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
@@ -1092,7 +1092,7 @@
     ; it follows ?human
     (retract ?f ?f1 ?f2)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
-    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    ;(assert (attempt (name attend-ftrans)(id ?*plan_number* )(follow ?human)))
     
 	(if (and (neq ?room-human nil)
 	         (neq ?zone-human nil))
@@ -1119,7 +1119,7 @@
     ; it follows ?human
     (retract ?f ?f1 ?f2)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
-    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    ;(assert (attempt (name attend-ftrans)(id ?*plan_number* )(follow ?human)))
     
     (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-loc " " ?zone-loc"))" crlf)
     (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
@@ -1142,17 +1142,17 @@
     ; it says a ?text to ?human
     (retract ?f ?f1 ?f2)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
-    ;(assert (attempt (name speak)(id ?*plan_number* )(say ?text)(number 0 )))
+    ;(assert (attempt (name attend-speak)(id ?*plan_number* )(say ?text)(number 0 )))
     
 	(if (and (neq ?room-human nil)
 	         (neq ?zone-human nil))
 	   then
-       (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-human " " ?zone-human"))" crlf)
-       (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
-       (printout t "(plan (name speak)(id " ?*plan_number* ")(number 1)(actions say-string [" (implode$ ?text) "]))" crlf)
+       (printout t "(plan (name attend-speak)(id " ?*plan_number* ")(number 1)(actions goto " ?room-human " " ?zone-human"))" crlf)
+       (printout t "(plan (name attend-speak)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
+       (printout t "(plan (name attend-speak)(id " ?*plan_number* ")(number 3)(actions say-string [" (implode$ ?text) "]))" crlf)
 	   else
-       (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 1)(actions find-human " ?human "))" crlf)
-       (printout t "(plan (name speak)(id " ?*plan_number* ")(number 1)(actions say-string [" (implode$ ?text) "]))" crlf)
+       (printout t "(plan (name attend-speak)(id " ?*plan_number* ")(number 1)(actions find-human " ?human "))" crlf)
+       (printout t "(plan (name attend-speak)(id " ?*plan_number* ")(number 2)(actions say-string [" (implode$ ?text) "]))" crlf)
 	) 
 )
 
@@ -1169,11 +1169,11 @@
     ; it says a ?text to ?human at ?location
     (retract ?f ?f1 ?f2)
     (bind ?*plan_number* (+ 1 ?*plan_number*))
-    ;(assert (attempt (name ftrans)(id ?*plan_number* )(follow ?human)))
+    ;(assert (attempt (name attend-speak)(id ?*plan_number* )(follow ?human)))
     
-    (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 1)(actions goto " ?room-loc " " ?zone-loc"))" crlf)
-    (printout t "(plan (name attend-ftrans)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
-    (printout t "(plan (name speak)(id " ?*plan_number* ")(number 1)(actions say-string [" (implode$ ?text) "]))" crlf)
+    (printout t "(plan (name attend-speak)(id " ?*plan_number* ")(number 1)(actions goto " ?room-loc " " ?zone-loc"))" crlf)
+    (printout t "(plan (name attend-speak)(id " ?*plan_number* ")(number 2)(actions find-human " ?human "))" crlf)
+    (printout t "(plan (name attend-speak)(id " ?*plan_number* ")(number 3)(actions say-string [" (implode$ ?text) "]))" crlf)
 )
 
 

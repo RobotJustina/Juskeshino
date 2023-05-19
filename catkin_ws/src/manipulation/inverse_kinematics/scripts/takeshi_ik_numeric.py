@@ -20,10 +20,13 @@ def get_model_info(joint_names):
     
     joints = []
     transforms = []
+    
+    
     for name in joint_names:
         for joint in robot_model.joints:
-            
+            #print("joint name", joint.name)
             if joint.name == name:
+                print("joint name", joint.name)
                 joints.append(joint)
 
     
@@ -260,6 +263,7 @@ def main():
     #print(prompt+"max_iterations: " + str(max_iterations))#***********************
 
     joints, transforms = get_model_info(joint_names)
+    print([joints, transforms])
     if not (len(joints) > 4 and len(transforms) > 4):
         print("Inverse kinematics.->Cannot get model info from parameter server")
         sys.exit(-1)
