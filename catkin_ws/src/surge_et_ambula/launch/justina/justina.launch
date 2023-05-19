@@ -42,7 +42,7 @@
     <arg name="smooth_beta" default="0.9"/>
   </include>
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_navigation.rviz"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina.rviz"/>
   <node name="justina_gui" pkg="justina_gui" type="justina_gui_node" output="screen">
     <param name="la_predefined" value="$(find config_files)/justina/manipulation/la_predefined.yaml"/>
     <param name="ra_predefined" value="$(find config_files)/justina/manipulation/ra_predefined.yaml"/>
@@ -50,7 +50,10 @@
   </node>
 
   <include file="$(find surge_et_ambula)/launch/justina/manipulation.launch"/>
-  <include file="$(find surge_et_ambula)/launch/justina/vision.launch"/>
+  <include file="$(find surge_et_ambula)/launch/justina/vision.launch">
+    <arg name="debug"         value="false"/>
+    <arg name="training_dir"  value="$(find obj_reco)/training_dir"/>
+  </include>
   
   <!--node name="sound_play" pkg="sound_play" type="soundplay_node.py" output="screen"/>
   <node name="speech_recog" pkg="sprec_pocketsphinx" type="asr.py">

@@ -1,13 +1,16 @@
 <launch>
+  <arg name="debug"         default="true"/>
+  <arg name="training_dir"  default="$(find obj_reco)/training_simul"/>
+
   <node name="obj_reco" pkg="obj_reco" type="obj_reco_node" output="screen">
-    <param name="debug"               value="false"/>
-    <param name="training_dir"        value="$(find obj_reco)/training_simul"/>
+    <param name="debug"               value="$(arg debug)"/>
+    <param name="training_dir"        value="$(arg training_dir)"/>
     <param name="min_x"               value=" 0.3"/>
     <param name="min_y"               value="-2.0"/>
     <param name="min_z"               value=" 0.3"/>
-    <param name="max_x"               value=" 2.0"/>
+    <param name="max_x"               value=" 1.0"/>
     <param name="max_y"               value=" 2.0"/>
-    <param name="max_z"               value=" 2.0"/>
+    <param name="max_z"               value=" 1.5"/>
     <param name="normal_min_z"        value="0.6"/>
     <param name="canny_threshold1"    value="230"/>
     <param name="canny_threshold2"    value="250"/>
