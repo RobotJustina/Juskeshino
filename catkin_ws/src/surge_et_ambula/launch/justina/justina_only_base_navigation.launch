@@ -4,16 +4,40 @@
   <param name="robot_description" command="$(find xacro)/xacro '$(find justina_description)/urdf/justina.xacro'"/>
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
   
-  <include file="$(find surge_et_ambula)/launch/hardware/justina_base.launch"/>
+  <include file="$(find surge_et_ambula)/launch/justina/hardware/justina_base.launch"/>
   
-  <include file="$(find surge_et_ambula)/launch/navigation.launch">
-    <arg name="static_map_file"  value="$(find config_files)/maps/LabBiorobotica.yaml"/>
-    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/LabBiorobotica.yaml"/>
+  <include file="$(find surge_et_ambula)/launch/justina/navigation.launch">
+    <arg name="static_map_file"  value="$(find config_files)/maps/mapa_itzel.yaml"/>
+    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/mapa_itzel.yaml"/>
     <arg name="initial_pose_x" value="0.0"/>
     <arg name="initial_pose_y" value="0.0"/>
     <arg name="initial_pose_a" value="0.0"/>
     <arg name="laser_scan_topic" value="/hardware/scan"/>
-    <arg name="point_cloud_topic" value="/hardware/rgbd_wrt_robot"/>
+    <arg name="point_cloud_topic" value="/camera/depth_registered/points"/>
+    <arg name="use_lidar" value="True"/>
+    <arg name="use_sonars" value="False"/>
+    <arg name="use_point_cloud" value="False"/>
+    <arg name="cloud_downsampling" value="9"/>
+    <arg name="cloud_points_threshold" value="50"/>
+    <arg name="lidar_points_threshold" value="5"/>
+    <arg name="min_x" value="0.3"/>
+    <arg name="max_x" value="0.75"/>
+    <arg name="min_y" value="-0.30"/>
+    <arg name="max_y" value="0.30"/>
+    <arg name="min_z" value="0.00"/>
+    <arg name="max_z" value="1.30"/>
+    <arg name="obs_detector_debug" value="False"/>
+    <arg name="move_head" value="False"/>
+    <arg name="control_alpha" default="0.6"/>
+    <arg name="control_beta" default="0.2"/>
+    <arg name="max_linear_speed" default="0.65"/>
+    <arg name="min_linear_speed" default="0.15"/>
+    <arg name="max_angular_speed" default="0.8"/>
+    <arg name="linear_acceleration" default="0.2"/>
+    <arg name="inflation_radius" value="0.2"/>
+    <arg name="diagonal_paths" value="False"/>
+    <arg name="smooth_alpha" default="0.2"/>
+    <arg name="smooth_beta" default="0.8"/>
   </include>
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/navigation.rviz"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_navigation.rviz"/>
 </launch>
