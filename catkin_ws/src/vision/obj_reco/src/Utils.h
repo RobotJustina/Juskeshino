@@ -5,6 +5,7 @@
 #include "visualization_msgs/Marker.h"
 #include "visualization_msgs/MarkerArray.h"
 #include "vision_msgs/RecognizeObjects.h"
+#include "vision_msgs/RecognizeObject.h"
 #include <cv_bridge/cv_bridge.h>
 
 class Utils
@@ -28,8 +29,11 @@ public:
     static vision_msgs::RecognizeObjects::Response get_recog_objects_response(std::vector<cv::Mat>& objects_bgr, std::vector<cv::Mat>& objects_xyz,
                                                                               std::vector<cv::Mat>& objects_masks, std::vector<std::string>& labels,
                                                                               std::vector<double>& confidences, cv::Mat& result_img, std::string frame_id);
+    static vision_msgs::RecognizeObject::Response get_recog_object_response(cv::Mat& obj_bgr, cv::Mat& obj_xyz, cv::Mat& obj_msk, std::string label,
+                                                                            double confidence, std::string frame_id);
     static vision_msgs::VisionObject get_vision_object_msg(cv::Mat& obj_bgr, cv::Mat& obj_xyz, cv::Mat& obj_mask, std::string label,
                                                            double confidence, std::string frame_id);
 
     static visualization_msgs::MarkerArray get_objects_markers(std::vector<vision_msgs::VisionObject>& objs);
+    static visualization_msgs::MarkerArray get_object_marker(vision_msgs::VisionObject& obj);
 };
