@@ -13,6 +13,7 @@
 
 tf::TransformListener* tf_listener;
 ros::Publisher pubMarkers;
+ros::Publisher pubMarkerArray;
 
 bool  debug = false;
 float min_x =  0.3;
@@ -71,23 +72,32 @@ bool callback_find_planes(vision_msgs::FindPlanes::Request& req, vision_msgs::Fi
 
 bool callback_recog_objs(vision_msgs::RecognizeObjects::Request& req, vision_msgs::RecognizeObjects::Response& resp)
 {
-    std::cout << "ObjReco.->Recognizing objects by Jebug's method." << std::endl;
+    std::cout << "ObjReco.->Recognizing objects by Jebug's method (corrected and improved by Marcosoft)." << std::endl;
     cv::Mat img, cloud, output_mask;
+    if(debug) cv::destroyAllWindows();
         
     Utils::transform_cloud_wrt_base(req.point_cloud, img, cloud, tf_listener);
     Utils::filter_by_distance(cloud, img, min_x, min_y, min_z, max_x, max_y, max_z, cloud, img);
     std::vector<cv::Vec3f> plane = GeometricFeatures::get_horizontal_planes(cloud, normal_min_z, plane_dist_threshold, plane_min_area, output_mask, debug);
     std::vector<cv::Vec3f> points = GeometricFeatures::above_horizontal_plane(cloud, plane, plane_dist_threshold+0.005, output_mask, debug);
     if(points.size() < 10) return false;
+
     std::vector<cv::Mat> objects_bgr, objects_xyz, objects_masks;
     if(!ObjectRecognizer::segment_by_contours(cloud, img, output_mask, min_points_per_object, objects_bgr, objects_xyz, objects_masks, debug)) return false;
-    
+
+    img = cv::Mat::zeros(img.rows, img.cols, CV_8UC3);
+    std::vector<std::string> labels(objects_bgr.size(), "");
+    std::vector<double> confidences(objects_bgr.size(), -1);
     for(int i=0; i<objects_bgr.size(); i++){
-        std::string recognized;
-        ObjectRecognizer::recognize(objects_bgr[i], objects_masks[i], histogram_size, recognized);
+        ObjectRecognizer::recognize(objects_bgr[i], objects_masks[i], histogram_size, labels[i], confidences[i], debug);
+        cv::bitwise_or(img, objects_bgr[i], img);
+        std::cout << "ObjReco.->Recognized object: " << labels[i] << " with confidence " << confidences[i] << std::endl;
     }
     cv::imshow("Points above plane", img);
-    return false;
+
+    resp = Utils::get_recog_objects_response(objects_bgr, objects_xyz, objects_masks, labels, confidences, img, req.point_cloud.header.frame_id);
+    pubMarkerArray.publish(Utils::get_objects_markers(resp.recog_objects));
+    return resp.recog_objects.size() > 0;
 }
 
 bool callback_recog_obj(vision_msgs::RecognizeObject::Request& req, vision_msgs::RecognizeObject::Response& resp)
@@ -137,7 +147,8 @@ int main(int argc, char** argv)
     ros::ServiceServer srvRecogObjs  = n.advertiseService("/vision/obj_reco/recognize_objects", callback_recog_objs);
     ros::ServiceServer srvRecogObj   = n.advertiseService("/vision/obj_reco/recognize_object" , callback_recog_obj );
     ros::ServiceServer srvTrainObj   = n.advertiseService("/vision/obj_reco/train_object", callback_train_object);
-    pubMarkers    = n.advertise<visualization_msgs::Marker>("/vision/obj_reco/markers", 1);
+    pubMarkers     = n.advertise<visualization_msgs::Marker>("/vision/obj_reco/markers", 1);
+    pubMarkerArray = n.advertise<visualization_msgs::MarkerArray>("/vision/obj_reco/marker_array", 1);
     ros::Rate loop(30);
     tf_listener = new tf::TransformListener();
 
@@ -189,7 +200,8 @@ int main(int argc, char** argv)
     if(ros::param::has("~min_points_per_object"))
         ros::param::get("~min_points_per_object", min_points_per_object);
 
-    ObjectRecognizer::train_from_folder(training_dir, histogram_size);
+    Utils::debug = debug;
+    ObjectRecognizer::train_from_folder(training_dir, histogram_size, debug);
     while(ros::ok() && cv::waitKey(10) != 27)
     {
         ros::spinOnce();

@@ -41,10 +41,10 @@ void Utils::pointcloud_msg2_cv_mat(sensor_msgs::PointCloud2& pc_msg, cv::Mat& bg
 void Utils::transform_cloud_wrt_base(sensor_msgs::PointCloud2& cloud, cv::Mat& bgr_dest, cv::Mat& cloud_dest,
                                      tf::TransformListener* tf_listener)
 {
-    std::cout <<"ObjReco.->Point cloud frame: " << cloud.header.frame_id << std::endl;
+    if(Utils::debug) std::cout <<"ObjReco.->Point cloud frame: " << cloud.header.frame_id << std::endl;
     if(cloud.header.frame_id != "base_link")
     {
-        std::cout << "ObjReco.->Transforming point cloud to robot reference" << std::endl;
+        if(Utils::debug) std::cout << "ObjReco.->Transforming point cloud to robot reference" << std::endl;
         pcl_ros::transformPointCloud("base_link", cloud, cloud, *tf_listener);
     }
     Utils::pointcloud_msg2_cv_mat(cloud, bgr_dest, cloud_dest);
@@ -147,4 +147,87 @@ visualization_msgs::Marker Utils::get_plane_marker(std::vector<cv::Vec3f> plane)
     marker.color.b = 0.0;
     marker.lifetime = ros::Duration(10.0);
     return marker;
+}
+
+vision_msgs::RecognizeObjects::Response Utils::get_recog_objects_response(std::vector<cv::Mat>& objects_bgr, std::vector<cv::Mat>& objects_xyz,
+                                                                          std::vector<cv::Mat>& objects_masks, std::vector<std::string>& labels,
+                                                                          std::vector<double>& confidences, cv::Mat& result_img, std::string frame_id)
+{
+    vision_msgs::RecognizeObjects::Response resp;
+    if(objects_bgr.size() < 1) return resp;
+    
+    cv_bridge::CvImage cv_img;
+    cv_img.header.stamp = ros::Time::now();
+    cv_img.image = result_img;
+    cv_img.toImageMsg(resp.image);
+
+    resp.recog_objects.resize(objects_bgr.size());
+    for(size_t i=0; i < objects_bgr.size(); i++)
+        resp.recog_objects[i] = Utils::get_vision_object_msg(objects_bgr[i], objects_xyz[i], objects_masks[i], labels[i], confidences[i], frame_id);
+    
+    return resp;    
+}
+
+vision_msgs::VisionObject Utils::get_vision_object_msg(cv::Mat& obj_bgr, cv::Mat& obj_xyz, cv::Mat& obj_mask, std::string label,
+                                                       double confidence, std::string frame_id)
+{
+    vision_msgs::VisionObject msg;
+    msg.header.stamp = ros::Time::now();
+    msg.header.frame_id = frame_id;
+    msg.id = label;
+    msg.confidence = confidence;
+
+    cv_bridge::CvImage cv_img;
+    cv_img.header.stamp = ros::Time::now();
+    cv_img.image = obj_bgr;
+    cv_img.toImageMsg(msg.image);
+
+    cv::Scalar p = cv::mean(obj_xyz, obj_mask);
+    msg.pose.position.x = p[0];
+    msg.pose.position.y = p[1];
+    msg.pose.position.z = p[2];
+    msg.pose.orientation.w = 1.0;
+
+    cv::Mat obj_x_y_z[3];
+    double min_x, min_y, min_z, max_x, max_y, max_z;
+    int min_idx, max_idx;
+    cv::split(obj_xyz, obj_x_y_z);
+    cv::minMaxIdx(obj_x_y_z[0], &min_x, &max_x, &min_idx, &max_idx, obj_mask);
+    cv::minMaxIdx(obj_x_y_z[1], &min_y, &max_y, &min_idx, &max_idx, obj_mask);
+    cv::minMaxIdx(obj_x_y_z[2], &min_z, &max_z, &min_idx, &max_idx, obj_mask);
+    msg.size.x = max_x - min_x;
+    msg.size.y = max_y - min_y;
+    msg.size.z = max_z - min_z;
+
+    cv::Scalar c = cv::mean(obj_bgr, obj_mask);
+    msg.color_rgba.r = c[2];
+    msg.color_rgba.g = c[1];
+    msg.color_rgba.b = c[0];
+    msg.color_rgba.a = 1.0;
+    
+    msg.graspable = true;
+    return msg;
+}
+
+visualization_msgs::MarkerArray Utils::get_objects_markers(std::vector<vision_msgs::VisionObject>& objs)
+{
+    visualization_msgs::MarkerArray msg;
+    std::vector<visualization_msgs::Marker> markers;
+    markers.resize(objs.size());
+    for(size_t i=0; i<objs.size(); i++)
+    {
+        markers[i].header.frame_id = objs[i].header.frame_id;
+        markers[i].header.stamp = ros::Time();
+        markers[i].ns = "obj_reco_markers";
+        markers[i].id = i;
+        markers[i].type = visualization_msgs::Marker::CUBE;
+        markers[i].action = visualization_msgs::Marker::ADD;
+        markers[i].pose = objs[i].pose;
+        markers[i].scale = objs[i].size;
+        markers[i].color = objs[i].color_rgba;
+        markers[i].color.a = 0.6;
+        markers[i].lifetime = ros::Duration(10.0);
+    }
+    msg.markers = markers;
+    return msg;
 }
