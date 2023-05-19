@@ -81,7 +81,7 @@ visualization_msgs::Marker Utils::get_lines_marker(std::vector<cv::Vec3f> lines)
     visualization_msgs::Marker marker;
     marker.header.frame_id = "base_link";
     marker.header.stamp = ros::Time::now();
-    marker.ns = "obj_reco_markers";
+    marker.ns = "line_markers";
     marker.id = 2;
     marker.type = visualization_msgs::Marker::LINE_LIST;
     marker.action = visualization_msgs::Marker::ADD;
@@ -127,7 +127,7 @@ visualization_msgs::Marker Utils::get_plane_marker(std::vector<cv::Vec3f> plane)
     if(plane.size() < 6) return marker;
     marker.header.frame_id = "base_link";
     marker.header.stamp = ros::Time();
-    marker.ns = "obj_reco_markers";
+    marker.ns = "plane_markers";
     marker.id = 1;
     marker.type = visualization_msgs::Marker::CUBE;
     marker.action = visualization_msgs::Marker::ADD;
@@ -168,6 +168,18 @@ vision_msgs::RecognizeObjects::Response Utils::get_recog_objects_response(std::v
     return resp;    
 }
 
+vision_msgs::RecognizeObject::Response Utils::get_recog_object_response(cv::Mat& obj_bgr, cv::Mat& obj_xyz, cv::Mat& obj_msk, std::string label,
+                                                                            double confidence, std::string frame_id)
+{
+    vision_msgs::RecognizeObject::Response resp;
+    resp.recog_object = Utils::get_vision_object_msg(obj_bgr, obj_xyz, obj_msk, label, confidence, frame_id);
+    cv_bridge::CvImage cv_img;
+    cv_img.header.stamp = ros::Time::now();
+    cv_img.image = obj_bgr;
+    cv_img.toImageMsg(resp.image);
+    return resp;
+}
+
 vision_msgs::VisionObject Utils::get_vision_object_msg(cv::Mat& obj_bgr, cv::Mat& obj_xyz, cv::Mat& obj_mask, std::string label,
                                                        double confidence, std::string frame_id)
 {
@@ -200,9 +212,9 @@ vision_msgs::VisionObject Utils::get_vision_object_msg(cv::Mat& obj_bgr, cv::Mat
     msg.size.z = max_z - min_z;
 
     cv::Scalar c = cv::mean(obj_bgr, obj_mask);
-    msg.color_rgba.r = c[2];
-    msg.color_rgba.g = c[1];
-    msg.color_rgba.b = c[0];
+    msg.color_rgba.r = c[2]/255.0;
+    msg.color_rgba.g = c[1]/255.0;
+    msg.color_rgba.b = c[0]/255.0;
     msg.color_rgba.a = 1.0;
     
     msg.graspable = true;
@@ -213,21 +225,58 @@ visualization_msgs::MarkerArray Utils::get_objects_markers(std::vector<vision_ms
 {
     visualization_msgs::MarkerArray msg;
     std::vector<visualization_msgs::Marker> markers;
-    markers.resize(objs.size());
+    markers.resize(objs.size()*2);
     for(size_t i=0; i<objs.size(); i++)
     {
-        markers[i].header.frame_id = objs[i].header.frame_id;
-        markers[i].header.stamp = ros::Time();
-        markers[i].ns = "obj_reco_markers";
-        markers[i].id = i;
-        markers[i].type = visualization_msgs::Marker::CUBE;
-        markers[i].action = visualization_msgs::Marker::ADD;
-        markers[i].pose = objs[i].pose;
-        markers[i].scale = objs[i].size;
-        markers[i].color = objs[i].color_rgba;
-        markers[i].color.a = 0.6;
-        markers[i].lifetime = ros::Duration(10.0);
-    }
+        markers[2*i].header.frame_id = objs[i].header.frame_id;
+        markers[2*i].header.stamp = ros::Time();
+        markers[2*i].ns = "objs_reco_markers";
+        markers[2*i].id = 2*i;
+        markers[2*i].type = visualization_msgs::Marker::CUBE;
+        markers[2*i].action = visualization_msgs::Marker::ADD;
+        markers[2*i].pose = objs[i].pose;
+        markers[2*i].scale = objs[i].size;
+        markers[2*i].color = objs[i].color_rgba;
+        markers[2*i].color.a = 0.8;
+        markers[2*i].lifetime = ros::Duration(10.0);
+
+        markers[2*i+1] = markers[2*i];
+        markers[2*i+1].id = 2*i + 1;
+        markers[2*i+1].type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+        markers[2*i+1].pose.position.z += markers[2*i+1].scale.z/2;
+        markers[2*i+1].scale.z = 0.06;
+        markers[2*i+1].color.a = 1.0;
+        markers[2*i+1].text = objs[i].id;
+    }           
+    msg.markers = markers;
+    return msg;
+}
+
+visualization_msgs::MarkerArray Utils::get_object_marker(vision_msgs::VisionObject& obj)
+{
+    visualization_msgs::MarkerArray msg;
+    std::vector<visualization_msgs::Marker> markers;
+    markers.resize(2);
+    markers[0].header.frame_id = obj.header.frame_id;
+    markers[0].header.stamp = ros::Time();
+    markers[0].ns = "obj_reco_markers";
+    markers[0].id = 0;
+    markers[0].type = visualization_msgs::Marker::CUBE;
+    markers[0].action = visualization_msgs::Marker::ADD;
+    markers[0].pose = obj.pose;
+    markers[0].scale = obj.size;
+    markers[0].color = obj.color_rgba;
+    markers[0].color.a = 0.6;
+    markers[0].lifetime = ros::Duration(10.0);
+    
+    markers[1] = markers[0];
+    markers[1].id = 1;
+    markers[1].type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+    markers[1].pose.position.z += markers[1].scale.z/2;
+    markers[1].scale.z = 0.06;
+    markers[1].color.a = 1.0;
+    markers[1].text = obj.id;
+    
     msg.markers = markers;
     return msg;
 }

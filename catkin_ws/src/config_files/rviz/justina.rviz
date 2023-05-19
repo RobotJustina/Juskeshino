@@ -502,6 +502,14 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /vision/obj_reco/marker_array
+      Name: ObjRecoMrkArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /hri/leg_finder/hypothesis

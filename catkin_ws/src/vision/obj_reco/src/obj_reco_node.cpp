@@ -80,7 +80,6 @@ bool callback_recog_objs(vision_msgs::RecognizeObjects::Request& req, vision_msg
     Utils::filter_by_distance(cloud, img, min_x, min_y, min_z, max_x, max_y, max_z, cloud, img);
     std::vector<cv::Vec3f> plane = GeometricFeatures::get_horizontal_planes(cloud, normal_min_z, plane_dist_threshold, plane_min_area, output_mask, debug);
     std::vector<cv::Vec3f> points = GeometricFeatures::above_horizontal_plane(cloud, plane, plane_dist_threshold+0.005, output_mask, debug);
-    if(points.size() < 10) return false;
 
     std::vector<cv::Mat> objects_bgr, objects_xyz, objects_masks;
     if(!ObjectRecognizer::segment_by_contours(cloud, img, output_mask, min_points_per_object, objects_bgr, objects_xyz, objects_masks, debug)) return false;
@@ -103,8 +102,35 @@ bool callback_recog_objs(vision_msgs::RecognizeObjects::Request& req, vision_msg
 bool callback_recog_obj(vision_msgs::RecognizeObject::Request& req, vision_msgs::RecognizeObject::Response& resp)
 {
     std::cout << "ObjReco.->Trying to recognize " << req.name << " by Jebug's method." << std::endl;
-    cv::Mat img, cloud;
-    //transform_cloud_wrt_base(req.point_cloud, img, cloud);
+    cv::Mat img, cloud, output_mask;
+    if(debug) cv::destroyAllWindows();
+        
+    Utils::transform_cloud_wrt_base(req.point_cloud, img, cloud, tf_listener);
+    Utils::filter_by_distance(cloud, img, min_x, min_y, min_z, max_x, max_y, max_z, cloud, img);
+    std::vector<cv::Vec3f> plane = GeometricFeatures::get_horizontal_planes(cloud, normal_min_z, plane_dist_threshold, plane_min_area, output_mask, debug);
+    std::vector<cv::Vec3f> points = GeometricFeatures::above_horizontal_plane(cloud, plane, plane_dist_threshold+0.005, output_mask, debug);
+
+    std::vector<cv::Mat> objects_bgr, objects_xyz, objects_masks;
+    if(!ObjectRecognizer::segment_by_contours(cloud, img, output_mask, min_points_per_object, objects_bgr, objects_xyz, objects_masks, debug)) return false;
+
+    std::string recognized_label = "";
+    double confidence = -1;
+    double max_confidence = -1;
+    int recog_obj_idx = -1;
+    for(int i=0; i<objects_bgr.size(); i++){
+        ObjectRecognizer::recognize(objects_bgr[i], objects_masks[i], histogram_size, recognized_label, confidence, debug);
+        if(recognized_label == req.name && confidence > max_confidence)
+        {
+            recog_obj_idx = i;
+            max_confidence = confidence;
+        }
+    }
+    if(recog_obj_idx < 0) return false;
+
+    resp = Utils::get_recog_object_response(objects_bgr[recog_obj_idx], objects_xyz[recog_obj_idx], objects_masks[recog_obj_idx],
+                                            req.name, max_confidence, req.point_cloud.header.frame_id);
+    pubMarkerArray.publish(Utils::get_object_marker(resp.recog_object));
+    return recog_obj_idx >= 0;
 }
 
 bool callback_train_object(vision_msgs::TrainObject::Request& req, vision_msgs::TrainObject::Response& resp)
