@@ -126,6 +126,8 @@ geometry_msgs::Twist calculate_speeds(float robot_x, float robot_y, float robot_
     if(lateral)
         result.linear.y  = max_linear_speed  * exp(-(angle_error * angle_error) / (alpha));
     else result.linear.x  = max_linear_speed  * exp(-(angle_error * angle_error) / (alpha));
+    if(fabs(result.linear.x) < min_linear_speed)
+        result.linear.x = 0;
     if(fabs(result.linear.y) < min_linear_speed)
         result.linear.y = 0;
     result.angular.z = angular_speed * (2 / (1 + exp(-angle_error / beta)) - 1);
@@ -140,7 +142,7 @@ geometry_msgs::Twist calculate_speeds(float robot_angle, float goal_angle, float
 
     geometry_msgs::Twist result;
     result.linear.x  = 0;
-     result.angular.z = angular_speed * (2 / (1 + exp(-angle_error / beta)) - 1);
+    result.angular.z = angular_speed * (2 / (1 + exp(-angle_error / beta)) - 1);
     return result;
 }
 
@@ -365,7 +367,7 @@ int main(int argc, char** argv)
             global_error = sqrt((goal_x - robot_x)*(goal_x - robot_x) + (goal_y - robot_y)*(goal_y - robot_y));
             if(global_error < fine_dist_tolerance)
                 state = SM_GOAL_POSE_CORRECT_ANGLE;
-            else if(global_error < current_linear_speed*current_linear_speed/linear_acceleration)
+            else if(global_error < current_linear_speed*current_linear_speed/(linear_acceleration*5))
             {
                 state = SM_GOAL_POSE_DECCEL;
                 temp_k = current_linear_speed/sqrt(global_error);
@@ -381,8 +383,8 @@ int main(int argc, char** argv)
                 std::cout << "SimpleMove.->Timeout exceeded while trying to reach goal position. Current state: GOAL_POSE_ACCEL." << std::endl;
             }
             pub_cmd_vel.publish(calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
-                                                 max_angular_speed, alpha, beta, goal_distance < 0, move_lat));
-            current_linear_speed += linear_acceleration/RATE;
+                                                 max_angular_speed, alpha*2, beta/4, goal_distance < 0, move_lat));
+            current_linear_speed += (linear_acceleration*5)/RATE;
             break;
 
             
@@ -391,7 +393,7 @@ int main(int argc, char** argv)
             global_error = sqrt((goal_x - robot_x)*(goal_x - robot_x) + (goal_y - robot_y)*(goal_y - robot_y));
             if(global_error < fine_dist_tolerance)
                 state = SM_GOAL_POSE_CORRECT_ANGLE;
-            else if(global_error < current_linear_speed*current_linear_speed/linear_acceleration)
+            else if(global_error < current_linear_speed*current_linear_speed/(linear_acceleration*5))
             {
                 temp_k = current_linear_speed/sqrt(global_error);
                 state = SM_GOAL_POSE_DECCEL;
@@ -402,7 +404,7 @@ int main(int argc, char** argv)
                 std::cout << "SimpleMove.->Timeout exceeded while trying to reach goal position. Current state: GOAL_POSE_CRUISE." << std::endl;
             }
             pub_cmd_vel.publish(calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
-                                                 max_angular_speed, alpha, beta, goal_distance < 0, move_lat));
+                                                 max_angular_speed, alpha*2, beta/4, goal_distance < 0, move_lat));
             break;
 
             
@@ -419,7 +421,7 @@ int main(int argc, char** argv)
             current_linear_speed = temp_k * sqrt(global_error);
             if(current_linear_speed < min_linear_speed) current_linear_speed = min_linear_speed;
             pub_cmd_vel.publish(calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
-                                                 max_angular_speed, alpha, beta, goal_distance < 0, move_lat));
+                                                 max_angular_speed, alpha*2, beta/4, goal_distance < 0, move_lat));
             break;
 
 
@@ -431,7 +433,7 @@ int main(int argc, char** argv)
             global_error = fabs(global_error);
             if(global_error < angle_tolerance)
                 state = SM_GOAL_POSE_FINISH;
-            pub_cmd_vel.publish(calculate_speeds(robot_t, goal_t, max_angular_speed, beta, move_lat));
+            pub_cmd_vel.publish(calculate_speeds(robot_t, goal_t, max_angular_speed, beta/4, move_lat));
             if(--attempts <= 0)
             {
                 state = SM_GOAL_POSE_FAILED;

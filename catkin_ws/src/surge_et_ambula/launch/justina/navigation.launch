@@ -39,10 +39,11 @@
   <arg name="proximity_criterion" default="2.0"/>
   <arg name="cost_radius" default="0.5"/>
   <arg name="inflation_radius" default="0.2"/>
-
+  <arg name="diagonal_paths" default="False"/>
+  
 
   <node name="path_planner" pkg="path_planner" type="path_planner_node" output="screen">
-    <param name="diagonal_paths" value="False"/>
+    <param name="diagonal_paths" value="$(arg diagonal_paths)"/>
     <param name="smooth_alpha" value="$(arg smooth_alpha)"/>
     <param name="smooth_beta" value="$(arg smooth_beta)"/>
 
