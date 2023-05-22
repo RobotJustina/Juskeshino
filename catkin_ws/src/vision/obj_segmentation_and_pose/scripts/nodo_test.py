@@ -87,7 +87,7 @@ def callback(msg):
     # servicio reconocimiento de objetos ***************************************
     print("Reconocimiento del objeto.....")
     result_recog_obj = recog_obj_srv(RecognizeObject_msg )
-    """
+    
     # Desempaqueta datos
     if result_recog_obj.recog_object.graspable:
         # Orientacion y posicion del objeto detectado:
@@ -102,6 +102,9 @@ def callback(msg):
         type_obj = result_recog_obj.recog_object.category
 
         R,P,Y = tft.euler_from_quaternion([X, Y, Z, W])
+        print("pose del objeto", result_recog_obj.recog_object.pose )
+
+    """
 
     # servicio de agarre de objetos *********************************************
         print("Calculando la mejor orientacion del gripper.....")
@@ -133,8 +136,8 @@ def main():
 
     rospy.Subscriber("/hardware/realsense/points", PointCloud2, callback) 
 
-    rospy.wait_for_service("/vision/obj_reco/recognize_object")
-    recog_obj_srv = rospy.ServiceProxy("/vision/obj_reco/recognize_object", RecognizeObject)
+    #rospy.wait_for_service("/vision/obj_reco/recognize_object")
+    #recog_obj_srv = rospy.ServiceProxy("/vision/obj_reco/recognize_object", RecognizeObject)
 
     rospy.wait_for_service("/vision/gripper_orientation_grasping")
     best_grip_srv = rospy.ServiceProxy("/vision/gripper_orientation_grasping", InverseKinematicsPose2Traj )
