@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import math
 import rospy
 import numpy as np
 import tf
@@ -9,36 +8,14 @@ import tf2_ros
 import ros_numpy
 import cv2
 import pandas as pd
-from sensor_msgs.msg import PointCloud2, Image
-from std_msgs.msg import Header, Float32MultiArray, Float32
+from std_msgs.msg import Header
 from geometry_msgs.msg import PointStamped, PoseStamped, Point, Pose, Vector3, Vector3Stamped
-#from sklearn.preprocessing import StandardScaler
 from numpy.linalg import eig
 from visualization_msgs.msg import Marker
 from vision_msgs.srv import *
 import geometry_msgs.msg
 
-"""
-    Hacer que el codigo busque la mejor matriz de transformacion R que contiene a los eigenvectores
-    para 10 febrero 2023
-    Hecho
-"""
-
-"""
- node to recognize the closest object from the recognition of edges and contours, 
- in addition an approximation of the object's pose is obtained through principal 
- component analysis techniques.
-"""
-
-"""
-    Se modifica el metodo PCA para que entregue solo eigen valores y eigenvectores, no la pose,
-    el metodo que determina la pose se llama en la funcion callback y determina la pose del objeto 
-    con nuevas reglas, basandose en el paper de Lei Q, Chen
-
-
-    Para 16 de Febrero generar el frame object y adecuarlo a la orientacion de objeto, ademas
-    terminar de replicar resultados de paper
-"""
+ROBOTIC_ARM = 0.7
 
 def segment_by_contour(msg):
     objects_on_stage = False
@@ -50,13 +27,10 @@ def segment_by_contour(msg):
     img_bgr_copy = img_bgr
     #cv2.imshow('Imagen original', img_bgr)  #***************************************
     #cv2.waitKey(1)
-
     img_hsv = cv2.cvtColor(img_bgr,cv2.COLOR_BGR2HSV)   # Change the color space from BGR to HSV
     #cv2.imshow('Imagen hsv', img_hsv)   #*******************************************
     #cv2.waitKey(1)
-
     values=img_bgr.reshape((-1,3))  # (M,3=BGR), M = num of pixels
-
     values= np.float32(values)
     # Image color quantification with k-medias
     criteria= ( cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER,100,0.1)    # centroid convergence criterion
@@ -66,7 +40,6 @@ def segment_by_contour(msg):
     cc=np.uint8(cc) # Image with reduced colors, conversion to the format with which cv2 works
     #cv2.imshow('Imagen cuantizada', cc)
     #cv2.waitKey(1)
-
     segmented_image= cc[labels.flatten()]
     #cv2.imshow('Imagen aplanada', segmented_image)
     #cv2.waitKey(1)
@@ -95,97 +68,68 @@ def segment_by_contour(msg):
     contours, hierarchy = cv2.findContours(edged.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
     cents , normas, new_contour_list, contour_index, temp = [], [], [], [], []
     desired_idx = np.nan
-    
-    objects_on_stage = False
     #print("num contours", len(contours))
-    if len(contours) > 600:
-        return(objects_on_stage ,0 ,0, 0, 0,0,0,0)  
-
-    for i, contour in enumerate(contours):
-        area = cv2.contourArea(contour)
-        if area > 1500 and area < 20000:    # discarding contours by area
-            x1,y1,w,h = cv2.boundingRect(contour) 
-            xyz=[]
-
-            for c in range (x1, (x1+w)):   # Go through the rectangle from minimum to maximum.
-                for r in range(y1, (y1 + h)):  
-                    aux=(np.asarray((pointCloud_array[r,c][0] , pointCloud_array[r,c][1], pointCloud_array[r,c][2]))) # Guarda 1 coordenada array 1x3
-                    if np.isnan(aux[0]) or np.isnan(aux[1]) or np.isnan(aux[2]):'reject point'
-                    else:
-                        xyz.append(aux) 
-            if np.size(xyz) < 1:
-                continue
-            xyz=np.asarray(xyz)       
-            cent_rect = xyz.mean(axis=0) 
-            cents.append(cent_rect) 
-            # Calculation of the norm for the criterion of the centroid to choose
-
-            norma =  math.sqrt(cent_rect[0]**2 + cent_rect[1]**2 + cent_rect[2]**2)    
-            normas.append(norma)
-            objects_on_stage = True
-            new_contour_list.append(contour)
-            contour_index.append(i)
-            inf_contour = [contour, i, norma]
-            temp.append(inf_contour)
-       
     if len(contours) < 1:
         print("no contours candidates")
+        return(objects_on_stage ,0 ,0, 0, 0,0,0,0) 
+
+    if len(contours) > 600:
+        return(objects_on_stage ,0 ,0, 0, 0,0,0,0)  
     
-    if objects_on_stage:
-        cents, normas=np.asarray(cents), np.asarray(normas)
-        min_dist = np.amin(normas)
-        index = 0
-        for element in normas:      # search for the nearest contour index
-            if min_dist == element: 
-                desired_idx = index
-                break
-            index += 1
+    if len(contours) < 600:
+        for i, contour in enumerate(contours):
+            area = cv2.contourArea(contour)
+            if area > 1500 and area < 17000:    # discarding contours by area
+                new_contour_list.append(contour)
 
-        num_chosen_contour = temp[desired_idx][1]
-        # it is examined if the chosen contour has a parent***************************************
-        while hierarchy[0, num_chosen_contour ,3] > -1:     # as long as there is a father
-            num_parent_contour = hierarchy[0, num_chosen_contour ,3]
-            # it is examined if the parent contour belongs to the new list of contours
-            if num_parent_contour in contour_index: 
-                desired_idx = contour_index.index(num_parent_contour)
-                num_chosen_contour = temp[desired_idx][1]
+        if len(new_contour_list) <= 0:
+            print("no contours candidates")
+            return(objects_on_stage ,0 ,0, 0, 0,0,0,0) 
+        
+        else:
+            mask_contours_list = []
+            X_array, Y_array, Z_array= [], [], []
+            i = 0
+        
+            for i in range(len(new_contour_list)): 
+                mask = np.zeros(img_bgr.shape,np.uint8)
+                cv2.drawContours(mask, new_contour_list, i ,(255, 255, 255), thickness = cv2.FILLED)  # llena contorno para mascara
+                # the mask is eroded to ensure that we only get the point cloud of the object
+                mask_ero=cv2.erode(mask , kernel,iterations=4)   
+                pixels_array, img_with_mask = contour_point_cloud(img_bgr, mask_ero)
+                if len(pixels_array) <= 0:
+                    continue
             
-        cv2.drawContours(img_bgr_copy, new_contour_list, desired_idx,(200, 20, 233), 3)  # solo contorno en img original
-        recog_obj_img = img_bgr_copy 
-        mask = np.zeros(img_bgr.shape,np.uint8)
-        cv2.drawContours(mask, new_contour_list, desired_idx,(255, 255, 255), thickness = cv2.FILLED)  # llena contorno para mascara
+                x_c, y_c, z_c = 0,0,0
+                for pixel in pixels_array:  # extract xyz from each pixel 
+                    x, y, z = pointCloud_array[pixel[1],pixel[0]][0] , pointCloud_array[pixel[1],pixel[0]][1], pointCloud_array[pixel[1],pixel[0]][2]
+                    x_c += pointCloud_array[pixel[1],pixel[0]][0]   # calculate the centroid of the point cloud
+                    y_c += pointCloud_array[pixel[1],pixel[0]][1]
+                    z_c += pointCloud_array[pixel[1],pixel[0]][2]
+                    X_array.append(x), Y_array.append(y), Z_array.append(z)
 
-        # the mask is eroded to ensure that we only get the point cloud of the object
-        mask_ero=cv2.erode(mask , kernel,iterations=4)   
-        pixels_array, img_with_mask = contour_point_cloud(img_bgr, mask_ero)
-        X_array, Y_array, Z_array= [], [], []
-        x_c, y_c, z_c = 0,0,0
+                    centroid_x = x_c/len(pixels_array)
+                    centroid_y = y_c/len(pixels_array)
+                    centroid_z = z_c/len(pixels_array)
+                    cloud_msg = cloud_obj(pixels_array, X_array, Y_array, Z_array,0)
+                    norma = np.sqrt(centroid_x** + centroid_y** + centroid_z**)
+                    if norma > ROBOTIC_ARM: # descarta contornos lejanos
+                        continue
 
-        for pixel in pixels_array:  # extract xyz from each pixel 
-            x, y, z = pointCloud_array[pixel[1],pixel[0]][0] , pointCloud_array[pixel[1],pixel[0]][1], pointCloud_array[pixel[1],pixel[0]][2]
-            x_c += pointCloud_array[pixel[1],pixel[0]][0]   # calculate the centroid of the point cloud
-            y_c += pointCloud_array[pixel[1],pixel[0]][1]
-            z_c += pointCloud_array[pixel[1],pixel[0]][2]
-            X_array.append(x), Y_array.append(y), Z_array.append(z)
-        if len(pixels_array) == 0:
-            print("WARNING: NO POINT CLOUD")
-        centroid_x = x_c/len(pixels_array)
-        centroid_y = y_c/len(pixels_array)
-        centroid_z = z_c/len(pixels_array)
-        cloud_msg = cloud_obj(pixels_array, X_array, Y_array, Z_array,0)
-        X_array, Y_array, Z_array = np.asarray(X_array), np.asarray(Y_array), np.asarray(Z_array)
+                    X_array, Y_array, Z_array = np.asarray(X_array), np.asarray(Y_array), np.asarray(Z_array)
+                    # falta guardar contorno
 
-        #cv2.imshow('objeto con contorno ', recog_obj_img)
-        #cv2.waitKey(1)
-        #cv2.imshow('Objeto', img_with_mask)
-        #cv2.waitKey(1)
+                    #si hay contornos alcanzables actualiza bandera object_on_estage a True
 
-        return(objects_on_stage ,[centroid_x, centroid_y, centroid_z] ,X_array, Y_array, Z_array, recog_obj_img, img_with_mask, cloud_msg)
+        #retorna el contorno mas cercano
+
+        cv2.imshow('Objeto', img_with_mask)
+        cv2.waitKey(1)
+
+        return(objects_on_stage ,[centroid_x, centroid_y, centroid_z] ,X_array, Y_array, Z_array, img_with_mask, cloud_msg)
         
     else:
         return(objects_on_stage ,0 ,0, 0, 0,0,0,0)   
-
-
 
 
 
@@ -214,7 +158,7 @@ def cloud_obj(pixels_array, x_points, y_points, z_points, rgb_array):
                  dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4'), ('rgb','f4')])
     
     stamp = rospy.Time.now()
-    frame_id = 'camera_depth_optical_frame'
+    frame_id = 'realsense_link'
     cloud_msg = ros_numpy.point_cloud2.array_to_pointcloud2(cloud_obj, stamp, frame_id)
 
     return cloud_msg
@@ -272,69 +216,53 @@ def pca(x_points, y_points, z_points, frame_id, centroide_cam):
 
 
 
-
-
-def object_pose(centroid, principle_axis, frame_id):  # modificar a pointStamped cada punto
+def object_pose(centroid, principle_axis, frame_id_camera):  # modificar a pointStamped cada punto
     """
-        Esta funcion determina el frame orientacion del objeto, recibe la primera componente del 
-        analisis de PCA en 'realsense_link' y devuelve un objeto Pose, ademas genera el frame obj
-        EL FRAME DEBE GENERARSE EN BASE LINK...
-
-
         Construction of the coordinate system of the object
         All points is in the frame_id
     
         Pp = a random point on principle axis
-        Ps = position of the frame in which the cloud points is obtained = (0,0,0)
-        
+        Ps = position of the frame in which the cloud points is obtained = (0,0,0) 
+
         Oc_y = Oc_Ps x Oc_Pp , ahora eje x sera el de la componente principal
         Oc_z = Oc_y x Oc_x 
     """
     global listener 
-    principle_axis  = np.asarray(principle_axis)    # vector in frame de la camara
+    principle_axis  = np.asarray(principle_axis)    # vector in frame "realsense_link"
+    # transformacion de vector en frame camera a frame base_link*************************
 
-    # vector de la primera componente principal
     v_msg = Vector3Stamped()
-    v_msg.header.frame_id = frame_id   # Sistema coordenado de vector
+    v_msg.header.frame_id = frame_id_camera   # Sistema coordenado de vector
     v_msg.header.stamp = rospy.Time(0) 
     v_msg.vector.x, v_msg.vector.y , v_msg.vector.z = principle_axis[0], principle_axis[1], principle_axis[2]
     target_frame = 'base_link'
-    # la componente principal ahora tiene coordenadas respecto a frame base_link
     vector_principal_base_link = listener.transformVector3(target_frame, v_msg)
 
-    # Cambiar coordenadas de centroide de frame camara a frame base_link*********************************************
-    centroid = points_actual_to_points_target( centroid , frame_id, 'base_link')
-    # coordenadas de la componente principal como arreglo numpy
+    # Cambiar punto de centroide a frame base_link*********************************************
+    centroid = points_actual_to_points_target( centroid , frame_id_camera, 'base_link')
     principle_axis = np.asarray([vector_principal_base_link.vector.x , vector_principal_base_link.vector.y , vector_principal_base_link.vector.z ])
-    
     
     if principle_axis[2] < 0: 
         principle_axis = -1 * principle_axis
-        #print("principal axis is negative")
     
     Oc_Pp  = np.asarray(principle_axis) 
-    # componenten principal  ==  eje x en frame base link
-    
+    # axis x,y,z quedan en el frame base_link
     Oc_Ps = np.asarray([ centroid[0] , centroid[1] , centroid[2] ])
 
     Obj_y = np.cross(Oc_Ps , Oc_Pp)
-    # En base a las reglas se forma el sistema coordenado del objeto
+
     Obj_y = Obj_y /np.linalg.norm( np.cross(Oc_Ps , Oc_Pp ) )
     Obj_x = principle_axis /np.linalg.norm( principle_axis )    # Eje principal en x
     Obj_z = np.cross(Obj_y , Obj_x ) /np.linalg.norm( np.cross(Obj_x , Obj_y ) )
 
-    # se almacenan como puntos las coordenadas de eje x,y,...................................
     axis_x_obj, axis_y_obj, axis_z_obj = Point(), Point(), Point()
     axis_x_obj.x, axis_x_obj.y, axis_x_obj.z = Obj_x[0], Obj_x[1], Obj_x[2]
     axis_y_obj.x, axis_y_obj.y, axis_y_obj.z = Obj_y[0], Obj_y[1], Obj_y[2]
     axis_z_obj.x, axis_z_obj.y, axis_z_obj.z = Obj_z[0], Obj_z[1], Obj_z[2]
     
-    # Se forma la matriz de rotacion (columnas) del objeto, a partir de ella se obtienen
+    # con los vectores que representan a los ejes se forma la matriz de rotacion (columnas) y a partir de ella se obtienen
     # los cuaterniones necesarios para generar el frame del objeto
-
-    # En un arreglo se guardan las posibles combinciones de los eigenvectores de la MR
     comb = [[Obj_x, Obj_y , Obj_z],[Obj_y, Obj_x , Obj_z],[Obj_z, Obj_y , Obj_x],[Obj_x, Obj_z , Obj_y],[Obj_z, Obj_x , Obj_y]]
-    # Se prueba con la 3ra combinacion:
     RM = np.asarray( comb[3])
     RM = RM.T
     TM = [[RM[0,0], RM[0,1] , RM[0,2], 0],
@@ -345,12 +273,10 @@ def object_pose(centroid, principle_axis, frame_id):  # modificar a pointStamped
     r,p,y = tft.euler_from_matrix(np.asarray(TM))
     q_obj = tft.quaternion_from_euler(r, p, y)
     same_tf = tft.is_same_transform(np.asarray(TM), np.asarray( tft.quaternion_matrix(q_obj)))
-    # convierte de nuevo de cuaternion a Matriz y verifica que la transformacion sea la misma
     print("same tf?", same_tf )
-    i = 0
-    # obtiene la norma "d" para normalizar al cuaternion
-    #d = np.sqrt(q_obj[0]**2 + q_obj[1]**2 + q_obj[2]**2 + q_obj[3]**2)
-    d = 1.0
+
+    d = np.sqrt(q_obj[0]**2 + q_obj[1]**2 + q_obj[2]**2 + q_obj[3]**2)
+
     obj_pose = Pose()
     obj_pose.position.x, obj_pose.position.y, obj_pose.position.z = centroid[0], centroid[1], centroid[2]
     obj_pose.orientation.x = q_obj[0]/d
@@ -361,19 +287,21 @@ def object_pose(centroid, principle_axis, frame_id):  # modificar a pointStamped
 
 
 
-
 def broadcaster_frame_object(frame, child_frame, pose):
     """
-        Emite la transformacion en el frame base_link, 
+        Emite la transformacion en el frame base_link, entre pose en frame base_link
     """
     br = tf2_ros.TransformBroadcaster()
     t = geometry_msgs.msg.TransformStamped()
+
     t.header.frame_id = frame
     t.child_frame_id = child_frame 
     t.header.stamp = rospy.Time.now()
+
     t.transform.translation.x = pose.position.x
     t.transform.translation.y = pose.position.y
     t.transform.translation.z = pose.position.z
+    
     t.transform.rotation.x = pose.orientation.x
     t.transform.rotation.y = pose.orientation.y
     t.transform.rotation.z = pose.orientation.z
@@ -382,22 +310,21 @@ def broadcaster_frame_object(frame, child_frame, pose):
 
 
 
-
-def centroid_marker(xyz, frame_id): 
+def centroid_marker(centroide_cam, frame_id): 
     global pub_point
     centroide = PointStamped()
     centroide.header.frame_id = frame_id
-    centroide.point.x = xyz[0]
-    centroide.point.y = xyz[1]
-    centroide.point.z = xyz[2]
+    centroide.point.x = centroide_cam[0]
+    centroide.point.y = centroide_cam[1]
+    centroide.point.z = centroide_cam[2]
     frame_id = centroide.header.frame_id
     hdr = Header(frame_id=frame_id, stamp=rospy.Time(0))
     pub_point.publish(PointStamped(header=hdr, point=Point(x = centroide.point.x , y = centroide.point.y, z = centroide.point.z)))
 
 
 
-
-def arow_marker(centroide_cam, p1 ,p2,p3, frame_id_point_cloud):  
+def arow_marker(centroide_cam, p1 ,p2,p3, frame_id_point_cloud):  # P1 y P2
+    #centroide
     p0 = PointStamped()
     p0.header.frame_id = frame_id_point_cloud
     p0.point.x , p0.point.y, p0.point.z = centroide_cam[0], centroide_cam[1], centroide_cam[2]
@@ -423,7 +350,6 @@ def arow_marker(centroide_cam, p1 ,p2,p3, frame_id_point_cloud):
 
         marker.points = [points[0].point, point]
         marker_pub.publish(marker)
-
 
 
 
@@ -458,7 +384,6 @@ def object_category(fpc, spc, thpc):
 
 
 
-
 def frame_actual_to_frame_target(pos_in, f_actual, f_target):
     """
         Dado un frame y una pose de entrada, retorna una Pose en el frame objetivo
@@ -470,6 +395,7 @@ def frame_actual_to_frame_target(pos_in, f_actual, f_target):
     poseStamped_msg.header.frame_id = f_actual   # frame de origen
     poseStamped_msg.header.stamp = rospy.Time(0)  # la ultima transformacion
     pose_in = pos_in
+   
     #poseStamped_msg.pose = Pose()
     poseStamped_msg.pose = pose_in
     pose_frame_base_link = listener_base.transformPose(f_target, poseStamped_msg)
@@ -479,15 +405,22 @@ def frame_actual_to_frame_target(pos_in, f_actual, f_target):
 
 
 def points_actual_to_points_target(point_in, f_actual, f_target):
+    """
+        Dado un frame y una pose de entrada, retorna una Pose en el frame objetivo
+    """
     global listener_base
+
+    # Empaqueta msg, convierte orientacion de frame 'realsense_link' a frame 'base_link'
     point_msg = PointStamped()  
     point_msg.header.frame_id = f_actual   # frame de origen
     point_msg.header.stamp = rospy.Time(0)  # la ultima transformacion
+   
     point_msg.point.x = point_in[0]
     point_msg.point.y = point_in[1]
     point_msg.point.z = point_in[2]
     point_target_frame = listener_base.transformPoint(f_target, point_msg)
     new_point = point_target_frame.point
+
     return [ new_point.x , new_point.y , new_point.z ]
 
 
@@ -495,32 +428,21 @@ def points_actual_to_points_target(point_in, f_actual, f_target):
 
 def callback_RecognizeObject(req):  # Request is a PointCloud2
     global pca1
-
     msg = req.point_cloud
     print("the service has been requested **************")
     # centroide cam in 
-    obj_in_stage, centroide_cam, x_points, y_points, z_points, recog_obj_img, img_with_mask, cloud_msg = segment_by_contour(msg)
-    print("posicion de objeto despues de segmentar" , centroide_cam)
-    frame_id_point_cloud = msg.header.frame_id
+    obj_in_stage, centroide_cam, x_points, y_points, z_points, img_with_mask, cloud_msg = segment_by_contour(msg)
+    
     resp = RecognizeObjectResponse()
 
     if obj_in_stage:
         print("An object was detected")
-        position_bl = points_actual_to_points_target(centroide_cam, frame_id_point_cloud,'base_link')
-        centroid_marker(position_bl,'base_link')
-        # Retorna las componentes principales (eigenvalores y eigenvectores) de la nube de puntos del objeto y el tamanio aprox del objeto
+
         pca_vectors, eig_val, size_obj = pca(x_points, y_points, z_points, msg.header.frame_id, centroide_cam)
-        # Retorna la forma geometrica aproximada del objeto, pide las componentes principales de la pc del objeto
         c_obj = object_category(eig_val[0], eig_val[1], eig_val[2])
         
-        # Forma el frame del objeto para lo cual pide: el centroide y la primera componente principal
-        # retorna la Pose del objeto, y los ejes del frame, x,y,z
-        frame_id_point_cloud = 'camera_depth_optical_frame'
-        obj_pose, axis_x_obj, axis_y_obj, axis_z_obj, centroid = object_pose(centroide_cam, pca_vectors[0], frame_id_point_cloud)
+        obj_pose, axis_x_obj, axis_y_obj, axis_z_obj, centroid = object_pose(centroide_cam, pca_vectors[0], msg.header.frame_id)
         arow_marker( centroid, axis_x_obj, axis_y_obj, axis_z_obj, 'base_link')
-        #centroid_marker(centroide_cam, frame_id_point_cloud)
-        # cambiar la pose de frame
-        #pose_base_link = frame_actual_to_frame_target(obj_pose , 'realsense_link', 'base_link')
         broadcaster_frame_object("base_link", "object", obj_pose)
         print("size object", size_obj)
 
@@ -529,10 +451,7 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
         resp.recog_object.header = req.point_cloud.header
         resp.recog_object.point_cloud = cloud_msg
         resp.recog_object.size = size_obj
-        resp.recog_object.pose.position.x = position_bl[0]
-        resp.recog_object.pose.position.y = position_bl[1]
-        resp.recog_object.pose.position.z = position_bl[2]
-        resp.recog_object.pose.orientation = obj_pose     
+        resp.recog_object.pose = obj_pose  # envia la pose en el frame 'base_link'      
         resp.recog_object.image.data = img_with_mask.flatten().tolist()
         resp.recog_object.image.height = 480
         resp.recog_object.image.width = 640
@@ -540,13 +459,6 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
         #resp.image.data = recog_obj_img_list
         resp.image.height = 480
         resp.image.width = 640
-
-        """
-        cv2.imshow('final obj', img_with_mask)
-        cv2.waitKey(1)
-        cv2.imshow('detected object', recog_obj_img)
-        cv2.waitKey(1) 
-        """
         return resp
 
     else:
@@ -561,7 +473,7 @@ def main():
     rospy.init_node("object_pose")
     global pub_point, marker_pub, listener_base, listener, pca1
     
-    rospy.Service("/vision/obj_segmentation/get_obj_pose", RecognizeObject, callback_RecognizeObject) 
+    rospy.Service("/vision/obj_reco/recognize_object", RecognizeObject, callback_RecognizeObject) 
     pub_point = rospy.Publisher('/vision/detected_object', PointStamped, queue_size=10)
     marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10) 
     listener_base = tf.TransformListener()

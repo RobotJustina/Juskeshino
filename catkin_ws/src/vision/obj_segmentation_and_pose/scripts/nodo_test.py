@@ -17,7 +17,6 @@ from std_msgs.msg import Float64MultiArray
 from tf.transformations import euler_from_quaternion
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
-pubLaGoalPose = None
 
 
 """
@@ -79,13 +78,20 @@ def la_trajectory_tracking(joint_trajectory):
 
 
 def callback(msg):
-    global recog_obj_srv, best_grip_srv
+    global recog_obj_srv, best_grip_srv, bex_srv
 
+    
     RecognizeObject_msg = RecognizeObjectRequest()
     RecognizeObject_msg.point_cloud = msg
 
     # servicio reconocimiento de objetos ***************************************
     print("Reconocimiento del objeto.....")
+<<<<<<< HEAD
+=======
+    result_bex = bex_srv(RecognizeObject_msg)
+
+    """
+>>>>>>> 5d4f2dc13bb4f5e2016a3b401e6e68f12d047841
     result_recog_obj = recog_obj_srv(RecognizeObject_msg )
     
     # Desempaqueta datos
@@ -130,14 +136,22 @@ def callback(msg):
 
 def main():
     global pose_obj_frame_base, recog_obj_srv, best_grip_srv ,listener, traj_tracking_srv
-    global pubLaGoalPose, pubRaGoalPose
+    global pubLaGoalPose, pubRaGoalPose, bex_srv
     print("test node... ʕ•ᴥ•ʔ")
     rospy.init_node("nodo_test")
 
     rospy.Subscriber("/hardware/realsense/points", PointCloud2, callback) 
 
+<<<<<<< HEAD
     #rospy.wait_for_service("/vision/obj_reco/recognize_object")
     #recog_obj_srv = rospy.ServiceProxy("/vision/obj_reco/recognize_object", RecognizeObject)
+=======
+    rospy.wait_for_service("/vision/obj_segmentation_and_pose/bottom_extractor")
+    bex_srv = rospy.ServiceProxy("/vision/obj_segmentation_and_pose/bottom_extractor", RecognizeObject)    
+
+    rospy.wait_for_service("/vision/obj_reco/recognize_object")
+    recog_obj_srv = rospy.ServiceProxy("/vision/obj_reco/recognize_object", RecognizeObject)
+>>>>>>> 5d4f2dc13bb4f5e2016a3b401e6e68f12d047841
 
     rospy.wait_for_service("/vision/gripper_orientation_grasping")
     best_grip_srv = rospy.ServiceProxy("/vision/gripper_orientation_grasping", InverseKinematicsPose2Traj )
