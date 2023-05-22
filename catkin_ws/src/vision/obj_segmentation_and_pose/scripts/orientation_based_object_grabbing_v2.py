@@ -404,7 +404,7 @@ def main():
     global pose_obj_frame_base, image_seg_service, pose_in, listener , ik_srv, marker_pub
     print("Node to grab objects based on their orientation...")
     rospy.init_node("gripper_orientation_for_grasping")
-    rospy.Service("/vision/gripper_orientation_grasping", InverseKinematicsPose2Traj, callback)
+    rospy.Service("/vision/get_best_grasp_traj", InverseKinematicsPose2Traj, callback)
     listener = tf.TransformListener()
     # se suscribe al servicio /manipulation/ik_trajectory
     rospy.wait_for_service( '/manipulation/la_ik_trajectory' )

@@ -177,8 +177,8 @@ def segment_by_contour(msg):
 
         #cv2.imshow('objeto con contorno ', recog_obj_img)
         #cv2.waitKey(1)
-        cv2.imshow('Objeto', img_with_mask)
-        cv2.waitKey(1)
+        #cv2.imshow('Objeto', img_with_mask)
+        #cv2.waitKey(1)
 
         return(objects_on_stage ,[centroid_x, centroid_y, centroid_z] ,X_array, Y_array, Z_array, recog_obj_img, img_with_mask, cloud_msg)
         
@@ -348,29 +348,7 @@ def object_pose(centroid, principle_axis, frame_id):  # modificar a pointStamped
     # convierte de nuevo de cuaternion a Matriz y verifica que la transformacion sea la misma
     print("same tf?", same_tf )
     i = 0
-    """
-    while same_tf == False:
-        RM = np.asarray( comb[i])
-        RM = RM.T
-        TM = [[RM[0,0], RM[0,1] , RM[0,2], 0],
-        [RM[1,0], RM[1,1] , RM[1,2], 0],
-        [RM[2,0], RM[2,1] , RM[2,2], 0], 
-        [0, 0, 0, 1]]
-
-        #r,p,y = tft.euler_from_matrix(np.asarray(TM))
-        #q_obj = tft.quaternion_from_euler(r, p, y)
-        q_obj = tft.quaternion_from_matrix(np.asarray(TM))
-        # actualiza la bandera de comprobacion de transformacion correcta
-        same_tf = tft.is_same_transform(np.asarray(TM), np.asarray( tft.quaternion_matrix(q_obj)))
-        print("same tf?, i", same_tf , i)
-        i = i+1
-        if i > 4:
-            break
-    """
-
-
     # obtiene la norma "d" para normalizar al cuaternion
-    
     #d = np.sqrt(q_obj[0]**2 + q_obj[1]**2 + q_obj[2]**2 + q_obj[3]**2)
     d = 1.0
     obj_pose = Pose()
@@ -379,15 +357,6 @@ def object_pose(centroid, principle_axis, frame_id):  # modificar a pointStamped
     obj_pose.orientation.y = q_obj[1]/d
     obj_pose.orientation.z = q_obj[2]/d
     obj_pose.orientation.w = q_obj[3]/d
-
-    print("posicion obj dentro de object_pose", obj_pose.position)
-
-    # cambiar de frame
-    #pose_base_link = frame_actual_to_frame_target(obj_pose , 'realsense_link', 'base_link')
-
-
-    # la pose debe salir en el sistema base_link y cancelar la funcion de arriba
-
     return obj_pose , axis_x_obj, axis_y_obj, axis_z_obj , centroid
 
 
@@ -399,39 +368,31 @@ def broadcaster_frame_object(frame, child_frame, pose):
     """
     br = tf2_ros.TransformBroadcaster()
     t = geometry_msgs.msg.TransformStamped()
-
-    print("Emite la transformacion entre frame 'object' y frame 'base_link'.....")
-
     t.header.frame_id = frame
     t.child_frame_id = child_frame 
     t.header.stamp = rospy.Time.now()
-
     t.transform.translation.x = pose.position.x
     t.transform.translation.y = pose.position.y
     t.transform.translation.z = pose.position.z
-    
     t.transform.rotation.x = pose.orientation.x
     t.transform.rotation.y = pose.orientation.y
     t.transform.rotation.z = pose.orientation.z
     t.transform.rotation.w = pose.orientation.w
-    
     br.sendTransform(t)
 
 
 
 
-def centroid_marker(centroide_cam, frame_id): 
+def centroid_marker(xyz, frame_id): 
     global pub_point
     centroide = PointStamped()
     centroide.header.frame_id = frame_id
-    centroide.point.x = centroide_cam[0]
-    centroide.point.y = centroide_cam[1]
-    centroide.point.z = centroide_cam[2]
+    centroide.point.x = xyz[0]
+    centroide.point.y = xyz[1]
+    centroide.point.z = xyz[2]
     frame_id = centroide.header.frame_id
     hdr = Header(frame_id=frame_id, stamp=rospy.Time(0))
     pub_point.publish(PointStamped(header=hdr, point=Point(x = centroide.point.x , y = centroide.point.y, z = centroide.point.z)))
-
-
 
 
 
@@ -462,7 +423,6 @@ def arow_marker(centroide_cam, p1 ,p2,p3, frame_id_point_cloud):
 
         marker.points = [points[0].point, point]
         marker_pub.publish(marker)
-
 
 
 
@@ -499,7 +459,6 @@ def object_category(fpc, spc, thpc):
 
 
 
-
 def frame_actual_to_frame_target(pos_in, f_actual, f_target):
     """
         Dado un frame y una pose de entrada, retorna una Pose en el frame objetivo
@@ -511,35 +470,24 @@ def frame_actual_to_frame_target(pos_in, f_actual, f_target):
     poseStamped_msg.header.frame_id = f_actual   # frame de origen
     poseStamped_msg.header.stamp = rospy.Time(0)  # la ultima transformacion
     pose_in = pos_in
-   
     #poseStamped_msg.pose = Pose()
     poseStamped_msg.pose = pose_in
     pose_frame_base_link = listener_base.transformPose(f_target, poseStamped_msg)
     new_pose = pose_frame_base_link.pose
-
     return new_pose
 
 
 
-
-
 def points_actual_to_points_target(point_in, f_actual, f_target):
-    """
-        Dado un frame y una pose de entrada, retorna una Pose en el frame objetivo
-    """
     global listener_base
-
-    # Empaqueta msg, convierte orientacion de frame 'realsense_link' a frame 'base_link'
     point_msg = PointStamped()  
     point_msg.header.frame_id = f_actual   # frame de origen
     point_msg.header.stamp = rospy.Time(0)  # la ultima transformacion
-   
     point_msg.point.x = point_in[0]
     point_msg.point.y = point_in[1]
     point_msg.point.z = point_in[2]
     point_target_frame = listener_base.transformPoint(f_target, point_msg)
     new_point = point_target_frame.point
-
     return [ new_point.x , new_point.y , new_point.z ]
 
 
@@ -558,7 +506,8 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
 
     if obj_in_stage:
         print("An object was detected")
-
+        position_bl = points_actual_to_points_target(centroide_cam, frame_id_point_cloud,'base_link')
+        centroid_marker(position_bl,'base_link')
         # Retorna las componentes principales (eigenvalores y eigenvectores) de la nube de puntos del objeto y el tamanio aprox del objeto
         pca_vectors, eig_val, size_obj = pca(x_points, y_points, z_points, msg.header.frame_id, centroide_cam)
         # Retorna la forma geometrica aproximada del objeto, pide las componentes principales de la pc del objeto
@@ -580,7 +529,10 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
         resp.recog_object.header = req.point_cloud.header
         resp.recog_object.point_cloud = cloud_msg
         resp.recog_object.size = size_obj
-        resp.recog_object.pose = obj_pose  # envia la pose en el frame 'base_link'      
+        resp.recog_object.pose.position.x = position_bl[0]
+        resp.recog_object.pose.position.y = position_bl[1]
+        resp.recog_object.pose.position.z = position_bl[2]
+        resp.recog_object.pose.orientation = obj_pose     
         resp.recog_object.image.data = img_with_mask.flatten().tolist()
         resp.recog_object.image.height = 480
         resp.recog_object.image.width = 640
@@ -609,7 +561,7 @@ def main():
     rospy.init_node("object_pose")
     global pub_point, marker_pub, listener_base, listener, pca1
     
-    rospy.Service("/vision/obj_reco/recognize_object", RecognizeObject, callback_RecognizeObject) 
+    rospy.Service("/vision/obj_segmentation/get_obj_pose", RecognizeObject, callback_RecognizeObject) 
     pub_point = rospy.Publisher('/vision/detected_object', PointStamped, queue_size=10)
     marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10) 
     listener_base = tf.TransformListener()
