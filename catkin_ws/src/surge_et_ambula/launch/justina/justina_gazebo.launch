@@ -30,7 +30,6 @@
   </include>
 
   <include file="$(find surge_et_ambula)/launch/justina/justina_manipulation.launch"/>
-  <node name="traj_tracking" pkg="trajectory_tracking" type="traj_tracking.py" output="screen"/>
   
   <include file="$(find surge_et_ambula)/launch/justina/speech.launch"/>
 </launch>
