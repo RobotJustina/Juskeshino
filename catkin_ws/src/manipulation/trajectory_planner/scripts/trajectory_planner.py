@@ -68,7 +68,7 @@ def get_trajectory_time(p1, p2, speed_factor):
 
 def callback_polynomial_trajectory(req):
     print(prompt+"Calculating polynomial trajectory")
-    t  = req.duration if req.duration > 0 else get_trajectory_time(p1, p2, 0.25)
+    t  = req.duration if req.duration > 0 else get_trajectory_time(req.p1, req.p2, 0.25)
     Q, T = get_polynomial_trajectory_multi_dof(req.p1, req.p2, req.v1, req.v2, req.a1, req.a2, t, req.time_step)
     trj = JointTrajectory()
     trj.header.stamp = rospy.Time.now()

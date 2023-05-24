@@ -9,36 +9,13 @@ import tf2_ros
 import ros_numpy
 import cv2
 import pandas as pd
-from sensor_msgs.msg import PointCloud2, Image
 from std_msgs.msg import Header, Float32MultiArray, Float32
 from geometry_msgs.msg import PointStamped, PoseStamped, Point, Pose, Vector3, Vector3Stamped
-#from sklearn.preprocessing import StandardScaler
 from numpy.linalg import eig
 from visualization_msgs.msg import Marker
 from vision_msgs.srv import *
 import geometry_msgs.msg
 
-"""
-    Hacer que el codigo busque la mejor matriz de transformacion R que contiene a los eigenvectores
-    para 10 febrero 2023
-    Hecho
-"""
-
-"""
- node to recognize the closest object from the recognition of edges and contours, 
- in addition an approximation of the object's pose is obtained through principal 
- component analysis techniques.
-"""
-
-"""
-    Se modifica el metodo PCA para que entregue solo eigen valores y eigenvectores, no la pose,
-    el metodo que determina la pose se llama en la funcion callback y determina la pose del objeto 
-    con nuevas reglas, basandose en el paper de Lei Q, Chen
-
-
-    Para 16 de Febrero generar el frame object y adecuarlo a la orientacion de objeto, ademas
-    terminar de replicar resultados de paper
-"""
 
 def segment_by_contour(msg):
     objects_on_stage = False
@@ -500,22 +477,22 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
     print("the service has been requested **************")
     # centroide cam in 
     obj_in_stage, centroide_cam, x_points, y_points, z_points, recog_obj_img, img_with_mask, cloud_msg = segment_by_contour(msg)
-    print("posicion de objeto despues de segmentar" , centroide_cam)
     frame_id_point_cloud = msg.header.frame_id
     resp = RecognizeObjectResponse()
 
     if obj_in_stage:
         print("An object was detected")
         position_bl = points_actual_to_points_target(centroide_cam, frame_id_point_cloud,'base_link')
+        print("posicion de objeto" , position_bl)
         centroid_marker(position_bl,'base_link')
         # Retorna las componentes principales (eigenvalores y eigenvectores) de la nube de puntos del objeto y el tamanio aprox del objeto
+        """
         pca_vectors, eig_val, size_obj = pca(x_points, y_points, z_points, msg.header.frame_id, centroide_cam)
         # Retorna la forma geometrica aproximada del objeto, pide las componentes principales de la pc del objeto
         c_obj = object_category(eig_val[0], eig_val[1], eig_val[2])
         
         # Forma el frame del objeto para lo cual pide: el centroide y la primera componente principal
         # retorna la Pose del objeto, y los ejes del frame, x,y,z
-        frame_id_point_cloud = 'camera_depth_optical_frame'
         obj_pose, axis_x_obj, axis_y_obj, axis_z_obj, centroid = object_pose(centroide_cam, pca_vectors[0], frame_id_point_cloud)
         arow_marker( centroid, axis_x_obj, axis_y_obj, axis_z_obj, 'base_link')
         #centroid_marker(centroide_cam, frame_id_point_cloud)
@@ -523,16 +500,19 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
         #pose_base_link = frame_actual_to_frame_target(obj_pose , 'realsense_link', 'base_link')
         broadcaster_frame_object("base_link", "object", obj_pose)
         print("size object", size_obj)
+        """
 
         # Rellenando msg
+        """
         resp.recog_object.category = c_obj
         resp.recog_object.header = req.point_cloud.header
         resp.recog_object.point_cloud = cloud_msg
         resp.recog_object.size = size_obj
-        resp.recog_object.pose.position.x = position_bl[0]
+        """
+        resp.recog_object.pose.position.x = position_bl[0] + 0.02
         resp.recog_object.pose.position.y = position_bl[1]
-        resp.recog_object.pose.position.z = position_bl[2]
-        resp.recog_object.pose.orientation = obj_pose     
+        resp.recog_object.pose.position.z = position_bl[2] + 0.05
+        #resp.recog_object.pose.orientation = obj_pose.orientation   
         resp.recog_object.image.data = img_with_mask.flatten().tolist()
         resp.recog_object.image.height = 480
         resp.recog_object.image.width = 640

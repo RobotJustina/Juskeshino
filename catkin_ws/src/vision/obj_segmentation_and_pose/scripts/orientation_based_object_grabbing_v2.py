@@ -414,7 +414,6 @@ def main():
 
     loop = rospy.Rate(30)
     while not rospy.is_shutdown():
-        
         loop.sleep()
 
 if __name__ == '__main__':
