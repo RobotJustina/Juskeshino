@@ -99,6 +99,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(ui->visTxtTrainObject, SIGNAL(returnPressed()), this, SLOT(visTrainObjectReturnPressed()));
     QObject::connect(ui->visBtnRecogObjects, SIGNAL(clicked()), this, SLOT(visRecognizeObjectsClicked()));
     QObject::connect(ui->visTxtRecognizeObject, SIGNAL(returnPressed()), this, SLOT(visRecognizeObjectReturnPressed()));
+    QObject::connect(ui->visBtnPointsAbovePlane, SIGNAL(clicked()), this, SLOT(visGetPointsAbovePlaneClicked()));
 }
 
 MainWindow::~MainWindow()
@@ -872,4 +873,9 @@ void MainWindow::visRecognizeObjectReturnPressed()
 void MainWindow::visRecognizeObjectsClicked()
 {
     qtRosNode->call_recognize_objects();
+}
+
+void MainWindow::visGetPointsAbovePlaneClicked()
+{
+    qtRosNode->call_get_points_above_plane();
 }

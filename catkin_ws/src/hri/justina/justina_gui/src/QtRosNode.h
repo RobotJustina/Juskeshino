@@ -22,6 +22,7 @@
 #include "vision_msgs/TrainObject.h"
 #include "vision_msgs/RecognizeObjects.h"
 #include "vision_msgs/RecognizeObject.h"
+#include "vision_msgs/PreprocessPointCloud.h"
 #include "hri_msgs/RecognizedSpeech.h"
 
 class QtRosNode : public QThread
@@ -60,6 +61,7 @@ public:
     ros::ServiceClient cltTrainObject;
     ros::ServiceClient cltRecogObjects;
     ros::ServiceClient cltRecogObject;
+    ros::ServiceClient cltGetPointsAbovePlane;
     tf::TransformListener tf_listener;
     
     geometry_msgs::Twist cmd_vel;
@@ -110,6 +112,7 @@ public:
     bool call_train_object(std::string name);
     bool call_recognize_objects();
     bool call_recognize_object(std::string name);
+    bool call_get_points_above_plane();
 signals:
     void updateGraphics();
     void onRosNodeFinished();

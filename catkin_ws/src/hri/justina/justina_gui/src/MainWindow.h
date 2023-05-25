@@ -103,6 +103,7 @@ public slots:
     void visTrainObjectReturnPressed();
     void visRecognizeObjectReturnPressed();
     void visRecognizeObjectsClicked();
+    void visGetPointsAbovePlaneClicked();
 private:
     Ui::MainWindow *ui;
 };

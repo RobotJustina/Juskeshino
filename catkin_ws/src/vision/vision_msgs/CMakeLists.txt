@@ -38,6 +38,7 @@ add_service_files(
   RecognizeObject.srv
   TrainObject.srv
   FindPerson.srv
+  PreprocessPointCloud.srv
 )
 
 ## Generate actions in the 'action' folder

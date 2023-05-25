@@ -16,6 +16,7 @@ public:
 
     static bool debug;
     static void pointcloud_msg2_cv_mat(sensor_msgs::PointCloud2& pc_msg, cv::Mat& bgr_dest, cv::Mat& pc_dest);
+    static void cv_mat2_pointcloud_msg(cv::Mat& src_bgr, cv::Mat& src_xyz, std::string frame_id, sensor_msgs::PointCloud2& msg_cloud);
     static void filter_by_distance(cv::Mat& cloud, cv::Mat& img, float min_x, float min_y, float min_z, float max_x,
                                    float max_y, float max_z, cv::Mat& filtered_cloud, cv::Mat& filtered_img);
     static void transform_cloud_wrt_base(sensor_msgs::PointCloud2& cloud, cv::Mat& bgr_dest, cv::Mat& cloud_dest,

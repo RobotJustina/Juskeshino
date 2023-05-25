@@ -6,6 +6,7 @@
 #include "vision_msgs/RecognizeObject.h"
 #include "vision_msgs/VisionObject.h"
 #include "vision_msgs/TrainObject.h"
+#include "vision_msgs/PreprocessPointCloud.h"
 #include "visualization_msgs/MarkerArray.h"
 #include "Utils.h"
 #include "GeometricFeatures.h"
@@ -14,6 +15,7 @@
 tf::TransformListener* tf_listener;
 ros::Publisher pubMarkers;
 ros::Publisher pubMarkerArray;
+ros::Publisher pubResultCloud;
 
 bool  debug = false;
 float min_x =  0.3;
@@ -136,6 +138,7 @@ bool callback_recog_obj(vision_msgs::RecognizeObject::Request& req, vision_msgs:
 bool callback_train_object(vision_msgs::TrainObject::Request& req, vision_msgs::TrainObject::Response& resp)
 {
     std::cout << "ObjReco.->Training object " << req.name << " Jebusly..." << std::endl;
+    if(debug) cv::destroyAllWindows();
     if( req.name == "" )
     {
      	std::cout << "ObjReco.->ERROR!: objects must have a name to be trained" << std::endl;
@@ -163,18 +166,42 @@ bool callback_train_object(vision_msgs::TrainObject::Request& req, vision_msgs::
     return true;
 }
 
+bool callback_get_points_above_plane(vision_msgs::PreprocessPointCloud::Request& req, vision_msgs::PreprocessPointCloud::Response& resp)
+{
+    if(debug) cv::destroyAllWindows();
+    std::cout << "ObjReco.->Trying to find the points above a plane..." << std::endl;
+    cv::Mat img, xyz, output_mask;   
+    Utils::transform_cloud_wrt_base(req.input_cloud, img, xyz, tf_listener);
+    Utils::filter_by_distance(xyz, img, min_x, min_y, min_z, max_x, max_y, max_z, xyz, img);
+    std::vector<cv::Vec3f> plane = GeometricFeatures::get_horizontal_planes(xyz, normal_min_z, plane_dist_threshold, plane_min_area, output_mask, debug);
+    std::vector<cv::Vec3f> points = GeometricFeatures::above_horizontal_plane(xyz, plane, plane_dist_threshold+0.005, output_mask, debug);
+    if(points.size() < 10)
+    {
+        std::cout << "ObjReco.->Cannot find enough points above a plane. " << std::endl;
+        return false;
+    }
+    img = img.setTo(0, output_mask==0);
+    xyz = xyz.setTo(0, output_mask==0);
+    Utils::cv_mat2_pointcloud_msg(img, xyz, req.input_cloud.header.frame_id, resp.output_cloud);
+    pubResultCloud.publish(resp.output_cloud);
+    return true;
+}
+
 int main(int argc, char** argv)
 {
     std::cout << "INITIALIZING OBJECT RECOGNIZER BY MR. YISUS (CORRECTED AND IMPROVED BY MARCOSOFT)" << std::endl;
     ros::init(argc, argv, "obj_reco_node");
     ros::NodeHandle n;
-    ros::ServiceServer srvFindLines  = n.advertiseService("/vision/line_finder/find_table_edge", callback_find_table_edge);
-    ros::ServiceServer srvFindPlanes = n.advertiseService("/vision/line_finder/find_horizontal_plane_ransac", callback_find_planes);
-    ros::ServiceServer srvRecogObjs  = n.advertiseService("/vision/obj_reco/recognize_objects", callback_recog_objs);
-    ros::ServiceServer srvRecogObj   = n.advertiseService("/vision/obj_reco/recognize_object" , callback_recog_obj );
-    ros::ServiceServer srvTrainObj   = n.advertiseService("/vision/obj_reco/train_object", callback_train_object);
+    ros::ServiceServer srvFindLines    = n.advertiseService("/vision/line_finder/find_table_edge", callback_find_table_edge);
+    ros::ServiceServer srvFindPlanes   = n.advertiseService("/vision/line_finder/find_horizontal_plane_ransac", callback_find_planes);
+    ros::ServiceServer srvRecogObjs    = n.advertiseService("/vision/obj_reco/recognize_objects", callback_recog_objs);
+    ros::ServiceServer srvRecogObj     = n.advertiseService("/vision/obj_reco/recognize_object" , callback_recog_obj );
+    ros::ServiceServer srvTrainObj     = n.advertiseService("/vision/obj_reco/train_object", callback_train_object);
+    ros::ServiceServer srvProcessCloud = n.advertiseService("/vision/get_points_above_plane", callback_get_points_above_plane);
     pubMarkers     = n.advertise<visualization_msgs::Marker>("/vision/obj_reco/markers", 1);
     pubMarkerArray = n.advertise<visualization_msgs::MarkerArray>("/vision/obj_reco/marker_array", 1);
+    pubResultCloud = n.advertise<sensor_msgs::PointCloud2>("/vision/obj_reco/resulting_cloud", 1);
+    
     ros::Rate loop(30);
     tf_listener = new tf::TransformListener();
 

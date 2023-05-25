@@ -37,6 +37,43 @@ void Utils::pointcloud_msg2_cv_mat(sensor_msgs::PointCloud2& pc_msg, cv::Mat& bg
         }
 }
 
+void Utils::cv_mat2_pointcloud_msg(cv::Mat& src_bgr, cv::Mat& src_xyz, std::string frame_id, sensor_msgs::PointCloud2& msg)
+{
+    msg.fields.clear();
+    msg.header.frame_id = frame_id;
+    msg.header.stamp = ros::Time::now();
+    msg.height       = src_bgr.rows;
+    msg.width        = src_bgr.cols;
+    msg.is_bigendian = false;
+    msg.point_step   = 16;
+    msg.row_step     = 16*msg.width;
+    msg.is_dense     = false;
+    sensor_msgs::PointField f;
+    f.name     = "x";
+    f.offset   = 0;
+    f.datatype = 7;
+    f.count    = 1;
+    msg.fields.push_back(f);
+    f.name     = "y";
+    f.offset   = 4;
+    msg.fields.push_back(f);
+    f.name     = "z";
+    f.offset   = 8;
+    msg.fields.push_back(f);
+    f.name     = "rgba";
+    f.offset   = 12;
+    f.datatype = 6;
+    msg.fields.push_back(f);
+    msg.data.resize(msg.row_step*msg.height);
+
+    for(size_t i=0; i < src_bgr.rows*src_bgr.cols; i++)
+    {
+        memcpy(&msg.data[i*16], &src_xyz.data[12*i], 12);
+        memcpy(&msg.data[i*16 + 12], &src_bgr.data[3*i], 3);
+        msg.data[16*i + 15] = 255;
+    }
+}
+
 
 void Utils::transform_cloud_wrt_base(sensor_msgs::PointCloud2& cloud, cv::Mat& bgr_dest, cv::Mat& cloud_dest,
                                      tf::TransformListener* tf_listener)

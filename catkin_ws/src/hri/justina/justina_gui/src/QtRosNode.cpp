@@ -63,11 +63,12 @@ void QtRosNode::run()
     pubFakeSpeechRecog = n->advertise<hri_msgs::RecognizedSpeech>("/hri/sp_rec/recognized", 1);
     subRecogSpeech     = n->subscribe("/hri/sp_rec/recognized",1, &QtRosNode::callback_recognized_speech, this);
         
-    cltFindLines      = n->serviceClient<vision_msgs::FindLines>       ("/vision/line_finder/find_table_edge");
-    cltFindHoriPlanes = n->serviceClient<vision_msgs::FindPlanes>      ("/vision/line_finder/find_horizontal_plane_ransac");
-    cltTrainObject    = n->serviceClient<vision_msgs::TrainObject>     ("/vision/obj_reco/train_object");
-    cltRecogObjects   = n->serviceClient<vision_msgs::RecognizeObjects>("/vision/obj_reco/recognize_objects");
-    cltRecogObject    = n->serviceClient<vision_msgs::RecognizeObject >("/vision/obj_reco/recognize_object");
+    cltFindLines           = n->serviceClient<vision_msgs::FindLines>           ("/vision/line_finder/find_table_edge");
+    cltFindHoriPlanes      = n->serviceClient<vision_msgs::FindPlanes>          ("/vision/line_finder/find_horizontal_plane_ransac");
+    cltTrainObject         = n->serviceClient<vision_msgs::TrainObject>         ("/vision/obj_reco/train_object");
+    cltRecogObjects        = n->serviceClient<vision_msgs::RecognizeObjects>    ("/vision/obj_reco/recognize_objects");
+    cltRecogObject         = n->serviceClient<vision_msgs::RecognizeObject >    ("/vision/obj_reco/recognize_object");
+    cltGetPointsAbovePlane = n->serviceClient<vision_msgs::PreprocessPointCloud>("/vision/get_points_above_plane");
     
     int pub_zero_counter = 5;
     while(ros::ok() && !this->gui_closed)
@@ -432,4 +433,18 @@ bool QtRosNode::call_recognize_object(std::string name)
     srv.request.point_cloud = *ptr;
     srv.request.name = name;
     return cltRecogObject.call(srv);
+}
+
+bool QtRosNode::call_get_points_above_plane()
+{
+    vision_msgs::PreprocessPointCloud srv;
+    boost::shared_ptr<sensor_msgs::PointCloud2 const> ptr;
+    ptr = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/camera/depth_registered/points", ros::Duration(1.0));
+    if(ptr==NULL)
+    {
+        std::cout << "JustinaGUI.->Cannot get point cloud before calling preprocess object service..." << std::endl;
+        return false;
+    }
+    srv.request.input_cloud = *ptr;
+    return cltGetPointsAbovePlane.call(srv);
 }
