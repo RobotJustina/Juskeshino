@@ -26,9 +26,9 @@ SM_PREPARE_ARM = 80
 SM_MOVE_LEFT_ARM = 100 
 VIRTUAL_LOCATION = [5.8, 4.36, 0.0]
 LEFT_TABLE_NEAR = [5.45, 2.45, np.deg2rad(90)]
-LEFT_TABLE_FAR = [7.05, 2.3, 0.0]
+LEFT_TABLE_FAR = [6.95, 2.3, 0.0]
 RIGTH_TABLE = [5.7, 0.28, np.deg2rad(-90)]
-LOCAL_TARGET = LEFT_TABLE_FAR #NEAR
+LOCAL_TARGET = LEFT_TABLE_NEAR
 PREPARE = [-1.2, 0.1, 0.0, 1.6, 0.0, 1.1, 0.0]
 HOME = [0,0,0,0,0,0]
 
@@ -36,8 +36,18 @@ HOME = [0,0,0,0,0,0]
 def callback_goal_reached(msg):
     global goal_reached
     goal_reached = msg.status == 3
-    print("goal reached status", goal_reached)
+
+
+def callback_hd_goal_reached(msg):
+    global goal_hd_reached
+    goal_hd_reached = msg.data
+
+
+
+def callback_la_goal_reached(msg):
+    global goal_la_reached
     
+    goal_la_reached = msg.data
 
 
 def go_to_goal_pose(pub_goal_pose, local_target):
@@ -87,17 +97,18 @@ def move_left_arm(goal_pose, pub_traj, clt_ik):
 
 
 
-def q2q_traj(p_final, clt_traj_planner):
+def q2q_traj(p_final, clt_traj_planner, pub_traj):
     initial_pose = rospy.wait_for_message("/hardware/left_arm/current_pose", Float64MultiArray, 5.0)
-    initial_pose = initial_pose.data#[initial_pose.data[0] , initial_pose.data[1], initial_pose.data[2],initial_pose.data[3],
-                    #initial_pose.data[4],initial_pose.data[5],initial_pose.data[6]]
+    initial_pose = initial_pose.data
     request = GetPolynomialTrajectoryRequest()
-    
     request.p2 = p_final
-    print("TYPE", type(request))
     request.p1 = initial_pose
-    resp = clt_traj_planner(request)
-    return None
+    request.duration = 5
+    request.time_step = 0.2
+    resp_traj = clt_traj_planner(request)
+    resp_traj.trajectory
+    pub_traj.publish(resp_traj.trajectory)
+ 
 
 
 def move_left_gripper(q, pubLaGoalGrip):
@@ -110,8 +121,8 @@ def get_obj_pose(clt_recog_obj):
     recognize_object_req = RecognizeObjectRequest()
 
     try:
-        #recognize_object_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
-        recognize_object_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
+        recognize_object_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+        #recognize_object_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
     except:
         return None
     resp_recog_obj = clt_recog_obj(recognize_object_req)
@@ -160,7 +171,8 @@ def main():
 
     print("state machine....................... ʕ•ᴥ•ʔ")
     rospy.init_node("act_pln") 
-    global goal_reached
+    global goal_reached, goal_hd_reached, goal_la_reached
+
     rospy.wait_for_service("/vision/obj_segmentation/get_obj_pose")
     clt_pose_obj = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose", RecognizeObject)
     #rospy.wait_for_service("/vision/get_best_grasp_traj")
@@ -178,7 +190,10 @@ def main():
     pub_hd_goal_pose = rospy.Publisher("/hardware/head/goal_pose"     , Float64MultiArray, queue_size=10)
     pub_goal_pose = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
     pub_cmd_vel   = rospy.Publisher('/hardware/mobile_base/cmd_vel', Twist, queue_size=10)
-    rospy.Subscriber('/navigation/status',GoalStatus ,callback_goal_reached)
+    rospy.Subscriber('/navigation/status',Bool ,callback_hd_goal_reached)
+    rospy.Subscriber('/manipulation/head/goal_reached',Bool ,callback_hd_goal_reached)
+    rospy.Subscriber('/manipulation/left_arm/goal_reached',Bool , callback_la_goal_reached)
+    
     listener = tf.TransformListener()
 
     new_command = False
@@ -194,8 +209,9 @@ def main():
             state = SM_WAITING_NEW_COMMAND
 
         elif state == SM_WAITING_NEW_COMMAND:
-            state = SM_PREPARE_ARM
+            print("state == SM_WAITING_NEW_COMMAND")
             #state = SM_NAVIGATE
+            state = SM_MOVE_HEAD
 
         elif state == SM_NAVIGATE:
             #global goal_reached
@@ -208,38 +224,40 @@ def main():
             if goal_reached:
                 x_p, y_p, a = get_robot_pose(listener)
                 print("Se llego al lugar solicitado con Pose: ", x_p,y_p,a )
-                time.sleep(2)
+                rospy.sleep(1.0)
                 state = SM_MOVE_HEAD
 
         elif state == SM_MOVE_HEAD:
             move_head(pub_hd_goal_pose ,0, -0.9)
+            move_head(pub_hd_goal_pose ,0, -0.9)
             print("state == SM_MOVE_HEAD")
-            time.sleep(2)
+            rospy.sleep(3.0)
             state = SM_WAIT_FOR_HEAD
 
         elif state == SM_WAIT_FOR_HEAD:
-            #move_head(pub_hd_goal_pose ,0, -1)
+            print("SM_WAIT_FOR_HEAD")
+            """
+            if goal_hd_reached:
+                print("succesfull move head ")
+                rospy.sleep(1.0)
+            """
+            rospy.sleep(1.0)
             state = SM_PREPARE_ARM
+
 
         elif state == SM_PREPARE_ARM:
             print("state == SM_PREPARE_ARM")
             p_final = PREPARE
-            q2q_traj(p_final, clt_traj_planner)
+            q2q_traj(p_final, clt_traj_planner, pub_la_goal_traj)
             """
-            msg = Float64MultiArray()
-            msg.data.append(-1.2)
-            msg.data.append(0.1)
-            msg.data.append(0.0)
-            msg.data.append(1.6)
-            msg.data.append(0.0)
-            msg.data.append(1.1)
-            msg.data.append(0.0)
-            pub_la_goal_q.publish(msg)
+            print(goal_la_reached)
+            if goal_la_reached:
+                print("succesfull move arm ")
+                time.sleep(1)
+                state = SM_GET_OBJ_POSE
             """
-            state = -1 #SM_GET_OBJ_POSE
-            time.sleep(1)
-            
-
+            state = SM_GET_OBJ_POSE
+            rospy.sleep(5.0)
 
         elif state == SM_GET_OBJ_POSE:
             print("state == SM_GET_OBJ..........")
@@ -259,17 +277,19 @@ def main():
                     break
             print("position object ", x,y,z)
             x,y,z = transform_to_la(x,y,z,'base_link', 'shoulders_left_link',listener)
-            print("coordenadas hombros", x,y,z)
-            state = SM_MOVE_LEFT_ARM
+            #state = SM_GET_OBJ_POSE #SM_MOVE_LEFT_ARM
             
 
         elif state == SM_MOVE_LEFT_ARM:
             print("state == SM_MOVE_ARM")
             q = 0.6
             move_left_gripper(q, pub_la_goal_grip)
-            #move_left_arm( [x,y,z,0,-1.5,-0.3] , pub_la_goal_traj, clt_ik)
-            #q = -0.3
-            #move_left_gripper(q, pub_la_goal_grip)
+            duration = 10
+            time_step = 0.2
+            move_left_arm( [x,y,z,0,-1.5,-0.3] ,duration, time_step, pub_la_goal_traj, clt_ik)
+            q = 0
+            
+            move_left_gripper(q, pub_la_goal_grip)
             state = -1
 
         else:
