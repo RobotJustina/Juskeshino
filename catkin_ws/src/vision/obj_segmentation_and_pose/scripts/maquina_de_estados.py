@@ -121,8 +121,8 @@ def get_obj_pose(clt_recog_obj):
     recognize_object_req = RecognizeObjectRequest()
 
     try:
-        recognize_object_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
-        #recognize_object_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
+        #recognize_object_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+        recognize_object_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
     except:
         return None
     resp_recog_obj = clt_recog_obj(recognize_object_req)
@@ -242,22 +242,8 @@ def main():
                 rospy.sleep(1.0)
             """
             rospy.sleep(1.0)
-            state = SM_PREPARE_ARM
-
-
-        elif state == SM_PREPARE_ARM:
-            print("state == SM_PREPARE_ARM")
-            p_final = PREPARE
-            q2q_traj(p_final, clt_traj_planner, pub_la_goal_traj)
-            """
-            print(goal_la_reached)
-            if goal_la_reached:
-                print("succesfull move arm ")
-                time.sleep(1)
-                state = SM_GET_OBJ_POSE
-            """
             state = SM_GET_OBJ_POSE
-            rospy.sleep(5.0)
+
 
         elif state == SM_GET_OBJ_POSE:
             print("state == SM_GET_OBJ..........")
@@ -277,7 +263,22 @@ def main():
                     break
             print("position object ", x,y,z)
             x,y,z = transform_to_la(x,y,z,'base_link', 'shoulders_left_link',listener)
-            #state = SM_GET_OBJ_POSE #SM_MOVE_LEFT_ARM
+            #state = SM_PREPARE_ARM
+
+
+        elif state == SM_PREPARE_ARM:
+            print("state == SM_PREPARE_ARM")
+            p_final = PREPARE
+            q2q_traj(p_final, clt_traj_planner, pub_la_goal_traj)
+            """
+            print(goal_la_reached)
+            if goal_la_reached:
+                print("succesfull move arm ")
+                time.sleep(1)
+                state = SM_GET_OBJ_POSE
+            """
+            state = SM_MOVE_LEFT_ARM
+            rospy.sleep(5.0)
             
 
         elif state == SM_MOVE_LEFT_ARM:

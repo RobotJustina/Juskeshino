@@ -26,8 +26,8 @@ def segment_by_contour(msg):
     r,g,b = ((rgb_array >> 16) & 255), ((rgb_array >> 8) & 255), (rgb_array & 255)  # 480 x 640 c/u
     img_bgr = cv2.merge((np.asarray(b,dtype='uint8'),np.asarray(g,dtype='uint8'),np.asarray(r,dtype='uint8')))
     img_bgr_copy = img_bgr
-    cv2.imshow('Imagen original', img_bgr)  #***************************************
-    cv2.waitKey(1)
+    #cv2.imshow('Imagen original', img_bgr)  #***************************************
+    #cv2.waitKey(1)
 
 
     img_hsv = cv2.cvtColor(img_bgr,cv2.COLOR_BGR2HSV)   # Change the color space from BGR to HSV
@@ -131,34 +131,44 @@ def segment_by_contour(msg):
             
         cv2.drawContours(img_bgr_copy, new_contour_list, desired_idx,(200, 20, 233), 3)  # solo contorno en img original
         recog_obj_img = img_bgr_copy 
+
         mask = np.zeros(img_bgr.shape,np.uint8)
         cv2.drawContours(mask, new_contour_list, desired_idx,(255, 255, 255), thickness = cv2.FILLED)  # llena contorno para mascara
-
+        #cv2.imshow("mask", mask)
         # the mask is eroded to ensure that we only get the point cloud of the object
         mask_ero=cv2.erode(mask , kernel,iterations=4)   
+        #cv2.imshow("mask erosionada", mask_ero)
         pixels_array, img_with_mask = contour_point_cloud(img_bgr, mask_ero)
         X_array, Y_array, Z_array= [], [], []
         x_c, y_c, z_c = 0,0,0
         print("TAMANO PC CONTORNO")
-        print(pixels_array)
+        print(len(pixels_array))
         for pixel in pixels_array:  # extract xyz from each pixel 
             x, y, z = pointCloud_array[pixel[1],pixel[0]][0] , pointCloud_array[pixel[1],pixel[0]][1], pointCloud_array[pixel[1],pixel[0]][2]
+            if abs(x) < 0.1 : continue
             x_c += pointCloud_array[pixel[1],pixel[0]][0]   # calculate the centroid of the point cloud
             y_c += pointCloud_array[pixel[1],pixel[0]][1]
             z_c += pointCloud_array[pixel[1],pixel[0]][2]
             X_array.append(x), Y_array.append(y), Z_array.append(z)
         if len(pixels_array) == 0:
             print("WARNING: NO POINT CLOUD")
-        centroid_x = x_c/len(pixels_array)
-        centroid_y = y_c/len(pixels_array)
-        centroid_z = z_c/len(pixels_array)
+        centroid_x = x_c/len(X_array)
+        centroid_y = y_c/len(Y_array)
+        centroid_z = z_c/len(Y_array)
         cloud_msg = cloud_obj(pixels_array, X_array, Y_array, Z_array,0)
         X_array, Y_array, Z_array = np.asarray(X_array), np.asarray(Y_array), np.asarray(Z_array)
 
         #cv2.imshow('objeto con contorno ', recog_obj_img)
         #cv2.waitKey(1)
-        cv2.imshow('Objeto', img_with_mask)
-        cv2.waitKey(1)
+        #cv2.imshow('Objeto', img_with_mask)
+        #cv2.waitKey(1)
+
+        print("X points")
+        print(X_array)
+        print("y points")
+        print(Y_array)
+        print("z points")
+        print(Z_array)
 
         return(objects_on_stage ,[centroid_x, centroid_y, centroid_z] ,X_array, Y_array, Z_array, recog_obj_img, img_with_mask, cloud_msg)
         
@@ -184,7 +194,7 @@ def contour_point_cloud(img_bgr, mask_ero):
 def cloud_obj(pixels_array, x_points, y_points, z_points, rgb_array):
     lista_coord = []
     i = 0
-    for i in range(len(pixels_array)):
+    for i in range(len(x_points)):
         lista_coord.append(tuple( [x_points[i] , y_points[i], z_points[i], 0]))
 
     cloud_obj = np.array(lista_coord,
@@ -205,10 +215,13 @@ def pca(x_points, y_points, z_points):
         eigenvectors and eigenvalues.
     """
     point_cloud =  {"x": x_points, "y": y_points,"z": z_points}
+
     # sin estandar scaler
     point_cloud = pd.DataFrame(pd.DataFrame(point_cloud), columns=["x","y","z"])
     eig_val, eig_vect = eig(point_cloud.cov())  # Eigenvalues and eigenvectors from Point Cloud Covariance Matrix
 
+    print("Eigenvectors****************************")
+    print(eig_vect)
     # Ordering from largest to smallest eigenvalues
     mayor, menor = np.amax(eig_val), np.amin(eig_val)
     eig_value_list = eig_val.tolist()
@@ -216,7 +229,6 @@ def pca(x_points, y_points, z_points):
     ind_m = eig_value_list.index(menor)
     ind_sec = 3 - ind_m - ind_M
 
-    #print("M,s,m", ind_M, ind_sec, ind_m)
     # each column of eig_vect corresponds to an eigenvector
     Eig_vect = [eig_vect[:,ind_M]* np.sqrt(eig_val[ind_M]), 
                 eig_vect[:,ind_sec]*np.sqrt(eig_val[ind_sec]),  
@@ -226,7 +238,6 @@ def pca(x_points, y_points, z_points):
     M = eig_vect[:,ind_M]
     s = eig_vect[:,ind_sec]
 
-    #MT = np.asarray([M, s, m])  # Matriz de transformacion con eigenvectores ordenados de mayor a menor
     MT = np.asarray(eig_vect) 
     # ESTIMACION DEL TAMANIO DEL OBJETO SEGMENTADO  object_size_estimation******************
     pts_frame_PCA = pd.DataFrame(point_cloud.values @ MT,#eig_vect.T, 
@@ -239,6 +250,7 @@ def pca(x_points, y_points, z_points):
     H = abs( h_max - h_min )
     L = abs( l_min - l_max )
     W = 2*abs( w_max - w_min )
+
     # Approximate size of the object is H, L, W
     size_obj = Vector3()
     size_obj.x = H
@@ -392,7 +404,7 @@ def arow_marker(centroide_cam, p1 ,p2,p3, frame_id_point_cloud):
         point.x = points[0].point.x + (points[i+1].x) 
         point.y = points[0].point.y + (points[i+1].y)
         point.z = points[0].point.z + (points[i+1].z)
-
+        marker.lifetime = rospy.Duration(10.0)
         marker.points = [points[0].point, point]
         marker_pub.publish(marker)
 
@@ -486,6 +498,8 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
         print("An object was detected")
         print("posicion de objeto" , centroide_cam)
         pca_vectors, eig_val, size_obj = pca(x_points, y_points, z_points)
+        print("pca vec",pca_vectors)
+        print("eig val",eig_val)
         c_obj = object_category(eig_val[0], eig_val[1], eig_val[2])
         obj_pose, axis_x_obj, axis_y_obj, axis_z_obj, centroid = object_pose(centroide_cam, pca_vectors[0], frame_id_point_cloud)
         arow_marker( centroid, axis_x_obj, axis_y_obj, axis_z_obj, 'base_link')

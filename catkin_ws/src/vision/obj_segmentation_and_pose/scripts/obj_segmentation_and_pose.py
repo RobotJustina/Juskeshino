@@ -142,6 +142,8 @@ def segment_by_contour(msg):
         print(len(pixels_array))
         for pixel in pixels_array:  # extract xyz from each pixel 
             x, y, z = pointCloud_array[pixel[1],pixel[0]][0] , pointCloud_array[pixel[1],pixel[0]][1], pointCloud_array[pixel[1],pixel[0]][2]
+            print("x,y,z")
+            print(x,y,z)
             x_c += pointCloud_array[pixel[1],pixel[0]][0]   # calculate the centroid of the point cloud
             y_c += pointCloud_array[pixel[1],pixel[0]][1]
             z_c += pointCloud_array[pixel[1],pixel[0]][2]
@@ -158,6 +160,13 @@ def segment_by_contour(msg):
         #cv2.waitKey(1)
         cv2.imshow('Objeto', img_with_mask)
         cv2.waitKey(1)
+
+        print("X points")
+        print(X_array)
+        print("y points")
+        print(Y_array)
+        print("z points")
+        print(Z_array)
 
         return(objects_on_stage ,[centroid_x, centroid_y, centroid_z] ,X_array, Y_array, Z_array, recog_obj_img, img_with_mask, cloud_msg)
         
@@ -207,10 +216,13 @@ def pca(x_points, y_points, z_points, frame_id, centroide_cam):
         eigenvectors and eigenvalues.
     """
     point_cloud =  {"x": x_points, "y": y_points,"z": z_points}
+
     # sin estandar scaler
     point_cloud = pd.DataFrame(pd.DataFrame(point_cloud), columns=["x","y","z"])
     eig_val, eig_vect = eig(point_cloud.cov())  # Eigenvalues and eigenvectors from Point Cloud Covariance Matrix
 
+    print("Eigenvectors****************************")
+    print(eig_vect)
     # Ordering from largest to smallest eigenvalues
     mayor, menor = np.amax(eig_val), np.amin(eig_val)
     eig_value_list = eig_val.tolist()
@@ -228,7 +240,6 @@ def pca(x_points, y_points, z_points, frame_id, centroide_cam):
     M = eig_vect[:,ind_M]
     s = eig_vect[:,ind_sec]
 
-    #MT = np.asarray([M, s, m])  # Matriz de transformacion con eigenvectores ordenados de mayor a menor
     MT = np.asarray(eig_vect) 
     # ESTIMACION DEL TAMANIO DEL OBJETO SEGMENTADO  object_size_estimation******************
     pts_frame_PCA = pd.DataFrame(point_cloud.values @ MT,#eig_vect.T, 
@@ -238,6 +249,7 @@ def pca(x_points, y_points, z_points, frame_id, centroide_cam):
     h_min, h_max = pts_frame_PCA[0, 0] , pts_frame_PCA[-1, 0] #H[0] , H[-1]
     l_min, l_max = pts_frame_PCA[0, 1] , pts_frame_PCA[-1, 1]
     w_min, w_max = pts_frame_PCA[0, 2] , pts_frame_PCA[-1, 2]
+
     H = abs( h_max - h_min )
     L = abs( l_min - l_max )
     W = 2*abs( w_max - w_min )
