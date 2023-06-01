@@ -175,8 +175,8 @@ def main():
 
     rospy.wait_for_service("/vision/obj_segmentation/get_obj_pose")
     clt_pose_obj = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose", RecognizeObject)
-    #rospy.wait_for_service("/vision/get_best_grasp_traj")
-    #clt_best_grip = rospy.ServiceProxy("/vision/get_best_grasp_traj", InverseKinematicsPose2Traj )
+    rospy.wait_for_service("/vision/get_best_grasp_traj")
+    clt_best_grip = rospy.ServiceProxy("/vision/get_best_grasp_traj", InverseKinematicsPose2Traj )
     rospy.wait_for_service( '/manipulation/la_ik_trajectory' )
     clt_ik = rospy.ServiceProxy( '/manipulation/la_ik_trajectory' , InverseKinematicsPose2Traj )
 
@@ -282,11 +282,15 @@ def main():
             
 
         elif state == SM_MOVE_LEFT_ARM:
+            req_best_grip = InverseKinematicsPose2TrajRequest()
+            req_best_grip.
+            resp_best_grip = clt_best_grip()
             print("state == SM_MOVE_ARM")
             q = 0.6
             move_left_gripper(q, pub_la_goal_grip)
             duration = 10
             time_step = 0.2
+
             move_left_arm( [x,y,z,0,-1.5,-0.3] ,duration, time_step, pub_la_goal_traj, clt_ik)
             q = 0
             

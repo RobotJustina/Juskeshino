@@ -16,7 +16,7 @@ import geometry_msgs.msg
 
 def get_cv_mats_from_cloud_message(cloud_msg):
     img_xyz = ros_numpy.point_cloud2.pointcloud2_to_array(cloud_msg)  # dim 480 x 640, 
-    rgb_array = img_xyz['rgb'].copy()     # Pass a copy of rgb float32, 480 x 640
+    rgb_array = img_xyz['rgba'].copy()     # Pass a copy of rgb float32, 480 x 640
     rgb_array.dtype = np.uint32       # Config data type of elements from array
     r,g,b = ((rgb_array >> 16) & 255), ((rgb_array >> 8) & 255), (rgb_array & 255)  # 480 x 640 c/u
     img_bgr = cv2.merge((np.asarray(b,dtype='uint8'),np.asarray(g,dtype='uint8'),np.asarray(r,dtype='uint8')))
@@ -63,26 +63,19 @@ def segment_by_contour(img_bgr, pointCloud_array):
         cv2.drawContours(mask, contours, j, 255 , thickness = cv2.FILLED)  # llena contorno para mascara
         # the mask is eroded to ensure that we only get the point cloud of the object
         mask_er=cv2.erode(mask , kernel,iterations=8)   
-        pixels_array, img_with_mask = contour_point_cloud(img_bgr, mask_er)
+        
         obj_bgr, obj_xyz = get_object_bgr_and_xyz(img_bgr, pointCloud_array, mask_er)
         obj_centroid = np.mean(obj_xyz, axis=0)
+        shap = obj_xyz.shape
+        print("type*******", shap(0))
+        print("type*******", obj_xyz[0][0])
+        
         print("Centroid: " + str(obj_centroid))
-        X_array, Y_array, Z_array= [], [], []
-        x_c, y_c, z_c = 0,0,0
-        for pixel in pixels_array:  # extract xyz from each pixel 
-            x, y, z = pointCloud_array[pixel[1],pixel[0]][0] , pointCloud_array[pixel[1],pixel[0]][1], pointCloud_array[pixel[1],pixel[0]][2]
-            if abs(x) < 0.1 : continue
-            x_c += pointCloud_array[pixel[1],pixel[0]][0]   # calculate the centroid of the point cloud
-            y_c += pointCloud_array[pixel[1],pixel[0]][1]
-            z_c += pointCloud_array[pixel[1],pixel[0]][2]
-            X_array.append(x), Y_array.append(y), Z_array.append(z)
-        if len(pixels_array) == 0:
-            print("WARNING: NO POINT CLOUD")
-        centroid_x ,  centroid_y, centroid_z = x_c/len(X_array), y_c/len(Y_array),z_c/len(Z_array)
-        centroid = (np.asarray((centroid_x , centroid_y , centroid_z ))) 
-        centroids_list.append(centroid)
-        # calcula la distancia hacia cada contorno
-        distance = math.sqrt(centroid_x**2 + centroid_y**2 + centroid_z**2)
+
+        #X_array.append(x), Y_array.append(y), Z_array.append(z) 
+        centroids_list.append(obj_centroid)
+        # calcula la distancia hacia cadaobj_centroid contorno
+        distance = math.sqrt(obj_centroid[0]**2 + obj_centroid[1]**2 + obj_centroid[2]**2)
         distances.append(distance)
         X_array, Y_array, Z_array = np.asarray(X_array), np.asarray(Y_array), np.asarray(Z_array)
         pc_contour=(np.asarray((X_array , Y_array , Z_array ))) 

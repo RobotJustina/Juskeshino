@@ -394,8 +394,6 @@ def callback(req):
 
     resp = successful_candidate_trajectories[0]
     #resp.articular_trajectory.articular_trajectory.joint_names = "la"
-    
-
     return resp
 
 
