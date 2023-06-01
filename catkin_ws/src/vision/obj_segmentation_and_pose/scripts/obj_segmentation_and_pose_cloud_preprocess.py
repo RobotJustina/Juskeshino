@@ -113,7 +113,7 @@ def pca(x_points, y_points, z_points):    # pc del contorno mas cercano
     L = abs(  pts_frame_PCA[-1, 1] - pts_frame_PCA[0, 1])
     W = 2*abs(pts_frame_PCA[-1, 2] - pts_frame_PCA[0, 2])
     size_obj = Vector3()
-    size_obj.x, size_obj.y , size_obj.z = H, W, L
+    size_obj.x, size_obj.z , size_obj.y = H, W, L
     
     return [eig_vect[:,ind_M], eig_vect[:,ind_sec] , eig_vect[:,ind_m]], [eig_val[ind_M], eig_val[ind_sec], eig_val[ind_m]], size_obj
 
@@ -131,10 +131,8 @@ def object_pose(centroid, principal_component, second_component):
     eje_x_obj = principal_component /np.linalg.norm( principal_component )    # Eje principal en x
     eje_z_obj = np.cross(eje_y_obj , eje_x_obj ) / np.linalg.norm(np.cross(eje_y_obj , eje_x_obj))
     # se almacenan como puntos las coordenadas de eje x,y,...................................
-    axis_x_obj, axis_y_obj, axis_z_obj = Point(), Point(), Point()
+    axis_x_obj = Point()
     axis_x_obj.x, axis_x_obj.y, axis_x_obj.z = eje_x_obj[0], eje_x_obj[1], eje_x_obj[2]
-    axis_y_obj.x, axis_y_obj.y, axis_y_obj.z = eje_y_obj[0], eje_y_obj[1], eje_y_obj[2]
-    axis_z_obj.x, axis_z_obj.y, axis_z_obj.z = eje_z_obj[0], eje_z_obj[1], eje_z_obj[2]
     # Se forma la matriz de rotacion (columnas) del objeto, a partir de ella se obtienen los cuaterniones necesarios para generar el frame del objeto
     RM = np.asarray([eje_x_obj, eje_y_obj , eje_z_obj])
     RM = RM.T
@@ -152,7 +150,7 @@ def object_pose(centroid, principal_component, second_component):
     obj_pose.orientation.y = q_obj[1]/d
     obj_pose.orientation.z = q_obj[2]/d
     obj_pose.orientation.w = q_obj[3]/d
-    return obj_pose , axis_x_obj, axis_y_obj, axis_z_obj
+    return obj_pose , axis_x_obj
 
 
 
@@ -186,7 +184,7 @@ def centroid_marker(xyz, frame_id):
 
 
 
-def arow_marker(centroide_cam, p1 ,p2,p3, frame_id_point_cloud):  
+def arow_marker(centroide_cam, p1, frame_id_point_cloud):  
     p0 = PointStamped()
     p0.header.frame_id = frame_id_point_cloud
     p0.point.x , p0.point.y, p0.point.z = centroide_cam[0], centroide_cam[1], centroide_cam[2]
@@ -246,8 +244,8 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
         print("object position" , centroide_cam)
         pca_vectors, eig_val, size_obj = pca(x_points, y_points, z_points)
         c_obj = object_category(eig_val[0], eig_val[1], eig_val[2])
-        obj_pose, axis_x_obj, axis_y_obj, axis_z_obj = object_pose(centroide_cam, pca_vectors[0], pca_vectors[1])
-        arow_marker( centroide_cam, axis_x_obj, axis_y_obj, axis_z_obj, 'base_link')
+        obj_pose, axis_x_obj = object_pose(centroide_cam, pca_vectors[0], pca_vectors[1])
+        arow_marker( centroide_cam, axis_x_obj, 'base_link')
         broadcaster_frame_object("base_link", "object", obj_pose)
         print("size object", size_obj)
         # Rellenando msg
