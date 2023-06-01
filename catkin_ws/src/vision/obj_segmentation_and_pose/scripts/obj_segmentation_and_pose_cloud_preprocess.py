@@ -14,14 +14,22 @@ from visualization_msgs.msg import Marker
 from vision_msgs.srv import *
 import geometry_msgs.msg
 
-
-def segment_by_contour(msg):
-    objects_on_stage = False
-    pointCloud_array = ros_numpy.point_cloud2.pointcloud2_to_array(msg)  # dim 480 x 640, 
-    rgb_array = pointCloud_array['rgba'].copy()     # Pass a copy of rgb float32, 480 x 640
+def get_cv_mats_from_cloud_message(cloud_msg):
+    img_xyz = ros_numpy.point_cloud2.pointcloud2_to_array(cloud_msg)  # dim 480 x 640, 
+    rgb_array = img_xyz['rgb'].copy()     # Pass a copy of rgb float32, 480 x 640
     rgb_array.dtype = np.uint32       # Config data type of elements from array
     r,g,b = ((rgb_array >> 16) & 255), ((rgb_array >> 8) & 255), (rgb_array & 255)  # 480 x 640 c/u
     img_bgr = cv2.merge((np.asarray(b,dtype='uint8'),np.asarray(g,dtype='uint8'),np.asarray(r,dtype='uint8')))
+    xyz = np.zeros((480, 640, 3))
+    for i in range(480):
+        for j in range(640):
+            xyz[i,j][0] = img_xyz[i,j][0]
+            xyz[i,j][1] = img_xyz[i,j][1]
+            xyz[i,j][2] = img_xyz[i,j][2]
+    return [img_bgr, xyz]
+
+def segment_by_contour(img_bgr, pointCloud_array):
+    print("Segmenting image by contours")
     img_hsv = cv2.cvtColor(img_bgr,cv2.COLOR_BGR2HSV)   # Change the color space from BGR to HSV
     values=img_bgr.reshape((-1,3))  # (M,3=BGR), M = num of pixels
     values= np.float32(values)
@@ -42,52 +50,58 @@ def segment_by_contour(msg):
     edged = cv2.Canny(img_dilate, 100, 20)
     #Finding contours in the image, each individual contour is a Numpy array of (x,y) coordinates of boundary points of the object
     contours, hierarchy = cv2.findContours(edged.astype('uint8'),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-    normas, point_cloud_contour_list, centroids_list, j = [], [] , [] , 0
+    distances, point_cloud_contour_list, centroids_list = [], [] , [] 
 
-    if len(contours) > 0: objects_on_stage = True
-    
-    for i, contour in enumerate(contours):
-        area = cv2.contourArea(contour)
-        if area < 1000 and area > 20000: contours.pop(i)   # discarding contours by area
-
+    if not len(contours) > 0:
+        return(False ,0 ,0, 0, 0,0,0,0)   
        
-    if objects_on_stage:
-        for contour in contours:
-            mask = np.zeros(img_bgr.shape,np.uint8)
-            cv2.drawContours(mask, contours, j,(255, 255, 255), thickness = cv2.FILLED)  # llena contorno para mascara
-            # the mask is eroded to ensure that we only get the point cloud of the object
-            mask_er=cv2.erode(mask , kernel,iterations=8)   
-            pixels_array, img_with_mask = contour_point_cloud(img_bgr, mask_er)
-            X_array, Y_array, Z_array= [], [], []
-            x_c, y_c, z_c = 0,0,0
-            for pixel in pixels_array:  # extract xyz from each pixel 
-                x, y, z = pointCloud_array[pixel[1],pixel[0]][0] , pointCloud_array[pixel[1],pixel[0]][1], pointCloud_array[pixel[1],pixel[0]][2]
-                if abs(x) < 0.1 : continue
-                x_c += pointCloud_array[pixel[1],pixel[0]][0]   # calculate the centroid of the point cloud
-                y_c += pointCloud_array[pixel[1],pixel[0]][1]
-                z_c += pointCloud_array[pixel[1],pixel[0]][2]
-                X_array.append(x), Y_array.append(y), Z_array.append(z)
-            if len(pixels_array) == 0:
-                print("WARNING: NO POINT CLOUD")
-            centroid_x ,  centroid_y, centroid_z = x_c/len(X_array), y_c/len(Y_array),z_c/len(Z_array)
-            centroid = (np.asarray((centroid_x , centroid_y , centroid_z ))) 
-            centroids_list.append(centroid)
-            # calcula la distancia hacia cada contorno
-            norma = math.sqrt(centroid_x**2 + centroid_y**2 + centroid_z**2)
-            normas.append(norma)
-            X_array, Y_array, Z_array = np.asarray(X_array), np.asarray(Y_array), np.asarray(Z_array)
-            pc_contour=(np.asarray((X_array , Y_array , Z_array ))) 
-            point_cloud_contour_list.append(pc_contour)
+    for j, contour in enumerate(contours):
+        area = cv2.contourArea(contour)
+        if area < 1000 or area > 20000: continue # discarding contours by area
 
-        index = normas.index(min(normas))   # envia la nube del objeto mas cercano
-        return(objects_on_stage ,centroids_list[index].tolist() , point_cloud_contour_list[index][0] , point_cloud_contour_list[index][1] , point_cloud_contour_list[index][2])
-    else:
-        return(objects_on_stage ,0 ,0, 0, 0,0,0,0)   
-
+        mask = np.zeros((img_bgr.shape[0], img_bgr.shape[1]),np.uint8)
+        cv2.drawContours(mask, contours, j, 255 , thickness = cv2.FILLED)  # llena contorno para mascara
+        # the mask is eroded to ensure that we only get the point cloud of the object
+        mask_er=cv2.erode(mask , kernel,iterations=8)   
+        pixels_array, img_with_mask = contour_point_cloud(img_bgr, mask_er)
+        obj_bgr, obj_xyz = get_object_bgr_and_xyz(img_bgr, pointCloud_array, mask_er)
+        obj_centroid = np.mean(obj_xyz, axis=0)
+        print("Centroid: " + str(obj_centroid))
+        X_array, Y_array, Z_array= [], [], []
+        x_c, y_c, z_c = 0,0,0
+        for pixel in pixels_array:  # extract xyz from each pixel 
+            x, y, z = pointCloud_array[pixel[1],pixel[0]][0] , pointCloud_array[pixel[1],pixel[0]][1], pointCloud_array[pixel[1],pixel[0]][2]
+            if abs(x) < 0.1 : continue
+            x_c += pointCloud_array[pixel[1],pixel[0]][0]   # calculate the centroid of the point cloud
+            y_c += pointCloud_array[pixel[1],pixel[0]][1]
+            z_c += pointCloud_array[pixel[1],pixel[0]][2]
+            X_array.append(x), Y_array.append(y), Z_array.append(z)
+        if len(pixels_array) == 0:
+            print("WARNING: NO POINT CLOUD")
+        centroid_x ,  centroid_y, centroid_z = x_c/len(X_array), y_c/len(Y_array),z_c/len(Z_array)
+        centroid = (np.asarray((centroid_x , centroid_y , centroid_z ))) 
+        centroids_list.append(centroid)
+        # calcula la distancia hacia cada contorno
+        distance = math.sqrt(centroid_x**2 + centroid_y**2 + centroid_z**2)
+        distances.append(distance)
+        X_array, Y_array, Z_array = np.asarray(X_array), np.asarray(Y_array), np.asarray(Z_array)
+        pc_contour=(np.asarray((X_array , Y_array , Z_array ))) 
+        point_cloud_contour_list.append(pc_contour)
+        
+    index = distances.index(min(distances))   # envia la nube del objeto mas cercano
+    return(True ,centroids_list[index].tolist() , point_cloud_contour_list[index][0] , point_cloud_contour_list[index][1] , point_cloud_contour_list[index][2])
     
+
+def get_object_bgr_and_xyz(img_bgr, img_xyz, mask):
+    obj_bgr = img_bgr.copy()
+    obj_bgr[mask == 0] = 0
+    obj_xyz = img_xyz[mask == 255]
+    print("Xyz shape: " + str(img_xyz.shape))
+    print("Obj xyz shape: " + str(obj_xyz.shape))
+    print(obj_xyz[0])
+    return obj_bgr, obj_xyz
 
 def contour_point_cloud(img_bgr, mask_ero):  
-    mask_ero = cv2.cvtColor(mask_ero, cv2.COLOR_BGR2GRAY)
     img_with_mask = cv2.bitwise_and(img_bgr,img_bgr, mask=mask_ero)
     img_non_zero = cv2.findNonZero(mask_ero)
     pixels_array= []
@@ -225,16 +239,23 @@ def object_category(fpc, spc, thpc):  # estima la forma geometrica del objeto.
 
 def callback_RecognizeObject(req):  # Request is a PointCloud2
     global clt_get_points
-    print("the service has been requested **************")
+    print("ObjSegmenter.->The service has been requested **************")
     req_ppc = PreprocessPointCloudRequest()
     req_ppc.input_cloud = req.point_cloud
-    resp_clt_get_points = clt_get_points(req_ppc)
-    msg = resp_clt_get_points.output_cloud
-    obj_in_stage, centroide_cam, x_points, y_points, z_points= segment_by_contour(msg)
+    try:
+        resp_clt_get_points = clt_get_points(req_ppc)
+        print("ObjSegmenter.->Preprocessed pc received")
+        msg = resp_clt_get_points.output_cloud
+    except:
+        msg = req.point_cloud
+        print("ObjSegmenter.->Cannot get preprocessed cloud. Using original cloud.")
+    img_bgr, img_xyz = get_cv_mats_from_cloud_message(msg)
+    
+    found_object, centroide_cam, x_points, y_points, z_points= segment_by_contour(img_bgr, img_xyz)
     frame_id_point_cloud = msg.header.frame_id
     resp = RecognizeObjectResponse()
-
-    if obj_in_stage:
+    
+    if found_object:
         print("An object was detected...............")
         print("object position" , centroide_cam)
         pca_vectors, eig_val, size_obj = pca(x_points, y_points, z_points)
@@ -248,7 +269,7 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
         resp.recog_object.header = req.point_cloud.header
         resp.recog_object.size = size_obj
         resp.recog_object.pose = obj_pose
-        resp.recog_object.graspable = obj_in_stage
+        resp.recog_object.graspable = found_object
         return resp
     else:
         print("no object detected on stage")

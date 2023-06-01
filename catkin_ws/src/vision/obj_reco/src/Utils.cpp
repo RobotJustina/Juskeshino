@@ -60,7 +60,7 @@ void Utils::cv_mat2_pointcloud_msg(cv::Mat& src_bgr, cv::Mat& src_xyz, std::stri
     f.name     = "z";
     f.offset   = 8;
     msg.fields.push_back(f);
-    f.name     = "rgba";
+    f.name     = "rgb";
     f.offset   = 12;
     f.datatype = 6;
     msg.fields.push_back(f);
