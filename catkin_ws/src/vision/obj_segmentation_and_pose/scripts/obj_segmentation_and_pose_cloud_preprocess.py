@@ -48,8 +48,8 @@ def segment_by_contour(msg):
     
     for i, contour in enumerate(contours):
         area = cv2.contourArea(contour)
-        if area < 1000 and area > 20000:    # discarding contours by area
-            contours.pop(i)
+        if area < 1000 and area > 20000: contours.pop(i)   # discarding contours by area
+
        
     if objects_on_stage:
         for contour in contours:
@@ -91,8 +91,7 @@ def contour_point_cloud(img_bgr, mask_ero):
     img_with_mask = cv2.bitwise_and(img_bgr,img_bgr, mask=mask_ero)
     img_non_zero = cv2.findNonZero(mask_ero)
     pixels_array= []
-    for cord in img_non_zero:         
-        pixels_array.append(cord[0])
+    for cord in img_non_zero: pixels_array.append(cord[0])
     return (pixels_array, img_with_mask)
 
 
@@ -114,7 +113,6 @@ def pca(x_points, y_points, z_points):    # pc del contorno mas cercano
     W = 2*abs(pts_frame_PCA[-1, 2] - pts_frame_PCA[0, 2])
     size_obj = Vector3()
     size_obj.x, size_obj.z , size_obj.y = H, W, L
-    
     return [eig_vect[:,ind_M], eig_vect[:,ind_sec] , eig_vect[:,ind_m]], [eig_val[ind_M], eig_val[ind_sec], eig_val[ind_m]], size_obj
 
 
@@ -189,7 +187,6 @@ def arow_marker(centroide_cam, p1, frame_id_point_cloud):
     p0.header.frame_id = frame_id_point_cloud
     p0.point.x , p0.point.y, p0.point.z = centroide_cam[0], centroide_cam[1], centroide_cam[2]
     frame = frame_id_point_cloud
-
     marker = Marker()
     marker.header.frame_id = frame
     marker.type = Marker.ARROW
@@ -201,9 +198,7 @@ def arow_marker(centroide_cam, p1, frame_id_point_cloud):
     marker.scale.x, marker.scale.y, marker.scale.z = 0.02, 0.1, 0.04 
     marker.color.r , marker.color.g , marker.color.b, marker.color.a = 20, 0.0, 100.0, 1.0
     point = Point()
-    point.x = p0.point.x + p1.x 
-    point.y = p0.point.y + p1.y 
-    point.z = p0.point.z + p1.z 
+    point.x, point.y, point.z = p0.point.x + p1.x , p0.point.y + p1.y , p0.point.z + p1.z
     marker.lifetime = rospy.Duration(10.0)
     marker.points = [p0.point, point]
     marker_pub.publish(marker)
@@ -229,7 +224,7 @@ def object_category(fpc, spc, thpc):  # estima la forma geometrica del objeto.
 
 
 def callback_RecognizeObject(req):  # Request is a PointCloud2
-    global pca1, clt_get_points
+    global clt_get_points
     print("the service has been requested **************")
     req_ppc = PreprocessPointCloudRequest()
     req_ppc.input_cloud = req.point_cloud
