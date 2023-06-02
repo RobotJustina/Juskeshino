@@ -6,17 +6,15 @@ import tf.transformations as tft
 import tf2_ros
 import ros_numpy
 import cv2
-import pandas as pd
 from std_msgs.msg import Header
 from geometry_msgs.msg import PointStamped,  Point, Pose, Vector3
-from numpy.linalg import eig
 from visualization_msgs.msg import Marker
 from vision_msgs.srv import *
 import geometry_msgs.msg
 
 def get_cv_mats_from_cloud_message(cloud_msg):
     img_xyz = ros_numpy.point_cloud2.pointcloud2_to_array(cloud_msg)  # dim 480 x 640, 
-    rgb_array = img_xyz['rgba'].copy()     # Pass a copy of rgb float32, 480 x 640
+    rgb_array = img_xyz['rgb'].copy()     # Pass a copy of rgb float32, 480 x 640
     rgb_array.dtype = np.uint32       # Config data type of elements from array
     r,g,b = ((rgb_array >> 16) & 255), ((rgb_array >> 8) & 255), (rgb_array & 255)  # 480 x 640 c/u
     img_bgr = cv2.merge((np.asarray(b,dtype='uint8'),np.asarray(g,dtype='uint8'),np.asarray(r,dtype='uint8')))
@@ -50,77 +48,55 @@ def segment_by_contour(img_bgr, pointCloud_array):
     edged = cv2.Canny(img_dilate, 100, 20)
     #Finding contours in the image, each individual contour is a Numpy array of (x,y) coordinates of boundary points of the object
     contours, hierarchy = cv2.findContours(edged.astype('uint8'),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-    distances, point_cloud_contour_list, centroids_list = [], [] , [] 
-
+    distances, point_cloud_contour_list, centroids_list = [], [] , []
+    
     if not len(contours) > 0:
-        return(False ,0 ,0, 0, 0,0,0,0)   
-       
+        return False ,None, None   
+
+    min_distance = float("inf")
+    nearest_obj_bgr = None
+    nearest_obj_xyz = None
+    nearest_centroid = None
+    print("Found " + str(len(contours)) + " countours")
     for j, contour in enumerate(contours):
         area = cv2.contourArea(contour)
         if area < 1000 or area > 20000: continue # discarding contours by area
-
+        
         mask = np.zeros((img_bgr.shape[0], img_bgr.shape[1]),np.uint8)
         cv2.drawContours(mask, contours, j, 255 , thickness = cv2.FILLED)  # llena contorno para mascara
         # the mask is eroded to ensure that we only get the point cloud of the object
-        mask_er=cv2.erode(mask , kernel,iterations=8)   
-        
-        obj_bgr, obj_xyz = get_object_bgr_and_xyz(img_bgr, pointCloud_array, mask_er)
+        mask =cv2.erode(mask , kernel,iterations=8)
+        obj_bgr, obj_xyz = get_object_bgr_and_xyz(img_bgr, pointCloud_array, mask)
         obj_centroid = np.mean(obj_xyz, axis=0)
-        shap = obj_xyz.shape
-        print("type*******", shap(0))
-        print("type*******", obj_xyz[0][0])
-        
-        print("Centroid: " + str(obj_centroid))
+        distance = math.sqrt(obj_centroid[0]**2 + obj_centroid[1]**2)
+        if distance < min_distance:
+            min_distance = distance
+            nearest_obj_bgr = obj_bgr.copy()
+            nearest_obj_xyz = obj_xyz.copy()
+            nearest_centroid= obj_centroid.copy()
 
-        #X_array.append(x), Y_array.append(y), Z_array.append(z) 
-        centroids_list.append(obj_centroid)
-        # calcula la distancia hacia cadaobj_centroid contorno
-        distance = math.sqrt(obj_centroid[0]**2 + obj_centroid[1]**2 + obj_centroid[2]**2)
-        distances.append(distance)
-        X_array, Y_array, Z_array = np.asarray(X_array), np.asarray(Y_array), np.asarray(Z_array)
-        pc_contour=(np.asarray((X_array , Y_array , Z_array ))) 
-        point_cloud_contour_list.append(pc_contour)
-        
-    index = distances.index(min(distances))   # envia la nube del objeto mas cercano
-    return(True ,centroids_list[index].tolist() , point_cloud_contour_list[index][0] , point_cloud_contour_list[index][1] , point_cloud_contour_list[index][2])
+    return True, nearest_centroid, nearest_obj_xyz
     
 
 def get_object_bgr_and_xyz(img_bgr, img_xyz, mask):
     obj_bgr = img_bgr.copy()
     obj_bgr[mask == 0] = 0
-    obj_xyz = img_xyz[mask == 255]
-    print("Xyz shape: " + str(img_xyz.shape))
-    print("Obj xyz shape: " + str(obj_xyz.shape))
-    print(obj_xyz[0])
+    # Take xyz points only in mask and remove points with zero X
+    obj_xyz = img_xyz[(mask == 255) & (img_xyz[:,:,0] > 0.1)].copy()
     return obj_bgr, obj_xyz
 
-def contour_point_cloud(img_bgr, mask_ero):  
-    img_with_mask = cv2.bitwise_and(img_bgr,img_bgr, mask=mask_ero)
-    img_non_zero = cv2.findNonZero(mask_ero)
-    pixels_array= []
-    for cord in img_non_zero: pixels_array.append(cord[0])
-    return (pixels_array, img_with_mask)
-
-
-
-def pca(x_points, y_points, z_points):    # pc del contorno mas cercano
-    point_cloud =  {"x": x_points, "y": y_points,"z": z_points}
-    point_cloud = pd.DataFrame(pd.DataFrame(point_cloud), columns=["x","y","z"])
-    eig_val, eig_vect = eig(point_cloud.cov())  # Eigenvalues and eigenvectors from Point Cloud Covariance Matrix
-    # Ordering from largest to smallest eigenvalues
-    eig_value_list = eig_val.tolist()
-    ind_M = eig_value_list.index(max(eig_value_list))
-    ind_m = eig_value_list.index(min(eig_value_list))
-    ind_sec = 3 - ind_m - ind_M
-    # object_size_estimation   MT = np.asarray(eig_vect)   ******************
-    pts_frame_PCA = pd.DataFrame(point_cloud.values @ np.asarray(eig_vect) , columns=["x","y","z"])
-    pts_frame_PCA = pts_frame_PCA.to_numpy()
-    H = abs(  pts_frame_PCA[-1, 0] - pts_frame_PCA[0, 0])
-    L = abs(  pts_frame_PCA[-1, 1] - pts_frame_PCA[0, 1])
-    W = 2*abs(pts_frame_PCA[-1, 2] - pts_frame_PCA[0, 2])
+def pca(xyz_points):    # pc del contorno mas cercano
+    eig_val, eig_vect = np.linalg.eig(np.cov(np.transpose(xyz_points))) # Eigenvalues and eigenvectors from Point Cloud Cov Matrix
+    idx = eig_val.argsort()
+    eig_val  = eig_val[idx]
+    eig_vect = np.transpose(np.transpose(eig_vect)[idx])
+    pts_frame_PCA = np.transpose(np.dot(eig_vect, np.transpose(xyz_points)))
+    H = np.max(pts_frame_PCA[:, 2]) - np.min(pts_frame_PCA[:, 2])
+    L = np.max(pts_frame_PCA[:, 1]) - np.min(pts_frame_PCA[:, 1])
+    W = np.max(pts_frame_PCA[:, 0]) - np.min(pts_frame_PCA[:, 0])
     size_obj = Vector3()
     size_obj.x, size_obj.z , size_obj.y = H, W, L
-    return [eig_vect[:,ind_M], eig_vect[:,ind_sec] , eig_vect[:,ind_m]], [eig_val[ind_M], eig_val[ind_sec], eig_val[ind_m]], size_obj
+    return [eig_vect[:,2], eig_vect[:,1] , eig_vect[:,0]], [eig_val[2], eig_val[1], eig_val[0]], size_obj
 
 
 
@@ -132,10 +108,13 @@ def object_pose(centroid, principal_component, second_component):
     if principal_component[2] < 0: 
         principal_component = -1 * principal_component
     
-    eje_y_obj = np.asarray(second_component) /np.linalg.norm( np.asarray(second_component) )
-    eje_x_obj = principal_component /np.linalg.norm( principal_component )    # Eje principal en x
-    eje_z_obj = np.cross(eje_y_obj , eje_x_obj ) / np.linalg.norm(np.cross(eje_y_obj , eje_x_obj))
+    eje_y_obj = second_component #np.asarray(second_component) /np.linalg.norm( np.asarray(second_component) )
+    eje_x_obj = principal_component # /np.linalg.norm( principal_component )    # Eje principal en x
+    eje_z_obj = np.cross(eje_y_obj , eje_x_obj )# / np.linalg.norm(np.cross(eje_y_obj , eje_x_obj))
     # se almacenan como puntos las coordenadas de eje x,y,...................................
+    # print("Normas que dice Itzel que no son uno:")
+    # print(np.linalg.norm( principal_component ))
+    # print(np.linalg.norm( np.asarray(second_component) ))
     axis_x_obj = Point()
     axis_x_obj.x, axis_x_obj.y, axis_x_obj.z = eje_x_obj[0], eje_x_obj[1], eje_x_obj[2]
     # Se forma la matriz de rotacion (columnas) del objeto, a partir de ella se obtienen los cuaterniones necesarios para generar el frame del objeto
@@ -148,13 +127,13 @@ def object_pose(centroid, principal_component, second_component):
 
     r,p,y = tft.euler_from_matrix(np.asarray(TM))
     q_obj = tft.quaternion_from_euler(r, p, y)
-    d = np.sqrt(q_obj[0]**2 + q_obj[1]**2 + q_obj[2]**2 + q_obj[3]**2)
+    #d = np.sqrt(q_obj[0]**2 + q_obj[1]**2 + q_obj[2]**2 + q_obj[3]**2)
     obj_pose = Pose()
     obj_pose.position.x, obj_pose.position.y, obj_pose.position.z = centroid[0], centroid[1], centroid[2]
-    obj_pose.orientation.x = q_obj[0]/d
-    obj_pose.orientation.y = q_obj[1]/d
-    obj_pose.orientation.z = q_obj[2]/d
-    obj_pose.orientation.w = q_obj[3]/d
+    obj_pose.orientation.x = q_obj[0]#/d
+    obj_pose.orientation.y = q_obj[1]#/d
+    obj_pose.orientation.z = q_obj[2]#/d
+    obj_pose.orientation.w = q_obj[3]#/d
     return obj_pose , axis_x_obj
 
 
@@ -172,6 +151,8 @@ def broadcaster_frame_object(frame, child_frame, pose):   # Emite la transformac
     t.transform.rotation.y = pose.orientation.y
     t.transform.rotation.z = pose.orientation.z
     t.transform.rotation.w = pose.orientation.w
+    # print("Sending object tf")
+    # print(t.transform)
     br.sendTransform(t)
 
 
@@ -189,7 +170,7 @@ def centroid_marker(xyz, frame_id):
 
 
 
-def arow_marker(centroide_cam, p1, frame_id_point_cloud):  
+def publish_arow_marker(centroide_cam, p1, frame_id_point_cloud):  
     p0 = PointStamped()
     p0.header.frame_id = frame_id_point_cloud
     p0.point.x , p0.point.y, p0.point.z = centroide_cam[0], centroide_cam[1], centroide_cam[2]
@@ -208,6 +189,7 @@ def arow_marker(centroide_cam, p1, frame_id_point_cloud):
     point.x, point.y, point.z = p0.point.x + p1.x , p0.point.y + p1.y , p0.point.z + p1.z
     marker.lifetime = rospy.Duration(10.0)
     marker.points = [p0.point, point]
+    marker.pose.orientation.w = 1.0
     marker_pub.publish(marker)
 
 
@@ -244,17 +226,17 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
         print("ObjSegmenter.->Cannot get preprocessed cloud. Using original cloud.")
     img_bgr, img_xyz = get_cv_mats_from_cloud_message(msg)
     
-    found_object, centroide_cam, x_points, y_points, z_points= segment_by_contour(img_bgr, img_xyz)
+    found_object, centroid, obj_xyz = segment_by_contour(img_bgr, img_xyz)
     frame_id_point_cloud = msg.header.frame_id
     resp = RecognizeObjectResponse()
     
     if found_object:
         print("An object was detected...............")
-        print("object position" , centroide_cam)
-        pca_vectors, eig_val, size_obj = pca(x_points, y_points, z_points)
+        print("object position" , centroid)
+        pca_vectors, eig_val, size_obj = pca(obj_xyz)
         c_obj = object_category(eig_val[0], eig_val[1], eig_val[2])
-        obj_pose, axis_x_obj = object_pose(centroide_cam, pca_vectors[0], pca_vectors[1])
-        arow_marker( centroide_cam, axis_x_obj, 'base_link')
+        obj_pose, axis_x_obj = object_pose(centroid, pca_vectors[0], pca_vectors[1])
+        publish_arow_marker( centroid, axis_x_obj, 'base_link')
         broadcaster_frame_object("base_link", "object", obj_pose)
         print("size object", size_obj)
         # Rellenando msg
