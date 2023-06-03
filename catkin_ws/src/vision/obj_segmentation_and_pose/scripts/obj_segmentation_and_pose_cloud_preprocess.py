@@ -48,7 +48,6 @@ def segment_by_contour(img_bgr, pointCloud_array):
     edged = cv2.Canny(img_dilate, 100, 20)
     #Finding contours in the image, each individual contour is a Numpy array of (x,y) coordinates of boundary points of the object
     contours, hierarchy = cv2.findContours(edged.astype('uint8'),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-    distances, point_cloud_contour_list, centroids_list = [], [] , []
     
     if not len(contours) > 0:
         return False ,None, None   
@@ -111,10 +110,6 @@ def object_pose(centroid, principal_component, second_component):
     eje_y_obj = second_component #np.asarray(second_component) /np.linalg.norm( np.asarray(second_component) )
     eje_x_obj = principal_component # /np.linalg.norm( principal_component )    # Eje principal en x
     eje_z_obj = np.cross(eje_y_obj , eje_x_obj )# / np.linalg.norm(np.cross(eje_y_obj , eje_x_obj))
-    # se almacenan como puntos las coordenadas de eje x,y,...................................
-    # print("Normas que dice Itzel que no son uno:")
-    # print(np.linalg.norm( principal_component ))
-    # print(np.linalg.norm( np.asarray(second_component) ))
     axis_x_obj = Point()
     axis_x_obj.x, axis_x_obj.y, axis_x_obj.z = eje_x_obj[0], eje_x_obj[1], eje_x_obj[2]
     # Se forma la matriz de rotacion (columnas) del objeto, a partir de ella se obtienen los cuaterniones necesarios para generar el frame del objeto
@@ -127,13 +122,12 @@ def object_pose(centroid, principal_component, second_component):
 
     r,p,y = tft.euler_from_matrix(np.asarray(TM))
     q_obj = tft.quaternion_from_euler(r, p, y)
-    #d = np.sqrt(q_obj[0]**2 + q_obj[1]**2 + q_obj[2]**2 + q_obj[3]**2)
     obj_pose = Pose()
     obj_pose.position.x, obj_pose.position.y, obj_pose.position.z = centroid[0], centroid[1], centroid[2]
-    obj_pose.orientation.x = q_obj[0]#/d
-    obj_pose.orientation.y = q_obj[1]#/d
-    obj_pose.orientation.z = q_obj[2]#/d
-    obj_pose.orientation.w = q_obj[3]#/d
+    obj_pose.orientation.x = q_obj[0]
+    obj_pose.orientation.y = q_obj[1]
+    obj_pose.orientation.z = q_obj[2]
+    obj_pose.orientation.w = q_obj[3]
     return obj_pose , axis_x_obj
 
 
@@ -151,22 +145,7 @@ def broadcaster_frame_object(frame, child_frame, pose):   # Emite la transformac
     t.transform.rotation.y = pose.orientation.y
     t.transform.rotation.z = pose.orientation.z
     t.transform.rotation.w = pose.orientation.w
-    # print("Sending object tf")
-    # print(t.transform)
     br.sendTransform(t)
-
-
-
-def centroid_marker(xyz, frame_id): 
-    global pub_point
-    centroide = PointStamped()
-    centroide.header.frame_id = frame_id
-    centroide.point.x = xyz[0]
-    centroide.point.y = xyz[1]
-    centroide.point.z = xyz[2]
-    frame_id = centroide.header.frame_id
-    hdr = Header(frame_id=frame_id, stamp=rospy.Time(0))
-    pub_point.publish(PointStamped(header=hdr, point=Point(x = centroide.point.x , y = centroide.point.y, z = centroide.point.z)))
 
 
 
@@ -211,7 +190,6 @@ def object_category(fpc, spc, thpc):  # estima la forma geometrica del objeto.
         return "0"
 
 
-
 def callback_RecognizeObject(req):  # Request is a PointCloud2
     global clt_get_points
     print("ObjSegmenter.->The service has been requested **************")
@@ -227,7 +205,6 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
     img_bgr, img_xyz = get_cv_mats_from_cloud_message(msg)
     
     found_object, centroid, obj_xyz = segment_by_contour(img_bgr, img_xyz)
-    frame_id_point_cloud = msg.header.frame_id
     resp = RecognizeObjectResponse()
     
     if found_object:
