@@ -81,7 +81,7 @@
     <param name="min_y" value="$(arg min_y)"/>
     <param name="max_z" value="$(arg max_z)"/>
     <param name="min_z" value="$(arg min_z)"/>
-    <param name="obs_detector_debug" value="$(arg obs_detector_debug)"/>
+    <param name="debug" value="$(arg obs_detector_debug)"/>
     <param name="no_sensor_data_timeout" value="$(arg no_sensor_data_timeout)"/>
   </node>
 
