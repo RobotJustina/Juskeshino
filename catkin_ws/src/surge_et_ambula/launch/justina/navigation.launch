@@ -7,8 +7,10 @@
   <arg name="laser_scan_topic" default="/hardware/scan"/>
   <arg name="point_cloud_topic" default="/hardware/kinect/rgbd_wrt_robot"/>
   <arg name="use_lidar" default="True"/>
-  <arg name="use_sonars" default="False"/>
   <arg name="use_point_cloud" default="False"/>
+  <arg name="use_pot_fields" default="False"/>
+  <arg name="pot_fields_k_rej" default="1.0"/>
+  <arg name="pot_fields_d0" default="1.0"/>
   <arg name="cloud_downsampling" default="9"/>
   <arg name="lidar_downsampling" default="2"/>
   <arg name="cloud_points_threshold" default="100"/>
@@ -23,9 +25,9 @@
   <arg name="move_head" default="True"/>
   <arg name="/base_link_name" default="base_footprint"/>
   <arg name="min_x" default="0.3"/>
-  <arg name="max_x" default="0.85"/>
-  <arg name="min_y" default="-0.30"/>
-  <arg name="max_y" default="0.30"/>
+  <arg name="max_x" default="0.8"/>
+  <arg name="min_y" default="-0.25"/>
+  <arg name="max_y" default="0.25"/>
   <arg name="min_z" default="0.05"/>
   <arg name="max_z" default="1.30"/>
   <arg name="obs_detector_debug" default="False"/>
@@ -60,6 +62,7 @@
     <param name="coarse_dist_tolerance" value="$(arg coarse_dist_tolerance)"/>
     <param name="angle_tolerance" value="$(arg angle_tolerance)"/>
     <param name="move_head" value="$(arg move_head)"/>
+    <param name="use_pot_fields" value="$(arg use_pot_fields)"/>
     <param name="/base_link_name" value="$(arg /base_link_name)"/>
     
   </node>
@@ -67,9 +70,10 @@
   <node name="obs_detector"  pkg="obstacle_detector"  type="obs_detect_node"  output="screen">
     <param name="laser_scan_topic" value="$(arg laser_scan_topic)"/>
     <param name="use_lidar" value="$(arg use_lidar)"/>
-    <param name="use_sonars" value="$(arg use_sonars)"/>
     <param name="use_point_cloud" value="$(arg use_point_cloud)"/>
-    <param name="use_point_cloud2" value="False"/>
+    <param name="use_pot_fields" value="$(arg use_pot_fields)"/>
+    <param name="pot_fields_k_rej" value="$(arg pot_fields_k_rej)"/>
+    <param name="pot_fields_d0" value="$(arg pot_fields_d0)"/>
     <param name="point_cloud_topic" value="$(arg point_cloud_topic)"/>
     <param name="laser_scan_topic" value="$(arg laser_scan_topic)"/>
     <param name="cloud_downsampling" value="$(arg cloud_downsampling)"/>
@@ -83,15 +87,14 @@
     <param name="min_z" value="$(arg min_z)"/>
     <param name="debug" value="$(arg obs_detector_debug)"/>
     <param name="no_sensor_data_timeout" value="$(arg no_sensor_data_timeout)"/>
+    
   </node>
 
 
 
   <node name="map_augmenter"  pkg="map_augmenter"  type="map_augmenter_node"  output="screen">
     <param name="use_lidar" value="$(arg use_lidar)"/>
-    <param name="use_sonars" value="$(arg use_sonars)"/>
     <param name="use_point_cloud" value="$(arg use_point_cloud)"/>
-    <param name="use_point_cloud2" value="False"/>
     <param name="point_cloud_topic" value="$(arg point_cloud_topic)"/>
     <param name="laser_scan_topic" value="$(arg laser_scan_topic)"/>
     <param name="cloud_downsampling" value="$(arg cloud_downsampling)"/>

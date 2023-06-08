@@ -23,8 +23,10 @@
     <arg name="laser_scan_topic" value="/hardware/scan"/>
     <arg name="point_cloud_topic" value="/hardware/realsense/points"/>
     <arg name="use_lidar" value="True"/>
-    <arg name="use_sonars" value="False"/>
     <arg name="use_point_cloud" value="True"/>
+    <arg name="use_pot_fields" value="True"/>
+    <arg name="pot_fields_k_rej" value="0.3"/>
+    <arg name="pot_fields_d0" default="1.0"/>
     <arg name="cloud_downsampling" value="9"/>
     <arg name="cloud_points_threshold" value="50"/>
     <arg name="lidar_points_threshold" value="5"/>

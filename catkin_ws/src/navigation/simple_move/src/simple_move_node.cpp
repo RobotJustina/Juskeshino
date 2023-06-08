@@ -1,6 +1,7 @@
 #include "ros/ros.h"
 #include "geometry_msgs/Pose2D.h"
 #include "geometry_msgs/Twist.h"
+#include "geometry_msgs/Vector3.h"
 #include "nav_msgs/Path.h"
 #include "std_msgs/Float32.h"
 #include "std_msgs/Float32MultiArray.h"
@@ -33,7 +34,9 @@ bool  new_pose       = false;
 bool  new_path       = false;
 bool  collision_risk = false;
 bool  move_lat       = false;
+bool  use_pot_fields = false;
 nav_msgs::Path goal_path;
+geometry_msgs::Vector3 rejection_force;
 bool stop = false;
 std::string base_link_name = "base_footprint";
 
@@ -111,7 +114,12 @@ void callback_collision_risk(const std_msgs::Bool::ConstPtr& msg)
     collision_risk = msg->data;
 }
 
-geometry_msgs::Twist calculate_speeds(float robot_x, float robot_y, float robot_t, float goal_x, float goal_y,float min_linear_speed, float max_linear_speed, float angular_speed, float alpha, float beta, bool backwards, bool lateral)
+void callback_rejection_force(const geometry_msgs::Vector3::ConstPtr& msg)
+{
+    rejection_force = *msg;
+}
+
+geometry_msgs::Twist calculate_speeds(float robot_x, float robot_y, float robot_t, float goal_x, float goal_y,float min_linear_speed, float max_linear_speed, float angular_speed, float alpha, float beta, bool backwards, bool lateral, bool use_pot_fields=false, double rejection_force_y=0)
 {
     float angle_error = 0;
     if(backwards) angle_error = (atan2(robot_y - goal_y, robot_x -goal_x)-robot_t);
@@ -120,17 +128,20 @@ geometry_msgs::Twist calculate_speeds(float robot_x, float robot_y, float robot_
     if(angle_error <= -M_PI) angle_error += 2*M_PI;
     if(lateral) angle_error -= M_PI/2;
     if(angle_error <= -M_PI) angle_error += 2*M_PI;
-
     if(backwards) max_linear_speed *= -1;
+    
     geometry_msgs::Twist result;
     if(lateral)
-        result.linear.y  = max_linear_speed  * exp(-(angle_error * angle_error) / (alpha));
+        result.linear.y   = max_linear_speed  * exp(-(angle_error * angle_error) / (alpha));
     else result.linear.x  = max_linear_speed  * exp(-(angle_error * angle_error) / (alpha));
+    result.angular.z = angular_speed * (2 / (1 + exp(-angle_error / beta)) - 1);
+
     if(fabs(result.linear.x) < min_linear_speed)
         result.linear.x = 0;
     if(fabs(result.linear.y) < min_linear_speed)
         result.linear.y = 0;
-    result.angular.z = angular_speed * (2 / (1 + exp(-angle_error / beta)) - 1);
+    
+    if(use_pot_fields && !lateral) result.linear.y = rejection_force_y;
     return result;
 }
 
@@ -247,6 +258,7 @@ int main(int argc, char** argv)
     ros::Subscriber sub_navSimpleMvStop  = n.subscribe("/simple_move/stop", 1, callback_simple_move_stop);               
     ros::Subscriber sub_gollisionRisk    = n.subscribe("/navigation/obs_detector/collision_risk", 10, callback_collision_risk);
     ros::Subscriber sub_moveLateral      = n.subscribe("/simple_move/goal_dist_lateral" , 1, callback_move_lateral);
+    ros::Subscriber sub_rejection_force  = n.subscribe("/navigation/obs_detector/pf_rejection_force", 1, callback_rejection_force);
     tf::TransformListener tf_listener;
     ros::Rate loop(RATE);
 
@@ -282,6 +294,8 @@ int main(int argc, char** argv)
         ros::param::get("~angle_tolerance", angle_tolerance);
     if(ros::param::has("~move_head"))
         ros::param::get("~move_head", move_head);
+    if(ros::param::has("~use_pot_fields"))
+        ros::param::get("~use_pot_fields", use_pot_fields);
     if(ros::param::has("/base_link_name"))
         ros::param::get("/base_link_name", base_link_name);
 
@@ -289,6 +303,7 @@ int main(int argc, char** argv)
     std::cout << "  linear_accel=" << linear_acceleration << "  max_angular=" << max_angular_speed << std::endl;
     std::cout << "SimpleMove.->alpha=" << alpha << "  beta=" << beta << "  fine_dist_tol=" << fine_dist_tolerance;
     std::cout << "  coarse_dist_tol=" << coarse_dist_tolerance << "  angle_tol=" << angle_tolerance << std::endl;
+    std::cout << "SimpleMove.->Use potential fields rejection force: " << (use_pot_fields ? "True" : "False") << std::endl;
     std::cout << "SimpleMove.->Base link name: " << base_link_name << std::endl;
 
     std::cout << "SimpleMove.->Waiting for odometry and localization transforms..." << std::endl;
@@ -421,7 +436,7 @@ int main(int argc, char** argv)
             current_linear_speed = temp_k * sqrt(global_error);
             if(current_linear_speed < min_linear_speed) current_linear_speed = min_linear_speed;
             pub_cmd_vel.publish(calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
-                                                 max_angular_speed, alpha*2, beta/4, goal_distance < 0, move_lat));
+                                                 max_angular_speed, alpha*2, beta/4, goal_distance < 0, move_lat, use_pot_fields, rejection_force.y));
             break;
 
 
@@ -491,7 +506,7 @@ int main(int argc, char** argv)
                     std::cout<<"SimpleMove.->Timeout exceeded while trying to reach goal path. Current state: GOAL_PATH_ACCEL."<<std::endl;
                 }
                 pub_cmd_vel.publish(calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
-                                                     max_angular_speed, alpha, beta, false, move_lat));
+                                                     max_angular_speed, alpha, beta, false, move_lat, use_pot_fields, rejection_force.y));
                 if(move_head) pub_head_goal_pose.publish(get_next_goal_head_angles(robot_x, robot_y, robot_t, next_pose_idx));
                 current_linear_speed += linear_acceleration/RATE;
             }
@@ -523,7 +538,7 @@ int main(int argc, char** argv)
                     std::cout<<"SimpleMove.->Timeout exceeded while trying to reach goal path. Current state: GOAL_PATH_CRUISE."<<std::endl;
                 }
                 pub_cmd_vel.publish(calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
-                                                     max_angular_speed, alpha, beta, false,move_lat));
+                                                     max_angular_speed, alpha, beta, false,move_lat, use_pot_fields, rejection_force.y));
                 if(move_head) pub_head_goal_pose.publish(get_next_goal_head_angles(robot_x, robot_y, robot_t, next_pose_idx));
             }
             break;
@@ -550,8 +565,8 @@ int main(int argc, char** argv)
                 }
                 current_linear_speed = temp_k * sqrt(global_error);
                 if(current_linear_speed < min_linear_speed) current_linear_speed = min_linear_speed;
-                pub_cmd_vel.publish(calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, 
-                                                     current_linear_speed, max_angular_speed, alpha, beta, false,move_lat));
+                pub_cmd_vel.publish(calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
+                                                     max_angular_speed, alpha, beta, false,move_lat, use_pot_fields, rejection_force.y));
                 if(move_head) pub_head_goal_pose.publish(get_next_goal_head_angles(robot_x, robot_y, robot_t, next_pose_idx));
             }
             break;
