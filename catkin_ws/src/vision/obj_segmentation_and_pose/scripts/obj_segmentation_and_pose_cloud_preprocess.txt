@@ -17,8 +17,8 @@ def get_cv_mats_from_cloud_message(cloud_msg):
     rgb_array.dtype = np.uint32       # Config data type of elements from array
     r,g,b = ((rgb_array >> 16) & 255), ((rgb_array >> 8) & 255), (rgb_array & 255)  # 480 x 640 c/u
     img_bgr = cv2.merge((np.asarray(b,dtype='uint8'),np.asarray(g,dtype='uint8'),np.asarray(r,dtype='uint8')))
-    #cv2.imshow("imagen sin plano #1", img_bgr) #*****************
-    #cv2.waitKey(0)
+    cv2.imshow("imagen sin plano #1", img_bgr) #*****************
+    cv2.waitKey(0)
     xyz = np.zeros((480, 640, 3))
     for i in range(480):
         for j in range(640):
@@ -41,25 +41,25 @@ def segment_by_contour(img_bgr, pointCloud_array):
     cc=np.uint8(cc) # Image with reduced colors, conversion to the format with which cv2 works
     segmented_image= cc[labels.flatten()]
     segmented_image=segmented_image.reshape(img_bgr.shape)
-    #cv2.imshow("imagen con clusterización por color #3", segmented_image) #*****************
-    #cv2.waitKey(0)
+    cv2.imshow("imagen con clusterización por color #3", segmented_image) #*****************
+    cv2.waitKey(0)
     # Change the color space from BGR to grayscale
     image_gray = cv2.cvtColor(segmented_image, cv2.COLOR_BGR2GRAY)
-    #cv2.imshow("imagen en escala de grises #4", image_gray) #*****************
-    #cv2.waitKey(0)
+    cv2.imshow("imagen en escala de grises #4", image_gray) #*****************
+    cv2.waitKey(0)
     img_bin = cv2.adaptiveThreshold(image_gray,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,15)
-    #cv2.imshow("imagen umbralizada #5", img_bin) #*****************
-    #cv2.waitKey(0)
+    cv2.imshow("imagen umbralizada #5", img_bin) #*****************
+    cv2.waitKey(0)
     kernel = np.ones((3,3),np.uint8)    # Define a kernel for erosion
     img_erode=cv2.erode(img_bin , kernel,iterations=3)  #4 eroded image
-    #cv2.imshow("imagen erosionada #6", img_erode) #*****************
-    #cv2.waitKey(0)
+    cv2.imshow("imagen erosionada #6", img_erode) #*****************
+    cv2.waitKey(0)
     img_dilate = cv2.dilate(img_erode , kernel, iterations=2) # apertura y cierre
-    #cv2.imshow("imagen dilatada #7", img_dilate) #*****************
-    #cv2.waitKey(0)
+    cv2.imshow("imagen dilatada #7", img_dilate) #*****************
+    cv2.waitKey(0)
     edged = cv2.Canny(img_dilate, 100, 20)
-    #cv2.imshow("imagen con filtro Canny #8", edged) #*****************
-    #cv2.waitKey(0)
+    cv2.imshow("imagen con filtro Canny #8", edged) #*****************
+    cv2.waitKey(0)
     #Finding contours in the image, each individual contour is a Numpy array of (x,y) coordinates of boundary points of the object
     contours, hierarchy = cv2.findContours(edged.astype('uint8'),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
     
@@ -94,29 +94,24 @@ def segment_by_contour(img_bgr, pointCloud_array):
 def get_object_bgr_and_xyz(img_bgr, img_xyz, mask):
     obj_bgr = img_bgr.copy()
     obj_bgr[mask == 0] = 0
+    cv2.imshow("obj", obj_bgr) #*****************
+    cv2.waitKey(0)
     # Take xyz points only in mask and remove points with zero X
     obj_xyz = img_xyz[(mask == 255) & (img_xyz[:,:,0] > 0.1)].copy()
     return obj_bgr, obj_xyz
 
-def pca(xyz_points,centrid):    # pc del contorno mas cercano
+def pca(xyz_points):    # pc del contorno mas cercano
     eig_val, eig_vect = np.linalg.eig(np.cov(np.transpose(xyz_points))) # Eigenvalues and eigenvectors from Point Cloud Cov Matrix
     idx = eig_val.argsort()
     eig_val  = eig_val[idx]
     eig_vect = np.transpose(np.transpose(eig_vect)[idx])
-    
     pts_frame_PCA = np.transpose(np.dot(eig_vect, np.transpose(xyz_points)))
-    pt_frame_PCA = np.transpose(np.dot(eig_vect, np.transpose(centrid)))
-    print("pt in pca", pt_frame_PCA, centrid)
-    
     H = np.max(pts_frame_PCA[:, 2]) - np.min(pts_frame_PCA[:, 2])
     L = np.max(pts_frame_PCA[:, 1]) - np.min(pts_frame_PCA[:, 1])
     W = np.max(pts_frame_PCA[:, 0]) - np.min(pts_frame_PCA[:, 0])
     size_obj = Vector3()
     size_obj.x, size_obj.z , size_obj.y = H, W, L
     return [eig_vect[:,2], eig_vect[:,1] , eig_vect[:,0]], [eig_val[2], eig_val[1], eig_val[0]], size_obj
-
-
-
 
 
 
@@ -231,14 +226,14 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
     if found_object:
         print("An object was detected...............")
         print("object position" , centroid)
-        pca_vectors, eig_val, size_obj = pca(obj_xyz, centroid)
+        pca_vectors, eig_val, size_obj = pca(obj_xyz)
         c_obj = object_category(eig_val[0], eig_val[1], eig_val[2])
         obj_pose, axis_x_obj = object_pose(centroid, pca_vectors[0], pca_vectors[1])
         publish_arow_marker( centroid, axis_x_obj, 'base_link')
         broadcaster_frame_object("base_link", "object", obj_pose)
         print("size object", size_obj)
-
-        # Rellenando msg 
+        # Rellenando msg
+        
         resp.recog_object.category = c_obj
         resp.recog_object.header = req.point_cloud.header
         resp.recog_object.size = size_obj

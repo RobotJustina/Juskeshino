@@ -1,0 +1,5 @@
+geometry_msgs/Pose pose 
+string category                     #Centroid and orientation
+sensor_msgs/PointCloud2 point_cloud
+---
+trajectory_msgs/JointTrajectory articular_trajectory

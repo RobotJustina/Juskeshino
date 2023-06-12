@@ -22,7 +22,7 @@
     <param name="hough_min_theta"     value="1.0708"/>
     <param name="hough_max_theta"     value="2.0708"/>
     <param name="hough_step_theta"    value="0.03"/>
-    <param name="plane_dist_threshold"  value="0.05"/>
+    <param name="plane_dist_threshold"  value="0.02"/>
     <param name="plane_min_area"        value="0.5"/>
     <param name="histogram_size"        value="18"/>
     <param name="min_points_per_object" value="1000"/>"
