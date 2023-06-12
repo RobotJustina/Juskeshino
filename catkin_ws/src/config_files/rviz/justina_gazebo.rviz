@@ -563,6 +563,14 @@ Visualization Manager:
       Topic: /hri/leg_finder/leg_pose
       Unreliable: false
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /navigation/obs_detector/pot_field_markers
+      Name: RejectionForces
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -591,7 +599,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 5.439601898193359
+      Distance: 7.64224910736084
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -599,17 +607,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 2.379579544067383
-        Y: 6.0043721199035645
-        Z: -0.35020530223846436
+        X: 3.682816743850708
+        Y: 6.594723701477051
+        Z: -1.0454591512680054
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8947955369949341
+      Pitch: 1.119795322418213
       Target Frame: <Fixed Frame>
-      Yaw: 5.788586616516113
+      Yaw: 5.803586959838867
     Saved: ~
 Window Geometry:
   Displays:
