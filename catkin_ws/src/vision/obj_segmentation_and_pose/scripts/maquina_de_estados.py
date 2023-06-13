@@ -119,16 +119,12 @@ def move_left_gripper(q, pubLaGoalGrip):
 
 def get_obj_pose(clt_recog_obj):
     recognize_object_req = RecognizeObjectRequest()
-
     try:
         recognize_object_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
         #recognize_object_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
     except:
         return None
-    resp_recog_obj = clt_recog_obj(recognize_object_req)
-    #print(resp_recog_obj.recog_object.pose)
-    p = resp_recog_obj.recog_object.pose
-    return [p.position.x, p.position.y, p.position.z]
+    return clt_recog_obj(recognize_object_req)
 
 
 
@@ -176,7 +172,7 @@ def main():
     rospy.wait_for_service("/vision/obj_segmentation/get_obj_pose")
     clt_pose_obj = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose", RecognizeObject)
     rospy.wait_for_service("/vision/get_best_grasp_traj")
-    clt_best_grip = rospy.ServiceProxy("/vision/get_best_grasp_traj", InverseKinematicsPose2Traj )
+    clt_best_grip = rospy.ServiceProxy("/vision/get_best_grasp_traj", BestGraspTraj )
     rospy.wait_for_service( '/manipulation/la_ik_trajectory' )
     clt_ik = rospy.ServiceProxy( '/manipulation/la_ik_trajectory' , InverseKinematicsPose2Traj )
 
@@ -231,7 +227,7 @@ def main():
             move_head(pub_hd_goal_pose ,0, -0.9)
             move_head(pub_hd_goal_pose ,0, -0.9)
             print("state == SM_MOVE_HEAD")
-            rospy.sleep(3.0)
+            rospy.sleep(1.0)
             state = SM_WAIT_FOR_HEAD
 
         elif state == SM_WAIT_FOR_HEAD:
@@ -247,12 +243,14 @@ def main():
 
         elif state == SM_GET_OBJ_POSE:
             print("state == SM_GET_OBJ..........")
-            x,y,z = get_obj_pose(clt_pose_obj)
+            resp = get_obj_pose(clt_pose_obj)
+            x, y ,z = resp.recog_object.pose.position.x, resp.recog_object.pose.position.y, resp.recog_object.pose.position.z
             i = 0
             z_temp = z*10
             z_temp2 = str(z)
             while  z_temp <= 0 or z_temp2 == 'nan': 
-                x,y,z = get_obj_pose(clt_pose_obj)
+                resp = get_obj_pose(clt_pose_obj)
+                x, y ,z = resp.recog_object.pose.position.x, resp.recog_object.pose.position.y, resp.recog_object.pose.position.z
                 z_temp = z*10
                 z_temp2 = str(z)
                 print("                     ")
@@ -262,8 +260,8 @@ def main():
                 if i > 15:
                     break
             print("position object ", x,y,z)
-            x,y,z = transform_to_la(x,y,z,'base_link', 'shoulders_left_link',listener)
-            #state = SM_PREPARE_ARM
+            
+            state = SM_PREPARE_ARM
 
 
         elif state == SM_PREPARE_ARM:
@@ -278,23 +276,20 @@ def main():
                 state = SM_GET_OBJ_POSE
             """
             state = SM_MOVE_LEFT_ARM
-            rospy.sleep(5.0)
+            rospy.sleep(2.0)
             
 
         elif state == SM_MOVE_LEFT_ARM:
-            req_best_grip = InverseKinematicsPose2TrajRequest()
-            req_best_grip.
-            resp_best_grip = clt_best_grip()
+            req_best_grip = BestGraspTrajRequest()
+            req_best_grip.pose = resp.recog_object.pose
+            req_best_grip.category = resp.recog_object.category
+            resp_best_grip = clt_best_grip(req_best_grip)
             print("state == SM_MOVE_ARM")
-            q = 0.6
-            move_left_gripper(q, pub_la_goal_grip)
-            duration = 10
-            time_step = 0.2
-
-            move_left_arm( [x,y,z,0,-1.5,-0.3] ,duration, time_step, pub_la_goal_traj, clt_ik)
-            q = 0
-            
-            move_left_gripper(q, pub_la_goal_grip)
+            move_left_gripper(0.9, pub_la_goal_grip)
+            #pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
+            print("moviendo brazo izquierdo...................")
+            rospy.sleep(7.0)
+            move_left_gripper(0, pub_la_goal_grip)
             state = -1
 
         else:

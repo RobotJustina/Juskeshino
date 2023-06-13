@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   trajectory_msgs
   message_generation
+  sensor_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -59,6 +60,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
+  BestGraspTraj.srv
   ForwardKinematics.srv
   GetPolynomialTrajectory.srv
   InverseKinematicsPose2Pose.srv
@@ -76,7 +78,7 @@ add_service_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  geometry_msgs   std_msgs trajectory_msgs
+  geometry_msgs   std_msgs trajectory_msgs    sensor_msgs
 )
 
 ################################################
