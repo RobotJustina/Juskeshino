@@ -1,5 +1,6 @@
 geometry_msgs/Pose pose 
 string category                     #Centroid and orientation
 sensor_msgs/PointCloud2 point_cloud
+geometry_msgs/Vector3 size                   #Size in meters: size in x, y and z
 ---
 trajectory_msgs/JointTrajectory articular_trajectory
