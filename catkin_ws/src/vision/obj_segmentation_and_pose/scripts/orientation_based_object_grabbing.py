@@ -140,7 +140,7 @@ def box(obj_pose, size, obj_state):
 
 
 
-def cylinder_or_prism(obj_pose, angle_obj ):   
+def cylinder_or_prism(obj_pose, obj_state ):   
     global listener
     grasp_candidates_quaternion = []
     y_object = 0.04 # ancho del objeto
@@ -158,6 +158,28 @@ def cylinder_or_prism(obj_pose, angle_obj ):
     theta = 0 + offset_theta 
     count = 0
     id = 0
+    points = []
+    z_list = []
+    max_value_z = -1000
+
+    for i in range( num_points):   # generación de puntos
+        point = np.asarray([ 0, epsilon*np.sin(theta), epsilon*np.cos(theta)  ])
+        point = points_actual_to_points_target(point, 'object', 'base_link')
+        points.append(point)
+        z_list.append(point[2])
+        marker_array_publish(point, 'base_link', count, id)
+        count += 1
+        id += 1
+        theta = theta + step_size 
+
+    if obj_state == 'horizontal':   # se toma el punto mas alto en z
+        z_array = np.ndarray(z_list)
+        indx_mayor = np.argmax(z_array)
+        print(np.argmax(z_array))
+        point = points[indx_mayor]
+        num_points = 1
+
+
     # obtencion de origen de frame candidato
     for i in range( num_points):   
         point = np.asarray([ 0, epsilon*np.sin(theta), epsilon*np.cos(theta)  ])
@@ -165,6 +187,7 @@ def cylinder_or_prism(obj_pose, angle_obj ):
         marker_array_publish(point, 'base_link', count, id)
         count += 1
         id += 1
+        theta = theta + step_size 
         # obtencion de eje x
         axis_x_point = axis_x_obj / np.linalg.norm( (axis_x_obj) )
         arow_marker(point , axis_x_point, 'base_link', 'axis_x',7,250)
@@ -193,7 +216,6 @@ def cylinder_or_prism(obj_pose, angle_obj ):
         candidate_grasp.orientation.z = q_gripper[2]/d
         candidate_grasp.orientation.w = q_gripper[3]/d
         grasp_candidates_quaternion.append(candidate_grasp) 
-        theta = theta + step_size 
     return grasp_candidates_quaternion
 
 
