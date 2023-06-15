@@ -107,9 +107,9 @@ def cylinder_or_prism(obj_pose, angle_obj ):
     for i in range( num_points):   
         point = np.asarray([ 0, epsilon*np.sin(theta), epsilon*np.cos(theta)  ])
         point = points_actual_to_points_target(point, 'object', 'base_link')
-        marker_array_publish(point, 'base_link', count, id)
         count += 1
         id += 1
+        marker_array_publish(point, 'base_link', count, id)
         # obtencion de eje x
         axis_x_point = axis_x_obj / np.linalg.norm( (axis_x_obj) )
         arow_marker(point , axis_x_point, 'base_link', 'axis_x',7,250)
@@ -272,6 +272,11 @@ def callback(req):
     ang_pc1_pixy = angle_pca_floor(req.pose) 
     pose_list_q = grip_rules(req.pose, req.category, ang_pc1_pixy) # solo para cilindro 
     broadcaster_frame_object('base_link', 'candidate1' , pose_list_q[0] )
+    broadcaster_frame_object('base_link', 'candidate2' , pose_list_q[6] )
+    broadcaster_frame_object('base_link', 'candidate3' , pose_list_q[12] )
+    broadcaster_frame_object('base_link', 'candidate4' , pose_list_q[18] )
+    broadcaster_frame_object('base_link', 'candidate5' , pose_list_q[24] )
+    broadcaster_frame_object('base_link', 'candidate5' , pose_list_q[31] )
     new_pose_rpy_list = convert_frame_of_candidates_poses(pose_list_q)
     successful_candidate_trajectories = evaluating_possibility_grip(new_pose_rpy_list)
 
