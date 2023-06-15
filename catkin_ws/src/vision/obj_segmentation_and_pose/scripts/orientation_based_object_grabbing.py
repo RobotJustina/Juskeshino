@@ -13,15 +13,6 @@ from visualization_msgs.msg import Marker, MarkerArray
 import geometry_msgs.msg
 
 
-def box(obj_pose):
-    print("take a box")
-    
-
-def cube_or_sphere(obj_pose):
-    print("take cube or sphere")   
-
-
-
 def pose_actual_to_pose_target(pose, f_actual, f_target):
     global listener
     #q1, q2, q3, q4 = tft.quaternion_from_euler(R, P, Y) # conversion a quaternion
@@ -38,7 +29,7 @@ def pose_actual_to_pose_target(pose, f_actual, f_target):
     return new_pose
 
 
-def angle_pca_floor(obj_pose):  
+def object_state(obj_pose):  
     MT = tft.quaternion_matrix([obj_pose.orientation.x ,obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w]) 
     pc1 = np.asarray( [MT[0,0], MT[1,0], MT[2,0]])   # eje principal
     # componente principal esta en eje x
@@ -47,9 +38,20 @@ def angle_pca_floor(obj_pose):
 
     eje_z = np.asarray([0, 0, 1], dtype=np.float64 )# vector normal al plano xy
     # angulo entre pc1 y plano xy frame base_link
-    ang_pc1_pixy = np.arcsin( np.dot(pc1 , eje_z) / (np.linalg.norm(pc1) * 1) )
-    print("angulo pc1 grados", np.rad2deg( ang_pc1_pixy ) )
-    return ang_pc1_pixy # en radianes
+    angle_obj = np.arcsin( np.dot(pc1 , eje_z) / (np.linalg.norm(pc1) * 1) )
+    print("angulo pc1 grados", np.rad2deg( angle_obj ) )
+
+    MT = tft.quaternion_matrix([obj_pose.orientation.x ,obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w])
+    axis_x_obj = np.asarray( [MT[0,0], MT[1,0], MT[2,0]])   # eje x del objeto = eje x gripper
+    axis_y_obj = np.asarray( [MT[0,1], MT[1,1], MT[2,1]])   # eje x del objeto 
+    
+
+    if (angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150)):
+        print("Eje principal horizontal***********")
+        return 'horizontal'
+    else: 
+        print("Eje principal vertical*******************************")
+        return 'vertical'
 
 
 
@@ -68,22 +70,77 @@ def points_actual_to_points_target(point_in, f_actual, f_target):
 
 
 
-def grip_rules(obj_pose, type_obj, angle_obj):
-    if type_obj == 1:
-        print("cube_or_sphere")
+def grip_rules(obj_pose, type_obj, obj_state, size):
+    if type_obj == 2 or type_obj == 1:
+        return box(obj_pose, size, obj_state)
 
-    if type_obj == 2:
-        print("box")
 
     if type_obj == "3":
-        print("take cylinder or prism") 
-        grasp_candidates_quaternion = cylinder_or_prism(obj_pose, angle_obj)
-        return grasp_candidates_quaternion
+        print("take prism") 
+        grasp_candidates_quaternion = cylinder_or_prism(obj_pose, obj_state)
+        return grasp_candidates_quaternion 
+
+
+def box(obj_pose, size, obj_state):
+    # agarre vertical
+    # obtencion del punto de agarra
+    grip_point = Point()
+    grip_point.x = 0
+    grip_point.y = 0
+    grip_point.z = size.z / 2   # a partir origen se desplaza sobre eje x size.z/2 
+    # transformar del espacio del objeto al espacio base link
+    new_point_grip = points_actual_to_points_target(grip_point , 'object', 'base_link')
+    marker_array_publish(new_point_grip , 'base_link', 0, 7)
+    # construccion de frame de gripper..............................................................
+    MT = tft.quaternion_matrix([obj_pose.orientation.x ,obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w])
+    axis_x_obj = np.asarray( [MT[0,0], MT[1,0], MT[2,0]])   # eje x del objeto
+    axis_y_obj = np.asarray( [MT[0,1], MT[1,1], MT[2,1]])   # eje y del objeto
+    axis_z_obj = np.asarray( [MT[0,2], MT[1,2], MT[2,2]])   # eje y del objeto
+
+    if obj_state == 'horizontal':   # eje x gripper paralelo a eje principal del objeto
+        print("caja larga")
+        axis_x_gripper = axis_x_obj
+        #arow_marker(point , axis_z_point, 'base_link', 'axis_z',8,150)
+        axis_y_gripper = axis_z_obj
+        #arow_marker(point , axis_y_point, 'base_link', 'axis_y',9, 50)
+        axis_z_gripper = axis_y_obj 
+        #arow_marker(new_point_grip , axis_z_gripper , 'base_link', 'axis_x',7,250)
+
     
-    return 
+    if obj_state == 'vertical':     # eje x gripper perpendicular a eje principal del objeto
+        print("caja alta")
+        axis_z_gripper = axis_x_obj / np.linalg.norm( (axis_x_obj) )
+        #arow_marker(new_point_grip , axis_z_gripper , 'base_link', 'axis_x',7,250)
+        axis_x_gripper = axis_y_obj
+        #arow_marker(point , axis_z_point, 'base_link', 'axis_z',8,150)
+        axis_y_gripper = axis_z_obj
+        #arow_marker(point , axis_y_point, 'base_link', 'axis_y',9, 50)
+
+    # los cuaterniones necesarios para generar el frame del gripper
+    RM = np.asarray( [axis_x_gripper, axis_y_gripper, axis_z_gripper] ) 
+    RM = RM.T
+    TM = [[RM[0,0], RM[0,1] , RM[0,2], 0],
+            [RM[1,0], RM[1,1] , RM[1,2], 0],
+            [RM[2,0], RM[2,1] , RM[2,2], 0], 
+            [      0,        0,       0, 1]]
+    
+    q_gripper = tft.quaternion_from_matrix ( TM )        
+    # lista de poses para graficos
+    pose_gripper = Pose()
+    d = np.sqrt(q_gripper[0]**2 + q_gripper[1]**2 + q_gripper[2]**2 + q_gripper[3]**2)
+    pose_gripper.position.x = grip_point[0] 
+    pose_gripper.position.y = grip_point[1] 
+    pose_gripper.position.z = grip_point[2] 
+    pose_gripper.orientation.x = q_gripper[0]/d
+    pose_gripper.orientation.y = q_gripper[1]/d
+    pose_gripper.orientation.z = q_gripper[2]/d
+    pose_gripper.orientation.w = q_gripper[3]/d
+    grasp_quaternion_list = []
+    return grasp_quaternion_list.append(pose_gripper)
 
 
-def cylinder_or_prism(obj_pose, angle_obj ):   
+
+def cylinder_or_prism(obj_pose, obj_state ):   
     global listener
     grasp_candidates_quaternion = []
     y_object = 0.04 # ancho del objeto
@@ -92,8 +149,6 @@ def cylinder_or_prism(obj_pose, angle_obj ):
     obj_centroid = np.asarray([obj_pose.position.x , obj_pose.position.y, obj_pose.position.z]) # origen de la circunferencia
     MT = tft.quaternion_matrix([obj_pose.orientation.x ,obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w])
     axis_x_obj = np.asarray( [MT[0,0], MT[1,0], MT[2,0]])   # eje x del objeto vector normal al plano que corta al objet
-    if (angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150)):print("Prisma horizontal*****************************")
-    else: print("Prisma vertical*******************************")
     
     step_size = np.deg2rad(10)
     range_points = np.deg2rad(360)          # rango dentro del cual se generan los candidatos 360 grados
@@ -103,6 +158,28 @@ def cylinder_or_prism(obj_pose, angle_obj ):
     theta = 0 + offset_theta 
     count = 0
     id = 0
+    points = []
+    z_list = []
+    max_value_z = -1000
+
+    for i in range( num_points):   # generación de puntos
+        point = np.asarray([ 0, epsilon*np.sin(theta), epsilon*np.cos(theta)  ])
+        point = points_actual_to_points_target(point, 'object', 'base_link')
+        points.append(point)
+        z_list.append(point[2])
+        marker_array_publish(point, 'base_link', count, id)
+        count += 1
+        id += 1
+        theta = theta + step_size 
+
+    if obj_state == 'horizontal':   # se toma el punto mas alto en z
+        z_array = np.ndarray(z_list)
+        indx_mayor = np.argmax(z_array)
+        print(np.argmax(z_array))
+        point = points[indx_mayor]
+        num_points = 1
+
+
     # obtencion de origen de frame candidato
     for i in range( num_points):   
         point = np.asarray([ 0, epsilon*np.sin(theta), epsilon*np.cos(theta)  ])
@@ -126,8 +203,6 @@ def cylinder_or_prism(obj_pose, angle_obj ):
               [RM[1,0], RM[1,1] , RM[1,2], 0],
               [RM[2,0], RM[2,1] , RM[2,2], 0], 
               [      0,        0,       0, 1]]
-        R, P, Y  = tft.euler_from_matrix(np.asarray(TM))
-        #q_gripper = tft.quaternion_from_euler( R , P , Y )
         q_gripper = tft.quaternion_from_matrix ( TM )        
         # lista de poses para graficos
         candidate_grasp = Pose()
@@ -269,14 +344,12 @@ def evaluating_possibility_grip(new_pose_rpy_list):
 
 def callback(req):
     global listener, ik_srv
-    ang_pc1_pixy = angle_pca_floor(req.pose) 
-    pose_list_q = grip_rules(req.pose, req.category, ang_pc1_pixy) # solo para cilindro 
+    obj_state = object_state(req.pose) 
+    pose_list_q = grip_rules(req.pose, req.category, obj_state, req.size ) # solo para cilindro 
     broadcaster_frame_object('base_link', 'candidate1' , pose_list_q[0] )
     broadcaster_frame_object('base_link', 'candidate2' , pose_list_q[6] )
     broadcaster_frame_object('base_link', 'candidate3' , pose_list_q[12] )
     broadcaster_frame_object('base_link', 'candidate4' , pose_list_q[18] )
-    broadcaster_frame_object('base_link', 'candidate5' , pose_list_q[24] )
-    broadcaster_frame_object('base_link', 'candidate5' , pose_list_q[31] )
     new_pose_rpy_list = convert_frame_of_candidates_poses(pose_list_q)
     successful_candidate_trajectories = evaluating_possibility_grip(new_pose_rpy_list)
 
@@ -296,10 +369,7 @@ def main():
     rospy.wait_for_service( '/manipulation/la_ik_trajectory' )
     ik_srv = rospy.ServiceProxy( '/manipulation/la_ik_trajectory' , InverseKinematicsPose2Traj )
     marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10) 
-
     marker_array_pub = rospy.Publisher("/vision/obj_reco/marker_array", MarkerArray, queue_size = 10) 
-    
-
     
     loop = rospy.Rate(30)
     while not rospy.is_shutdown():
