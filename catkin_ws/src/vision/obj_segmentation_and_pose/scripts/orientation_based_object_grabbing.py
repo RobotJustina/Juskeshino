@@ -39,7 +39,6 @@ def object_state(obj_pose):
     eje_z = np.asarray([0, 0, 1], dtype=np.float64 )# vector normal al plano xy
     # angulo entre pc1 y plano xy frame base_link
     angle_obj = np.arcsin( np.dot(pc1 , eje_z) / (np.linalg.norm(pc1) * 1) )
-    print("angulo pc1 grados", np.rad2deg( angle_obj ) )
 
     MT = tft.quaternion_matrix([obj_pose.orientation.x ,obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w])
     axis_x_obj = np.asarray( [MT[0,0], MT[1,0], MT[2,0]])   # eje x del objeto = eje x gripper
@@ -160,6 +159,7 @@ def cylinder_or_prism(obj_pose, obj_state ):
     id = 0
     points = []
     z_list = []
+    horizontal_candidate_points = []
     max_value_z = -1000
 
     for i in range( num_points):   # generación de puntos
@@ -172,30 +172,30 @@ def cylinder_or_prism(obj_pose, obj_state ):
         id += 1
         theta = theta + step_size 
 
-    if obj_state == 'horizontal':   # se toma el punto mas alto en z
-        z_array = np.ndarray(z_list)
-        indx_mayor = np.argmax(z_array)
-        print(np.argmax(z_array))
-        point = points[indx_mayor]
-        num_points = 1
+    
 
+    if obj_state == 'horizontal':   # se toma el punto mas alto en z
+        for cont in range(22):
+            print("agarre horizontal......")
+            print("len points", len(points))
+            idx_min_value = z_list.index(min(z_list))
+            z_list.pop(idx_min_value)
+            points.pop(idx_min_value)
+
+    else: print("Agarre vertical..........")
+            
 
     # obtencion de origen de frame candidato
-    for i in range( num_points):   
-        point = np.asarray([ 0, epsilon*np.sin(theta), epsilon*np.cos(theta)  ])
-        point = points_actual_to_points_target(point, 'object', 'base_link')
-        count += 1
-        id += 1
-        marker_array_publish(point, 'base_link', count, id)
+    for p in points:   
         # obtencion de eje x
         axis_x_point = axis_x_obj / np.linalg.norm( (axis_x_obj) )
-        arow_marker(point , axis_x_point, 'base_link', 'axis_x',7,250)
+        #arow_marker(point , axis_x_point, 'base_link', 'axis_x',7,250)
         # obtencion de eje z
-        axis_z_point = (point - obj_centroid ) / np.linalg.norm( (point - obj_centroid ) )
-        arow_marker(point , axis_z_point, 'base_link', 'axis_z',8,150)
+        axis_z_point = (p - obj_centroid ) / np.linalg.norm( (p - obj_centroid ) )
+        #arow_marker(point , axis_z_point, 'base_link', 'axis_z',8,150)
         # obtencion de eje y
         axis_y_point = np.cross(axis_z_point , axis_x_point) / np.linalg.norm( np.cross(axis_z_point , axis_x_point) )
-        arow_marker(point , axis_y_point, 'base_link', 'axis_y',9, 50)
+        #arow_marker(point , axis_y_point, 'base_link', 'axis_y',9, 50)
         # los cuaterniones necesarios para generar el frame del gripper
         RM = np.asarray( [axis_x_point, axis_y_point, axis_z_point] ) 
         RM = RM.T
@@ -207,15 +207,15 @@ def cylinder_or_prism(obj_pose, obj_state ):
         # lista de poses para graficos
         candidate_grasp = Pose()
         d = np.sqrt(q_gripper[0]**2 + q_gripper[1]**2 + q_gripper[2]**2 + q_gripper[3]**2)
-        candidate_grasp.position.x = point[0] 
-        candidate_grasp.position.y = point[1] 
-        candidate_grasp.position.z = point[2] 
+        candidate_grasp.position.x = p[0] 
+        candidate_grasp.position.y = p[1] 
+        candidate_grasp.position.z = p[2] 
         candidate_grasp.orientation.x = q_gripper[0]/d
         candidate_grasp.orientation.y = q_gripper[1]/d
         candidate_grasp.orientation.z = q_gripper[2]/d
         candidate_grasp.orientation.w = q_gripper[3]/d
         grasp_candidates_quaternion.append(candidate_grasp) 
-        theta = theta + step_size 
+        
     return grasp_candidates_quaternion
 
 
@@ -344,16 +344,17 @@ def evaluating_possibility_grip(new_pose_rpy_list):
 
 def callback(req):
     global listener, ik_srv
+    resp = BestGraspTrajResponse()
     obj_state = object_state(req.pose) 
     pose_list_q = grip_rules(req.pose, req.category, obj_state, req.size ) # solo para cilindro 
-    broadcaster_frame_object('base_link', 'candidate1' , pose_list_q[0] )
-    broadcaster_frame_object('base_link', 'candidate2' , pose_list_q[6] )
-    broadcaster_frame_object('base_link', 'candidate3' , pose_list_q[12] )
-    broadcaster_frame_object('base_link', 'candidate4' , pose_list_q[18] )
+    if len(pose_list_q) > 0:
+        broadcaster_frame_object('base_link', 'candidate1' , pose_list_q[0] )
+    else: 
+        print("object is no grapable")
+        return resp
     new_pose_rpy_list = convert_frame_of_candidates_poses(pose_list_q)
     successful_candidate_trajectories = evaluating_possibility_grip(new_pose_rpy_list)
 
-    resp = BestGraspTrajResponse()
     resp.articular_trajectory = successful_candidate_trajectories[2]
     #resp.articular_trajectory.articular_trajectory.joint_names = "la"
     return resp
