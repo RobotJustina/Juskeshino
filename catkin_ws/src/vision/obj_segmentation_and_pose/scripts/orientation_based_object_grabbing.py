@@ -37,8 +37,9 @@ def object_state(obj_pose):
         pc1[0] = pc1[0]*-1
 
     eje_z = np.asarray([0, 0, 1], dtype=np.float64 )# vector normal al plano xy
-    # angulo entre pc1 y plano xy frame base_link
     angle_obj = np.arcsin( np.dot(pc1 , eje_z) / (np.linalg.norm(pc1) * 1) )
+    print("OBJECT ANGLE: ", angle_obj)
+
 
     MT = tft.quaternion_matrix([obj_pose.orientation.x ,obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w])
     axis_x_obj = np.asarray( [MT[0,0], MT[1,0], MT[2,0]])   # eje x del objeto = eje x gripper
@@ -159,8 +160,6 @@ def cylinder_or_prism(obj_pose, obj_state ):
     id = 0
     points = []
     z_list = []
-    horizontal_candidate_points = []
-    max_value_z = -1000
 
     for i in range( num_points):   # generación de puntos
         point = np.asarray([ 0, epsilon*np.sin(theta), epsilon*np.cos(theta)  ])
@@ -175,22 +174,37 @@ def cylinder_or_prism(obj_pose, obj_state ):
     
 
     if obj_state == 'horizontal':   # se toma el punto mas alto en z
-        for cont in range(22):
-            print("agarre horizontal......")
-            print("len points", len(points))
+        if obj_pose.position.y > 0: 
+            print("Object is on the left side of the robot, left arm grip suggested ")
+            if axis_x_obj[0] < 0: 
+                axis_x_point = -axis_x_obj / np.linalg.norm( (axis_x_obj) )
+                print("x pasó de negativo a positivo", axis_x_obj)
+            else: 
+                axis_x_point = axis_x_obj / np.linalg.norm( (axis_x_obj) )
+                print("x no se modificó", axis_x_obj)
+                
+        else:
+            if obj_pose.position.y < 0: 
+                print("Object is on the right side of the robot, right arm grip suggested ")
+            axis_x_point = axis_x_obj / np.linalg.norm( (axis_x_obj) )
+
+
+        for cont in range(16):
+            
             idx_min_value = z_list.index(min(z_list))
             z_list.pop(idx_min_value)
-            points.pop(idx_min_value)
+            #points.pop(idx_min_value)
 
-    else: print("Agarre vertical..........")
+        print("len points", len(points))
+
+    else: 
+        print("Agarre vertical..........")
+        axis_x_point = axis_x_obj / np.linalg.norm( (axis_x_obj) )
             
 
     # obtencion de origen de frame candidato
     for p in points:   
-        # obtencion de eje x
-        axis_x_point = axis_x_obj / np.linalg.norm( (axis_x_obj) )
         #arow_marker(point , axis_x_point, 'base_link', 'axis_x',7,250)
-        # obtencion de eje z
         axis_z_point = (p - obj_centroid ) / np.linalg.norm( (p - obj_centroid ) )
         #arow_marker(point , axis_z_point, 'base_link', 'axis_z',8,150)
         # obtencion de eje y
@@ -326,16 +340,16 @@ def evaluating_possibility_grip(new_pose_rpy_list):
         ik_msg.yaw = pose[5]
         ik_msg.duration = 20
         ik_msg.time_step = 0.2
-    
+        
         try: 
-            resp_ik_srv = ik_srv(ik_msg)
+            resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
             successful_candidate_trajectories.append(resp_ik_srv.articular_trajectory)   #trajectory_msgs/JointTrajectory
-            i = i + 1
+            
+            i = i + 1   # incrementa en 1 el indice
             indx_list.append(i)
-            successful_candidate_cartesian_pose_list.append(np.asarray([pose[0],pose[1],pose[2],pose[3], pose[4], pose[5]]))
             print("..............")
         except :
-            i = i + 1
+            i = i + 1   
             continue
     print("there are" , len(successful_candidate_trajectories) , " possible ways to grab an object with left arm")
     return successful_candidate_trajectories
@@ -346,16 +360,25 @@ def callback(req):
     global listener, ik_srv
     resp = BestGraspTrajResponse()
     obj_state = object_state(req.pose) 
+
     pose_list_q = grip_rules(req.pose, req.category, obj_state, req.size ) # solo para cilindro 
-    if len(pose_list_q) > 0:
-        broadcaster_frame_object('base_link', 'candidate1' , pose_list_q[0] )
-    else: 
+    if len(pose_list_q) <= 0:
         print("object is no grapable")
         return resp
     new_pose_rpy_list = convert_frame_of_candidates_poses(pose_list_q)
     successful_candidate_trajectories = evaluating_possibility_grip(new_pose_rpy_list)
 
-    resp.articular_trajectory = successful_candidate_trajectories[2]
+    if len(successful_candidate_trajectories) > 0:
+        broadcaster_frame_object('base_link', 'candidate1' , pose_list_q[0] )
+        broadcaster_frame_object('base_link', 'candidate2' , pose_list_q[12] )
+        broadcaster_frame_object('base_link', 'candidate3' , pose_list_q[24] )
+
+    else: return resp
+
+    if obj_state == 'vertical': 
+        resp.articular_trajectory = successful_candidate_trajectories[2]
+    else:
+        resp.articular_trajectory = successful_candidate_trajectories[0]
     #resp.articular_trajectory.articular_trajectory.joint_names = "la"
     return resp
 
