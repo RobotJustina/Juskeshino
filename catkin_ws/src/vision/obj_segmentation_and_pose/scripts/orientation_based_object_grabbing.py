@@ -38,7 +38,7 @@ def object_state(obj_pose):
 
     eje_z = np.asarray([0, 0, 1], dtype=np.float64 )# vector normal al plano xy
     angle_obj = np.arcsin( np.dot(pc1 , eje_z) / (np.linalg.norm(pc1) * 1) )
-    print("OBJECT ANGLE: ", angle_obj)
+    print("angulo del objeto respecto de la superficie: ", np.rad2deg(angle_obj))
 
 
     MT = tft.quaternion_matrix([obj_pose.orientation.x ,obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w])
@@ -48,10 +48,13 @@ def object_state(obj_pose):
 
     if (angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150)):
         print("Eje principal horizontal***********")
-        return 'horizontal'
+        eje_x = np.asarray([1, 0, 0], dtype=np.float64 )# vector normal al plano xy
+        angle_obj_axisx = np.arcsin( np.dot(pc1 , eje_x) / (np.linalg.norm(pc1) * 1) )
+        print("angulo del objeto respecto de eje x: ", np.rad2deg(angle_obj_axisx))
+        return 'horizontal', np.rad2deg(angle_obj_axisx)
     else: 
         print("Eje principal vertical*******************************")
-        return 'vertical'
+        return 'vertical', np.rad2deg(angle_obj) 
 
 
 
@@ -70,14 +73,14 @@ def points_actual_to_points_target(point_in, f_actual, f_target):
 
 
 
-def grip_rules(obj_pose, type_obj, obj_state, size):
+def grip_rules(obj_pose, type_obj, obj_state, angle, size):
     if type_obj == 2 or type_obj == 1:
         return box(obj_pose, size, obj_state)
 
 
     if type_obj == "3":
-        print("take prism") 
-        grasp_candidates_quaternion = cylinder_or_prism(obj_pose, obj_state)
+        print("prism") 
+        grasp_candidates_quaternion = prism(obj_pose, obj_state, angle, size)
         return grasp_candidates_quaternion 
 
 
@@ -140,7 +143,7 @@ def box(obj_pose, size, obj_state):
 
 
 
-def cylinder_or_prism(obj_pose, obj_state ):   
+def prism(obj_pose, obj_state, angle, size):   
     global listener
     grasp_candidates_quaternion = []
     y_object = 0.04 # ancho del objeto
@@ -153,7 +156,6 @@ def cylinder_or_prism(obj_pose, obj_state ):
     step_size = np.deg2rad(10)
     range_points = np.deg2rad(360)          # rango dentro del cual se generan los candidatos 360 grados
     num_points = int(range_points / step_size)
-    print("number points", num_points)
     offset_theta = np.deg2rad(0)    # donde inicia la generacion de agarres candidatos
     theta = 0 + offset_theta 
     count = 0
@@ -178,12 +180,43 @@ def cylinder_or_prism(obj_pose, obj_state ):
             print("Object is on the left side of the robot, left arm grip suggested ")
             if axis_x_obj[0] < 0: 
                 axis_x_point = -axis_x_obj / np.linalg.norm( (axis_x_obj) )
-                print("x pasó de negativo a positivo", axis_x_obj)
             else: 
                 axis_x_point = axis_x_obj / np.linalg.norm( (axis_x_obj) )
-                print("x no se modificó", axis_x_obj)
+
+            if angle > 50 and angle < 120:  # se generan candidatos con reglas particulares
+                print("Excepcion...............................")
+                p = obj_centroid + [0,0, 0.03]
+                axis_z_point = [0,0,1]
+                axis_y_point = np.cross(axis_z_point , axis_x_point) / np.linalg.norm( np.cross(axis_z_point , axis_x_point) )
+
+                RM = np.asarray( [axis_x_point, axis_y_point, axis_z_point] ) 
+                RM = RM.T
+                TM = [[RM[0,0], RM[0,1] , RM[0,2], 0], [RM[1,0], RM[1,1] , RM[1,2], 0], [RM[2,0], RM[2,1] , RM[2,2], 0], [ 0, 0, 0, 1]]
                 
-        else:
+                q_gripper = tft.quaternion_from_matrix ( TM ) 
+                qy = tft.quaternion_about_axis(np.deg2rad(-45) , (0,1,0))
+                qz = tft.quaternion_about_axis(np.deg2rad(1) , (0,0,1))
+                q_yz = tft.quaternion_multiply(qz,qy)
+                print("quaternion qz", qz)
+                q_gripper = q_yz
+
+                # lista de poses para graficos
+                candidate_grasp = Pose()
+                d = np.sqrt(q_gripper[0]**2 + q_gripper[1]**2 + q_gripper[2]**2 + q_gripper[3]**2)
+                candidate_grasp.position.x = p[0] 
+                candidate_grasp.position.y = p[1] 
+                candidate_grasp.position.z = p[2] 
+                candidate_grasp.orientation.x = q_gripper[0]/d
+                candidate_grasp.orientation.y = q_gripper[1]/d
+                candidate_grasp.orientation.z = q_gripper[2]/d
+                candidate_grasp.orientation.w = q_gripper[3]/d
+                grasp_candidates_quaternion.append(candidate_grasp) 
+                print("lolo")
+                return grasp_candidates_quaternion
+
+            else: print("Agarre ordinario")                
+                
+        else:   # vertical
             if obj_pose.position.y < 0: 
                 print("Object is on the right side of the robot, right arm grip suggested ")
             axis_x_point = axis_x_obj / np.linalg.norm( (axis_x_obj) )
@@ -195,7 +228,6 @@ def cylinder_or_prism(obj_pose, obj_state ):
             z_list.pop(idx_min_value)
             #points.pop(idx_min_value)
 
-        print("len points", len(points))
 
     else: 
         print("Agarre vertical..........")
@@ -282,6 +314,7 @@ def marker_array_publish(pointxyz, target_frame, count, id):
 
 
 def broadcaster_frame_object(frame, child_frame, pose):
+    
     br = tf2_ros.TransformBroadcaster()
     t = geometry_msgs.msg.TransformStamped()
 
@@ -321,30 +354,30 @@ def convert_frame_of_candidates_poses(pose_list_q):
 
     resp = BestGraspTrajResponse()
 
-def evaluating_possibility_grip(new_pose_rpy_list):
+def evaluating_possibility_grip(pose_rpy, pose_quaternion):
     # Prepara msg request para el servicio /manipulation/ik_trajectory
     ik_msg = InverseKinematicsPose2TrajRequest()
     # Rellenar msg pose to pose
     successful_candidate_trajectories = []
-    successful_candidate_cartesian_pose_list = []
+    successful_candidate_pose = []
     indx_list = []
     # Step 7 **************************************************************
     print("Evaluating the possibility of grip given the position of the object...")
     i = 0
-    for pose in new_pose_rpy_list:  
-        ik_msg.x = pose[0]
-        ik_msg.y = pose[1]
-        ik_msg.z = pose[2] + 0.08   # offset debido a la fuerza de gravedad que altera la posición deseada de gripper
-        ik_msg.roll = pose[3]
-        ik_msg.pitch = pose[4]
-        ik_msg.yaw = pose[5]
+    for pose1 in pose_rpy:  
+        ik_msg.x = pose1[0]
+        ik_msg.y = pose1[1]
+        ik_msg.z = pose1[2] + 0.08   # offset debido a la fuerza de gravedad que altera la posición deseada de gripper
+        ik_msg.roll = pose1[3]
+        ik_msg.pitch = pose1[4]
+        ik_msg.yaw = pose1[5]
         ik_msg.duration = 20
         ik_msg.time_step = 0.2
         
         try: 
             resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
             successful_candidate_trajectories.append(resp_ik_srv.articular_trajectory)   #trajectory_msgs/JointTrajectory
-            
+            successful_candidate_pose.append(pose_quaternion[i])
             i = i + 1   # incrementa en 1 el indice
             indx_list.append(i)
             print("..............")
@@ -352,33 +385,40 @@ def evaluating_possibility_grip(new_pose_rpy_list):
             i = i + 1   
             continue
     print("there are" , len(successful_candidate_trajectories) , " possible ways to grab an object with left arm")
-    return successful_candidate_trajectories
+    return successful_candidate_trajectories, successful_candidate_pose
 
 
 
 def callback(req):
     global listener, ik_srv
     resp = BestGraspTrajResponse()
-    obj_state = object_state(req.pose) 
+    obj_state, angle = object_state(req.pose) 
 
-    pose_list_q = grip_rules(req.pose, req.category, obj_state, req.size ) # solo para cilindro 
+    pose_list_q = grip_rules(req.pose, req.category, obj_state,angle , req.size ) # solo para cilindro 
     if len(pose_list_q) <= 0:
         print("object is no grapable")
         return resp
-    new_pose_rpy_list = convert_frame_of_candidates_poses(pose_list_q)
-    successful_candidate_trajectories = evaluating_possibility_grip(new_pose_rpy_list)
+    
+    print("len pose list ", len(pose_list_q))
+    broadcaster_frame_object('base_link', 'candidate' , pose_list_q[0] )
+    pose_rpy = convert_frame_of_candidates_poses(pose_list_q)
+    trajectories, poses = evaluating_possibility_grip(pose_rpy, pose_list_q)
 
-    if len(successful_candidate_trajectories) > 0:
-        broadcaster_frame_object('base_link', 'candidate1' , pose_list_q[0] )
-        broadcaster_frame_object('base_link', 'candidate2' , pose_list_q[12] )
-        broadcaster_frame_object('base_link', 'candidate3' , pose_list_q[24] )
+    if len(trajectories) > 0:
+        n = 0
+        print("emitiendo poses posibles")
+        for candidate in poses:
+            broadcaster_frame_object('base_link', 'candidate'+ str(n) , candidate )
+            rospy.sleep(1.0)
+            n += 1
+            
 
     else: return resp
 
     if obj_state == 'vertical': 
-        resp.articular_trajectory = successful_candidate_trajectories[2]
+        resp.articular_trajectory = trajectories[2]
     else:
-        resp.articular_trajectory = successful_candidate_trajectories[0]
+        resp.articular_trajectory = trajectories[0]
     #resp.articular_trajectory.articular_trajectory.joint_names = "la"
     return resp
 

@@ -283,6 +283,7 @@ def main():
             req_best_grip = BestGraspTrajRequest()
             req_best_grip.pose = resp.recog_object.pose
             req_best_grip.category = resp.recog_object.category
+            req_best_grip.size = resp.recog_object.size
             resp_best_grip = clt_best_grip(req_best_grip)
             print("state == SM_MOVE_ARM")
             move_left_gripper(0.9, pub_la_goal_grip)
