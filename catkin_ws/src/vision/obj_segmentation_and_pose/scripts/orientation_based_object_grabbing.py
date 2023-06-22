@@ -398,7 +398,7 @@ def callback(req):
     if len(pose_list_q) <= 0:
         print("object is no grapable")
         return resp
-    
+    n = 0
     print("len pose list ", len(pose_list_q))
     broadcaster_frame_object('base_link', 'candidate' , pose_list_q[0] )
     pose_rpy = convert_frame_of_candidates_poses(pose_list_q)
