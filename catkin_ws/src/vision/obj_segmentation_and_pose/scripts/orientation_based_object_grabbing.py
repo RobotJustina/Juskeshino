@@ -146,7 +146,7 @@ def box(obj_pose, size, obj_state):
 def prism(obj_pose, obj_state, angle, size):   
     global listener
     grasp_candidates_quaternion = []
-    y_object = 0.03 # ancho del objeto
+    y_object = 0.01 # ancho del objeto
     epsilon = y_object # radio de la circunferencia
 
     obj_centroid = np.asarray([obj_pose.position.x , obj_pose.position.y, obj_pose.position.z]) # origen de la circunferencia
@@ -185,7 +185,7 @@ def prism(obj_pose, obj_state, angle, size):
 
             if angle > 45 and angle < 120:  # se generan candidatos con reglas particulares
                 print("Excepcion...............................")
-                p = obj_centroid + [0,0, 0.03]
+                p = obj_centroid + [0,0, 0.01]
                 axis_z_point = [0,0,1]
                 axis_y_point = np.cross(axis_z_point , axis_x_point) / np.linalg.norm( np.cross(axis_z_point , axis_x_point) )
 
@@ -366,11 +366,7 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion):
     for pose1 in pose_rpy:  
         ik_msg.x = pose1[0]
         ik_msg.y = pose1[1]
-<<<<<<< HEAD
-        ik_msg.z = pose1[2] + 0.05   # offset debido a la fuerza de gravedad que altera la posición deseada de gripper
-=======
-        ik_msg.z = pose1[2] + 0.04   # offset debido a la fuerza de gravedad que altera la posición deseada de gripper***********************************
->>>>>>> fc794d924bbee59106e50f13439070d6001d6eb7
+        ik_msg.z = pose1[2] + 0.03   # offset debido a la fuerza de gravedad que altera la posición deseada de gripper***********************************
         ik_msg.roll = pose1[3]
         ik_msg.pitch = pose1[4]
         ik_msg.yaw = pose1[5]
@@ -420,9 +416,9 @@ def callback(req):
 
     if obj_state == 'vertical': 
     
-        resp.articular_trajectory = trajectories[len(trajectories) // 2] 
+        resp.articular_trajectory = trajectories[(len(trajectories) -1) // 3] 
     else:
-        resp.articular_trajectory = trajectories[0]
+        resp.articular_trajectory = trajectories[-1]
     #resp.articular_trajectory.articular_trajectory.joint_names = "la"
     return resp
 
