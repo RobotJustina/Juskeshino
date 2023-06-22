@@ -183,7 +183,7 @@ def prism(obj_pose, obj_state, angle, size):
             else: 
                 axis_x_point = axis_x_obj / np.linalg.norm( (axis_x_obj) )
 
-            if angle > 50 and angle < 120:  # se generan candidatos con reglas particulares
+            if angle > 45 and angle < 120:  # se generan candidatos con reglas particulares
                 print("Excepcion...............................")
                 p = obj_centroid + [0,0, 0.03]
                 axis_z_point = [0,0,1]
@@ -194,10 +194,9 @@ def prism(obj_pose, obj_state, angle, size):
                 TM = [[RM[0,0], RM[0,1] , RM[0,2], 0], [RM[1,0], RM[1,1] , RM[1,2], 0], [RM[2,0], RM[2,1] , RM[2,2], 0], [ 0, 0, 0, 1]]
                 
                 q_gripper = tft.quaternion_from_matrix ( TM ) 
-                qy = tft.quaternion_about_axis(np.deg2rad(-45) , (0,1,0))
+                qy = tft.quaternion_about_axis(np.deg2rad(-55) , (0,1,0))
                 qz = tft.quaternion_about_axis(np.deg2rad(1) , (0,0,1))
                 q_yz = tft.quaternion_multiply(qz,qy)
-                print("quaternion qz", qz)
                 q_gripper = q_yz
 
                 # lista de poses para graficos
@@ -211,7 +210,7 @@ def prism(obj_pose, obj_state, angle, size):
                 candidate_grasp.orientation.z = q_gripper[2]/d
                 candidate_grasp.orientation.w = q_gripper[3]/d
                 grasp_candidates_quaternion.append(candidate_grasp) 
-                print("lolo")
+                
                 return grasp_candidates_quaternion
 
             else: print("Agarre ordinario")                
@@ -367,7 +366,7 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion):
     for pose1 in pose_rpy:  
         ik_msg.x = pose1[0]
         ik_msg.y = pose1[1]
-        ik_msg.z = pose1[2] + 0.08   # offset debido a la fuerza de gravedad que altera la posición deseada de gripper
+        ik_msg.z = pose1[2] + 0.05   # offset debido a la fuerza de gravedad que altera la posición deseada de gripper
         ik_msg.roll = pose1[3]
         ik_msg.pitch = pose1[4]
         ik_msg.yaw = pose1[5]
