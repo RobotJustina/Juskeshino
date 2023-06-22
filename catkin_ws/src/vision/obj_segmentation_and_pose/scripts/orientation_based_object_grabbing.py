@@ -146,7 +146,7 @@ def box(obj_pose, size, obj_state):
 def prism(obj_pose, obj_state, angle, size):   
     global listener
     grasp_candidates_quaternion = []
-    y_object = 0.04 # ancho del objeto
+    y_object = 0.03 # ancho del objeto
     epsilon = y_object # radio de la circunferencia
 
     obj_centroid = np.asarray([obj_pose.position.x , obj_pose.position.y, obj_pose.position.z]) # origen de la circunferencia
@@ -360,13 +360,17 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion):
     successful_candidate_trajectories = []
     successful_candidate_pose = []
     indx_list = []
-    # Step 7 **************************************************************
+    # Step 7 
     print("Evaluating the possibility of grip given the position of the object...")
     i = 0
     for pose1 in pose_rpy:  
         ik_msg.x = pose1[0]
         ik_msg.y = pose1[1]
+<<<<<<< HEAD
         ik_msg.z = pose1[2] + 0.05   # offset debido a la fuerza de gravedad que altera la posición deseada de gripper
+=======
+        ik_msg.z = pose1[2] + 0.04   # offset debido a la fuerza de gravedad que altera la posición deseada de gripper***********************************
+>>>>>>> fc794d924bbee59106e50f13439070d6001d6eb7
         ik_msg.roll = pose1[3]
         ik_msg.pitch = pose1[4]
         ik_msg.yaw = pose1[5]
@@ -397,7 +401,7 @@ def callback(req):
     if len(pose_list_q) <= 0:
         print("object is no grapable")
         return resp
-    
+    n = 0
     print("len pose list ", len(pose_list_q))
     broadcaster_frame_object('base_link', 'candidate' , pose_list_q[0] )
     pose_rpy = convert_frame_of_candidates_poses(pose_list_q)
@@ -415,7 +419,8 @@ def callback(req):
     else: return resp
 
     if obj_state == 'vertical': 
-        resp.articular_trajectory = trajectories[2]
+    
+        resp.articular_trajectory = trajectories[len(trajectories) // 2] 
     else:
         resp.articular_trajectory = trajectories[0]
     #resp.articular_trajectory.articular_trajectory.joint_names = "la"
