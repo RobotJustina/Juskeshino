@@ -73,7 +73,7 @@ def segment_by_contour(img_bgr, pointCloud_array):
     print("Found " + str(len(contours)) + " countours")
     for j, contour in enumerate(contours):
         area = cv2.contourArea(contour)
-        if area < 1000 or area > 20000: continue # discarding contours by area
+        if area < 1000 or area > 30000: continue # discarding contours by area
         
         mask = np.zeros((img_bgr.shape[0], img_bgr.shape[1]),np.uint8)
         cv2.drawContours(mask, contours, j, 255 , thickness = cv2.FILLED)  # llena contorno para mascara
@@ -96,6 +96,8 @@ def get_object_bgr_and_xyz(img_bgr, img_xyz, mask):
     obj_bgr[mask == 0] = 0
     # Take xyz points only in mask and remove points with zero X
     obj_xyz = img_xyz[(mask == 255) & (img_xyz[:,:,0] > 0.1)].copy()
+    #cv2.imshow("", obj_bgr) #*****************
+    #cv2.waitKey(0)
     return obj_bgr, obj_xyz
 
 def pca(xyz_points,centrid):    # pc del contorno mas cercano

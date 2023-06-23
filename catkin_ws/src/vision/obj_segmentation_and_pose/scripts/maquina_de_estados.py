@@ -198,6 +198,7 @@ def main():
     goal_reached = False
 
     loop = rospy.Rate(30)
+    
     while not rospy.is_shutdown():
         
         if state == SM_INIT:
@@ -290,7 +291,7 @@ def main():
             pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
             print("moviendo brazo izquierdo...................")
             rospy.sleep(7.0)
-            move_left_gripper(0, pub_la_goal_grip)
+            #move_left_gripper(0, pub_la_goal_grip)
             state = -1
 
         else:

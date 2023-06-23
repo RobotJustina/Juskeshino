@@ -175,7 +175,8 @@ def prism(obj_pose, obj_state, angle, size):
 
     
 
-    if obj_state == 'horizontal':   # se toma el punto mas alto en z
+    if obj_state == 'horizontal':  
+    # se lleva al objeto a una segunda posicion de preparacion 10 o 15 cm por encim del objeto a agarrar
         if obj_pose.position.y > 0: 
             print("Object is on the left side of the robot, left arm grip suggested ")
             if axis_x_obj[0] < 0: 
@@ -228,7 +229,7 @@ def prism(obj_pose, obj_state, angle, size):
             #points.pop(idx_min_value)
 
 
-    else: 
+    else: #If object is vertical*****************************************************************************************
         print("Agarre vertical..........")
         axis_x_point = axis_x_obj / np.linalg.norm( (axis_x_obj) )
             
@@ -334,7 +335,7 @@ def broadcaster_frame_object(frame, child_frame, pose):
 
 
 
-def convert_frame_of_candidates_poses(pose_list_q):
+def convert_frame_of_candidates_poses(pose_list_q, obj_state):
     new_pose_q_list = []
     new_pose_rpy_list = []
 
@@ -353,7 +354,7 @@ def convert_frame_of_candidates_poses(pose_list_q):
 
     resp = BestGraspTrajResponse()
 
-def evaluating_possibility_grip(pose_rpy, pose_quaternion):
+def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
     # Prepara msg request para el servicio /manipulation/ik_trajectory
     ik_msg = InverseKinematicsPose2TrajRequest()
     # Rellenar msg pose to pose
@@ -364,9 +365,9 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion):
     print("Evaluating the possibility of grip given the position of the object...")
     i = 0
     for pose1 in pose_rpy:  
-        ik_msg.x = pose1[0]
+        ik_msg.x = pose1[0] + 0.03
         ik_msg.y = pose1[1]
-        ik_msg.z = pose1[2] + 0.03   # offset debido a la fuerza de gravedad que altera la posición deseada de gripper***********************************
+        ik_msg.z = pose1[2] + 0.01   # offset debido a la fuerza de gravedad que altera la posición deseada de gripper***********************************
         ik_msg.roll = pose1[3]
         ik_msg.pitch = pose1[4]
         ik_msg.yaw = pose1[5]
@@ -384,7 +385,17 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion):
             i = i + 1   
             continue
     print("there are" , len(successful_candidate_trajectories) , " possible ways to grab an object with left arm")
-    return successful_candidate_trajectories, successful_candidate_pose
+    
+    
+    if obj_state == 'vertical': 
+    
+        resp_traj = successful_candidate_trajectories[(len(successful_candidate_trajectories) -1) // 3] 
+    else:   # Horizontal
+
+        resp_traj = successful_candidate_trajectories[0]
+    #resp.articular_trajectory.articular_trajectory.joint_names = "la"
+    
+    return successful_candidate_trajectories, resp_traj,successful_candidate_pose
 
 
 
@@ -397,11 +408,9 @@ def callback(req):
     if len(pose_list_q) <= 0:
         print("object is no grapable")
         return resp
-    n = 0
-    print("len pose list ", len(pose_list_q))
-    broadcaster_frame_object('base_link', 'candidate' , pose_list_q[0] )
-    pose_rpy = convert_frame_of_candidates_poses(pose_list_q)
-    trajectories, poses = evaluating_possibility_grip(pose_rpy, pose_list_q)
+    
+    pose_rpy = convert_frame_of_candidates_poses(pose_list_q, obj_state)
+    trajectories, resp_traj, poses = evaluating_possibility_grip(pose_rpy, pose_list_q, obj_state)
 
     if len(trajectories) > 0:
         n = 0
@@ -410,17 +419,9 @@ def callback(req):
             broadcaster_frame_object('base_link', 'candidate'+ str(n) , candidate )
             rospy.sleep(1.0)
             n += 1
-            
+        return resp_traj
 
     else: return resp
-
-    if obj_state == 'vertical': 
-    
-        resp.articular_trajectory = trajectories[(len(trajectories) -1) // 3] 
-    else:
-        resp.articular_trajectory = trajectories[-1]
-    #resp.articular_trajectory.articular_trajectory.joint_names = "la"
-    return resp
 
 
 def main():
