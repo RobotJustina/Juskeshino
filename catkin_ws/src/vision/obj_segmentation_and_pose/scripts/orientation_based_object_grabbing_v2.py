@@ -82,27 +82,50 @@ def grip_rules(obj_pose, type_obj, obj_state, angle, size):
 
 
 def box(obj_pose, size, obj_state):
-    grasp_candidates_quaternion = []
+    # construccion de frame de gripper..............................................................
+    MT = tft.quaternion_matrix([obj_pose.orientation.x ,obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w])
+    axis_x_obj = np.asarray( [MT[0,0], MT[1,0], MT[2,0]])   # eje x del objeto
+    axis_y_obj = np.asarray( [MT[0,1], MT[1,1], MT[2,1]])   # eje y del objeto
+    axis_z_obj = np.asarray( [MT[0,2], MT[1,2], MT[2,2]])   # eje y del objeto
+
     grip_point = Point(x=0, y=size.y/2, z=0)
     # transformar del espacio del objeto al espacio base link
     new_point_grip = points_actual_to_points_target(grip_point , 'object', 'base_link')
     marker_array_publish(new_point_grip , 'base_link', 0, 7)
 
-    if obj_state == 'horizontal':
-        R, P, Y = tft.euler_from_quaternion([obj_pose.orientation.x ,obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w])
+    axis_x_gripper = axis_x_obj
+    #arow_marker(point , axis_z_point, 'base_link', 'axis_z',8,150)
+    axis_y_gripper = axis_z_obj
+    #arow_marker(point , axis_y_point, 'base_link', 'axis_y',9, 50)
+    axis_z_gripper = axis_y_obj 
+    #arow_marker(new_point_grip , axis_z_gripper , 'base_link', 'axis_x',7,250)
+
+    # los cuaterniones necesarios para generar el frame del gripper
+    RM = np.asarray( [axis_x_gripper, axis_y_gripper, axis_z_gripper] ) 
+    RM = RM.T
+    TM =   [[RM[0,0], RM[0,1] , RM[0,2], 0],
+            [RM[1,0], RM[1,1] , RM[1,2], 0],
+            [RM[2,0], RM[2,1] , RM[2,2], 0], 
+            [      0,        0,       0, 1]]
+    q_gripper = tft.quaternion_from_matrix ( TM ) 
+
+    if obj_state == 'horizontal': # Genera tambien agarre vertical
+        R, P, Y = tft.euler_from_matrix( TM)
         P = P + np.deg2rad(-30)
         q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  
-        obj_pose.orientation.x = q_gripper[0]
-        obj_pose.orientation.y = q_gripper[1]
-        obj_pose.orientation.z = q_gripper[2]
-        obj_pose.orientation.w = q_gripper[3]
 
-    obj_pose.position.x = new_point_grip[0] 
-    obj_pose.position.y = new_point_grip[1] 
-    obj_pose.position.z = new_point_grip[2] 
-
-    grasp_candidates_quaternion.append( obj_pose ) 
-    return grasp_candidates_quaternion
+    # lista de poses para graficos
+    pose_gripper = Pose()
+    d = np.sqrt(q_gripper[0]**2 + q_gripper[1]**2 + q_gripper[2]**2 + q_gripper[3]**2)
+    pose_gripper.position.x = grip_point[0] 
+    pose_gripper.position.y = grip_point[1] 
+    pose_gripper.position.z = grip_point[2] 
+    pose_gripper.orientation.x = q_gripper[0]/d
+    pose_gripper.orientation.y = q_gripper[1]/d
+    pose_gripper.orientation.z = q_gripper[2]/d
+    pose_gripper.orientation.w = q_gripper[3]/d
+    grasp_quaternion_list = []
+    return grasp_quaternion_list.append(pose_gripper)
 
 
 

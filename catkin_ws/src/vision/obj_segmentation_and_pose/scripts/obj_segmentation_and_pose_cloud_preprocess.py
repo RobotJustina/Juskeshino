@@ -73,7 +73,7 @@ def segment_by_contour(img_bgr, pointCloud_array):
     print("Found " + str(len(contours)) + " countours")
     for j, contour in enumerate(contours):
         area = cv2.contourArea(contour)
-        if area < 1000 or area > 30000: continue # discarding contours by area
+        if area < 1000 or area > 20000: continue # discarding contours by area
         
         mask = np.zeros((img_bgr.shape[0], img_bgr.shape[1]),np.uint8)
         cv2.drawContours(mask, contours, j, 255 , thickness = cv2.FILLED)  # llena contorno para mascara
@@ -87,18 +87,18 @@ def segment_by_contour(img_bgr, pointCloud_array):
             nearest_obj_bgr = obj_bgr.copy()
             nearest_obj_xyz = obj_xyz.copy()
             nearest_centroid= obj_centroid.copy()
-
     return True, nearest_centroid, nearest_obj_xyz
     
+
 
 def get_object_bgr_and_xyz(img_bgr, img_xyz, mask):
     obj_bgr = img_bgr.copy()
     obj_bgr[mask == 0] = 0
     # Take xyz points only in mask and remove points with zero X
     obj_xyz = img_xyz[(mask == 255) & (img_xyz[:,:,0] > 0.1)].copy()
-    #cv2.imshow("", obj_bgr) #*****************
-    #cv2.waitKey(0)
     return obj_bgr, obj_xyz
+
+
 
 def pca(xyz_points,centrid):    # pc del contorno mas cercano
     eig_val, eig_vect = np.linalg.eig(np.cov(np.transpose(xyz_points))) # Eigenvalues and eigenvectors from Point Cloud Cov Matrix
@@ -110,15 +110,15 @@ def pca(xyz_points,centrid):    # pc del contorno mas cercano
     pt_frame_PCA = np.transpose(np.dot(eig_vect, np.transpose(centrid)))
     print("pt in pca", pt_frame_PCA, centrid)
     
+    
     H = np.max(pts_frame_PCA[:, 2]) - np.min(pts_frame_PCA[:, 2])
     L = np.max(pts_frame_PCA[:, 1]) - np.min(pts_frame_PCA[:, 1])
     W = np.max(pts_frame_PCA[:, 0]) - np.min(pts_frame_PCA[:, 0])
     size_obj = Vector3()
     size_obj.x, size_obj.z , size_obj.y = H, W, L
+    print("HX LY WZ", H, L, W)
+
     return [eig_vect[:,2], eig_vect[:,1] , eig_vect[:,0]], [eig_val[2], eig_val[1], eig_val[0]], size_obj
-
-
-
 
 
 
@@ -238,7 +238,7 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
         obj_pose, axis_x_obj = object_pose(centroid, pca_vectors[0], pca_vectors[1])
         publish_arow_marker( centroid, axis_x_obj, 'base_link')
         broadcaster_frame_object("base_link", "object", obj_pose)
-        print("size object", size_obj)
+        print("size object i frame object", size_obj)
 
         # Rellenando msg 
         resp.recog_object.category = c_obj

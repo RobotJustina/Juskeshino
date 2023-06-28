@@ -288,7 +288,7 @@ def main():
             resp_best_grip = clt_best_grip(req_best_grip)
             print("state == SM_MOVE_ARM")
             move_left_gripper(0.9, pub_la_goal_grip)
-            pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
+            #pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
             print("moviendo brazo izquierdo...................")
             rospy.sleep(7.0)
             #move_left_gripper(0, pub_la_goal_grip)
