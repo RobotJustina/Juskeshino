@@ -225,8 +225,8 @@ def main():
                 state = SM_MOVE_HEAD
 
         elif state == SM_MOVE_HEAD:
-            move_head(pub_hd_goal_pose ,0, -0.9)
-            move_head(pub_hd_goal_pose ,0, -0.9)
+            move_head(pub_hd_goal_pose ,0, -0.4)
+            move_head(pub_hd_goal_pose ,0, -0.4)
             print("state == SM_MOVE_HEAD")
             rospy.sleep(1.0)
             state = SM_WAIT_FOR_HEAD

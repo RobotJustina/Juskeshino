@@ -28,7 +28,7 @@ def get_cv_mats_from_cloud_message(cloud_msg):
     return [img_bgr, xyz]
 
 
-def segment_by_contour(img_bgr, pointCloud_array):
+def segment_by_contour(img_bgr, pointCloud_array, original_cloud):
     print("Segmenting image by contours")
     
     values=img_bgr.reshape((-1,3))  # (M,3=BGR), M = num of pixels
@@ -58,11 +58,13 @@ def segment_by_contour(img_bgr, pointCloud_array):
     #cv2.imshow("imagen dilatada #7", img_dilate) #*****************
     #cv2.waitKey(0)
     edged = cv2.Canny(img_dilate, 100, 20)
-    #cv2.imshow("imagen con filtro Canny #8", edged) #*****************
-    #cv2.waitKey(0)
+    cv2.imshow("imagen con filtro Canny #8", edged) #*****************
+    cv2.waitKey(0)
     #Finding contours in the image, each individual contour is a Numpy array of (x,y) coordinates of boundary points of the object
     contours, hierarchy = cv2.findContours(edged.astype('uint8'),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-    
+    if original_cloud:
+        contours, hierarchy = cv2.findContours(edged.astype('uint8'),cv2.RETR_TREE ,cv2.CHAIN_APPROX_NONE)
+
     if not len(contours) > 0:
         return False ,None, None   
 
@@ -71,16 +73,21 @@ def segment_by_contour(img_bgr, pointCloud_array):
     nearest_obj_xyz = None
     nearest_centroid = None
     print("Found " + str(len(contours)) + " countours")
+
     for j, contour in enumerate(contours):
         area = cv2.contourArea(contour)
         if area < 1000 or area > 20000: continue # discarding contours by area
         
+        print("no descartado")
         mask = np.zeros((img_bgr.shape[0], img_bgr.shape[1]),np.uint8)
         cv2.drawContours(mask, contours, j, 255 , thickness = cv2.FILLED)  # llena contorno para mascara
         # the mask is eroded to ensure that we only get the point cloud of the object
-        mask =cv2.erode(mask , kernel,iterations=8)
+        mask =cv2.erode(mask , kernel,iterations=3)
         obj_bgr, obj_xyz = get_object_bgr_and_xyz(img_bgr, pointCloud_array, mask)
+        cv2.imshow("obj", obj_bgr) #*****************
+        cv2.waitKey(0)
         obj_centroid = np.mean(obj_xyz, axis=0)
+        print("centroide " , obj_centroid)
         distance = math.sqrt(obj_centroid[0]**2 + obj_centroid[1]**2)
         if distance < min_distance:
             min_distance = distance
@@ -96,6 +103,8 @@ def get_object_bgr_and_xyz(img_bgr, img_xyz, mask):
     obj_bgr[mask == 0] = 0
     # Take xyz points only in mask and remove points with zero X
     obj_xyz = img_xyz[(mask == 255) & (img_xyz[:,:,0] > 0.1)].copy()
+    print("obj xyz " , obj_xyz)
+
     return obj_bgr, obj_xyz
 
 
@@ -222,12 +231,15 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
         resp_clt_get_points = clt_get_points(req_ppc)
         print("ObjSegmenter.->Preprocessed pc received")
         msg = resp_clt_get_points.output_cloud
+        original_cloud = False
     except:
         msg = req.point_cloud
         print("ObjSegmenter.->Cannot get preprocessed cloud. Using original cloud.")
+        original_cloud = True
+    
     img_bgr, img_xyz = get_cv_mats_from_cloud_message(msg)
     
-    found_object, centroid, obj_xyz = segment_by_contour(img_bgr, img_xyz)
+    found_object, centroid, obj_xyz = segment_by_contour(img_bgr, img_xyz, original_cloud)
     resp = RecognizeObjectResponse()
     
     if found_object:

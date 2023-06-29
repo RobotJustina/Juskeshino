@@ -13,6 +13,38 @@ from visualization_msgs.msg import Marker, MarkerArray
 import geometry_msgs.msg
 
 
+
+def superior_obj_grip(obj_pose, size):
+    # construcción de frame para agarre de objetos a partir de determinada altura
+    grasp_candidates_quaternion = []
+    MT = tft.quaternion_matrix([obj_pose.orientation.x ,obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w])
+    axis_x = np.asarray( [MT[0,0], MT[1,0], MT[2,0]])
+    axis_z = [-1,0,0]
+    axis_y = np.cross(axis_z , axis_x) / np.linalg.norm(np.cross(axis_z , axis_x) ) 
+    RM = np.asarray( [axis_x, axis_y, axis_z] ) 
+    RM = RM.T
+    TM = [[RM[0,0], RM[0,1] , RM[0,2], 0],
+          [RM[1,0], RM[1,1] , RM[1,2], 0],
+          [RM[2,0], RM[2,1] , RM[2,2], 0], 
+          [      0,        0,       0, 1]]
+        
+    R, P, Y = tft.euler_from_matrix( TM)
+    P = P + np.deg2rad(-50)
+    q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')
+    candidate_grasp = Pose()
+    d = np.sqrt(q_gripper[0]**2 + q_gripper[1]**2 + q_gripper[2]**2 + q_gripper[3]**2)
+    candidate_grasp.position.x = grip_point[0] 
+    candidate_grasp.position.y = grip_point[1] 
+    candidate_grasp.position.z = grip_point[2] 
+    candidate_grasp.orientation.x = q_gripper[0]/d
+    candidate_grasp.orientation.y = q_gripper[1]/d
+    candidate_grasp.orientation.z = q_gripper[2]/d
+    candidate_grasp.orientation.w = q_gripper[3]/d
+    grasp_candidates_quaternion.append(candidate_grasp) 
+    return grasp_candidates_quaternion
+
+
+
 def pose_actual_to_pose_target(pose, f_actual, f_target):
     global listener
     #q1, q2, q3, q4 = tft.quaternion_from_euler(R, P, Y) # conversion a quaternion
@@ -103,7 +135,6 @@ def box(obj_pose, size, obj_state):
 
     grasp_candidates_quaternion.append( obj_pose ) 
     return grasp_candidates_quaternion
-
 
 
 
@@ -211,7 +242,6 @@ def arow_marker(p_offset, p1, frame_id, ns, id, color):  # P1 y P2
     point0.x = p_offset[0] 
     point0.y = p_offset[1] 
     point0.z = p_offset[2] 
-
     marker1 = Marker()
     marker1.header.frame_id = frame_id
     marker1.type = Marker.ARROW
@@ -255,18 +285,14 @@ def marker_array_publish(pointxyz, target_frame, count, id):
 
 
 def broadcaster_frame_object(frame, child_frame, pose):
-    
     br = tf2_ros.TransformBroadcaster()
     t = geometry_msgs.msg.TransformStamped()
-
     t.header.frame_id = frame
     t.child_frame_id = child_frame 
     t.header.stamp = rospy.Time.now()
-
     t.transform.translation.x = pose.position.x
     t.transform.translation.y = pose.position.y
     t.transform.translation.z = pose.position.z
-    
     t.transform.rotation.x = pose.orientation.x
     t.transform.rotation.y = pose.orientation.y
     t.transform.rotation.z = pose.orientation.z
@@ -329,10 +355,8 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
     
     
     if obj_state == 'vertical': 
-    
         resp_traj = successful_candidate_trajectories[(len(successful_candidate_trajectories) -1) // 3] 
     else:   # Horizontal
-
         resp_traj = successful_candidate_trajectories[0]
     #resp.articular_trajectory.articular_trajectory.joint_names = "la"
     
