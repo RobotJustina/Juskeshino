@@ -29,8 +29,7 @@ def get_cv_mats_from_cloud_message(cloud_msg):
 
 
 def segment_by_contour(img_bgr, pointCloud_array, original_cloud):
-    print("Segmenting image by contours")
-    
+    #print("Segmenting image by contours")
     values=img_bgr.reshape((-1,3))  # (M,3=BGR), M = num of pixels
     values= np.float32(values)
     # Image color quantification with k-medias
@@ -58,12 +57,12 @@ def segment_by_contour(img_bgr, pointCloud_array, original_cloud):
     #cv2.imshow("imagen dilatada #7", img_dilate) #*****************
     #cv2.waitKey(0)
     edged = cv2.Canny(img_dilate, 100, 20)
-    cv2.imshow("imagen con filtro Canny #8", edged) #*****************
-    cv2.waitKey(0)
+    #cv2.imshow("imagen con filtro Canny #8", edged) #*****************
+    #cv2.waitKey(0)
     #Finding contours in the image, each individual contour is a Numpy array of (x,y) coordinates of boundary points of the object
     contours, hierarchy = cv2.findContours(edged.astype('uint8'),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-    if original_cloud:
-        contours, hierarchy = cv2.findContours(edged.astype('uint8'),cv2.RETR_TREE ,cv2.CHAIN_APPROX_NONE)
+    #if original_cloud:
+     #   contours, hierarchy = cv2.findContours(edged.astype('uint8'),cv2.RETR_TREE ,cv2.CHAIN_APPROX_NONE)
 
     if not len(contours) > 0:
         return False ,None, None   
@@ -76,7 +75,7 @@ def segment_by_contour(img_bgr, pointCloud_array, original_cloud):
 
     for j, contour in enumerate(contours):
         area = cv2.contourArea(contour)
-        if area < 1000 or area > 20000: continue # discarding contours by area
+        if area < 1000 or area > 22000: continue # discarding contours by area
         
         print("no descartado")
         mask = np.zeros((img_bgr.shape[0], img_bgr.shape[1]),np.uint8)
@@ -84,8 +83,8 @@ def segment_by_contour(img_bgr, pointCloud_array, original_cloud):
         # the mask is eroded to ensure that we only get the point cloud of the object
         mask =cv2.erode(mask , kernel,iterations=3)
         obj_bgr, obj_xyz = get_object_bgr_and_xyz(img_bgr, pointCloud_array, mask)
-        cv2.imshow("obj", obj_bgr) #*****************
-        cv2.waitKey(0)
+        #cv2.imshow("obj", obj_bgr) #*****************
+        #cv2.waitKey(0)
         obj_centroid = np.mean(obj_xyz, axis=0)
         print("centroide " , obj_centroid)
         distance = math.sqrt(obj_centroid[0]**2 + obj_centroid[1]**2)
@@ -103,8 +102,6 @@ def get_object_bgr_and_xyz(img_bgr, img_xyz, mask):
     obj_bgr[mask == 0] = 0
     # Take xyz points only in mask and remove points with zero X
     obj_xyz = img_xyz[(mask == 255) & (img_xyz[:,:,0] > 0.1)].copy()
-    print("obj xyz " , obj_xyz)
-
     return obj_bgr, obj_xyz
 
 
@@ -117,7 +114,7 @@ def pca(xyz_points,centrid):    # pc del contorno mas cercano
     
     pts_frame_PCA = np.transpose(np.dot(eig_vect, np.transpose(xyz_points)))
     pt_frame_PCA = np.transpose(np.dot(eig_vect, np.transpose(centrid)))
-    print("pt in pca", pt_frame_PCA, centrid)
+    #print("pt in pca", pt_frame_PCA, centrid)
     
     
     H = np.max(pts_frame_PCA[:, 2]) - np.min(pts_frame_PCA[:, 2])
@@ -125,7 +122,7 @@ def pca(xyz_points,centrid):    # pc del contorno mas cercano
     W = np.max(pts_frame_PCA[:, 0]) - np.min(pts_frame_PCA[:, 0])
     size_obj = Vector3()
     size_obj.x, size_obj.z , size_obj.y = H, W, L
-    print("HX LY WZ", H, L, W)
+    #print("HX LY WZ", H, L, W)
 
     return [eig_vect[:,2], eig_vect[:,1] , eig_vect[:,0]], [eig_val[2], eig_val[1], eig_val[0]], size_obj
 
@@ -207,14 +204,14 @@ def publish_arow_marker(centroide_cam, p1, frame_id_point_cloud):
 
 def object_category(fpc, spc, thpc):  # estima la forma geometrica del objeto.
     c21, c31, c32 =  spc * ( 100 / fpc), thpc * ( 100 / fpc),thpc * ( 100 / spc)
-    if c21 >= 70:    # Means 1PC and 2PC are similar
+    if c21 >= 60:    # Means 1PC and 2PC are similar
         if c31 > 70:    # Means 2PC and 3PC are similar
             print("cube_or_sphere")
             return "1"
         if c32 < 40:    # Means 2PC is much bigger than 3PC
             print("box")
             return "2"
-    elif c21 < 70:    # Means 1PC is much bigger than 2PC
+    elif c21 < 60:    # Means 1PC is much bigger than 2PC
         print("cylinder_or_prism")
         return "3"
     else:

@@ -4,3 +4,12 @@ sensor_msgs/PointCloud2 point_cloud
 geometry_msgs/Vector3 size                   #Size in meters: size in x, y and z
 ---
 trajectory_msgs/JointTrajectory articular_trajectory
+bool graspable                               #graspable by the gripper
+float64 x				# desired gripper pose
+float64 y
+float64 z
+float64 roll
+float64 pitch
+float64 yaw
+
+

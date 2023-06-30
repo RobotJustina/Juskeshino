@@ -104,7 +104,7 @@ def q2q_traj(p_final, clt_traj_planner, pub_traj):
     request.p2 = p_final
     request.p1 = initial_pose
     request.duration = 5
-    request.time_step = 0.2
+    request.time_step = 0.02
     resp_traj = clt_traj_planner(request)
     resp_traj.trajectory
     pub_traj.publish(resp_traj.trajectory)
@@ -120,8 +120,8 @@ def move_left_gripper(q, pubLaGoalGrip):
 def get_obj_pose(clt_recog_obj):
     recognize_object_req = RecognizeObjectRequest()
     try:
-        recognize_object_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
-        #recognize_object_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
+        #recognize_object_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+        recognize_object_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
     except:
         return None
     return clt_recog_obj(recognize_object_req)
@@ -225,8 +225,8 @@ def main():
                 state = SM_MOVE_HEAD
 
         elif state == SM_MOVE_HEAD:
-            move_head(pub_hd_goal_pose ,0, -0.4)
-            move_head(pub_hd_goal_pose ,0, -0.4)
+            move_head(pub_hd_goal_pose ,0, -0.9)
+            move_head(pub_hd_goal_pose ,0, -0.9)
             print("state == SM_MOVE_HEAD")
             rospy.sleep(1.0)
             state = SM_WAIT_FOR_HEAD
@@ -288,10 +288,29 @@ def main():
             resp_best_grip = clt_best_grip(req_best_grip)
             print("state == SM_MOVE_ARM")
             move_left_gripper(0.9, pub_la_goal_grip)
-            #pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
-            print("moviendo brazo izquierdo...................")
-            rospy.sleep(7.0)
-            #move_left_gripper(0, pub_la_goal_grip)
+            if resp_best_grip.graspable:
+                pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
+                print("moviendo brazo izquierdo...................")
+                rospy.sleep(7.0)
+            else:
+                print("No se encontraron poses posibles...................")
+            """
+            move_left_gripper(0.7, pub_la_goal_grip)
+            rospy.sleep(1.0)
+            move_left_gripper(0.5, pub_la_goal_grip)
+            rospy.sleep(1.0)
+            move_left_gripper(0.1, pub_la_goal_grip)
+            goal_pose = []
+            goal_pose.append(resp_best_grip.x)
+            goal_pose.append(resp_best_grip.y)
+            goal_pose.append(resp_best_grip.z + 0.20)
+            goal_pose.append(resp_best_grip.roll)
+            goal_pose.append(resp_best_grip.pitch)
+            goal_pose.append(resp_best_grip.yaw)
+            #move_left_arm(goal_pose,  pub_la_goal_traj, clt_ik)
+            """
+            
+
             state = -1
 
         else:
