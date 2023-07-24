@@ -4,7 +4,7 @@ import rospy
 import numpy as np
 import tf
 import math
-from sensor_msgs.msg import PointCloud2, Image
+from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import PointStamped, PoseStamped, Point, Pose, Twist
 from vision_msgs.srv import *
 from manip_msgs.srv import *
@@ -29,7 +29,7 @@ LEFT_TABLE_NEAR = [5.45, 2.45, np.deg2rad(90)]
 LEFT_TABLE_FAR = [6.95, 2.3, 0.0]
 RIGTH_TABLE = [5.7, 0.28, np.deg2rad(-90)]
 LOCAL_TARGET = LEFT_TABLE_NEAR
-PREPARE = [-1.2, 0.1, 0.0, 1.6, 0.0, 1.1, 0.0]
+PREPARE = [-1.27, 0.4, 0.0, 1.9, 0.01, 0.69, -0.01]#[-1.2, 0.1, 0.0, 1.6, 0.0, 1.1, 0.0]
 HOME = [0,0,0,0,0,0]
 
 
@@ -120,8 +120,8 @@ def move_left_gripper(q, pubLaGoalGrip):
 def get_obj_pose(clt_recog_obj):
     recognize_object_req = RecognizeObjectRequest()
     try:
-        recognize_object_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
-        #recognize_object_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
+        #recognize_object_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+        recognize_object_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
     except:
         return None
     return clt_recog_obj(recognize_object_req)
@@ -282,9 +282,7 @@ def main():
 
         elif state == SM_MOVE_LEFT_ARM:
             req_best_grip = BestGraspTrajRequest()
-            req_best_grip.pose = resp.recog_object.pose
-            req_best_grip.category = resp.recog_object.category
-            req_best_grip.size = resp.recog_object.size
+            req_best_grip.recog_object = resp.recog_object
             resp_best_grip = clt_best_grip(req_best_grip)
             print("state == SM_MOVE_ARM")
             move_left_gripper(0.9, pub_la_goal_grip)

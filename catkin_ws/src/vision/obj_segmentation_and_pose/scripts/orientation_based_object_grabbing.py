@@ -12,7 +12,7 @@ from manip_msgs.srv import *
 from visualization_msgs.msg import Marker, MarkerArray
 import geometry_msgs.msg
 
-MAXIMUM_GRIP_LENGTH = 0.16
+MAXIMUM_GRIP_LENGTH = 0.17
 
 
 def superior_obj_grip(obj_pose, size):
@@ -97,23 +97,29 @@ def points_actual_to_points_target(point_in, f_actual, f_target):
 
 def grip_rules(obj_pose, type_obj, obj_state, angle, size):
     if size.y <= MAXIMUM_GRIP_LENGTH:
-        print("size < MAX LENGHT GRIP")
+        print("size object < MAX LENGHT GRIP")
         grasp_candidates_quaternion = prism(obj_pose, obj_state, angle, size)
         return grasp_candidates_quaternion 
     else:
-        print("size > MAX LENGHT GRIP")
+        print("size object > MAX LENGHT GRIP")
         return box(obj_pose, size, obj_state)
 
 
 
 def box(obj_pose, size, obj_state):
     grasp_candidates_quaternion = []
-    grip_point = Point(x=0, y=size.y/2, z=0)
+    grip_point1 = [0, size.y/2, 0]
+    grip_point2 = [0, -1*(size.y/2), 0]
     # transformar del espacio del objeto al espacio base link
-    new_point_grip = points_actual_to_points_target(grip_point , 'object', 'base_link')
-    marker_array_publish(new_point_grip , 'base_link', 0, 7)
+    new_point_grip1 = points_actual_to_points_target(grip_point1 , 'object', 'base_link')
+    new_point_grip2 = points_actual_to_points_target(grip_point1 , 'object', 'base_link')
+    print("se grafico el punto de agarre")
+    marker_array_publish(new_point_grip1 , 'base_link', 0, 7)
+    marker_array_publish(new_point_grip2 , 'base_link', 0, 7)
 
-    if obj_state == 'horizontal':
+    if obj_state == 'horizontal':   
+        if new_point_grip1[2] > new_point_grip2[2]: grip_point = new_point_grip1
+        else: grip_point = new_point_grip2
         R, P, Y = tft.euler_from_quaternion([obj_pose.orientation.x ,obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w])
         P = P + np.deg2rad(-30)
         q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  
@@ -121,13 +127,21 @@ def box(obj_pose, size, obj_state):
         obj_pose.orientation.y = q_gripper[1]
         obj_pose.orientation.z = q_gripper[2]
         obj_pose.orientation.w = q_gripper[3]
+        obj_pose.position.x = grip_point[0] 
+        obj_pose.position.y = grip_point[1] 
+        obj_pose.position.z = grip_point[2]
+        grasp_candidates_quaternion.append( obj_pose ) 
+        return grasp_candidates_quaternion
 
-    obj_pose.position.x = new_point_grip[0] 
-    obj_pose.position.y = new_point_grip[1] 
-    obj_pose.position.z = new_point_grip[2] 
+    else:  # vertical object
+        if new_point_grip1[1] > new_point_grip2[1]: grip_point = new_point_grip1
+        else: grip_point = new_point_grip2
+        obj_pose.position.x = grip_point[0] 
+        obj_pose.position.y = grip_point[1] 
+        obj_pose.position.z = grip_point[2] 
 
-    grasp_candidates_quaternion.append( obj_pose ) 
-    return grasp_candidates_quaternion
+        grasp_candidates_quaternion.append( obj_pose ) 
+        return grasp_candidates_quaternion
 
 
 
@@ -140,12 +154,11 @@ def prism(obj_pose, obj_state, angle, size):
     MT = tft.quaternion_matrix([obj_pose.orientation.x ,obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w])
     axis_x_obj = np.asarray( [MT[0,0], MT[1,0], MT[2,0]])   # eje x del objeto vector normal al plano que corta al objet
     
-    step_size = np.deg2rad(10)
-    range_points = np.deg2rad(90)          # rango dentro del cual se generan los candidatos 360 grados
-    num_points = int(range_points / step_size)
-    # donde inicia la generacion de agarres candidatos, depende de la ubicacion del objeto respecto del robot
-    if obj_pose.position.y >= 0: offset_theta = np.deg2rad(230)    
-    theta = 0 + offset_theta 
+    step_size = np.deg2rad(30)
+    range_points = np.deg2rad(360)          # rango dentro del cual se generan los candidatos 360 grados
+    num_points = int(range_points / step_size) 
+    theta_offset = np.deg2rad(40)
+    theta = theta_offset
     count = 0
     id = 0
     points = []
@@ -169,7 +182,6 @@ def prism(obj_pose, obj_state, angle, size):
               [      0,        0,       0, 1]]
         
         R, P, Y = tft.euler_from_matrix( TM)
-        #P = P + np.deg2rad(-30)
         for j in range(5):
             q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')
             candidate_grasp = Pose()
@@ -198,6 +210,8 @@ def prism(obj_pose, obj_state, angle, size):
             id += 1
             theta = theta + step_size 
 
+        print("len poins", len(points))
+
         # obtencion de origen de frame candidato
         for p in points:   
             axis_z_point = (p - obj_centroid ) / np.linalg.norm( (p - obj_centroid ) )
@@ -206,9 +220,9 @@ def prism(obj_pose, obj_state, angle, size):
             RM = np.asarray( [axis_x_point, axis_y_point, axis_z_point] ) 
             RM = RM.T
             TM = [[RM[0,0], RM[0,1] , RM[0,2], 0],
-                [RM[1,0], RM[1,1] , RM[1,2], 0],
-                [RM[2,0], RM[2,1] , RM[2,2], 0], 
-                [      0,        0,       0, 1]]
+                [RM[1,0], RM[1,1] , RM[1,2],   0],
+                [RM[2,0], RM[2,1] , RM[2,2],   0], 
+                [      0,        0,       0,   1]]
         
             q_gripper = tft.quaternion_from_matrix ( TM ) 
             candidate_grasp = Pose()
@@ -221,7 +235,10 @@ def prism(obj_pose, obj_state, angle, size):
             candidate_grasp.orientation.z = q_gripper[2]/d
             candidate_grasp.orientation.w = q_gripper[3]/d
             grasp_candidates_quaternion.append(candidate_grasp) 
-            return grasp_candidates_quaternion
+
+        print("len poses list in", len(grasp_candidates_quaternion))
+        return grasp_candidates_quaternion
+        
 
 
 
@@ -257,7 +274,7 @@ def marker_array_publish(pointxyz, target_frame, count, id):
     marker.header.frame_id = target_frame
     marker.type = marker.SPHERE
     marker.action = marker.ADD
-    marker.scale.x , marker.scale.y,marker.scale.z = 0.008, 0.008, 0.008
+    marker.scale.x , marker.scale.y,marker.scale.z = 0.01, 0.01, 0.01
     marker.color.a , marker.color.r, marker.color.g, marker.color.b = 1.0, 0.0 , 0.0 ,1.0
     marker.pose.orientation.w = 1.0
     marker.pose.position.x, marker.pose.position.y, marker.pose.position.z = pointxyz[0], pointxyz[1], pointxyz[2]
@@ -339,9 +356,10 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
 def callback(req):
     global listener, ik_srv
     resp = BestGraspTrajResponse()
-    obj_state, angle = object_state(req.pose) 
+    obj_state, angle = object_state(req.recog_object.pose)  # Object state: 'vertical' u 'horizontal'
 
-    pose_list_q = grip_rules(req.pose, req.category, obj_state,angle , req.size )
+    pose_list_q = grip_rules(req.recog_object.pose, req.recog_object.category, obj_state,angle , req.recog_object.size )
+    print("lista d eposes", len(pose_list_q))
     if len(pose_list_q) <= 0:
         print("object is no graspable")
         return resp
@@ -365,7 +383,7 @@ def callback(req):
 
 def main():
     global listener , ik_srv, marker_pub, marker_array_pub
-    print("Node to grab objects based on their orientation...")
+    print("Node to grab objects based on their orientation..............ʕ•ᴥ•ʔ")
     rospy.init_node("gripper_orientation_for_grasping")
     rospy.Service("/vision/get_best_grasp_traj", BestGraspTraj, callback)
     listener = tf.TransformListener()

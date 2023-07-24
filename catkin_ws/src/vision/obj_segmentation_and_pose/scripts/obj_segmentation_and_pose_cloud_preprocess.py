@@ -83,8 +83,8 @@ def segment_by_contour(img_bgr, pointCloud_array, original_cloud):
         # the mask is eroded to ensure that we only get the point cloud of the object
         mask =cv2.erode(mask , kernel,iterations=3)
         obj_bgr, obj_xyz = get_object_bgr_and_xyz(img_bgr, pointCloud_array, mask)
-        #cv2.imshow("obj", obj_bgr) #*****************
-        #cv2.waitKey(0)
+        cv2.imshow("obj", obj_bgr) #*****************
+        cv2.waitKey(0)
         obj_centroid = np.mean(obj_xyz, axis=0)
         print("centroide " , obj_centroid)
         distance = math.sqrt(obj_centroid[0]**2 + obj_centroid[1]**2)
@@ -247,10 +247,10 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
         obj_pose, axis_x_obj = object_pose(centroid, pca_vectors[0], pca_vectors[1])
         publish_arow_marker( centroid, axis_x_obj, 'base_link')
         broadcaster_frame_object("base_link", "object", obj_pose)
-        print("size object i frame object", size_obj)
+        #print("size object i frame object", size_obj)
 
         # Rellenando msg 
-        resp.recog_object.category = c_obj
+        #resp.recog_object.category = c_obj
         resp.recog_object.header = req.point_cloud.header
         resp.recog_object.size = size_obj
         resp.recog_object.pose = obj_pose
