@@ -120,8 +120,8 @@ def move_left_gripper(q, pubLaGoalGrip):
 def get_obj_pose(clt_recog_obj):
     recognize_object_req = RecognizeObjectRequest()
     try:
-        #recognize_object_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
-        recognize_object_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
+        recognize_object_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+        #recognize_object_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
     except:
         return None
     return clt_recog_obj(recognize_object_req)

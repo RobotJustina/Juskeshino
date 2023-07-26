@@ -96,6 +96,7 @@ def points_actual_to_points_target(point_in, f_actual, f_target):
 
 
 def grip_rules(obj_pose, type_obj, obj_state, angle, size):
+    return box(obj_pose, size, obj_state)
     if size.y <= MAXIMUM_GRIP_LENGTH:
         print("size object < MAX LENGHT GRIP")
         grasp_candidates_quaternion = prism(obj_pose, obj_state, angle, size)
@@ -108,39 +109,53 @@ def grip_rules(obj_pose, type_obj, obj_state, angle, size):
 
 def box(obj_pose, size, obj_state):
     grasp_candidates_quaternion = []
-    grip_point1 = [0, size.y/2, 0]
-    grip_point2 = [0, -1*(size.y/2), 0]
+    grip_point1 = [0, 0, size.z/2]
+    grip_point2 = [0, 0, -1*(size.z/2)]
     # transformar del espacio del objeto al espacio base link
     new_point_grip1 = points_actual_to_points_target(grip_point1 , 'object', 'base_link')
-    new_point_grip2 = points_actual_to_points_target(grip_point1 , 'object', 'base_link')
+    new_point_grip2 = points_actual_to_points_target(grip_point2 , 'object', 'base_link')
     print("se grafico el punto de agarre")
-    marker_array_publish(new_point_grip1 , 'base_link', 0, 7)
-    marker_array_publish(new_point_grip2 , 'base_link', 0, 7)
+    
 
     if obj_state == 'horizontal':   
         if new_point_grip1[2] > new_point_grip2[2]: grip_point = new_point_grip1
         else: grip_point = new_point_grip2
+
+        #marker_array_publish(grip_point , 'base_link', 0, 7)
         R, P, Y = tft.euler_from_quaternion([obj_pose.orientation.x ,obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w])
-        P = P + np.deg2rad(-30)
-        q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  
-        obj_pose.orientation.x = q_gripper[0]
-        obj_pose.orientation.y = q_gripper[1]
-        obj_pose.orientation.z = q_gripper[2]
-        obj_pose.orientation.w = q_gripper[3]
-        obj_pose.position.x = grip_point[0] 
-        obj_pose.position.y = grip_point[1] 
-        obj_pose.position.z = grip_point[2]
-        grasp_candidates_quaternion.append( obj_pose ) 
+        marker_array_publish(grip_point , 'base_link', 0, 7)
+
+        for j in range(5):
+            q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')
+            candidate_grasp = Pose()
+            candidate_grasp.position.x = grip_point[0] 
+            candidate_grasp.position.y = grip_point[1] 
+            candidate_grasp.position.z = grip_point[2]      
+            candidate_grasp.orientation.x = q_gripper[0]
+            candidate_grasp.orientation.y = q_gripper[1]
+            candidate_grasp.orientation.z = q_gripper[2]
+            candidate_grasp.orientation.w = q_gripper[3]
+            grasp_candidates_quaternion.append(candidate_grasp) 
+            broadcaster_frame_object('base_link', 'test_box_horizontal' , candidate_grasp )
+            rospy.sleep(1.0)
+            Y = Y + np.deg2rad(-15)
+
+        print("len candidates horizontal", len(grasp_candidates_quaternion))
         return grasp_candidates_quaternion
+
 
     else:  # vertical object
         if new_point_grip1[1] > new_point_grip2[1]: grip_point = new_point_grip1
         else: grip_point = new_point_grip2
+        marker_array_publish(grip_point , 'base_link', 0, 7)
         obj_pose.position.x = grip_point[0] 
         obj_pose.position.y = grip_point[1] 
         obj_pose.position.z = grip_point[2] 
-
+        # misma orientación del objeto
+        broadcaster_frame_object('base_link', 'test_box' , obj_pose )
+        rospy.sleep(1.0)
         grasp_candidates_quaternion.append( obj_pose ) 
+        # si la segunda componente no apunta a -y de base link rotar el frame 180° sobre la comp principal
         return grasp_candidates_quaternion
 
 
@@ -274,8 +289,8 @@ def marker_array_publish(pointxyz, target_frame, count, id):
     marker.header.frame_id = target_frame
     marker.type = marker.SPHERE
     marker.action = marker.ADD
-    marker.scale.x , marker.scale.y,marker.scale.z = 0.01, 0.01, 0.01
-    marker.color.a , marker.color.r, marker.color.g, marker.color.b = 1.0, 0.0 , 0.0 ,1.0
+    marker.scale.x , marker.scale.y,marker.scale.z = 0.03, 0.03, 0.03
+    marker.color.a , marker.color.r, marker.color.g, marker.color.b = 1.0, 1.0 , 0.0 ,1.0
     marker.pose.orientation.w = 1.0
     marker.pose.position.x, marker.pose.position.y, marker.pose.position.z = pointxyz[0], pointxyz[1], pointxyz[2]
     

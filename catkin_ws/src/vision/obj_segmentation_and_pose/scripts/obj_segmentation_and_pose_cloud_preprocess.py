@@ -109,6 +109,7 @@ def get_object_bgr_and_xyz(img_bgr, img_xyz, mask):
 def pca(xyz_points,centrid):    # pc del contorno mas cercano
     eig_val, eig_vect = np.linalg.eig(np.cov(np.transpose(xyz_points))) # Eigenvalues and eigenvectors from Point Cloud Cov Matrix
     idx = eig_val.argsort()
+
     eig_val  = eig_val[idx]
     eig_vect = np.transpose(np.transpose(eig_vect)[idx])
     
@@ -121,7 +122,7 @@ def pca(xyz_points,centrid):    # pc del contorno mas cercano
     L = np.max(pts_frame_PCA[:, 1]) - np.min(pts_frame_PCA[:, 1])
     W = np.max(pts_frame_PCA[:, 0]) - np.min(pts_frame_PCA[:, 0])
     size_obj = Vector3()
-    size_obj.x, size_obj.z , size_obj.y = H, W, L
+    size_obj.x, size_obj.z , size_obj.y = H, L, W
     #print("HX LY WZ", H, L, W)
 
     return [eig_vect[:,2], eig_vect[:,1] , eig_vect[:,0]], [eig_val[2], eig_val[1], eig_val[0]], size_obj
@@ -136,9 +137,9 @@ def object_pose(centroid, principal_component, second_component):
     if principal_component[2] < 0: 
         principal_component = -1 * principal_component
     
-    eje_y_obj = second_component #np.asarray(second_component) /np.linalg.norm( np.asarray(second_component) )
+    eje_z_obj = second_component #np.asarray(second_component) /np.linalg.norm( np.asarray(second_component) )
     eje_x_obj = principal_component # /np.linalg.norm( principal_component )    # Eje principal en x
-    eje_z_obj = np.cross(eje_y_obj , eje_x_obj )# / np.linalg.norm(np.cross(eje_y_obj , eje_x_obj))
+    eje_y_obj = np.cross(eje_z_obj , eje_x_obj )# / np.linalg.norm(np.cross(eje_y_obj , eje_x_obj))
     axis_x_obj = Point()
     axis_x_obj.x, axis_x_obj.y, axis_x_obj.z = eje_x_obj[0], eje_x_obj[1], eje_x_obj[2]
     # Se forma la matriz de rotacion (columnas) del objeto, a partir de ella se obtienen los cuaterniones necesarios para generar el frame del objeto
@@ -247,7 +248,8 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
         obj_pose, axis_x_obj = object_pose(centroid, pca_vectors[0], pca_vectors[1])
         publish_arow_marker( centroid, axis_x_obj, 'base_link')
         broadcaster_frame_object("base_link", "object", obj_pose)
-        #print("size object i frame object", size_obj)
+        print("size object i frame object", size_obj)
+
 
         # Rellenando msg 
         #resp.recog_object.category = c_obj
