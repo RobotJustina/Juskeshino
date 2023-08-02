@@ -268,7 +268,7 @@ def main():
         elif state == SM_PREPARE_ARM:
             print("state == SM_PREPARE_ARM")
             p_final = PREPARE
-            #q2q_traj(p_final, clt_traj_planner, pub_la_goal_traj)
+            q2q_traj(p_final, clt_traj_planner, pub_la_goal_traj)
             """
             print(goal_la_reached)
             if goal_la_reached:

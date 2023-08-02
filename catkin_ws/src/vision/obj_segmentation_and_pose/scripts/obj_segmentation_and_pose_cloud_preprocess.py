@@ -83,8 +83,8 @@ def segment_by_contour(img_bgr, pointCloud_array, original_cloud):
         # the mask is eroded to ensure that we only get the point cloud of the object
         mask =cv2.erode(mask , kernel,iterations=3)
         obj_bgr, obj_xyz = get_object_bgr_and_xyz(img_bgr, pointCloud_array, mask)
-        cv2.imshow("obj", obj_bgr) #*****************
-        cv2.waitKey(0)
+        #cv2.imshow("obj", obj_bgr) #*****************
+        #cv2.waitKey(0)
         obj_centroid = np.mean(obj_xyz, axis=0)
         print("centroide " , obj_centroid)
         distance = math.sqrt(obj_centroid[0]**2 + obj_centroid[1]**2)
@@ -109,37 +109,69 @@ def get_object_bgr_and_xyz(img_bgr, img_xyz, mask):
 def pca(xyz_points,centrid):    # pc del contorno mas cercano
     eig_val, eig_vect = np.linalg.eig(np.cov(np.transpose(xyz_points))) # Eigenvalues and eigenvectors from Point Cloud Cov Matrix
     idx = eig_val.argsort()
-
     eig_val  = eig_val[idx]
     eig_vect = np.transpose(np.transpose(eig_vect)[idx])
-    
     pts_frame_PCA = np.transpose(np.dot(eig_vect, np.transpose(xyz_points)))
     pt_frame_PCA = np.transpose(np.dot(eig_vect, np.transpose(centrid)))
-    #print("pt in pca", pt_frame_PCA, centrid)
-    
     
     H = np.max(pts_frame_PCA[:, 2]) - np.min(pts_frame_PCA[:, 2])
     L = np.max(pts_frame_PCA[:, 1]) - np.min(pts_frame_PCA[:, 1])
     W = np.max(pts_frame_PCA[:, 0]) - np.min(pts_frame_PCA[:, 0])
     size_obj = Vector3()
-    size_obj.x, size_obj.z , size_obj.y = H, L, W
-    #print("HX LY WZ", H, L, W)
-
+    size_obj.x, size_obj.z , size_obj.y = H,L,W#H, L, W
+    # Los vectores de salida estan en el frame base_link
     return [eig_vect[:,2], eig_vect[:,1] , eig_vect[:,0]], [eig_val[2], eig_val[1], eig_val[0]], size_obj
 
 
 
-def object_pose(centroid, principal_component, second_component): 
+def object_pose(centroid, principal_component, second_component):  # vectores de entrada estan en frame base_link
     """
     Construction of the coordinate system of the object,the construction of the frame depends on the coordinate system of the robot gripper 
+    Ademas se imponen restricciones para que la pose sea realizable por el gripper
     """
     principal_component = np.asarray(principal_component)
     if principal_component[2] < 0: 
         principal_component = -1 * principal_component
-    
-    eje_z_obj = second_component #np.asarray(second_component) /np.linalg.norm( np.asarray(second_component) )
-    eje_x_obj = principal_component # /np.linalg.norm( principal_component )    # Eje principal en x
-    eje_y_obj = np.cross(eje_z_obj , eje_x_obj )# / np.linalg.norm(np.cross(eje_y_obj , eje_x_obj))
+
+    # calculo de angulo de primera componente respecto de la superficie
+    eje_z = np.asarray([0, 0, 1], dtype=np.float64 )# vector normal al plano xy
+    angle_obj = np.arcsin( np.dot(principal_component , eje_z ) / (np.linalg.norm(principal_component ) * 1) )
+    print("angulo del objeto respecto de la superficie: ", np.rad2deg(angle_obj))
+
+    if (angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150)):
+        print("Eje principal horizontal")
+        # Angulo respecto de x_base_link
+        angle_obj_x_bl =  math.atan2(principal_component[1], principal_component[0]) 
+        print("Angulo respecto de eje X de BASE_LINK:", np.rad2deg(angle_obj_x_bl))
+
+        if angle_obj_x_bl > np.deg2rad(60) or angle_obj_x_bl < np.deg2rad(-130):
+            print("Angulo 1pc fuera de limites corregido...........")
+            principal_component[0] = -1*principal_component[0]
+            principal_component[1] = -1*principal_component[1]
+        
+        if second_component[2] < 0: 
+            print("se corrigio sc")
+            second_component = -1 * second_component    # sc no puede ser un vector negativo
+    else: 
+        print("Eje principal vertical")
+        angle_2pc_x_bl =  math.atan2(second_component[1], second_component[0]) 
+        print("angulo de z_obj respecto de eje x base link", np.rad2deg(angle_2pc_x_bl))
+        if angle_2pc_x_bl < np.deg2rad(23):
+            if angle_2pc_x_bl > np.deg2rad(-157):
+                print("angulo fuera de rango de agarre ,se invirtio sentido de 2pc")
+                second_component[0] = -1*second_component[0]
+                second_component[1] = -1*second_component[1]
+                angle_2pc_x_bl =  math.atan2(second_component[1], second_component[0]) 
+                print("angulo de z_obj respecto de eje x base link despues", np.rad2deg(angle_2pc_x_bl))
+
+                #sec_comp = Point(x = second_component[0], y =second_component[1], z=second_component[2])
+                #publish_arow_marker(centroid, sec_comp, 'base_link', ns ="second_component", id=23)
+                #publish_arow_marker( centroid, sec_comp, 'base_link')
+
+    # Asignacion de ejes del objeto
+    eje_z_obj = second_component 
+    eje_x_obj = principal_component 
+    eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
     axis_x_obj = Point()
     axis_x_obj.x, axis_x_obj.y, axis_x_obj.z = eje_x_obj[0], eje_x_obj[1], eje_x_obj[2]
     # Se forma la matriz de rotacion (columnas) del objeto, a partir de ella se obtienen los cuaterniones necesarios para generar el frame del objeto
@@ -179,11 +211,11 @@ def broadcaster_frame_object(frame, child_frame, pose):   # Emite la transformac
 
 
 
-def publish_arow_marker(centroide_cam, p1, frame_id_point_cloud):  
+def publish_arow_marker(centroide_cam, p1,frame_id, ns, id):  
     p0 = PointStamped()
-    p0.header.frame_id = frame_id_point_cloud
+    p0.header.frame_id = frame_id
     p0.point.x , p0.point.y, p0.point.z = centroide_cam[0], centroide_cam[1], centroide_cam[2]
-    frame = frame_id_point_cloud
+    frame = frame_id
     marker = Marker()
     marker.header.frame_id = frame
     marker.type = Marker.ARROW
@@ -204,17 +236,25 @@ def publish_arow_marker(centroide_cam, p1, frame_id_point_cloud):
 
 
 def object_category(fpc, spc, thpc):  # estima la forma geometrica del objeto.
-    c21, c31, c32 =  spc * ( 100 / fpc), thpc * ( 100 / fpc),thpc * ( 100 / spc)
+    print("1pca, 2pca, 3pca", fpc,spc,thpc)
+    # coeficiente de similitud entre aristas de bounding box del objeto
+    c21, c31, c32 =  spc * ( 100 / fpc),   thpc * ( 100 / fpc),    thpc * ( 100 / spc)  
+    print("c21, c31, c32", c21, c31, c32)
     if c21 >= 60:    # Means 1PC and 2PC are similar
-        if c31 > 70:    # Means 2PC and 3PC are similar
-            print("cube_or_sphere")
-            return "1"
-        if c32 < 40:    # Means 2PC is much bigger than 3PC
+        if (c31 > 70) or (c32 > 70):    # Means 2PC and 3PC are similar
+            print("cubic bounding box") # debe verificarse grapabilidad
+            return "cube"
+        if c31 <= 70 or c32 <= 70:
             print("box")
-            return "2"
+            return "box"
+    
     elif c21 < 60:    # Means 1PC is much bigger than 2PC
-        print("cylinder_or_prism")
-        return "3"
+        if c32 > 70:    # Means 2PC and 3PC are similar
+            print("prismatic bounding box") # debe verificarse grapabilidad
+            return "prism"
+        if c31 <= 70 or c32 <= 70:
+            print("box")
+            return "box"
     else:
         print("Could not determine the shape of the object...")
         return "0"
@@ -244,15 +284,14 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
         print("An object was detected...............")
         print("object position" , centroid)
         pca_vectors, eig_val, size_obj = pca(obj_xyz, centroid)
-        c_obj = object_category(eig_val[0], eig_val[1], eig_val[2])
+        c_obj = object_category(size_obj.x, size_obj.z, size_obj.y)
         obj_pose, axis_x_obj = object_pose(centroid, pca_vectors[0], pca_vectors[1])
-        publish_arow_marker( centroid, axis_x_obj, 'base_link')
+        publish_arow_marker(centroid, axis_x_obj, 'base_link', ns ="principal_component", id=22)
         broadcaster_frame_object("base_link", "object", obj_pose)
         print("size object i frame object", size_obj)
-
-
+        print("object category", c_obj)
         # Rellenando msg 
-        #resp.recog_object.category = c_obj
+        resp.recog_object.category = c_obj
         resp.recog_object.header = req.point_cloud.header
         resp.recog_object.size = size_obj
         resp.recog_object.pose = obj_pose
