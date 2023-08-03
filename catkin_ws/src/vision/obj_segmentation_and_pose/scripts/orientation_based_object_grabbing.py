@@ -75,7 +75,10 @@ def horizontal_obj_grip(grip_point , obj_pose ):
                                              obj_pose_frame_object.orientation.y ,
                                              obj_pose_frame_object.orientation.z, 
                                              obj_pose_frame_object.orientation.w])
-    
+    candidate_grasp = Pose()
+    candidate_grasp.position.x = grip_point[0] 
+    candidate_grasp.position.y = grip_point[1] 
+    candidate_grasp.position.z = grip_point[2] 
     for j in range(5):      # genera 5 candidatos
         q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
         obj_pose_frame_object.orientation.x = q_gripper[0]
@@ -83,16 +86,14 @@ def horizontal_obj_grip(grip_point , obj_pose ):
         obj_pose_frame_object.orientation.z = q_gripper[2]
         obj_pose_frame_object.orientation.w = q_gripper[3]
         P = P + np.deg2rad(-14)
-        candidate_frame_bl = pose_actual_to_pose_target(obj_pose_frame_object , 'object', 'base_link')    # pose en frame 'base_link'
-        candidate_frame_bl.position.x = grip_point[0] 
-        candidate_frame_bl.position.y = grip_point[1] 
-        candidate_frame_bl.position.z = grip_point[2] 
-        broadcaster_frame_object('base_link', 'test_horizontal'+str(j) , candidate_frame_bl )  # emite la pose en 'base_link'
+        candidate_grasp = pose_actual_to_pose_target(obj_pose_frame_object , 'object', 'base_link')    # pose en frame 'base_link'
+        broadcaster_frame_object('base_link', 'test_horizontal'+str(j) , candidate_grasp )  # emite la pose en 'base_link'
         rospy.sleep(1.0)
-        grasp_candidates_quaternion.append(candidate_frame_bl )     # guarda el candidato en frame bl
+        grasp_candidates_quaternion.append(candidate_grasp )     # guarda el candidato en frame bl
 
     print("len candidates horizontal grip box", len(grasp_candidates_quaternion))
     return grasp_candidates_quaternion
+
 
 
 
@@ -104,7 +105,10 @@ def vertical_obj_grip(grip_point, obj_pose):
                                              obj_pose_frame_object.orientation.y ,
                                              obj_pose_frame_object.orientation.z, 
                                              obj_pose_frame_object.orientation.w])
-        
+    candidate_grasp = Pose()
+    candidate_grasp.position.x = grip_point[0] 
+    candidate_grasp.position.y = grip_point[1] 
+    candidate_grasp.position.z = grip_point[2] 
     for j in range(3):      # genera 3 candidatos
         q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
         obj_pose_frame_object.orientation.x = q_gripper[0]
@@ -112,13 +116,13 @@ def vertical_obj_grip(grip_point, obj_pose):
         obj_pose_frame_object.orientation.z = q_gripper[2]
         obj_pose_frame_object.orientation.w = q_gripper[3]
         R = R + np.deg2rad(10)
-        candidate_frame_bl = pose_actual_to_pose_target(obj_pose_frame_object , 'object', 'base_link')    # pose en frame 'base_link'
-        candidate_frame_bl.position.x = grip_point[0] 
-        candidate_frame_bl.position.y = grip_point[1] 
-        candidate_frame_bl.position.z = grip_point[2] 
-        broadcaster_frame_object('base_link', 'test_box_vertical'+str(j) , candidate_frame_bl )  # emite la pose en 'base_link'
+        candidate_grasp = pose_actual_to_pose_target(obj_pose_frame_object , 'object', 'base_link')    # pose en frame 'base_link'
+        candidate_grasp.position.x = grip_point[0] 
+        candidate_grasp.position.y = grip_point[1] 
+        candidate_grasp.position.z = grip_point[2] 
+        broadcaster_frame_object('base_link', 'test_box_vertical'+str(j) , candidate_grasp )  # emite la pose en 'base_link'
         rospy.sleep(1.0)
-        grasp_candidates_quaternion.append(candidate_frame_bl )     # guarda el candidato en frame bl
+        grasp_candidates_quaternion.append(candidate_grasp)     # guarda el candidato en frame bl
     return grasp_candidates_quaternion
 
 
@@ -144,69 +148,11 @@ def box(obj_pose, size, obj_state, alfa, beta):
         # transformar del espacio del objeto al espacio base link
         grip_point = points_actual_to_points_target(grip_point , 'object', 'base_link')
         return horizontal_obj_grip(grip_point , obj_pose )
-        """
-        marker_array_publish(grip_point , 'base_link', 0, 7)    # publica el punto de agarre para brazo izquierdo
-
-        obj_pose_frame_object = pose_actual_to_pose_target(obj_pose , 'base_link', 'object') # pose en frame 'object'
-        R, P, Y = tft.euler_from_quaternion([obj_pose_frame_object.orientation.x ,  # pose expresada en RPY
-                                             obj_pose_frame_object.orientation.y ,
-                                             obj_pose_frame_object.orientation.z, 
-                                             obj_pose_frame_object.orientation.w])
-        
-        for j in range(7):      # genera 5 candidatos
-            q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
-            obj_pose_frame_object.orientation.x = q_gripper[0]
-            obj_pose_frame_object.orientation.y = q_gripper[1]
-            obj_pose_frame_object.orientation.z = q_gripper[2]
-            obj_pose_frame_object.orientation.w = q_gripper[3]
-            P = P + np.deg2rad(-10)
-            candidate_frame_bl = pose_actual_to_pose_target(obj_pose_frame_object , 'object', 'base_link')    # pose en frame 'base_link'
-            candidate_frame_bl.position.x = grip_point[0] 
-            candidate_frame_bl.position.y = grip_point[1] 
-            candidate_frame_bl.position.z = grip_point[2] 
-            broadcaster_frame_object('base_link', 'test_box_horizontal'+str(j) , candidate_frame_bl )  # emite la pose en 'base_link'
-            rospy.sleep(1.0)
-            grasp_candidates_quaternion.append(candidate_frame_bl )     # guarda el candidato en frame bl
-
-        print("len candidates horizontal grip box", len(grasp_candidates_quaternion))
-        return grasp_candidates_quaternion
-        """
-
 
     else:  # VERTICAL object
         print("Angulo de 2cp respecto de eje X de BASE_LINK:", np.rad2deg(beta)) 
         grip_point = points_actual_to_points_target(grip_point , 'object', 'base_link')
-
-        poses_list_1 = vertical_obj_grip(grip_point, obj_pose)
-        """
-        marker_array_publish(grip_point , 'base_link', 0, 7)
-        obj_pose_frame_object = pose_actual_to_pose_target(obj_pose , 'base_link', 'object') # pose en frame 'object'
-        R, P, Y = tft.euler_from_quaternion([obj_pose_frame_object.orientation.x ,  # pose expresada en RPY
-                                             obj_pose_frame_object.orientation.y ,
-                                             obj_pose_frame_object.orientation.z, 
-                                             obj_pose_frame_object.orientation.w])
-        
-        for j in range(3):      # genera 3 candidatos
-            q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
-            obj_pose_frame_object.orientation.x = q_gripper[0]
-            obj_pose_frame_object.orientation.y = q_gripper[1]
-            obj_pose_frame_object.orientation.z = q_gripper[2]
-            obj_pose_frame_object.orientation.w = q_gripper[3]
-            R = R + np.deg2rad(10)
-            candidate_frame_bl = pose_actual_to_pose_target(obj_pose_frame_object , 'object', 'base_link')    # pose en frame 'base_link'
-            candidate_frame_bl.position.x = grip_point[0] 
-            candidate_frame_bl.position.y = grip_point[1] 
-            candidate_frame_bl.position.z = grip_point[2] 
-            broadcaster_frame_object('base_link', 'test_box_vertical'+str(j) , candidate_frame_bl )  # emite la pose en 'base_link'
-            rospy.sleep(1.0)
-            grasp_candidates_quaternion.append(candidate_frame_bl )     # guarda el candidato en frame bl
-        return grasp_candidates_quaternion
-        """
-
-        # Genera candidatos para agarre horizontal
-
-
-
+        grasp_candidates_quaternion = vertical_obj_grip(grip_point, obj_pose)
         print("len candidates vertical grip box", len(grasp_candidates_quaternion))
         return grasp_candidates_quaternion
 
