@@ -112,15 +112,20 @@ def pca(xyz_points,centrid):    # pc del contorno mas cercano
     eig_val  = eig_val[idx]
     eig_vect = np.transpose(np.transpose(eig_vect)[idx])
     pts_frame_PCA = np.transpose(np.dot(eig_vect, np.transpose(xyz_points)))
-    pt_frame_PCA = np.transpose(np.dot(eig_vect, np.transpose(centrid)))
+    #pt_frame_PCA = np.transpose(np.dot(eig_vect, np.transpose(centrid)))
     
+    print("EigVal...........", eig_val)
     H = np.max(pts_frame_PCA[:, 2]) - np.min(pts_frame_PCA[:, 2])
     L = np.max(pts_frame_PCA[:, 1]) - np.min(pts_frame_PCA[:, 1])
     W = np.max(pts_frame_PCA[:, 0]) - np.min(pts_frame_PCA[:, 0])
-    size_obj = Vector3()
-    size_obj.x, size_obj.z , size_obj.y = H,L,W#H, L, W
+    
+    size_obj = np.asarray([H, L,W])
+    idx = size_obj.argsort()
+    size_obj = size_obj[idx]
+    print("size obj", size_obj)
     # Los vectores de salida estan en el frame base_link
-    return [eig_vect[:,2], eig_vect[:,1] , eig_vect[:,0]], [eig_val[2], eig_val[1], eig_val[0]], size_obj
+    size_object = Vector3(x = size_obj[2] , z = size_obj[1], y = size_obj[0])
+    return [eig_vect[:,2], eig_vect[:,1] , eig_vect[:,0]], [eig_val[2], eig_val[1], eig_val[0]], size_object
 
 
 
