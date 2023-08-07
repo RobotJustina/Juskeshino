@@ -24,7 +24,7 @@
     <child link="shoulders_right_link"/>
   </joint>
   <joint name="spine_head_connect" type="fixed">
-    <origin xyz="0 0 0.2" rpy="0 0 0"/>
+    <origin xyz="0 0 0.13" rpy="0 0 0"/>
     <parent link="spine_link"/>
     <child link="head_link1"/>
   </joint>

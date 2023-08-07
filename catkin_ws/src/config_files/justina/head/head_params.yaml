@@ -2,10 +2,10 @@ port: /dev/justinaHead
 baudrate: 1000000
 servo_ids:
   - 0
-  - 1
+  - 2
 servo_zeros:
   - 2000
-  - 2580
+  - 2082
 servo_directions:
   - 1
   - 1
