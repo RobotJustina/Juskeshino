@@ -11,6 +11,8 @@ from visualization_msgs.msg import Marker
 from vision_msgs.srv import *
 import geometry_msgs.msg
 
+MAXIMUM_GRIP_LENGTH = 0.14
+
 def get_cv_mats_from_cloud_message(cloud_msg):
     img_xyz = ros_numpy.point_cloud2.pointcloud2_to_array(cloud_msg)  # dim 480 x 640, 
     rgb_array = img_xyz['rgb'].copy()     # Pass a copy of rgb float32, 480 x 640
@@ -75,7 +77,7 @@ def segment_by_contour(img_bgr, pointCloud_array, original_cloud):
 
     for j, contour in enumerate(contours):
         area = cv2.contourArea(contour)
-        if area < 1000 or area > 22000: continue # discarding contours by area
+        if area < 1000 or area > 25000: continue # discarding contours by area
         
         print("no descartado")
         mask = np.zeros((img_bgr.shape[0], img_bgr.shape[1]),np.uint8)
@@ -83,8 +85,8 @@ def segment_by_contour(img_bgr, pointCloud_array, original_cloud):
         # the mask is eroded to ensure that we only get the point cloud of the object
         mask =cv2.erode(mask , kernel,iterations=3)
         obj_bgr, obj_xyz = get_object_bgr_and_xyz(img_bgr, pointCloud_array, mask)
-        #cv2.imshow("obj", obj_bgr) #*****************
-        #cv2.waitKey(0)
+        cv2.imshow("obj", obj_bgr) #*****************
+        cv2.waitKey(0)
         obj_centroid = np.mean(obj_xyz, axis=0)
         print("centroide " , obj_centroid)
         distance = math.sqrt(obj_centroid[0]**2 + obj_centroid[1]**2)
@@ -240,7 +242,7 @@ def publish_arow_marker(centroide_cam, p1,frame_id, ns, id):
 
 
 
-def object_category(fpc, spc, thpc):  # estima la forma geometrica del objeto.
+def object_category(fpc, spc, thpc):  # estima la forma geometrica del objeto. (x,z,y)
     print("1pca, 2pca, 3pca", fpc,spc,thpc)
     # coeficiente de similitud entre aristas de bounding box del objeto
     c21, c31, c32 =  spc * ( 100 / fpc),   thpc * ( 100 / fpc),    thpc * ( 100 / spc)  
@@ -250,16 +252,17 @@ def object_category(fpc, spc, thpc):  # estima la forma geometrica del objeto.
             print("cubic bounding box") # debe verificarse grapabilidad
             return "cube"
         if c31 <= 70 or c32 <= 70:
-            print("box")
+            print("box")  #se puede confundir con prism
             return "box"
     
-    elif c21 < 60:    # Means 1PC is much bigger than 2PC
-        if c32 > 70:    # Means 2PC and 3PC are similar
-            print("prismatic bounding box") # debe verificarse grapabilidad
-            return "prism"
+    elif c21 < 60:    # Means 1PC is much bigger than 2PC        
         if c31 <= 70 or c32 <= 70:
             print("box")
             return "box"
+        if c32 > 70 and spc < MAXIMUM_GRIP_LENGTH:    # Means 2PC and 3PC are similar
+            print("prismatic bounding box") # debe verificarse grapabilidad
+            return "prism"
+        else: return 'box'
     else:
         print("Could not determine the shape of the object...")
         return "0"

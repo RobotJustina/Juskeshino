@@ -9,13 +9,13 @@
       <param name="serial_port" type="string" value="/dev/justinaHokuyo_H1009463" />
       <param name="frame_id" type="string" value="laser_link" />
     </node>
-    <node name="urg_rear_node" pkg="urg_node" type="urg_node" output="screen">
-      <param name="serial_port" type="string" value="/dev/justinaHokuyo_H1303051" />
-      <param name="frame_id" type="string" value="laser_link_rear" />
-      <remap from="scan" to="scan_rear"/>
-      <param name="angle_min" value="-1.5708"/>
-      <param name="angle_max" value="1.5708"/>
-    </node>
+    <!-- <node name="urg_rear_node" pkg="urg_node" type="urg_node" output="screen"> -->
+    <!--   <param name="serial_port" type="string" value="/dev/justinaHokuyo_H1303051" /> -->
+    <!--   <param name="frame_id" type="string" value="laser_link_rear" /> -->
+    <!--   <remap from="scan" to="scan_rear"/> -->
+    <!--   <param name="angle_min" value="-1.5708"/> -->
+    <!--   <param name="angle_max" value="1.5708"/> -->
+    <!-- </node> -->
     <node name="joy" pkg="joy" type="joy_node" output="screen"/>
     <node name="joystick_teleop" pkg="joystick_teleop" type="joystick_teleop_node.py" output="screen" />
   </group>

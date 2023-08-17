@@ -120,8 +120,8 @@ def move_left_gripper(q, pubLaGoalGrip):
 def get_obj_pose(clt_recog_obj):
     recognize_object_req = RecognizeObjectRequest()
     try:
-        recognize_object_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
-        #recognize_object_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
+        #recognize_object_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+        recognize_object_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
     except:
         return None
     return clt_recog_obj(recognize_object_req)
@@ -221,12 +221,12 @@ def main():
             if goal_reached:
                 x_p, y_p, a = get_robot_pose(listener)
                 print("Se llego al lugar solicitado con Pose: ", x_p,y_p,a )
-                rospy.sleep(1.0)
+                #rospy.sleep(1.0)
                 state = SM_MOVE_HEAD
 
         elif state == SM_MOVE_HEAD:
-            move_head(pub_hd_goal_pose ,0, -0.9)
-            move_head(pub_hd_goal_pose ,0, -0.9)
+            move_head(pub_hd_goal_pose ,0, -1.0)
+            move_head(pub_hd_goal_pose ,0, -1.0)
             print("state == SM_MOVE_HEAD")
             rospy.sleep(1.0)
             state = SM_WAIT_FOR_HEAD
@@ -287,14 +287,15 @@ def main():
             print("state == SM_MOVE_ARM")
             move_left_gripper(0.9, pub_la_goal_grip)
             if resp_best_grip.graspable:
-                #pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
+                pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
                 print("moviendo brazo izquierdo...................")
                 rospy.sleep(7.0)
             else:
                 print("No se encontraron poses posibles...................")
-            """
-            move_left_gripper(0.7, pub_la_goal_grip)
+            
+            move_left_gripper(0.1, pub_la_goal_grip)
             rospy.sleep(1.0)
+            """
             move_left_gripper(0.5, pub_la_goal_grip)
             rospy.sleep(1.0)
             move_left_gripper(0.1, pub_la_goal_grip)
@@ -320,5 +321,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-
 

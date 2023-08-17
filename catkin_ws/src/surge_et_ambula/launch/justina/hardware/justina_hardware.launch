@@ -1,7 +1,7 @@
 <launch>
   <include file="$(find surge_et_ambula)/launch/justina/hardware/justina_base.launch"/>
   <include file="$(find surge_et_ambula)/launch/justina/hardware/justina_upper_actuators.launch"/>
-  <include file="$(find freenect_launch)/launch/freenect.launch">
+  <include file="$(find freenect_launch)/launch/examples/freenect-registered-xyzrgb.launch">
 
   </include>
   

@@ -1,35 +1,46 @@
 port: /dev/justinaRightArm
 baudrate: 1000000
+servo_arm_bits_per_radian:
+  - 1966.51847684
+  - 651.739491961
+  - 651.739491961
+  - 651.739491961
+  - 651.739491961
+  - 651.739491961
+  - 651.739491961
 servo_arm_ids:
   - 0
   - 1
-  - 4
-  - 3
-  - 5
   - 2
+  - 3
+  - 4
+  - 5
   - 6
 servo_arm_zeros:
-  - 1402
-  - 1546
-  - 2024
-  - 2210
-  - 2295
-  - 1904
-  - 1922
+  - 3789
+  - 1529
+  - 0
+  - 3513
+  - 1843
+  - 1843
+  - 1921
 servo_arm_directions:
   - -1
-  - -1
+  - 1
   - -1
   - -1
   - -1
   - 1
   - -1
+servo_gripper_bits_per_radian:
+  - 651.739491961
+  - 651.739491961
 servo_gripper_ids:
   - 8
   - 7
 servo_gripper_zeros:
-  - 500
-  - 1506
+  - 502
+  - 1527
 servo_gripper_directions:
   - 1
   - -1

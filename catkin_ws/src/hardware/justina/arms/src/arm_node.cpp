@@ -12,7 +12,7 @@
 #define MX_GOAL_POSITION 30
 #define MX_MOVING_SPEED 32
 #define MX_TORQUE_ENABLE 24
-#define MX_BITS_PER_RADIAN 651.739491961 //=4095/360*180/PI
+//#define MX_BITS_PER_RADIAN 651.739491961 //=4095/360*180/PI
 #define MX_CURRENT_VOLTAGE 42
 
 #define SM_INIT                      10
@@ -25,15 +25,18 @@
 #define SM_FINISH_TASK               60
 
 std::string prompt;
-std::vector<int> servo_arm_ids;            //Servo IDs for each joint of the arm
-std::vector<int> servo_arm_zeros;          //Bits corresponding to the 0 rad value
-std::vector<int> servo_arm_directions;     //1 for clockwise, -1 for counter clockwise
-std::vector<int> servo_gripper_ids;        //Servo IDs for each joint of the gripper
-std::vector<int> servo_gripper_zeros;      //Bits corresponding to the 0 rad value
-std::vector<int> servo_gripper_directions; //1 for clockwise, -1 for counter clockwise
-std::vector<int> servo_ids;                // = arm_ids + gripper_ids
-std::vector<int> servo_zeros;              // = arm zeros  + gripper zeros
-std::vector<int> servo_directions;         // = arm directions +  gripper directions
+std::vector<int> servo_arm_ids;                     //Servo IDs for each joint of the arm
+std::vector<double> servo_arm_bits_per_radian;      //Constant servo bit for each id arm(4095/360)(180/Pi)         
+std::vector<int> servo_arm_zeros;                   //Bits corresponding to the 0 rad value
+std::vector<int> servo_arm_directions;              //1 for clockwise, -1 for counter clockwise
+std::vector<int> servo_gripper_ids;                 //Servo IDs for each joint of the gripper
+std::vector<int> servo_gripper_zeros;               //Bits corresponding to the 0 rad value
+std::vector<int> servo_gripper_directions;          //1 for clockwise, -1 for counter clockwise
+std::vector<double> servo_gripper_bits_per_radian;  //Constant servo bit for each id gripper (4095/360)(180/Pi)
+std::vector<int> servo_ids;                         // = arm_ids + gripper_ids
+std::vector<double> servo_bits_per_radian;          // = servo_arm_bits_per_radian + servo_gripper_bits_per_radian
+std::vector<int> servo_zeros;                       // = arm zeros  + gripper zeros
+std::vector<int> servo_directions;                  // = arm directions +  gripper directions
 std::vector<int> goal_pose_arm_bits;
 std::vector<int> goal_pose_gripper_bits;
 std::vector<std::vector<int> >   goal_trajectory_bits;
@@ -43,35 +46,37 @@ bool new_trajectory     = false;
 bool new_gripper_pose   = false;
 bool new_gripper_torque = false;
 
-std::vector<double> positions_bits_to_radians(std::vector<int>& positions_bits, std::vector<int>& centers, std::vector<int>& directions)
+std::vector<double> positions_bits_to_radians(std::vector<int>& positions_bits,  std::vector<int>& centers, std::vector<int>& directions,std::vector<double>& bits_per_radian)
 {
     std::vector<double> positions_radians;
     positions_radians.resize(positions_bits.size());
     for(int i=0; i<positions_bits.size(); i++)
-        positions_radians[i] = directions[i]*(positions_bits[i] - centers[i])/MX_BITS_PER_RADIAN;
+        positions_radians[i] = directions[i]*(positions_bits[i] - centers[i])/bits_per_radian[i];
     return positions_radians;
 }
 
-std::vector<int> positions_radians_to_bits(const std::vector<double>& positions_rads, std::vector<int>& centers, std::vector<int>& directions)
+std::vector<int> positions_radians_to_bits(const std::vector<double>& positions_rads, std::vector<int>& centers, std::vector<int>& directions, std::vector<double>& bits_per_radian)
 {
     std::vector<int> positions_bits;
     positions_bits.resize(positions_rads.size());
-    for(int i=0; i<positions_rads.size(); i++)
-        positions_bits[i] = directions[i]*positions_rads[i]*MX_BITS_PER_RADIAN + centers[i];
+    for(int i=0; i<positions_rads.size(); i++){
+        positions_bits[i] = directions[i]*positions_rads[i]*bits_per_radian[i] + centers[i];
+        std:: cout<<"I get here"<<i<<std::endl;
+    }
     return positions_bits;
 }
 
 void callback_goal_pose(const std_msgs::Float64MultiArray::ConstPtr& msg)
 {
-    goal_pose_arm_bits = positions_radians_to_bits(msg->data, servo_arm_zeros, servo_arm_directions);
+    goal_pose_arm_bits = positions_radians_to_bits(msg->data, servo_arm_zeros, servo_arm_directions, servo_bits_per_radian);
     new_arm_pose = true;
 }
 
 void callback_goal_gripper(const std_msgs::Float64::ConstPtr& msg)
 {
-    goal_pose_gripper_bits[0] =  servo_gripper_directions[0]*msg->data*MX_BITS_PER_RADIAN + servo_gripper_zeros[0];
-    goal_pose_gripper_bits[1] =  servo_gripper_directions[1]*msg->data*MX_BITS_PER_RADIAN + servo_gripper_zeros[1];
-    new_gripper_pose = true;
+        goal_pose_gripper_bits[0] =  servo_gripper_directions[0]*msg->data*servo_gripper_bits_per_radian[0] + servo_gripper_zeros[0];
+        goal_pose_gripper_bits[1] =  servo_gripper_directions[1]*msg->data*servo_gripper_bits_per_radian[1] + servo_gripper_zeros[1];
+        new_gripper_pose = true;
 }
 
 void callback_torque_gripper(const std_msgs::Float64::ConstPtr& msg)
@@ -85,7 +90,7 @@ void callback_q_trajectory(const trajectory_msgs::JointTrajectory::ConstPtr& msg
     goal_trajectory = *msg;
     goal_trajectory_bits.resize(msg->points.size());
     for(int i=0; i< msg->points.size(); i++)
-        goal_trajectory_bits[i] = positions_radians_to_bits(msg->points[i].positions, servo_arm_zeros, servo_arm_directions);
+        goal_trajectory_bits[i] = positions_radians_to_bits(msg->points[i].positions, servo_arm_zeros, servo_arm_directions, servo_arm_bits_per_radian);
     new_trajectory = true;
 }
 
@@ -167,6 +172,11 @@ int main(int argc, char **argv)
         std::cout<<prompt<<"Missing servo IDs. Specifying servo IDs with param 'servo_arm_ids' is mandatory."<<std::endl;
         correct_params = false;
     }
+    if(!n.getParam("servo_arm_bits_per_radian",servo_arm_bits_per_radian))
+    {
+        std::cout<<prompt<<"Missing servo arm bits per radian. Specifying servo bits per radian with param 'servo_arm_bits_per_radian' is mandatory."<<std::endl;
+        correct_params = false;
+    }
     if(!n.getParam("servo_arm_zeros",servo_arm_zeros))
     {
         std::cout<<prompt<<"Missing servo zeros. Specifying servo centers with param 'servo_arm_zeros' is mandatory."<<std::endl;
@@ -180,6 +190,11 @@ int main(int argc, char **argv)
     if(!n.getParam("servo_gripper_ids",servo_gripper_ids))
     {
         std::cout<<prompt<<"Missing gripper IDs. Specifying gripper IDs with param 'servo_gripper_ids' is mandatory."<<std::endl;
+        correct_params = false;
+    }    
+    if(!n.getParam("servo_gripper_bits_per_radian",servo_gripper_bits_per_radian))
+    {
+        std::cout<<prompt<<"Missing servo gripper bits per radian. Specifying servo gripper bits per radian with param 'servo_gripper_bits_per_radian' is mandatory."<<std::endl;
         correct_params = false;
     }
     if(!n.getParam("servo_gripper_zeros",servo_gripper_zeros))
@@ -208,6 +223,9 @@ int main(int argc, char **argv)
     std::cout<<prompt << "Servo arm zeros: ";
     for(size_t i=0; i<servo_arm_zeros.size(); i++) std::cout << servo_arm_zeros[i] << "   ";
     std::cout << std::endl;
+    std::cout <<prompt << "Servo arm bits per radian:";
+    for(size_t i=0; i<servo_arm_bits_per_radian.size(); i++) std::cout << servo_arm_bits_per_radian[i] << "   ";
+    std::cout << std::endl;
     std::cout<<prompt << "Servo arm directions: ";
     for(size_t i=0; i<servo_arm_directions.size(); i++) std::cout << servo_arm_directions[i] << "   ";
     std::cout << std::endl;
@@ -216,6 +234,9 @@ int main(int argc, char **argv)
     std::cout << std::endl;
     std::cout<<prompt << "Servo gripper zeros: ";
     for(size_t i=0; i<servo_gripper_zeros.size(); i++) std::cout << servo_gripper_zeros[i] << "   ";
+    std::cout << std::endl;
+    std::cout <<prompt << "Servo gripper bits per radian:";
+    for(size_t i=0; i<servo_gripper_bits_per_radian.size(); i++) std::cout << servo_gripper_bits_per_radian[i] << "   ";
     std::cout << std::endl;
     std::cout<<prompt << "Servo gripper directions: ";
     for(size_t i=0; i<servo_gripper_directions.size(); i++) std::cout << servo_gripper_directions[i] << "   ";
@@ -237,9 +258,11 @@ int main(int argc, char **argv)
     servo_ids        = servo_arm_ids;
     servo_zeros      = servo_arm_zeros;
     servo_directions = servo_arm_directions;
+    servo_bits_per_radian = servo_arm_bits_per_radian;
     servo_ids.insert(servo_ids.end(), servo_gripper_ids.begin(), servo_gripper_ids.end());
     servo_zeros.insert(servo_zeros.end(), servo_gripper_zeros.begin(), servo_gripper_zeros.end());
     servo_directions.insert(servo_directions.end(), servo_gripper_directions.begin(), servo_gripper_directions.end());
+    servo_bits_per_radian.insert(servo_bits_per_radian.end(), servo_gripper_bits_per_radian.begin(), servo_gripper_bits_per_radian.end());
     //Setting parameters for bulk reading current arm position. 
     for(int i=0; i<servo_ids.size(); i++)
         if(!groupBulkReadPosition.addParam(servo_ids[i], MX_CURRENT_POSITION, 2))
@@ -312,7 +335,7 @@ int main(int argc, char **argv)
     std_msgs::Float64 msg_current_gripper;
     std_msgs::Float64 msg_voltage;
     joint_states.name.insert(joint_states.name.end(), joint_names.begin(), joint_names.end());
-    joint_states.position = positions_bits_to_radians(current_position_bits, servo_zeros, servo_directions);
+    joint_states.position = positions_bits_to_radians(current_position_bits, servo_zeros, servo_directions,servo_bits_per_radian);
     msg_current_pose.data.resize(servo_arm_ids.size());
 
     int state = SM_INIT;
@@ -382,7 +405,7 @@ int main(int argc, char **argv)
 
         //Get current servo position and publish the corresponding topics 
         if(get_current_position_bits(groupBulkReadPosition, servo_ids, current_position_bits))
-            joint_states.position = positions_bits_to_radians(current_position_bits, servo_zeros, servo_directions);
+            joint_states.position = positions_bits_to_radians(current_position_bits, servo_zeros, servo_directions, servo_bits_per_radian);
         else
             std::cout<<prompt << "Cannot get arm current position..." << std::endl;
         if(!get_current_voltage_bits(groupBulkReadVoltages, servo_ids, msg_voltage.data))
@@ -401,3 +424,4 @@ int main(int argc, char **argv)
     }
     on_shutting_down(portHandler, packetHandler, servo_ids, servo_zeros);
 }
+//   for(int i=0;i<=6;i++){

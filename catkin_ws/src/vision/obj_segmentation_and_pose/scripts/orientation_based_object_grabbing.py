@@ -74,7 +74,7 @@ def obj_grip(grip_point , obj_pose, rotacion, obj_state , object_frame):
 
     if obj_state == "horizontal": 
         num_candidates = 5
-        grip_point[2] = grip_point[2] + 0.12   # 12 cm por encima del objeto (z_base_link)
+        grip_point[2] = grip_point[2] + 0.05  # 12 cm por encima del objeto (z_base_link)
 
     
 
@@ -353,11 +353,11 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
     for pose1 in pose_rpy:  
         ik_msg.x = pose1[0] 
         ik_msg.y = pose1[1]
-        ik_msg.z = pose1[2] - 0.05
+        ik_msg.z = pose1[2] + 0.04
         ik_msg.roll = pose1[3]
         ik_msg.pitch = pose1[4]
         ik_msg.yaw = pose1[5]
-        ik_msg.duration = 10
+        ik_msg.duration = 5
         ik_msg.time_step = 0.02
         
         try: 
@@ -376,11 +376,11 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
                 
                 ik_msg.x = pose1[0] 
                 ik_msg.y = pose1[1]
-                ik_msg.z = pose1[2] - 0.12
+                ik_msg.z = pose1[2] - 0.05
                 ik_msg.roll = pose1[3]
                 ik_msg.pitch = pose1[4]
                 ik_msg.yaw = pose1[5]
-                ik_msg.duration = 10
+                ik_msg.duration = 3
                 ik_msg.time_step = 0.02
                 ik_msg.initial_guess = guess
 
