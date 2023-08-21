@@ -19,6 +19,7 @@ SM_INIT = 0
 SM_WAIT_FOR_NAVIGATE = 1
 SM_NAVIGATE = 5
 SM_WAITING_NEW_COMMAND = 10
+SM_RECO_OBJ = 12
 SM_GET_OBJ_POSE = 50
 SM_MOVE_HEAD = 60
 SM_WAIT_FOR_HEAD = 70
@@ -117,14 +118,16 @@ def move_left_gripper(q, pubLaGoalGrip):
 
 
 
-def get_obj_pose(clt_recog_obj):
+def get_obj_pose(clt_pose_obj):
     recognize_object_req = RecognizeObjectRequest()
     try:
         #recognize_object_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
         recognize_object_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
     except:
         return None
-    return clt_recog_obj(recognize_object_req)
+    return clt_pose_obj(recognize_object_req)
+
+
 
 
 
@@ -171,6 +174,10 @@ def main():
 
     rospy.wait_for_service("/vision/obj_segmentation/get_obj_pose")
     clt_pose_obj = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose", RecognizeObject)
+
+    rospy.wait_for_service("/vision/obj_reco/recognize_object")
+    clt_recognize_object = rospy.ServiceProxy("/vision/obj_reco/recognize_object", RecognizeObjects)
+
     rospy.wait_for_service("/vision/get_best_grasp_traj")
     clt_best_grip = rospy.ServiceProxy("/vision/get_best_grasp_traj", BestGraspTraj )
     rospy.wait_for_service( '/manipulation/la_ik_trajectory' )
@@ -260,8 +267,22 @@ def main():
                 i = i + 1
                 if i > 15:
                     break
-            print("position object ", x,y,z)
-            
+            print("position object ", x,y,z)    
+            state = SM_RECO_OBJ
+
+        
+
+        elif state == SM_RECO_OBJ:
+            print("state == SM_RECO_OBJ")
+            reco_obj_req = RecognizeObjectsRequest()
+            # LLenar msg
+            #reco_obj_req.point_cloud = 
+            reco_obj_req.image = 
+
+            reco_obj_resp = clt_recognize_object(reco_obj_req)
+
+            #reco_obj_resp.recog_objects     #array
+            #reco_obj_resp.image
             state = SM_PREPARE_ARM
 
 
@@ -277,7 +298,6 @@ def main():
                 state = SM_GET_OBJ_POSE
             """
             state = SM_MOVE_LEFT_ARM
-            rospy.sleep(2.0)
             
 
         elif state == SM_MOVE_LEFT_ARM:
