@@ -72,7 +72,7 @@ bool callback_find_planes(vision_msgs::FindPlanes::Request& req, vision_msgs::Fi
     return plane.size() > 0;
 }
 
-bool callback_recog_objs(vision_msgs::RecognizeObjects::Request& req, vision_msgs::RecognizeObjects::Response& resp)
+bool callback_detect_and_recog_objs(vision_msgs::RecognizeObjects::Request& req, vision_msgs::RecognizeObjects::Response& resp)
 {
     std::cout << "ObjReco.->Recognizing objects by Jebug's method (corrected and improved by Marcosoft)." << std::endl;
     cv::Mat img, cloud, output_mask;
@@ -101,7 +101,7 @@ bool callback_recog_objs(vision_msgs::RecognizeObjects::Request& req, vision_msg
     return resp.recog_objects.size() > 0;
 }
 
-bool callback_recog_obj(vision_msgs::RecognizeObject::Request& req, vision_msgs::RecognizeObject::Response& resp)
+bool callback_detect_and_recog_obj(vision_msgs::RecognizeObject::Request& req, vision_msgs::RecognizeObject::Response& resp)
 {
     std::cout << "ObjReco.->Trying to recognize " << req.name << " by Jebug's method." << std::endl;
     cv::Mat img, cloud, output_mask;
@@ -135,7 +135,29 @@ bool callback_recog_obj(vision_msgs::RecognizeObject::Request& req, vision_msgs:
     return recog_obj_idx >= 0;
 }
 
-bool callback_train_object(vision_msgs::TrainObject::Request& req, vision_msgs::TrainObject::Response& resp)
+bool callback_recog_obj(vision_msgs::RecognizeObjects::Request& req, vision_msgs::RecognizeObjects::Response& resp)
+{
+    std::cout << "ObjReco.->Recognizing objects by Jebug's method (modified by Itzel (✿◠‿◠)." << std::endl;
+    cv::Mat img, cloud, output_mask;
+    if(debug) cv::destroyAllWindows();
+
+    std::vector<cv::Mat> objects_bgr, objects_xyz, objects_masks;
+
+    img = cv::Mat::zeros(img.rows, img.cols, CV_8UC3);
+    std::vector<std::string> labels(objects_bgr.size(), "");
+    std::vector<double> confidences(objects_bgr.size(), -1);
+
+    ObjectRecognizer::recognize(objects_bgr[0], objects_masks[0], histogram_size, labels[0], confidences[0], debug);
+    cv::bitwise_or(img, objects_bgr[0], img);
+    std::cout << "ObjReco.->Recognized object: " << labels[0] << " with confidence " << confidences[0] << std::endl;
+    //cv::imshow("Points above plane", img);
+    resp = Utils::get_recog_objects_response(objects_bgr, objects_xyz, objects_masks, labels, confidences, img, req.point_cloud.header.frame_id);
+    pubMarkerArray.publish(Utils::get_objects_markers(resp.recog_objects));
+    return resp.recog_objects.size() > 0;
+}
+
+
+bool callback_detect_and_train_object(vision_msgs::TrainObject::Request& req, vision_msgs::TrainObject::Response& resp)
 {
     std::cout << "ObjReco.->Training object " << req.name << " Jebusly..." << std::endl;
     if(debug) cv::destroyAllWindows();
@@ -192,12 +214,13 @@ int main(int argc, char** argv)
     std::cout << "INITIALIZING OBJECT RECOGNIZER BY MR. YISUS (CORRECTED AND IMPROVED BY MARCOSOFT)" << std::endl;
     ros::init(argc, argv, "obj_reco_node");
     ros::NodeHandle n;
-    ros::ServiceServer srvFindLines    = n.advertiseService("/vision/line_finder/find_table_edge", callback_find_table_edge);
-    ros::ServiceServer srvFindPlanes   = n.advertiseService("/vision/line_finder/find_horizontal_plane_ransac", callback_find_planes);
-    ros::ServiceServer srvRecogObjs    = n.advertiseService("/vision/obj_reco/recognize_objects", callback_recog_objs);
-    ros::ServiceServer srvRecogObj     = n.advertiseService("/vision/obj_reco/recognize_object" , callback_recog_obj );
-    ros::ServiceServer srvTrainObj     = n.advertiseService("/vision/obj_reco/train_object", callback_train_object);
-    ros::ServiceServer srvProcessCloud = n.advertiseService("/vision/get_points_above_plane", callback_get_points_above_plane);
+    ros::ServiceServer srvFindLines       = n.advertiseService("/vision/line_finder/find_table_edge", callback_find_table_edge);
+    ros::ServiceServer srvFindPlanes      = n.advertiseService("/vision/line_finder/find_horizontal_plane_ransac", callback_find_planes);
+    ros::ServiceServer srvDetectRecogObjs = n.advertiseService("/vision/obj_reco/detect_and_recognize_objects", callback_detect_and_recog_objs);
+    ros::ServiceServer srvDetectRecogObj  = n.advertiseService("/vision/obj_reco/detect_and_recognize_object" , callback_detect_and_recog_obj );
+    ros::ServiceServer srvRecogObj        = n.advertiseService("/vision/obj_reco/recognize_object" , callback_recog_obj );
+    ros::ServiceServer srvDetectTrainObj  = n.advertiseService("/vision/obj_reco/detect_and_train_object", callback_detect_and_train_object);
+    ros::ServiceServer srvProcessCloud    = n.advertiseService("/vision/get_points_above_plane", callback_get_points_above_plane);
     pubMarkers     = n.advertise<visualization_msgs::Marker>("/vision/obj_reco/markers", 1);
     pubMarkerArray = n.advertise<visualization_msgs::MarkerArray>("/vision/obj_reco/marker_array", 1);
     pubResultCloud = n.advertise<sensor_msgs::PointCloud2>("/vision/obj_reco/resulting_cloud", 1);

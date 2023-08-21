@@ -286,12 +286,20 @@ std::vector<cv::Vec3f> GeometricFeatures::find_table_edge(cv::Mat& cloud, float 
                                                           float hough_min_theta, float hough_max_theta, float hough_step_theta, float hough_threshold,
                                                           cv::Mat& output_bgr, bool debug)
 {
-    cv::Mat grayscale_normals, borders;
-
+    cv::Mat grayscale_normals, borders, output_img_mask;
     cv::Mat normals = GeometricFeatures::get_horizontal_normals(cloud, normal_min_z, debug);
-    cv::cvtColor(normals, grayscale_normals, cv::COLOR_BGR2GRAY);
-    grayscale_normals.convertTo(grayscale_normals, CV_8UC1, 255);
-    cv::Canny(grayscale_normals, borders, canny_threshold1, canny_threshold2, canny_window_size);    
+    cv::cvtColor(normals, output_img_mask, cv::COLOR_BGR2GRAY);
+    output_img_mask.convertTo(output_img_mask, CV_8UC1, 255);
+    cv::threshold(output_img_mask, output_img_mask, 10, 255, cv::THRESH_BINARY);
+    if(debug) cv::imshow("Binary image with normals", output_img_mask);
+    std::vector<cv::Vec3f> inliers, outliers;
+    std::vector<cv::Vec3f> plane = GeometricFeatures::plane_by_ransac(cloud, output_img_mask, normal_min_z, 0.04, 0.4, inliers,
+                                                                      outliers, debug);
+    
+    //cv::cvtColor(normals, grayscale_normals, cv::COLOR_BGR2GRAY);
+    //grayscale_normals.convertTo(grayscale_normals, CV_8UC1, 255);
+    //cv::Canny(grayscale_normals, borders, canny_threshold1, canny_threshold2, canny_window_size);
+    cv::Canny(output_img_mask, borders, canny_threshold1, canny_threshold2, canny_window_size);    
     std::vector<cv::Vec3f> lines = GeometricFeatures::hough_lines(borders, cloud,  hough_min_rho, hough_max_rho, hough_step_rho, hough_min_theta,
                                                                   hough_max_theta, hough_step_theta, hough_threshold, output_bgr, debug);
     float min_dist = 1000;

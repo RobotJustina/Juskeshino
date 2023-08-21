@@ -44,83 +44,83 @@
   <arg name="diagonal_paths" default="False"/>
   
 
-  <!-- <node name="path_planner" pkg="path_planner" type="path_planner_node" output="screen"> -->
-  <!--   <param name="diagonal_paths" value="$(arg diagonal_paths)"/> -->
-  <!--   <param name="smooth_alpha" value="$(arg smooth_alpha)"/> -->
-  <!--   <param name="smooth_beta" value="$(arg smooth_beta)"/> -->
+  <node name="path_planner" pkg="path_planner" type="path_planner_node" output="screen">
+    <param name="diagonal_paths" value="$(arg diagonal_paths)"/>
+    <param name="smooth_alpha" value="$(arg smooth_alpha)"/>
+    <param name="smooth_beta" value="$(arg smooth_beta)"/>
 
-  <!-- </node> -->
+  </node>
   
-  <!-- <node name="simple_move"  pkg="simple_move"  type="simple_move_node"  output="screen"> -->
-  <!--   <param name="max_linear_speed" value="$(arg max_linear_speed)"/> -->
-  <!--   <param name="max_angular_speed" value="$(arg max_angular_speed)"/> -->
-  <!--   <param name="min_linear_speed" value="$(arg min_linear_speed)"/> -->
-  <!--   <param name="control_alpha" value="$(arg control_alpha)"/> -->
-  <!--   <param name="control_beta" value="$(arg control_beta)"/> -->
-  <!--   <param name="linear_acceleration" value="$(arg linear_acceleration)"/> -->
-  <!--   <param name="fine_dist_tolerance" value="$(arg fine_dist_tolerance)"/> -->
-  <!--   <param name="coarse_dist_tolerance" value="$(arg coarse_dist_tolerance)"/> -->
-  <!--   <param name="angle_tolerance" value="$(arg angle_tolerance)"/> -->
-  <!--   <param name="move_head" value="$(arg move_head)"/> -->
-  <!--   <param name="use_pot_fields" value="$(arg use_pot_fields)"/> -->
-  <!--   <param name="/base_link_name" value="$(arg /base_link_name)"/> -->
+  <node name="simple_move"  pkg="simple_move"  type="simple_move_node"  output="screen">
+    <param name="max_linear_speed" value="$(arg max_linear_speed)"/>
+    <param name="max_angular_speed" value="$(arg max_angular_speed)"/>
+    <param name="min_linear_speed" value="$(arg min_linear_speed)"/>
+    <param name="control_alpha" value="$(arg control_alpha)"/>
+    <param name="control_beta" value="$(arg control_beta)"/>
+    <param name="linear_acceleration" value="$(arg linear_acceleration)"/>
+    <param name="fine_dist_tolerance" value="$(arg fine_dist_tolerance)"/>
+    <param name="coarse_dist_tolerance" value="$(arg coarse_dist_tolerance)"/>
+    <param name="angle_tolerance" value="$(arg angle_tolerance)"/>
+    <param name="move_head" value="$(arg move_head)"/>
+    <param name="use_pot_fields" value="$(arg use_pot_fields)"/>
+    <param name="/base_link_name" value="$(arg /base_link_name)"/>
     
-  <!-- </node> -->
+  </node>
 
-  <!-- <node name="obs_detector"  pkg="obstacle_detector"  type="obs_detect_node"  output="screen"> -->
-  <!--   <param name="laser_scan_topic" value="$(arg laser_scan_topic)"/> -->
-  <!--   <param name="use_lidar" value="$(arg use_lidar)"/> -->
-  <!--   <param name="use_point_cloud" value="$(arg use_point_cloud)"/> -->
-  <!--   <param name="use_pot_fields" value="$(arg use_pot_fields)"/> -->
-  <!--   <param name="pot_fields_k_rej" value="$(arg pot_fields_k_rej)"/> -->
-  <!--   <param name="pot_fields_d0" value="$(arg pot_fields_d0)"/> -->
-  <!--   <param name="point_cloud_topic" value="$(arg point_cloud_topic)"/> -->
-  <!--   <param name="laser_scan_topic" value="$(arg laser_scan_topic)"/> -->
-  <!--   <param name="cloud_downsampling" value="$(arg cloud_downsampling)"/> -->
-  <!--   <param name="lidar_points_threshold" value="$(arg lidar_points_threshold)"/> -->
-  <!--   <param name="cloud_points_threshold" value="$(arg cloud_points_threshold)"/> -->
-  <!--   <param name="max_x" value="$(arg max_x)"/> -->
-  <!--   <param name="min_x" value="$(arg min_x)"/> -->
-  <!--   <param name="max_y" value="$(arg max_y)"/> -->
-  <!--   <param name="min_y" value="$(arg min_y)"/> -->
-  <!--   <param name="max_z" value="$(arg max_z)"/> -->
-  <!--   <param name="min_z" value="$(arg min_z)"/> -->
-  <!--   <param name="debug" value="$(arg obs_detector_debug)"/> -->
-  <!--   <param name="no_sensor_data_timeout" value="$(arg no_sensor_data_timeout)"/> -->
+  <node name="obs_detector"  pkg="obstacle_detector"  type="obs_detect_node"  output="screen">
+    <param name="laser_scan_topic" value="$(arg laser_scan_topic)"/>
+    <param name="use_lidar" value="$(arg use_lidar)"/>
+    <param name="use_point_cloud" value="$(arg use_point_cloud)"/>
+    <param name="use_pot_fields" value="$(arg use_pot_fields)"/>
+    <param name="pot_fields_k_rej" value="$(arg pot_fields_k_rej)"/>
+    <param name="pot_fields_d0" value="$(arg pot_fields_d0)"/>
+    <param name="point_cloud_topic" value="$(arg point_cloud_topic)"/>
+    <param name="laser_scan_topic" value="$(arg laser_scan_topic)"/>
+    <param name="cloud_downsampling" value="$(arg cloud_downsampling)"/>
+    <param name="lidar_points_threshold" value="$(arg lidar_points_threshold)"/>
+    <param name="cloud_points_threshold" value="$(arg cloud_points_threshold)"/>
+    <param name="max_x" value="$(arg max_x)"/>
+    <param name="min_x" value="$(arg min_x)"/>
+    <param name="max_y" value="$(arg max_y)"/>
+    <param name="min_y" value="$(arg min_y)"/>
+    <param name="max_z" value="$(arg max_z)"/>
+    <param name="min_z" value="$(arg min_z)"/>
+    <param name="debug" value="$(arg obs_detector_debug)"/>
+    <param name="no_sensor_data_timeout" value="$(arg no_sensor_data_timeout)"/>
     
-  <!-- </node> -->
+  </node>
 
 
 
-  <!-- <node name="map_augmenter"  pkg="map_augmenter"  type="map_augmenter_node"  output="screen"> -->
-  <!--   <param name="use_lidar" value="$(arg use_lidar)"/> -->
-  <!--   <param name="use_point_cloud" value="$(arg use_point_cloud)"/> -->
-  <!--   <param name="point_cloud_topic" value="$(arg point_cloud_topic)"/> -->
-  <!--   <param name="laser_scan_topic" value="$(arg laser_scan_topic)"/> -->
-  <!--   <param name="cloud_downsampling" value="$(arg cloud_downsampling)"/> -->
-  <!--   <param name="inflation_radius" value="$(arg inflation_radius)"/>  -->
-  <!--   <param name="cost_radius" value="$(arg cost_radius)"/> -->
-  <!--   <param name="decay_factor" value="$(arg decay_factor)"/> -->
-  <!--   <param name="lidar_downsampling" value="$(arg lidar_downsampling)"/> -->
-  <!--   <param name="max_x" value="$(arg max_x)"/> -->
-  <!--   <param name="min_x" value="$(arg min_x)"/> -->
-  <!--   <param name="max_y" value="$(arg max_y)"/> -->
-  <!--   <param name="min_y" value="$(arg min_y)"/> -->
-  <!--   <param name="max_z" value="$(arg max_z)"/> -->
-  <!--   <param name="min_z" value="$(arg min_z)"/> -->
-  <!-- </node> -->
+  <node name="map_augmenter"  pkg="map_augmenter"  type="map_augmenter_node"  output="screen">
+    <param name="use_lidar" value="$(arg use_lidar)"/>
+    <param name="use_point_cloud" value="$(arg use_point_cloud)"/>
+    <param name="point_cloud_topic" value="$(arg point_cloud_topic)"/>
+    <param name="laser_scan_topic" value="$(arg laser_scan_topic)"/>
+    <param name="cloud_downsampling" value="$(arg cloud_downsampling)"/>
+    <param name="inflation_radius" value="$(arg inflation_radius)"/>
+    <param name="cost_radius" value="$(arg cost_radius)"/>
+    <param name="decay_factor" value="$(arg decay_factor)"/>
+    <param name="lidar_downsampling" value="$(arg lidar_downsampling)"/>
+    <param name="max_x" value="$(arg max_x)"/>
+    <param name="min_x" value="$(arg min_x)"/>
+    <param name="max_y" value="$(arg max_y)"/>
+    <param name="min_y" value="$(arg min_y)"/>
+    <param name="max_z" value="$(arg max_z)"/>
+    <param name="min_z" value="$(arg min_z)"/>
+  </node>
 
-  <!-- <node name="mvn_pln"  pkg="mvn_pln"  type="mvn_pln_node"  output="screen"> -->
-  <!--   <remap from="/nav_control/goal" to="/move_base_simple/goal"/> -->
-  <!--   <param name="patience" value="$(arg patience)"/> -->
-  <!--   <param name="proximity_criterion" value="$(arg proximity_criterion)"/> -->
+  <node name="mvn_pln"  pkg="mvn_pln"  type="mvn_pln_node"  output="screen">
+    <remap from="/nav_control/goal" to="/move_base_simple/goal"/>
+    <param name="patience" value="$(arg patience)"/>
+    <param name="proximity_criterion" value="$(arg proximity_criterion)"/>
     
-  <!-- </node> -->
+  </node>
 
-  <!-- <node name="prohibition_map_server" pkg="map_server" type="map_server" output="screen" args="$(arg prohibition_map_file)"> -->
-  <!--   <remap from="/static_map" to="/prohibition_map"/> -->
-  <!--   <remap from="/map" to="/prohibition_layer_map"/> -->
-  <!-- </node> -->
+  <node name="prohibition_map_server" pkg="map_server" type="map_server" output="screen" args="$(arg prohibition_map_file)">
+    <remap from="/static_map" to="/prohibition_map"/>
+    <remap from="/map" to="/prohibition_layer_map"/>
+  </node>
  
   <node name="map_server" pkg="map_server" type="map_server" output="screen" args="$(arg static_map_file)"/>
 
