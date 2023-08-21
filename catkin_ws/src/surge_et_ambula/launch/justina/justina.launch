@@ -13,7 +13,7 @@
     <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/mapa_itzel.yaml"/>
     <arg name="initial_pose_x" value="0.0"/>
     <ag name="initial_pose_y" value="0.0"/>
-    <arg name="initial_pose_a" value="0.0"/>
+    <arg name="initial_pose_a" value="0.0"/
     <arg name="laser_scan_topic" value="/hardware/scan"/>
     <arg name="point_cloud_topic" value="/camera/depth_registered/points"/>
     <arg name="use_lidar" value="True"/>
