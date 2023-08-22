@@ -61,7 +61,7 @@ std::vector<int> positions_radians_to_bits(const std::vector<double>& positions_
     positions_bits.resize(positions_rads.size());
     for(int i=0; i<positions_rads.size(); i++){
         positions_bits[i] = directions[i]*positions_rads[i]*bits_per_radian[i] + centers[i];
-        std:: cout<<"I get here"<<i<<std::endl;
+        
     }
     return positions_bits;
 }
@@ -341,6 +341,8 @@ int main(int argc, char **argv)
     int state = SM_INIT;
     int trajectory_idx = 0;
     ros::Time start_time;
+
+    
     while(ros::ok())
     {
         switch(state)
