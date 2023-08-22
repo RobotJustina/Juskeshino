@@ -10,6 +10,8 @@ from geometry_msgs.msg import PointStamped,  Point, Pose, Vector3
 from visualization_msgs.msg import Marker
 from vision_msgs.srv import *
 import geometry_msgs.msg
+from cv_bridge import CvBridge
+
 
 MAXIMUM_GRIP_LENGTH = 0.14
 
@@ -87,6 +89,7 @@ def segment_by_contour(img_bgr, pointCloud_array, original_cloud):
         obj_bgr, obj_xyz = get_object_bgr_and_xyz(img_bgr, pointCloud_array, mask)
         cv2.imshow("obj", obj_bgr) #*****************
         cv2.waitKey(0)
+        print("TYPE IMAGE",type(obj_bgr))
         obj_centroid = np.mean(obj_xyz, axis=0)
         print("centroide " , obj_centroid)
         distance = math.sqrt(obj_centroid[0]**2 + obj_centroid[1]**2)
@@ -95,8 +98,14 @@ def segment_by_contour(img_bgr, pointCloud_array, original_cloud):
             nearest_obj_bgr = obj_bgr.copy()
             nearest_obj_xyz = obj_xyz.copy()
             nearest_centroid= obj_centroid.copy()
-    return True, nearest_centroid, nearest_obj_xyz
+
+        bridge = CvBridge()
+        image_obj = bridge.cv2_to_imgmsg(obj_bgr , "bgr8")
+
+    return True, nearest_centroid, nearest_obj_xyz, image_obj
     
+
+
 
 
 def get_object_bgr_and_xyz(img_bgr, img_xyz, mask):
@@ -142,10 +151,12 @@ def object_pose(centroid, principal_component, second_component):  # vectores de
 
     # calculo de angulo de primera componente respecto de la superficie
     eje_z = np.asarray([0, 0, 1], dtype=np.float64 )# vector normal al plano xy
-    angle_obj = np.arcsin( np.dot(principal_component , eje_z ) / (np.linalg.norm(principal_component ) * 1) )
+    angle_obj = np.abs(np.arcsin( np.dot(principal_component , eje_z ) / (np.linalg.norm(principal_component ) * 1) ))
     print("angulo del objeto respecto de la superficie: ", np.rad2deg(angle_obj))
 
-    if (angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150)):
+    if (angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150)):   
+        # Realiza agarre superior
+        obj_state = 'horizontal'
         print("Eje principal horizontal")
         # Angulo respecto de x_base_link
         angle_obj_x_bl =  math.atan2(principal_component[1], principal_component[0]) 
@@ -155,11 +166,17 @@ def object_pose(centroid, principal_component, second_component):  # vectores de
             print("Angulo 1pc fuera de limites corregido...........")
             principal_component[0] = -1*principal_component[0]
             principal_component[1] = -1*principal_component[1]
-        
+                                                    
         if second_component[2] < 0: 
             print("se corrigio sc")
             second_component = -1 * second_component    # sc no puede ser un vector negativo
-    else: 
+        # Asignacion de ejes del objeto
+        eje_x_obj = principal_component 
+        eje_z_obj = eje_z
+        eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+
+    else: # Realiza agarre lateral
+        obj_state = 'vertical'
         print("Eje principal vertical")
         angle_2pc_x_bl =  math.atan2(second_component[1], second_component[0]) 
         print("angulo de z_obj respecto de eje x base link", np.rad2deg(angle_2pc_x_bl))
@@ -175,10 +192,12 @@ def object_pose(centroid, principal_component, second_component):  # vectores de
                 #publish_arow_marker(centroid, sec_comp, 'base_link', ns ="second_component", id=23)
                 #publish_arow_marker( centroid, sec_comp, 'base_link')
 
-    # Asignacion de ejes del objeto
-    eje_z_obj = second_component 
-    eje_x_obj = principal_component 
-    eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+        # Asignacion de ejes del objeto
+        eje_z_obj = second_component 
+        eje_x_obj = principal_component 
+        eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+
+
     axis_x_obj = Point()
     axis_x_obj.x, axis_x_obj.y, axis_x_obj.z = eje_x_obj[0], eje_x_obj[1], eje_x_obj[2]
     # Se forma la matriz de rotacion (columnas) del objeto, a partir de ella se obtienen los cuaterniones necesarios para generar el frame del objeto
@@ -266,6 +285,8 @@ def object_category(fpc, spc, thpc):  # estima la forma geometrica del objeto. (
     else:
         print("Could not determine the shape of the object...")
         return "0"
+    
+
 
 
 def callback_RecognizeObject(req):  # Request is a PointCloud2
@@ -285,20 +306,26 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
     
     img_bgr, img_xyz = get_cv_mats_from_cloud_message(msg)
     
-    found_object, centroid, obj_xyz = segment_by_contour(img_bgr, img_xyz, original_cloud)
+    found_object, centroid, obj_xyz, image_obj = segment_by_contour(img_bgr, img_xyz, original_cloud)
     resp = RecognizeObjectResponse()
     
     if found_object:
         print("An object was detected...............")
         print("object position" , centroid)
         pca_vectors, eig_val, size_obj = pca(obj_xyz, centroid)
+        #obj_state = object_state(pca_vectors[0], pca_vectors[1])
+
+        #print("OBJECT STATE", obj_state[0])
+
         c_obj = object_category(size_obj.x, size_obj.z, size_obj.y)
+
         obj_pose, axis_x_obj = object_pose(centroid, pca_vectors[0], pca_vectors[1])
         publish_arow_marker(centroid, axis_x_obj, 'base_link', ns ="principal_component", id=22)
         broadcaster_frame_object("base_link", "object", obj_pose)
         print("size object i frame object", size_obj)
         print("object category", c_obj)
         # Rellenando msg 
+        resp.recog_object.image = image_obj
         resp.recog_object.category = c_obj
         resp.recog_object.header = req.point_cloud.header
         resp.recog_object.size = size_obj
@@ -313,7 +340,7 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
 
 
 def main():
-    print("Node to segment objects in a image from camera...ʕ•ᴥ•ʔ")
+    print("Node to segment objects in a image from camera by Iby..ʕ•ᴥ•ʔ")
     rospy.init_node("object_pose")
 
     global pub_point, marker_pub, clt_get_points
