@@ -15,3 +15,5 @@ int32 width				     #top widht
 int32 height				     #top height
 bool graspable                               #graspable by the gripper
 std_msgs/ColorRGBA color_rgba	             #Mean object's color
+float32 alfa				     #angle of the largest dimension of the object with respect to the surface
+string main_axis_tilt			     #inclination of the collinear axis to the longest dimension of the object
