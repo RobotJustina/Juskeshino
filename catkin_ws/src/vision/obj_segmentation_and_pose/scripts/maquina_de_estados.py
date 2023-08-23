@@ -4,6 +4,7 @@ import rospy
 import numpy as np
 import tf
 import math
+import cv2
 from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import PointStamped, PoseStamped, Point, Pose, Twist
 from vision_msgs.srv import *
@@ -13,6 +14,7 @@ from std_msgs.msg import String, Float64MultiArray, Float32, Float64,Bool, Float
 from actionlib_msgs.msg import GoalStatus
 from tf.transformations import euler_from_quaternion
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from cv_bridge import CvBridge
 
 
 SM_INIT = 0
@@ -121,8 +123,8 @@ def move_left_gripper(q, pubLaGoalGrip):
 def get_obj_pose(clt_pose_obj):
     recognize_object_req = RecognizeObjectRequest()
     try:
-        #recognize_object_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
-        recognize_object_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
+        recognize_object_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+        #recognize_object_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
     except:
         return None
     return clt_pose_obj(recognize_object_req)
@@ -251,14 +253,14 @@ def main():
 
         elif state == SM_GET_OBJ_POSE:
             print("state == SM_GET_OBJ..........")
-            resp = get_obj_pose(clt_pose_obj)
-            x, y ,z = resp.recog_object.pose.position.x, resp.recog_object.pose.position.y, resp.recog_object.pose.position.z
+            resp_pose_obj = get_obj_pose(clt_pose_obj)
+            x, y ,z = resp_pose_obj.recog_object.pose.position.x, resp_pose_obj.recog_object.pose.position.y, resp_pose_obj.recog_object.pose.position.z
             i = 0
             z_temp = z*10
             z_temp2 = str(z)
             while  z_temp <= 0 or z_temp2 == 'nan': 
-                resp = get_obj_pose(clt_pose_obj)
-                x, y ,z = resp.recog_object.pose.position.x, resp.recog_object.pose.position.y, resp.recog_object.pose.position.z
+                resp_pose_obj = get_obj_pose(clt_pose_obj)
+                x, y ,z = resp_pose_obj.recog_object.pose.position.x, resp_pose_obj.recog_object.pose.position.y, resp_pose_obj.recog_object.pose.position.z
                 z_temp = z*10
                 z_temp2 = str(z)
                 print("                     ")
@@ -277,8 +279,15 @@ def main():
             reco_obj_req = RecognizeObjectsRequest()
             # LLenar msg
             #reco_obj_req.point_cloud = 
-            reco_obj_req.image = 
+            ros_image_obj = resp_pose_obj.recog_object.image        #imagen del objeto
+            ros_image_mask = resp_pose_obj.image
+            bridge = CvBridge()
+            cv_image_obj = bridge.imgmsg_to_cv2(ros_image_obj, "bgr8")
+            cv2.imshow("imagen reconstruida", cv_image_obj) #*****************
+            cv2.waitKey(0)
 
+            reco_obj_req.image = ros_image_obj
+            reco_obj_req.mask = ros_image_mask
             reco_obj_resp = clt_recognize_object(reco_obj_req)
 
             #reco_obj_resp.recog_objects     #array
@@ -302,12 +311,12 @@ def main():
 
         elif state == SM_MOVE_LEFT_ARM:
             req_best_grip = BestGraspTrajRequest()
-            req_best_grip.recog_object = resp.recog_object
+            req_best_grip.recog_object = resp_pose_obj.recog_object
             resp_best_grip = clt_best_grip(req_best_grip)
             print("state == SM_MOVE_ARM")
             move_left_gripper(0.9, pub_la_goal_grip)
             if resp_best_grip.graspable:
-                pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
+                #pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
                 print("moviendo brazo izquierdo...................")
                 rospy.sleep(7.0)
             else:
