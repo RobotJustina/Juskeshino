@@ -11,6 +11,7 @@
 #include "Utils.h"
 #include "GeometricFeatures.h"
 #include "ObjectRecognizer.h"
+#include <cv_bridge/cv_bridge.h>
 
 tf::TransformListener* tf_listener;
 ros::Publisher pubMarkers;
@@ -137,22 +138,32 @@ bool callback_detect_and_recog_obj(vision_msgs::RecognizeObject::Request& req, v
 
 bool callback_recog_obj(vision_msgs::RecognizeObjects::Request& req, vision_msgs::RecognizeObjects::Response& resp)
 {
-    std::cout << "ObjReco.->Recognizing objects by Jebug's method (modified by Itzel (✿◠‿◠)." << std::endl;
-    cv::Mat img, cloud, output_mask;
-    if(debug) cv::destroyAllWindows();
+    std::cout << "ObjReco.->Recognizing objects by Jebug's method (modified (✿◠‿◠))." << std::endl;
+    cv::Mat img, cv_image, cloud, output_mask;
 
-    std::vector<cv::Mat> objects_bgr, objects_xyz, objects_masks;
+    cv_bridge::CvImagePtr cv_ptr;
+    cv_ptr = cv_bridge::toCvCopy(req.image , sensor_msgs::image_encodings::BGR8);
+    cv::imshow("image objectttt", cv_ptr->image);
+    cv::waitKey(0);
+
+    cv_bridge::CvImagePtr cv_ptr2;
+    cv_ptr2 = cv_bridge::toCvCopy(req.mask , sensor_msgs::image_encodings::BGR8);
+    cv::imshow("image mask", cv_ptr2->image);
+    cv::waitKey(0);
+   
+
+    //std::vector<cv::Mat> objects_bgr, objects_xyz, objects_masks;
 
     img = cv::Mat::zeros(img.rows, img.cols, CV_8UC3);
-    std::vector<std::string> labels(objects_bgr.size(), "");
-    std::vector<double> confidences(objects_bgr.size(), -1);
-
-    ObjectRecognizer::recognize(objects_bgr[0], objects_masks[0], histogram_size, labels[0], confidences[0], debug);
-    cv::bitwise_or(img, objects_bgr[0], img);
-    std::cout << "ObjReco.->Recognized object: " << labels[0] << " with confidence " << confidences[0] << std::endl;
+    double confidence;
+    vision_msgs::VisionObject obj;
+    ObjectRecognizer::recognize(cv_ptr->image , cv_image, histogram_size, obj.id, confidence, debug);
+    //std::cout << "ObjReco.->Recognized object: " << labels[0] << " with confidence " << confidences[0] << std::endl;
     //cv::imshow("Points above plane", img);
-    resp = Utils::get_recog_objects_response(objects_bgr, objects_xyz, objects_masks, labels, confidences, img, req.point_cloud.header.frame_id);
-    pubMarkerArray.publish(Utils::get_objects_markers(resp.recog_objects));
+
+
+    resp.recog_objects.push_back(obj);
+    //pubMarkerArray.publish(Utils::get_objects_markers(resp.recog_objects));
     return resp.recog_objects.size() > 0;
 }
 
