@@ -87,12 +87,12 @@ def segment_by_contour(img_bgr, pointCloud_array, original_cloud):
         # the mask is eroded to ensure that we only get the point cloud of the object
         mask =cv2.erode(mask , kernel,iterations=3)
         obj_bgr, obj_xyz = get_object_bgr_and_xyz(img_bgr, pointCloud_array, mask)
-        cv2.imshow("obj", obj_bgr) #*****************
-        cv2.waitKey(0)
+        #cv2.imshow("obj", obj_bgr) #*****************
+        #cv2.waitKey(0)
         # Basic threhold example 
         th, mask_bin = cv2.threshold(mask, 0, 255, cv2.THRESH_BINARY); 
-        cv2.imshow("mask", mask) #*****************
-        cv2.waitKey(0)
+        #cv2.imshow("mask", mask) #*****************
+        #cv2.waitKey(0)
         print("TYPE IMAGE",type(obj_bgr))
         obj_centroid = np.mean(obj_xyz, axis=0)
         print("centroide " , obj_centroid)
@@ -105,7 +105,7 @@ def segment_by_contour(img_bgr, pointCloud_array, original_cloud):
 
         bridge = CvBridge()
         image_obj = bridge.cv2_to_imgmsg(obj_bgr , "bgr8")
-        image_mask = bridge.cv2_to_imgmsg(mask , "bgr8")
+        image_mask = bridge.cv2_to_imgmsg(mask , "mono8")
 
     return True, nearest_centroid, nearest_obj_xyz, image_obj, image_mask
     

@@ -138,29 +138,24 @@ bool callback_detect_and_recog_obj(vision_msgs::RecognizeObject::Request& req, v
 
 bool callback_recog_obj(vision_msgs::RecognizeObjects::Request& req, vision_msgs::RecognizeObjects::Response& resp)
 {
-    std::cout << "ObjReco.->Recognizing objects by Jebug's method (modified (✿◠‿◠))." << std::endl;
+    std::cout << "ObjReco.->Recognizing objects by Jebug's method (modified by Iby(✿◠‿◠))." << std::endl;
     cv::Mat img, cv_image, cloud, output_mask;
 
     cv_bridge::CvImagePtr cv_ptr;
     cv_ptr = cv_bridge::toCvCopy(req.image , sensor_msgs::image_encodings::BGR8);
-    cv::imshow("image objectttt", cv_ptr->image);
+    cv::imshow("image objecttt", cv_ptr->image);
     cv::waitKey(0);
 
     cv_bridge::CvImagePtr cv_ptr2;
-    cv_ptr2 = cv_bridge::toCvCopy(req.mask , sensor_msgs::image_encodings::BGR8);
+    cv_ptr2 = cv_bridge::toCvCopy(req.mask , sensor_msgs::image_encodings::MONO8);
     cv::imshow("image mask", cv_ptr2->image);
     cv::waitKey(0);
    
 
-    //std::vector<cv::Mat> objects_bgr, objects_xyz, objects_masks;
-
     img = cv::Mat::zeros(img.rows, img.cols, CV_8UC3);
     double confidence;
     vision_msgs::VisionObject obj;
-    ObjectRecognizer::recognize(cv_ptr->image , cv_image, histogram_size, obj.id, confidence, debug);
-    //std::cout << "ObjReco.->Recognized object: " << labels[0] << " with confidence " << confidences[0] << std::endl;
-    //cv::imshow("Points above plane", img);
-
+    ObjectRecognizer::recognize(cv_ptr->image , cv_ptr2->image, histogram_size, obj.id, confidence, debug);
 
     resp.recog_objects.push_back(obj);
     //pubMarkerArray.publish(Utils::get_objects_markers(resp.recog_objects));
