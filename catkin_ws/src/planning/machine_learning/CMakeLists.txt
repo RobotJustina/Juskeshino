@@ -137,7 +137,7 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(get_votes src/get_votes.cpp)
-
+add_executable(get_grid  src/get_grid.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -147,11 +147,16 @@ add_executable(get_votes src/get_votes.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 add_dependencies(get_votes ${get_votes_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
+add_dependencies(get_grid ${get_grid_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 ## Specify libraries to link a library or executable target against
 target_link_libraries(get_votes
    ${catkin_LIBRARIES} ${OpenCV_LIBS} 
 )
+
+target_link_libraries(get_grid
+   ${catkin_LIBRARIES} ${OpenCV_LIBS} 
+)
+
 #############
 ## Install ##
 #############
