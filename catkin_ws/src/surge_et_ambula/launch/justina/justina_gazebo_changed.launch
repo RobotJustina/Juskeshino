@@ -1,21 +1,23 @@
 <launch>
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
-  <arg name="world" value="appartment_changed"/>
+  <arg name="posy" value="3.9" />
+  <arg name="world" value="Three_rooms_v2"/>
   </include>
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina.rviz"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_gazebo.rviz"/>
   
   <node name="justina_gui" pkg="justina_gui" type="justina_gui_node" output="screen">
     <param name="la_predefined" value="$(find config_files)/justina/manipulation/la_predefined.yaml"/>
     <param name="ra_predefined" value="$(find config_files)/justina/manipulation/ra_predefined.yaml"/>
     <param name="hd_predefined" value="$(find config_files)/justina/manipulation/hd_predefined.yaml"/>
     <remap from="/camera/depth_registered/points" to="/hardware/realsense/points"/>
+    <remap from="/vision/obj_reco/recognize_object" to="/vision/obj_segmentation/get_obj_pose"/>
   </node>
 
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/>
-  <include file="$(find surge_et_ambula)/launch/justina/navigation.launch">
-    <arg name="static_map_file"  value="$(find config_files)/maps/appartment_changed.yaml"/>
-    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/appartment_changed.yaml"/>
+  <include file="$(find surge_et_ambula)/launch/justina/navigation_tf_static.launch">
+    <arg name="static_map_file"  value="$(find config_files)/maps/Three_rooms.yaml"/>
+    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/Three_rooms.yaml"/>
     <arg name="initial_pose_x" value="3.25"/>
     <arg name="initial_pose_y" value="6.30"/>
     <arg name="initial_pose_a" value="-1.57"/>
@@ -24,15 +26,16 @@
     <arg name="laser_scan_topic" value="/hardware/scan"/>
     <arg name="point_cloud_topic" value="/hardware/realsense/points"/>
     <arg name="use_lidar" value="True"/>
-    <arg name="use_sonars" value="False"/>
     <arg name="use_point_cloud" value="True"/>
+    <arg name="use_pot_fields" value="True"/>
+    <arg name="pot_fields_k_rej" value="0.3"/>
+    <arg name="pot_fields_d0" default="1.0"/>
     <arg name="cloud_downsampling" value="9"/>
     <arg name="cloud_points_threshold" value="50"/>
     <arg name="lidar_points_threshold" value="5"/>
   </include>
 
   <include file="$(find surge_et_ambula)/launch/justina/justina_manipulation.launch"/>
-  <node name="traj_tracking" pkg="trajectory_tracking" type="traj_tracking.py" output="screen"/>
-  
+  <include file="$(find surge_et_ambula)/launch/justina/vision.launch"/>
   <include file="$(find surge_et_ambula)/launch/justina/speech.launch"/>
 </launch>

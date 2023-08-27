@@ -138,6 +138,8 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(get_votes src/get_votes.cpp)
 add_executable(get_grid  src/get_grid.cpp)
+add_executable(map_publisher  src/map_publisher.cpp)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -148,12 +150,17 @@ add_executable(get_grid  src/get_grid.cpp)
 ## same as for the library above
 add_dependencies(get_votes ${get_votes_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(get_grid ${get_grid_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(map_publisher ${get_grid_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 ## Specify libraries to link a library or executable target against
 target_link_libraries(get_votes
    ${catkin_LIBRARIES} ${OpenCV_LIBS} 
 )
 
 target_link_libraries(get_grid
+   ${catkin_LIBRARIES} ${OpenCV_LIBS} 
+)
+
+target_link_libraries(map_publisher
    ${catkin_LIBRARIES} ${OpenCV_LIBS} 
 )
 
