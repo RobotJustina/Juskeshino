@@ -17,7 +17,7 @@ bool cam_ready=false;
 //int votes[3][3]={};
 tf::TransformListener* tf_listener;
 ros::Publisher pub_votes;
-ros::Publisher pub_ready;
+//ros::Publisher pub_ready;
 int edo=1;
 int count=0;
 //Create message global message msg_head-->head goal
@@ -71,41 +71,41 @@ std::vector<int> Pointcloud_to_Array(sensor_msgs::PointCloud2 msg) {
         }
     for(int i=0; i<=29; i++)
         for(int j=0; j<=29; j++){
-            if(Array[i][j]>=2)
+            if(Array[i][j]>=1)
                 Array[i][j]=1;
             else
                 Array[i][j]=0;
     }
+    //cv::Mat obstacle = cv::Mat(30, 30, CV_8UC1, &Array);
+    //cv::resize(obstacle, obstacle, cv::Size(300, 300), cv::INTER_CUBIC);
+    //cv::imshow("ObsWindow", obstacle);
+    //cv::waitKey(1);
+
     std::vector<int> temp;
     temp=Array[0];
     for(int i=1; i<=29; i++){
         temp.insert( temp.end(), Array[i].begin(), Array[i].end() );
     }
-    //std::cout << Array[0][0]<<""<< Array[0][1]<<""<< Array[0][0] << std::endl;
+    cv::Mat obstacle = cv::Mat(30, 30, CV_8UC1, &Array);
+    cv::imshow("ObsWindow1", obstacle);
+    cv::resize(obstacle, obstacle, cv::Size(300, 300), cv::INTER_LINEAR);
+    cv::imshow("ObsWindow2", obstacle);
+    cv::waitKey(1);
     return temp;
 }
 
 
 void callback_pointcloud(sensor_msgs::PointCloud2 msg){
-    if(cam_ready && (edo==1 || edo==2 || edo==3 || edo==4) ){
+    if(cam_ready && (edo==1 || edo==2 || edo==3) ){
         //std::cout<<edo<<std::endl;
         std::vector<int> votes = Pointcloud_to_Array(msg);
         //Last_votes=
         for(int i=0; i<900; i++)
             if(Last_votes[i]==1 || votes[i]==1)
                 Last_votes[i]=1;
-        if(Last_votes[0]==0 && edo==1 && Last_votes[29]==0)
-            edo=2;
-        else if(Last_votes[29]==0 && edo==1)
-            edo=4;
-        else if(Last_votes[0]==0 && edo==1)
-            edo=3;
-        else if( (Last_votes[0]==1 && edo==1 && Last_votes[29]==1) || edo==3)
-            edo=5;
-        else
-            edo+=1;
+        edo+=1; //Next state
         cam_ready=false;
-        if(edo==5){
+        if(edo==4){
             std::cout<<"Publicar topicos"<<std::endl;
             std_msgs::Int32MultiArray msg_votes;
             msg_votes.data.resize(900);
@@ -143,13 +143,13 @@ int main(int argc, char** argv){
     ros::Subscriber sub_pose = n.subscribe("/hardware/head/current_pose", 10, callback_head);
     //ros::Subscriber sub_goal = n.subscribe("/simple_move/goal_reached", 10, callback_goal);
     ros::Publisher pub =  n.advertise<std_msgs::Float64MultiArray>("/hardware/head/goal_pose", 10);
-    pub_ready = n.advertise<actionlib_msgs::GoalStatus>("/ready", 10);
+    //ros::Publisher pub_ready = n.advertise<actionlib_msgs::GoalStatus>("/ready", 10);
     pub_votes = n.advertise<std_msgs::Int32MultiArray>("/votes", 10);
     ros::Rate loop(20);
 
     //std_msgs::Float64MultiArray msg_head;
     msg_head.data.resize(2);
-    actionlib_msgs::GoalStatus msg_ready;
+    //actionlib_msgs::GoalStatus msg_ready;
     //msg_head.data[0] = 0;
     //msg_head.data[1] = -1.15;
     while(ros::ok()){
@@ -158,31 +158,25 @@ int main(int argc, char** argv){
         switch(edo){
             case 1:
                 std::cout<<"Centro"<<std::endl;
-                msg_head.data[0] = 0;
+                msg_head.data[0] = 0;//Head motion
                 msg_head.data[1] = -1.15;
                 pub.publish(msg_head);
             break;
             case 2:
-                std::cout<<"Derecha estado 2"<<std::endl;
-                msg_head.data[0] = -1;
+                std::cout<<"Derecha"<<std::endl;
+                msg_head.data[0] = -1;//Head motion
                 msg_head.data[1] = -1.15;
                 pub.publish(msg_head);
             break;
             case 3:
                 std::cout<<"Izquierda"<<std::endl;
-                msg_head.data[0] = 1;
+                msg_head.data[0] = 1;//Head motion
                 msg_head.data[1] = -1.15;
                 pub.publish(msg_head);
             break;
             case 4:
-                std::cout<<"Derecha estado 4"<<std::endl;
-                msg_head.data[0] = -1;
-                msg_head.data[1] = -1.15;
-                pub.publish(msg_head);
-            break;
-            case 5:
-                msg_ready.status=3;
-                pub_ready.publish(msg_ready);
+                //msg_ready.status=3;
+                //pub_ready.publish(msg_ready);
                 edo=0;
             break;
             default: break;
