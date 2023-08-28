@@ -23,9 +23,9 @@ int count=0;
 //Create message global message msg_head-->head goal
 std_msgs::Float64MultiArray msg_head;
 //Global array to save the last votes
-std::vector<int> Last_votes(900,0);
+std::vector<std::vector<int>> Last_votes(30,std::vector<int>(30,0));
 
-std::vector<int> Pointcloud_to_Array(sensor_msgs::PointCloud2 msg) {
+std::vector<std::vector<int>> Pointcloud_to_Array(sensor_msgs::PointCloud2 msg) {
     std::vector<std::vector<int>> Array(30, std::vector<int>(30, 0));
     float xmin=-0.25;
     float ymin=-0.75; //Offset in axis y
@@ -71,49 +71,68 @@ std::vector<int> Pointcloud_to_Array(sensor_msgs::PointCloud2 msg) {
         }
     for(int i=0; i<=29; i++)
         for(int j=0; j<=29; j++){
-            if(Array[i][j]>=1)
+            std::cout<<"we got counters: "<<i<<" "<<j<<" "<<Array[i][j]<<std::endl;
+            if(Array[i][j]>=2)
                 Array[i][j]=1;
             else
                 Array[i][j]=0;
     }
-    //cv::Mat obstacle = cv::Mat(30, 30, CV_8UC1, &Array);
-    //cv::resize(obstacle, obstacle, cv::Size(300, 300), cv::INTER_CUBIC);
-    //cv::imshow("ObsWindow", obstacle);
-    //cv::waitKey(1);
-
     std::vector<int> temp;
     temp=Array[0];
-    for(int i=1; i<=29; i++){
-        temp.insert( temp.end(), Array[i].begin(), Array[i].end() );
-    }
-    cv::Mat obstacle = cv::Mat(30, 30, CV_8UC1, &Array);
-    cv::imshow("ObsWindow1", obstacle);
-    cv::resize(obstacle, obstacle, cv::Size(300, 300), cv::INTER_LINEAR);
-    cv::imshow("ObsWindow2", obstacle);
-    cv::waitKey(1);
-    return temp;
+    //for(int i=1; i<=29; i++){
+    //    temp.insert( temp.end(), Array[i].begin(), Array[i].end() );
+    //}
+    //cv::Mat obstacle = cv::Mat(30, 30, CV_8UC1, &Array);
+    //cv::imshow("ObsWindow1", obstacle);
+    //cv::resize(obstacle, obstacle, cv::Size(300, 300), cv::INTER_LINEAR);
+    //cv::imshow("ObsWindow2", obstacle);
+    //if (cv::waitKey(30) == 27)
+    //    std::cout<<"Close windows"<<std::endl;
+    return Array;
 }
 
 
 void callback_pointcloud(sensor_msgs::PointCloud2 msg){
     if(cam_ready && (edo==1 || edo==2 || edo==3) ){
         //std::cout<<edo<<std::endl;
-        std::vector<int> votes = Pointcloud_to_Array(msg);
+        std::vector<std::vector<int>> votes = Pointcloud_to_Array(msg);
         //Last_votes=
-        for(int i=0; i<900; i++)
-            if(Last_votes[i]==1 || votes[i]==1)
-                Last_votes[i]=1;
+        for(int i=0; i<30; i++)
+            for(int j=0; j<30; j++)
+                if(Last_votes[i][j]==1 || votes[i][j]==1)
+                    Last_votes[i][j]=1;
         edo+=1; //Next state
         cam_ready=false;
         if(edo==4){
+            //if (cv::waitKey(30) == 27)
+            //    std::cout<<"Close windows"<<std::endl;
+            //publish topics
             std::cout<<"Publicar topicos"<<std::endl;
+            std::vector<int> temp;
+            temp=Last_votes[0];
+            for(int i=1; i<=29; i++){
+                temp.insert( temp.end(), Last_votes[i].begin(), Last_votes[i].end() );
+            }
             std_msgs::Int32MultiArray msg_votes;
             msg_votes.data.resize(900);
             for(int i=0; i<900; i++)
-                msg_votes.data[i] = Last_votes[i];
+                msg_votes.data[i] = temp[i];
             pub_votes.publish(msg_votes);
-            Last_votes.assign(900,0);
+            for(int i=0; i<30; i++)
+                Last_votes[i].assign(30,0);
             edo=1;
+            //print image
+            //cv::Mat obstacle = cv::Mat(30, 30, CV_32FC1);
+            //for(int i=0; i<29; i++)
+            //    for(int j=0; j<29; j++){
+            //        obstacle.at<float>(i,j)= static_cast<float>(Last_votes[i][j]);
+            //    }
+            //for(int i=0; i<30; i++)
+            //    Last_votes[i].assign(30,0);
+            //cv::imshow("ObsWindow1", obstacle);
+            //cv::resize(obstacle, obstacle, cv::Size(300, 300), cv::INTER_LINEAR);
+            //cv::imshow("ObsWindow2", obstacle);
+            //cv::waitKey(1);
         }
     }
 
@@ -144,7 +163,7 @@ int main(int argc, char** argv){
     //ros::Subscriber sub_goal = n.subscribe("/simple_move/goal_reached", 10, callback_goal);
     ros::Publisher pub =  n.advertise<std_msgs::Float64MultiArray>("/hardware/head/goal_pose", 10);
     //ros::Publisher pub_ready = n.advertise<actionlib_msgs::GoalStatus>("/ready", 10);
-    pub_votes = n.advertise<std_msgs::Int32MultiArray>("/votes", 10);
+    pub_votes = n.advertise<std_msgs::Int32MultiArray>("/grid", 10);
     ros::Rate loop(20);
 
     //std_msgs::Float64MultiArray msg_head;
@@ -157,19 +176,19 @@ int main(int argc, char** argv){
         loop.sleep();
         switch(edo){
             case 1:
-                std::cout<<"Centro"<<std::endl;
+                //std::cout<<"Centro"<<std::endl;
                 msg_head.data[0] = 0;//Head motion
                 msg_head.data[1] = -1.15;
                 pub.publish(msg_head);
             break;
             case 2:
-                std::cout<<"Derecha"<<std::endl;
+                //std::cout<<"Derecha"<<std::endl;
                 msg_head.data[0] = -1;//Head motion
                 msg_head.data[1] = -1.15;
                 pub.publish(msg_head);
             break;
             case 3:
-                std::cout<<"Izquierda"<<std::endl;
+                //std::cout<<"Izquierda"<<std::endl;
                 msg_head.data[0] = 1;//Head motion
                 msg_head.data[1] = -1.15;
                 pub.publish(msg_head);
@@ -181,7 +200,6 @@ int main(int argc, char** argv){
             break;
             default: break;
         }
-            //continue;
         //cv::imshow("Visualizar",pc_dest);
         //if(cv::waitKey(3)==27)
             //break;
