@@ -4,10 +4,8 @@ import numpy as np
 import ros_numpy
 import tf
 import math
-from std_msgs.msg import Int32
+from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import PointStamped
-from actionlib_msgs.msg import GoalStatus
-from std_msgs.msg import Bool
 
 def callback_global_goal(msg):
     global goal_x
@@ -26,35 +24,41 @@ def get_robot_pose(listener, frame):
         pass
         return [0,0,0]
 
-def odom_map_comparison():
+def get_direction():
     global listener
     global goal_x
     global goal_y
     [robot_x, robot_y, robot_a]    = get_robot_pose(listener, "map")
-    print("Map:")
-    dx,dy=goal_x-robot_x, goal_y-robot_y
-    print(dx,dy)
+    ang_pos=math.atan2(goal_y-robot_y, goal_x-robot_x)
+    d=math.sqrt( (goal_y-robot_y)**2 + (goal_x-robot_x)**2 )
+    if ang_pos > math.pi:
+        ang_pos=ang_pos-2*math.pi
+    ang=ang_pos-robot_a
+    print("-------------")
+    print("Angulo", ang)
+    print("Distancia", d)
+    return [d,ang]
 
 def main():
     global listener
     global goal_x
     global goal_y
-    msg_offset=Int32()
     rospy.init_node("get_goal_point")
 
     listener = tf.TransformListener()
 
     rospy.Subscriber('/clicked_point', PointStamped, callback_global_goal)
-    #pub_off = rospy.Publisher("/offset", Int32, queue_size=10)
+    pub_goal = rospy.Publisher("/NN_goal", Float32MultiArray  , queue_size=10)
 
     loop = rospy.Rate(0.1)
     loop.sleep()
+    msg=Float32MultiArray()
     [goal_x, goal_y, temp] = get_robot_pose(listener,"map") ##Wait for the current pose
     while not rospy.is_shutdown():
-        odom_map_comparison()
-        #offset=set_offset()
+        data_goal=get_direction()
+        msg.data=data_goal
         #msg_offset.data=int(offset)
-        #pub_off.publish(msg_offset)
+        pub_goal.publish(msg)
         loop.sleep()
 
 if __name__ == '__main__':
