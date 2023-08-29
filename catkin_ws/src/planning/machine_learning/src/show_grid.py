@@ -6,12 +6,10 @@ import cv2
 from std_msgs.msg import Int32MultiArray
 
 def callback_grid(msg):
-    #print(msg.data[2:12])
-    image=np.zeros((30,30), dtype="uint8")
-    for i in range(0,30):
-        image[i,:30]=msg.data[i*30:i*30+30]
-    image=255*image
-    resized_image = cv2.resize(image, (300, 300), interpolation = cv2.INTER_CUBIC)
+    img=np.array(msg.data, dtype="uint8")
+    img=np.reshape(img,(30,30), order="C")
+    img[img==1]=255
+    resized_image = cv2.resize(img, (400, 400), interpolation = cv2.INTER_CUBIC)
     cv2.imshow("Obstacle image", resized_image)
     cv2.waitKey(1)
 
