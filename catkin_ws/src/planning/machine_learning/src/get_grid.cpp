@@ -157,8 +157,8 @@ void callback_head(std_msgs::Float64MultiArray msg){
 int main(int argc, char** argv){
     ros::init(argc, argv, "get_votes");
     ros::NodeHandle n;
-    tf_listener = new tf::TransformListener();
-    ros::Subscriber sub = n.subscribe("/hardware/realsense/points", 10, callback_pointcloud);
+    tf_listener = new tf::TransformListener(); //
+    ros::Subscriber sub = n.subscribe("/camera/depth_registered/points", 10, callback_pointcloud);
     ros::Subscriber sub_pose = n.subscribe("/hardware/head/current_pose", 10, callback_head);
     //ros::Subscriber sub_goal = n.subscribe("/simple_move/goal_reached", 10, callback_goal);
     ros::Publisher pub =  n.advertise<std_msgs::Float64MultiArray>("/hardware/head/goal_pose", 10);
