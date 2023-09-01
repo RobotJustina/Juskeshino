@@ -22,4 +22,11 @@
   <include file="$(find surge_et_ambula)/launch/justina/justina_manipulation.launch"/>
   <include file="$(find surge_et_ambula)/launch/justina/vision.launch"/>
   <include file="$(find surge_et_ambula)/launch/justina/speech.launch"/>
+
+  <node name="local_occ_grid" pkg="local_occ_grid" type="local_occ_grid">
+    <param name="use_lidar" value="true"/>
+    <param name="use_cloud" value="true"/>
+    <param name="laser_scan_topic" value="/hardware/scan"/>
+    <param name="point_cloud_topic" value="/hardware/realsense/points"/>
+  </node>
 </launch>

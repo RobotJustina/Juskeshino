@@ -1,134 +1,81 @@
 #include "ros/ros.h"
+#include "std_msgs/Float32MultiArray.h"
 #include "nav_msgs/OccupancyGrid.h"
-#include "nav_msgs/GetMap.h"
 #include "sensor_msgs/PointCloud2.h"
 #include "sensor_msgs/LaserScan.h"
 #include "tf/transform_listener.h"
 #include "tf_conversions/tf_eigen.h"
 
-float min_x =  0.0;
-float max_x =  4.0;
-float min_y = -2.0;
-float max_y =  2.0;
-float min_z =  0.05;
-float max_z =  1.5;
-float resolution = 0.05;
-int   cloud_downsampling  = 9;
-int   lidar_downsampling  = 2;
+boost::shared_ptr<sensor_msgs::LaserScan const> scan_ptr;
+boost::shared_ptr<sensor_msgs::PointCloud2 const> cloud_ptr;
 
-bool use_lidar  = true;
-bool use_cloud  = false;
+void callback_laser_scan(const sensor_msgs::LaserScan::ConstPtr& msg)
+{
+    scan_ptr = msg;
+}
 
-tf::TransformListener* listener;
-std::string base_link_name    = "/base_link";
-std::string point_cloud_frame = "/point_cloud_frame";
-std::string point_cloud_topic = "/point_cloud";
-std::string laser_scan_frame  = "/laser";
-std::string laser_scan_topic  = "/scan";
+void callback_point_cloud(const sensor_msgs::PointCloud2::ConstPtr& msg)
+{
+    cloud_ptr = msg;
+}
 
-nav_msgs::OccupancyGrid local_map; //Only obstacles map calculated with all enabled sensors, without inflation. Calculated on service request.
-nav_msgs::OccupancyGrid local_inflated_map; //Only obstacles with inflation.
-
-Eigen::Affine3d get_camera_position()
+Eigen::Affine3d get_sensor_tf(std::string frame_id, std::string base_link_name, tf::TransformListener* listener)
 {
     tf::StampedTransform tf;
-    listener->lookupTransform(base_link_name, point_cloud_frame, ros::Time(0), tf);
+    listener->lookupTransform(base_link_name, frame_id, ros::Time(0), tf);
     Eigen::Affine3d e;
     tf::transformTFToEigen(tf, e);
     return e;
 }
 
-Eigen::Affine3d get_lidar_position()
+bool fill_map_with_cloud(nav_msgs::OccupancyGrid& map, float min_x, float min_y, float min_z, float max_x, float max_y, float max_z,
+                               int downsampling, std::string base_link_name, tf::TransformListener* listener)
 {
-    tf::StampedTransform tf;
-    listener->lookupTransform(base_link_name, laser_scan_frame, ros::Time(0), tf);
-    Eigen::Affine3d e;
-    tf::transformTFToEigen(tf, e);
-    return e;
-}
-
-nav_msgs::OccupancyGrid merge_maps(nav_msgs::OccupancyGrid& a, nav_msgs::OccupancyGrid& b)
-{
-    if(a.info.width != b.info.width || a.info.height != b.info.height)
-    {
-        std::cout << "LocalOccGrid.->WARNING!!! Cannot merge maps of different sizes!!!" <<std::endl;
-        return a;
-    }
-    nav_msgs::OccupancyGrid c = a;
-    for(size_t i=0; i< c.data.size(); i++)
-        c.data[i] = (char)std::max((unsigned char)a.data[i], (unsigned char)b.data[i]);
-    return c;
-}
-
-nav_msgs::OccupancyGrid inflate_map(nav_msgs::OccupancyGrid& map, float inflation)
-{
-    if(inflation <= 0)
-        return map;
-    
-    nav_msgs::OccupancyGrid newMap = map;
-    int n = (int)(inflation / map.info.resolution);
-    
-    return newMap;
-}
-
-bool local_map_with_cloud()
-{
-    //std::cout << "LocalOccGrid.->Trying to get point cloud from topic: " << point_cloud_topic << std::endl;
-    boost::shared_ptr<sensor_msgs::PointCloud2 const> ptr = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(point_cloud_topic,ros::Duration(1.0));
-    if(ptr == NULL)
-    {
-        std::cout << "LocalOccGrid.->ERROR!!! Cannot get point cloud from topic " << point_cloud_topic << std::endl;
-        return false;
-    }
-    unsigned char* p = (unsigned char*)(&ptr->data[0]);
+    if(cloud_ptr == NULL) return false;
+    unsigned char* p = (unsigned char*)(&cloud_ptr->data[0]);
     int cell_x = 0;
     int cell_y = 0;
     int cell   = 0;
 
-    Eigen::Affine3d cam_to_robot = get_camera_position();
+    Eigen::Affine3d cam_to_robot = get_sensor_tf(cloud_ptr->header.frame_id, base_link_name, listener);
 
-    for(size_t i=0; i < ptr->width*ptr->height; i+=cloud_downsampling)
+    for(size_t i=0; i < cloud_ptr->width*cloud_ptr->height; i+=downsampling)
     {
         Eigen::Vector3d v(*((float*)(p)), *((float*)(p+4)), *((float*)(p+8)));
         v = cam_to_robot * v;
         if(v.x() > min_x && v.x() < max_x && v.y() > min_y && v.y() < max_y && v.z() > min_z && v.z() < max_z)
         {
-            cell_x = (int)((v.x() - local_map.info.origin.position.x)/local_map.info.resolution);
-            cell_y = (int)((v.y() - local_map.info.origin.position.y)/local_map.info.resolution);
-            cell   = cell_y * local_map.info.width + cell_x;
-            local_map.data[cell] = 100;
+            cell_x = (int)((v.x() - map.info.origin.position.x)/map.info.resolution);
+            cell_y = (int)((v.y() - map.info.origin.position.y)/map.info.resolution);
+            cell   = cell_y * map.info.width + cell_x;
+            map.data[cell] = 100;
         }
-        p += cloud_downsampling*ptr->point_step;
+        p += downsampling*cloud_ptr->point_step;
     }
     return true;
 }
 
-bool local_map_with_lidar()
+bool fill_map_with_lidar(nav_msgs::OccupancyGrid& map, float min_x, float min_y, float min_z, float max_x, float max_y, float max_z,
+                               int downsampling, std::string base_link_name, tf::TransformListener* listener)
 {
-    //std::cout << "LocalOccGrid.->Trying to get laser scan from topic: " << laser_scan_topic << std::endl;
-    boost::shared_ptr<sensor_msgs::LaserScan const> ptr = ros::topic::waitForMessage<sensor_msgs::LaserScan>(laser_scan_topic, ros::Duration(1.0));
-    if(ptr == NULL)
-    {
-        std::cout << "LocalOccGrid.->Cannot get laser scan from topic " << laser_scan_topic << std::endl;
-        return false;
-    }
+    if(scan_ptr == NULL) return false;
     int cell_x = 0;
     int cell_y = 0;
     int cell   = 0;
 
-    Eigen::Affine3d lidar_to_robot = get_lidar_position();
+    Eigen::Affine3d lidar_to_robot = get_sensor_tf(scan_ptr->header.frame_id, base_link_name, listener);
 
-    for(size_t i=0; i < ptr->ranges.size(); i+=lidar_downsampling)
+    for(size_t i=0; i < scan_ptr->ranges.size(); i+=downsampling)
     {
-        float angle = ptr->angle_min + i*ptr->angle_increment;
-        Eigen::Vector3d v(ptr->ranges[i]*cos(angle), ptr->ranges[i]*sin(angle), 0);
+        float angle = scan_ptr->angle_min + i*scan_ptr->angle_increment;
+        Eigen::Vector3d v(scan_ptr->ranges[i]*cos(angle), scan_ptr->ranges[i]*sin(angle), 0);
         v = lidar_to_robot * v;
         if(v.x() > min_x && v.x() < max_x && v.y() > min_y && v.y() < max_y && v.z() > min_z && v.z() < max_z) 
         {
-            cell_x = (int)((v.x() - local_map.info.origin.position.x)/local_map.info.resolution);
-            cell_y = (int)((v.y() - local_map.info.origin.position.y)/local_map.info.resolution);
-            cell   = cell_y * local_map.info.width + cell_x;
-            local_map.data[cell] = 100;
+            cell_x = (int)((v.x() - map.info.origin.position.x)/map.info.resolution);
+            cell_y = (int)((v.y() - map.info.origin.position.y)/map.info.resolution);
+            cell   = cell_y * map.info.width + cell_x;
+            map.data[cell] = 100;
         }
     }
     return true;
@@ -139,9 +86,22 @@ int main(int argc, char** argv)
     std::cout << "INITIALIZING LOCAL OCCUPANCY GRID BY MARCOSOFT..." << std::endl;
     ros::init(argc, argv, "local_occ_grid");
     ros::NodeHandle n;
-    ros::Publisher pubLocalOccGrid = n.advertise<nav_msgs::OccupancyGrid>("/local_occ_grid", 10);
-    listener = new tf::TransformListener();
-    ros::Rate loop(10);
+    tf::TransformListener* listener = new tf::TransformListener();
+    
+    bool use_lidar;
+    bool use_cloud;
+    float min_x;
+    float max_x;
+    float min_y;
+    float max_y;
+    float min_z;
+    float max_z;
+    float resolution;
+    int   cloud_downsampling;
+    int   lidar_downsampling;
+    std::string scan_topic;
+    std::string cloud_topic;
+    std::string base_link_name;
 
     ros::param::param<bool >("~use_lidar", use_lidar, true);
     ros::param::param<bool >("~use_cloud", use_cloud, false);
@@ -151,8 +111,11 @@ int main(int argc, char** argv)
     ros::param::param<float>("~max_y", max_y,  2.0);
     ros::param::param<float>("~min_z", min_z,  0.05);
     ros::param::param<float>("~max_z", max_z,  1.5);
+    ros::param::param<float>("~resolution", resolution,  0.05);
     ros::param::param<int  >("~lidar_downsampling", lidar_downsampling, 1);
     ros::param::param<int  >("~cloud_downsampling", cloud_downsampling, 9);
+    ros::param::param<std::string>("~laser_scan_topic", scan_topic, "/scan");
+    ros::param::param<std::string>("~point_cloud_topic", cloud_topic, "/point_cloud");
     ros::param::param<std::string>("/base_link_name", base_link_name, "base_link");
 
     std::cout << "LocalOccGrid.->Parameters: min_x =" << min_x << "  max_x =" << max_x << "  min_y =" << min_y << "  max_y =" << max_y;
@@ -163,6 +126,8 @@ int main(int argc, char** argv)
     //
     //Local map initialization
     //
+    nav_msgs::OccupancyGrid local_map;
+    local_map.header.frame_id = base_link_name;
     local_map.info.resolution = resolution;
     local_map.info.width  = (int)((max_x - min_x)/resolution);
     local_map.info.height = (int)((max_y - min_y)/resolution);
@@ -170,26 +135,41 @@ int main(int argc, char** argv)
     local_map.info.origin.position.y = min_y;
     local_map.data.resize(local_map.info.width*local_map.info.height);
     for(size_t i=0; i < local_map.data.size(); i++) local_map.data[i] = 0;
-    
-    std::cout << "LocalOccGrid.->Trying to get first messages from active sensor topics: " << (use_cloud ? point_cloud_topic : "") << "  ";
-    std::cout << (use_lidar ? laser_scan_topic : "")<<std::endl;
-    boost::shared_ptr<sensor_msgs::PointCloud2 const> ptr_c1  ; 
-    boost::shared_ptr<sensor_msgs::LaserScan const>   ptr_scan;
-    if(use_cloud)  ptr_c1   = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(point_cloud_topic , ros::Duration(10000.0));
-    if(use_lidar)  ptr_scan = ros::topic::waitForMessage<sensor_msgs::LaserScan>(laser_scan_topic, ros::Duration(10000.0));
-    std::cout << "LocalOccGrid.->First messages received..." << std::endl;
-    if(use_cloud  && ptr_c1   != NULL) point_cloud_frame  = ptr_c1->header.frame_id;
-    if(use_lidar  && ptr_scan != NULL) laser_scan_frame   = ptr_scan->header.frame_id;
+    std_msgs::Float32MultiArray local_map_array;
+    local_map_array.data.resize(local_map.info.width*local_map.info.height);
+    for(size_t i=0; i < local_map_array.data.size(); i++) local_map_array.data[i] = 0.0;
 
-    std::cout << "LocalOccGrid.->Waiting for sensor transforms" << std::endl;
-    if (use_cloud ) listener->waitForTransform(base_link_name, point_cloud_frame , ros::Time(0), ros::Duration(1000.0));
-    if (use_lidar)  listener->waitForTransform(base_link_name, laser_scan_frame,   ros::Time(0), ros::Duration(1000.0));
+    //
+    //Get first sensor messages and transformations
+    //
+    std::cout << "LocalOccGrid.->Trying to get first messages from active sensor topics: " << (use_cloud ? cloud_topic : "") << "  ";
+    std::cout << (use_lidar ? scan_topic : "")<<std::endl;
+    if(use_cloud)  cloud_ptr = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(cloud_topic , ros::Duration(10000.0));
+    if(use_lidar)  scan_ptr  = ros::topic::waitForMessage<sensor_msgs::LaserScan>(scan_topic, ros::Duration(10000.0));
+    std::cout << "LocalOccGrid.->First messages received. ";
+    if(use_cloud  && cloud_ptr != NULL) std::cout << "Cloud frame id: " << cloud_ptr->header.frame_id << "    ";
+    if(use_lidar  && scan_ptr  != NULL) std::cout << "Scan frame id: " << scan_ptr->header.frame_id << std::endl;
+    std::cout << "LocalOccGrid.->Waiting for transforms for active sensors..." << std::endl;
+    if(use_cloud  && cloud_ptr != NULL) listener->waitForTransform(base_link_name, cloud_ptr->header.frame_id, ros::Time(0), ros::Duration(10.0));
+    if(use_lidar  && scan_ptr  != NULL) listener->waitForTransform(base_link_name, scan_ptr->header.frame_id, ros::Time(0), ros::Duration(10.0));
     std::cout << "LocalOccGrid.->Sensor transforms are now available"<< std::endl;
-            
-    int counter = 0;
+
+    ros::Subscriber sub_lidar;
+    ros::Subscriber sub_cloud;
+    if(use_lidar) sub_lidar = n.subscribe(scan_topic, 1, callback_laser_scan);
+    if(use_cloud) sub_cloud = n.subscribe(cloud_topic, 1 , callback_point_cloud);
+
+    ros::Publisher pubLocalOccGrid = n.advertise<nav_msgs::OccupancyGrid>("/local_occ_grid", 10);
+    ros::Publisher pubLocalOccGridArray = n.advertise<std_msgs::Float32MultiArray>("/local_occ_grid_array", 10);
+    ros::Rate loop(10);
     while(ros::ok())
     {
+        for(size_t i=0; i < local_map.data.size(); i++) local_map.data[i] = 0;
+        if(use_lidar) fill_map_with_lidar(local_map, min_x, min_y, min_z, max_x, max_y, max_z, lidar_downsampling, base_link_name, listener);
+        if(use_cloud) fill_map_with_cloud(local_map, min_x, min_y, min_z, max_x, max_y, max_z, cloud_downsampling, base_link_name, listener);
+        for(size_t i=0; i < local_map_array.data.size(); i++) local_map_array.data[i] = local_map.data[i];
         pubLocalOccGrid.publish(local_map);
+        pubLocalOccGridArray.publish(local_map_array);
         ros::spinOnce();
         loop.sleep();
     }
