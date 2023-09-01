@@ -57,11 +57,11 @@
     <arg name="training_dir"  value="$(find obj_reco)/training_dir"/>
   </include>
   
-  <!--node name="sound_play" pkg="sound_play" type="soundplay_node.py" output="screen"/>
+  <node name="sound_play" pkg="sound_play" type="soundplay_node.py" output="screen"/>
   <node name="speech_recog" pkg="sprec_pocketsphinx" type="asr.py">
     <remap from="jsgf_audio" to="sphinx_audio" />
-    <param name="gram" value="$(find pocketsphinx)/vocab/gpsr"/>
-    <param name="dict" value="$(find pocketsphinx)/vocab/gpsr.dic"/>
+    <param name="gram" value="$(find sprec_pocketsphinx)/vocab/gpsr"/>
+    <param name="dict" value="$(find sprec_pocketsphinx)/vocab/gpsr.dic"/>
     <param name="grammar" value="gpsr_gram"/>
     <param name="rule" value="simple_command"/>
     <param name="lm" value=":default"/>
@@ -70,5 +70,5 @@
 
   <node name="audio_control" pkg="sprec_pocketsphinx" type="send_audio.py" output="screen">
     <param name="input" value=":default"/>
-  </node-->
+  </node>
 </launch>

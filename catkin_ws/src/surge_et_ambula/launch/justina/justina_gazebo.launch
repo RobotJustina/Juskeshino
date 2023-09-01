@@ -35,4 +35,5 @@
   <include file="$(find surge_et_ambula)/launch/justina/justina_manipulation.launch"/>
   <include file="$(find surge_et_ambula)/launch/justina/vision.launch"/>
   <include file="$(find surge_et_ambula)/launch/justina/speech.launch"/>
+
 </launch>

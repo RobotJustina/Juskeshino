@@ -39,26 +39,6 @@ def points_actual_to_points_target(point_in, f_actual, f_target):
 
 
 
-def object_state(obj_pose):  
-    MT = tft.quaternion_matrix([obj_pose.orientation.x ,obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w]) 
-    pc1 = np.asarray( [MT[0,0], MT[1,0], MT[2,0]])   # eje principal
-    pc2 = np.asarray( [MT[0,2], MT[1,2], MT[2,2]])   # 2do eje principal
-    angle_pc2_x_bl =  math.atan2(pc2[1], pc2[0]) # angulo de z_object con respecto a eje x base_link
-    eje_z = np.asarray([0, 0, 1], dtype=np.float64 )# vector normal al plano xy
-    angle_obj_surface = np.arcsin( np.dot(pc1 , eje_z ) / (np.linalg.norm(pc1) * 1) )
-    print("angulo del objeto respecto de la superficie: ", np.rad2deg(angle_obj_surface))
-   
-    if (angle_obj_surface < np.deg2rad(30)) or (angle_obj_surface > np.deg2rad(150)):
-        print("Eje principal horizontal***********")
-        eje_x = np.asarray([1, 0, 0], dtype=np.float64 )
-        angle_obj_axisx = np.arcsin( np.dot(pc1 , eje_x) / (np.linalg.norm(pc1) * 1) )
-        print("angulo del objeto respecto de eje x: ", np.rad2deg(angle_obj_axisx))
-        return 'horizontal', np.rad2deg(angle_obj_axisx), None
-    else: 
-        print("Eje principal vertical*******************************")
-        return 'vertical', np.rad2deg(angle_obj_surface), angle_pc2_x_bl
-
-
 
 def obj_grip(grip_point , obj_pose, rotacion, obj_state , object_frame):
     """
@@ -108,8 +88,8 @@ def obj_grip(grip_point , obj_pose, rotacion, obj_state , object_frame):
 
 
 
-def grip_rules(obj_pose, type_obj, obj_state, alfa, beta, size):
-    if type_obj == 'box': return box(obj_pose, size, obj_state,alfa, beta )
+def grip_rules(obj_pose, type_obj, obj_state, size):
+    if type_obj == 'box': return box(obj_pose, size, obj_state )
     else: return prism(obj_pose, obj_state)
         
 
@@ -123,11 +103,12 @@ def grip_rules(obj_pose, type_obj, obj_state, alfa, beta, size):
 
 
 
-def box(obj_pose, size, obj_state, alfa, beta):
+def box(obj_pose, size, obj_state):
     grasp_candidates_quaternion = []
     #grip_point = [0, 0, size.z/3]      # punto en frame object
     if obj_state == 'horizontal':   # se elige el punto mas alto 
         print("Horizontal box")
+        """
         MT = tft.quaternion_matrix([obj_pose.orientation.x ,obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w])
         axis_x_obj = np.asarray( [MT[0,0], MT[1,0], MT[2,0]]) 
         axis_z_point = [0,0,1]  # garantiza que agarre es completamente horizontal
@@ -144,13 +125,13 @@ def box(obj_pose, size, obj_state, alfa, beta):
         obj_pose.orientation.y = gripper_quaternion[1]
         obj_pose.orientation.z = gripper_quaternion[2]
         obj_pose.orientation.w = gripper_quaternion[3]
-        broadcaster_frame_object('base_link', 'horizontal_box' , obj_pose )  # emite la pose en 'base_link'
-        rospy.sleep(1.0)
-        grip_point = points_actual_to_points_target([0, 0, size.z/3], 'horizontal_box', 'base_link')
-        return obj_grip(grip_point , obj_pose, "P", obj_state , 'horizontal_box')
+        """
+        #broadcaster_frame_object('base_link', 'horizontal_box' , obj_pose )  # emite la pose en 'base_link'
+        #rospy.sleep(1.0)
+        grip_point = points_actual_to_points_target([0, 0, size.z/3], 'object', 'base_link')
+        return obj_grip(grip_point , obj_pose, "P", obj_state , 'object')
 
     else:  # VERTICAL object
-        print("Angulo de 2cp respecto de eje X de BASE_LINK:", np.rad2deg(beta)) 
         grip_point1 = points_actual_to_points_target([0, 0, size.z/3] , 'object', 'base_link')
         grip_point2 = points_actual_to_points_target([size.x/3, 0, 0]  , 'object', 'base_link')     # punto en frame object
         poses_list1 = obj_grip(grip_point1 , obj_pose, "R", obj_state ,'object')
@@ -402,9 +383,10 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
 def callback(req):
     global listener, ik_srv
     resp = BestGraspTrajResponse()
-    obj_state, angle_obj_surface , angle_pc2_x_bl = object_state(req.recog_object.pose)  # Object state: 'vertical' u 'horizontal'
+    obj_state = req.recog_object.main_axis_tilt     #"horizontal"
+    print("OBJ STATE ", obj_state)
 
-    pose_list_q = grip_rules(req.recog_object.pose, req.recog_object.category, obj_state,angle_obj_surface ,angle_pc2_x_bl, req.recog_object.size )
+    pose_list_q = grip_rules(req.recog_object.pose, req.recog_object.category, obj_state, req.recog_object.size )
     print("lista d eposes", len(pose_list_q))
     if len(pose_list_q) <= 0:
         print("object is no graspable")

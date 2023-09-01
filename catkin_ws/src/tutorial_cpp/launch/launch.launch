@@ -1,0 +1,5 @@
+<launch>
+    <!-- launch de tutorial -->
+    <node pkg="tutorial_cpp" type="simple" name="lolo"> output="screen">
+    </node>
+</launch>

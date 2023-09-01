@@ -223,7 +223,7 @@ def main():
         
         if state == SM_INIT:
             print("Starting State Machine..............")
-            state = SM_WAITING_NEW_COMMAND
+            state = SM_WAITING_NEW_COMMAND#SM_WAITING_NEW_COMMAND     SM_MOVE_HEAD
 
         elif state == SM_WAITING_NEW_COMMAND:
             print("state == SM_WAITING_NEW_COMMAND")
