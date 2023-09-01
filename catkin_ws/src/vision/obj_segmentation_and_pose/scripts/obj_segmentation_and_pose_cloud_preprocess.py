@@ -145,6 +145,7 @@ def pca(xyz_points,centrid):    # pc del contorno mas cercano
 
 
 
+
 def object_pose(centroid, principal_component, second_component):  # vectores de entrada estan en frame base_link
     """
     Construction of the coordinate system of the object,the construction of the frame depends on the coordinate system of the robot gripper 
@@ -221,7 +222,7 @@ def object_pose(centroid, principal_component, second_component):  # vectores de
     obj_pose.orientation.y = q_obj[1]
     obj_pose.orientation.z = q_obj[2]
     obj_pose.orientation.w = q_obj[3]
-    return obj_pose , axis_x_obj
+    return obj_pose , axis_x_obj, obj_state
 
 
 
@@ -324,13 +325,14 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
 
         c_obj = object_category(size_obj.x, size_obj.z, size_obj.y)
 
-        obj_pose, axis_x_obj = object_pose(centroid, pca_vectors[0], pca_vectors[1])
+        obj_pose, axis_x_obj, obj_state = object_pose(centroid, pca_vectors[0], pca_vectors[1])
         publish_arow_marker(centroid, axis_x_obj, 'base_link', ns ="principal_component", id=22)
         broadcaster_frame_object("base_link", "object", obj_pose)
         print("size object i frame object", size_obj)
         print("object category", c_obj)
         # Rellenando msg 
         resp.image = image_mask     # mascara del objeto detectado
+        resp.recog_object.main_axis_tilt = obj_state
         resp.recog_object.image = image_obj
         resp.recog_object.category = c_obj
         resp.recog_object.header = req.point_cloud.header

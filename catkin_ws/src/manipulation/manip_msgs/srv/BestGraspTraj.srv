@@ -1,4 +1,4 @@
-manip_msgs/VisionObject recog_object
+manip_msgs/VisionObject recog_object                    #vision_msgs/VisionObject recog_object
 ---
 trajectory_msgs/JointTrajectory articular_trajectory
 bool graspable                               #graspable by the gripper
