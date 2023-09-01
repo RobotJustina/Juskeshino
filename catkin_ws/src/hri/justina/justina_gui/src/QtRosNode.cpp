@@ -65,9 +65,9 @@ void QtRosNode::run()
         
     cltFindLines           = n->serviceClient<vision_msgs::FindLines>           ("/vision/line_finder/find_table_edge");
     cltFindHoriPlanes      = n->serviceClient<vision_msgs::FindPlanes>          ("/vision/line_finder/find_horizontal_plane_ransac");
-    cltTrainObject         = n->serviceClient<vision_msgs::TrainObject>         ("/vision/obj_reco/train_object");
-    cltRecogObjects        = n->serviceClient<vision_msgs::RecognizeObjects>    ("/vision/obj_reco/recognize_objects");
-    cltRecogObject         = n->serviceClient<vision_msgs::RecognizeObject >    ("/vision/obj_reco/recognize_object");
+    cltTrainObject         = n->serviceClient<vision_msgs::TrainObject>         ("/vision/obj_reco/detect_and_train_object");
+    cltRecogObjects        = n->serviceClient<vision_msgs::RecognizeObjects>    ("/vision/obj_reco/detect_and_recognize_objects");
+    cltRecogObject         = n->serviceClient<vision_msgs::RecognizeObject >    ("/vision/obj_reco/detect_and_recognize_object");
     cltGetPointsAbovePlane = n->serviceClient<vision_msgs::PreprocessPointCloud>("/vision/get_points_above_plane");
     
     int pub_zero_counter = 5;
