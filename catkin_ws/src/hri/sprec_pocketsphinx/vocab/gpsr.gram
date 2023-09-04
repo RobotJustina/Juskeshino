@@ -3,5 +3,5 @@ grammar gpsr_gram;
 
 public <simple_command> = ROBOT TAKE THE <object> TO THE <location>;
 
-<object> = JUICE | SOAP | CUP | DEODORANT;
+<object> = JUICE | SOAP | CUP | DEODORANT | PRINGLES;
 <location> = LIVINGROOM | KITCHEN;

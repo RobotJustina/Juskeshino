@@ -170,11 +170,11 @@ def get_robot_pose(listener):
 
 
 def callback_recognized_speech(msg):
-    global recognized_speech, new_task, executing_task
+    global recognized_speech, new_command, executing_command
     # Si se esta ejecuntando una tarea deja de almacenar comandos de voz entrantes y de imprimir en pantalla
-    if executing_task:  
+    if executing_command:  
         return
-    new_task = True
+    new_command = True
     recognized_speech = msg.hypothesis
     print(recognized_speech)
 
@@ -184,7 +184,7 @@ def main():
 
     print("state machine....................... ʕ•ᴥ•ʔ")
     rospy.init_node("act_pln") 
-    global goal_reached, goal_hd_reached, goal_la_reached
+    global goal_reached, goal_hd_reached, goal_la_reached, new_command ,executing_command
 
     rospy.wait_for_service("/vision/obj_segmentation/get_obj_pose")
     clt_pose_obj = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose", RecognizeObject)
@@ -234,6 +234,7 @@ def main():
 
             if "ROBOT" in request:
                 print("Se ha hecho una peticion")
+                print(recognized_speech)
                 #parse_command(recognized_speech)
                 state = -1
 
