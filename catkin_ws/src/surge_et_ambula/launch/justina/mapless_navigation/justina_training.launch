@@ -31,7 +31,7 @@
     <param name="use_lidar" value="true"/>
     <param name="use_cloud" value="true"/>
     <param name="laser_scan_topic" value="/hardware/scan"/>
-    <param name="point_cloud_topic" value="/hardware/realsense/points"/>
+    <param name="point_cloud_topic" value="/camera/depth_registered/points"/>
   </node>
   
 </launch>
