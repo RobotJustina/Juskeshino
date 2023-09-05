@@ -12,7 +12,7 @@
         args="$(find config_files)/maps/mapa_itzel.yaml _frame_id:=odom">
   </node>  
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina.rviz"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_mapless.rviz"/>
   <node name="justina_gui" pkg="justina_gui" type="justina_gui_node" output="screen">
     <param name="la_predefined" value="$(find config_files)/justina/manipulation/la_predefined.yaml"/>
     <param name="ra_predefined" value="$(find config_files)/justina/manipulation/ra_predefined.yaml"/>
