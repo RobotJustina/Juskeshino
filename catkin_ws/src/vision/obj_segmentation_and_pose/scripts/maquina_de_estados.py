@@ -10,6 +10,7 @@ from geometry_msgs.msg import PointStamped, PoseStamped, Point, Pose, Twist
 from vision_msgs.srv import *
 from manip_msgs.srv import *
 from hri_msgs.msg import *
+from sound_play.msg import SoundRequest
 import time
 from std_msgs.msg import String, Float64MultiArray, Float32, Float64,Bool, Float32MultiArray
 from actionlib_msgs.msg import GoalStatus
@@ -29,32 +30,29 @@ SM_WAIT_FOR_HEAD = 70
 SM_PREPARE_ARM = 80
 SM_MOVE_LEFT_ARM = 100 
 VIRTUAL_LOCATION = [5.8, 4.36, 0.0]
-LEFT_TABLE_NEAR = [5.45, 2.45, np.deg2rad(90)]
-LEFT_TABLE_FAR = [6.95, 2.3, 0.0]
-RIGTH_TABLE = [5.7, 0.28, np.deg2rad(-90)]
-LOCAL_TARGET = LEFT_TABLE_NEAR
-PREPARE = [-1.27, 0.4, 0.0, 1.9, 0.01, 0.69, -0.01]#[-1.2, 0.1, 0.0, 1.6, 0.0, 1.1, 0.0]
+#LEFT_TABLE_NEAR = [5.45, 2.45, np.deg2rad(90)]
+LIVINGROOM = []
+KITCHEN = []
+PREPARE = [-1.27, 0.4, 0.0, 1.9, 0.01, 0.69, -0.01]
 HOME = [0,0,0,0,0,0]
 
 
-def callback_goal_reached(msg):
+def callback_goal_reached(msg): #¿?
     global goal_reached
     goal_reached = msg.status == 3
 
 
-def callback_hd_goal_reached(msg):
+def callback_hd_goal_reached(msg):  # head
     global goal_hd_reached
     goal_hd_reached = msg.data
 
 
-
-def callback_la_goal_reached(msg):
+def callback_la_goal_reached(msg):  # left arm
     global goal_la_reached
-    
     goal_la_reached = msg.data
 
 
-def go_to_goal_pose(pub_goal_pose, local_target):
+def go_to_goal_pose(pub_goal_pose, local_target):   # movil base
     loop = rospy.Rate(10)
     goal_pose = PoseStamped()
     goal_pose.pose.orientation.w = math.cos(local_target[2] /2)
@@ -69,8 +67,6 @@ def go_to_goal_pose(pub_goal_pose, local_target):
         loop.sleep()
 
 
-
-
 def move_base(pub_cmd_vel, linear, angular):
     cmd = Twist()
     cmd.linear.x = linear
@@ -78,26 +74,6 @@ def move_base(pub_cmd_vel, linear, angular):
     pub_cmd_vel.publish(cmd)
     rospy.sleep(2)
     pub_cmd_vel.publish(Twist())
-
-
-
-def move_left_arm(goal_pose, pub_traj, clt_ik):
-    print("Moving left arm to " + str(goal_pose))
-    srv = InverseKinematicsPose2TrajRequest()
-    srv.x = goal_pose[0]
-    srv.y = goal_pose[1]
-    srv.z = goal_pose[2]
-    srv.roll = goal_pose[3]
-    srv.pitch = goal_pose[4]
-    srv.yaw = goal_pose[5]
-
-    try:
-        resp = clt_ik(srv)
-    except:
-        return None
-    
-    pub_traj.publish(resp.articular_trajectory)
-    return
 
 
 
@@ -129,8 +105,6 @@ def get_obj_pose(clt_pose_obj):
     except:
         return None
     return clt_pose_obj(recognize_object_req)
-
-
 
 
 
@@ -169,22 +143,38 @@ def get_robot_pose(listener):
 
 
 
+def parse_command(cmd):
+    obj = "pringles" if "PRINGLES" in cmd else "drink"
+    location = KITCHEN if "KITCHEN" in cmd else LIVINGROOM  # Ubicacion de LIVINGROOM y kitchen
+    return location
+
+
+def say(pub_say, text):
+    msg = SoundRequest()
+    msg.sound   = -3
+    msg.command = 1
+    msg.volume  = 1.0
+    msg.arg2    = "voice_kal_diphone"
+    msg.arg = text
+    pub_say.publish(msg)
+    time.sleep(1.5)
+
+
 def callback_recognized_speech(msg):
     global recognized_speech, new_command, executing_command
-    # Si se esta ejecuntando una tarea deja de almacenar comandos de voz entrantes y de imprimir en pantalla
-    if executing_command:  
-        return
-    new_command = True
-    recognized_speech = msg.hypothesis
-    print(recognized_speech)
+    print(recognized_speech, "****************************")
+    if not executing_command:  
+        new_command = True
+        recognized_speech = msg.hypothesis
 
 
 
 def main():
 
-    print("state machine....................... ʕ•ᴥ•ʔ")
+    print("STATE MACHINE.......................")
     rospy.init_node("act_pln") 
-    global goal_reached, goal_hd_reached, goal_la_reached, new_command ,executing_command
+    global goal_reached, goal_hd_reached, goal_la_reached
+    global executing_command, new_command, recognized_speech
 
     rospy.wait_for_service("/vision/obj_segmentation/get_obj_pose")
     clt_pose_obj = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose", RecognizeObject)
@@ -203,7 +193,7 @@ def main():
     pub_hd_goal_pose = rospy.Publisher("/hardware/head/goal_pose"     , Float64MultiArray, queue_size=10)
     pub_goal_pose    = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
     pub_cmd_vel      = rospy.Publisher('/hardware/mobile_base/cmd_vel', Twist, queue_size=10)
-    #pubSay           = rospy.Publisher('/hri/speech_generator', SoundRequest, queue_size=10)
+    pub_say           = rospy.Publisher('/hri/speech_generator', SoundRequest, queue_size=10)
     rospy.Subscriber('/navigation/status',Bool ,callback_hd_goal_reached)
     rospy.Subscriber('/manipulation/head/goal_reached',Bool ,callback_hd_goal_reached)
     rospy.Subscriber('/manipulation/left_arm/goal_reached',Bool , callback_la_goal_reached)
@@ -222,33 +212,30 @@ def main():
     while not rospy.is_shutdown():
         
         if state == SM_INIT:
-            print("Starting State Machine..............")
-            state = SM_MOVE_HEAD#_WAITING_NEW_COMMAND#SM_WAITING_NEW_COMMAND     SM_MOVE_HEAD
+            print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
+            state = SM_MOVE_HEAD#SM_WAITING_NEW_COMMAND
 
         elif state == SM_WAITING_NEW_COMMAND:
-            print("state == SM_WAITING_NEW_COMMAND")
-            rospy.sleep(1.0)
-            request = recognized_speech
-            print(recognized_speech)
+            print("state == SM_WAITING_NEW_COMMAND") 
+            #say(pub_say , "Hello, I am waiting for new task")
             rospy.sleep(3.0)
-
+            request = recognized_speech
+            print(request)
+        
             if "ROBOT" in request:
                 print("Se ha hecho una peticion")
-                print(recognized_speech)
-                #parse_command(recognized_speech)
-                state = -1
-
+                #say(pub_say , "has been requested"+recognized_speech)
+                local_target = parse_command(request)
+                state = -1#SM_NAVIGATE
             else:                
                 print("No se han recibido nuevas peticiones")
                 print("Regresando a E1...")
                 state = SM_INIT
-            #state = SM_NAVIGATE
-            #state = -1#SM_MOVE_HEAD
 
         elif state == SM_NAVIGATE:
             #global goal_reached
-            print("going to the target place....")
-            go_to_goal_pose(pub_goal_pose,LOCAL_TARGET)
+            print("going to the target place...."+ String(local_target))
+            go_to_goal_pose(pub_goal_pose, local_target)
             #goal_reached = 1
             state =  SM_WAIT_FOR_NAVIGATE
 
@@ -311,11 +298,9 @@ def main():
             cv_image_obj = bridge.imgmsg_to_cv2(ros_image_obj, "bgr8")
             #cv2.imshow("imagen reconstruida", cv_image_obj) #*****************
             #cv2.waitKey(0)
-
             reco_obj_req.image = ros_image_obj
             reco_obj_req.mask = ros_image_mask
             reco_obj_resp = clt_recognize_object(reco_obj_req)
-
             print("Objeto reconocido:_________")
             print(reco_obj_resp.recog_objects[0].id)
             #reco_obj_resp.image

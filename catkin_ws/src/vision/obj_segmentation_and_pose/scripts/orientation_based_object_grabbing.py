@@ -13,6 +13,7 @@ from visualization_msgs.msg import Marker, MarkerArray
 import geometry_msgs.msg
 
 MAXIMUM_GRIP_LENGTH = 0.17
+debug = False
 
 def pose_actual_to_pose_target(pose, f_actual, f_target):
     global listener
@@ -79,8 +80,9 @@ def obj_grip(grip_point , obj_pose, rotacion, obj_state , object_frame):
         candidate_grasp.position.x = grip_point[0] 
         candidate_grasp.position.y = grip_point[1] 
         candidate_grasp.position.z = grip_point[2] 
-        broadcaster_frame_object('base_link', 'test_candidates'+str(j)+obj_state , candidate_grasp )  # emite la pose en 'base_link'
-        rospy.sleep(1.0)
+        if debug:
+            broadcaster_frame_object('base_link', 'test_candidates'+str(j)+obj_state , candidate_grasp )  # emite la pose en 'base_link'
+            rospy.sleep(1.0)
         grasp_candidates_quaternion.append(candidate_grasp )     # guarda el candidato en frame bl
 
     print("len candidates grip box", len(grasp_candidates_quaternion))
@@ -126,8 +128,9 @@ def box(obj_pose, size, obj_state):
         obj_pose.orientation.z = gripper_quaternion[2]
         obj_pose.orientation.w = gripper_quaternion[3]
         """
-        #broadcaster_frame_object('base_link', 'horizontal_box' , obj_pose )  # emite la pose en 'base_link'
-        #rospy.sleep(1.0)
+        if debug:
+            broadcaster_frame_object('base_link', 'horizontal_box' , obj_pose )  # emite la pose en 'base_link'
+            rospy.sleep(1.0)
         grip_point = points_actual_to_points_target([0, 0, size.z/3], 'object', 'base_link')
         return obj_grip(grip_point , obj_pose, "P", obj_state , 'object')
 
@@ -147,8 +150,9 @@ def box(obj_pose, size, obj_state):
         obj_pose_frame_object.orientation.z = q_gripper[2]
         obj_pose_frame_object.orientation.w = q_gripper[3]
         obj_pose_frame_bl = pose_actual_to_pose_target(obj_pose , 'base_link', 'object')
-        broadcaster_frame_object('base_link', 'test', obj_pose_frame_bl)  # emite la pose en 'base_link'
-        rospy.sleep(1.0)
+        if debug:
+            broadcaster_frame_object('base_link', 'test', obj_pose_frame_bl)  # emite la pose en 'base_link'
+            rospy.sleep(1.0)
 
         poses_list2 = obj_grip(grip_point2 , obj_pose_frame_bl, "P", 'horizontal' ,'object')
 
@@ -195,8 +199,9 @@ def prism(obj_pose, obj_state):
         obj_pose.orientation.y = gripper_quaternion[1]
         obj_pose.orientation.z = gripper_quaternion[2]
         obj_pose.orientation.w = gripper_quaternion[3]
-        broadcaster_frame_object('base_link', 'horizontal_prism' , obj_pose )  # emite la pose en 'base_link'
-        rospy.sleep(1.0)
+        if debug:
+            broadcaster_frame_object('base_link', 'horizontal_prism' , obj_pose )  # emite la pose en 'base_link'
+            rospy.sleep(1.0)
         return obj_grip(grip_point , obj_pose, "P", obj_state ,  'horizontal_prism')
         
     else:
@@ -233,8 +238,9 @@ def prism(obj_pose, obj_state):
             candidate_grasp.orientation.z = q_gripper[2]
             candidate_grasp.orientation.w = q_gripper[3]
             grasp_candidates_quaternion.append(candidate_grasp) 
-            broadcaster_frame_object('base_link', 'vertical_prism'+str(j) , candidate_grasp )  # emite la pose en 'base_link'
-            rospy.sleep(1.0)
+            if debug:
+                broadcaster_frame_object('base_link', 'vertical_prism'+str(j) , candidate_grasp )  # emite la pose en 'base_link'
+                rospy.sleep(1.0)
             j += 1
         print("number of candidates vertical grip prism", len(grasp_candidates_quaternion))
         return grasp_candidates_quaternion
