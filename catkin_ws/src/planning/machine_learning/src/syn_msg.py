@@ -2,7 +2,7 @@
 
 import rospy
 import numpy as np
-import cv2
+import rospkg
 from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PointStamped
@@ -10,24 +10,31 @@ from geometry_msgs.msg import PointStamped
 #list with each concatenated data => [grid+goal+cmd]
 info=[]
 ##temporary variables for saving data
-last_cmd=[]
-last_goal=[]
+last_cmd=[0,0]
+last_goal=[0,0]
 save_bool=False
+rospack = rospkg.RosPack()
+dataset_folder = rospack.get_path("machine_learning")
 
 def callback_grid(msg):
-	grid=msg.data
+	global save_bool, last_cmd, last_goal
+	grid=list(msg.data)
 	if(save_bool):
 		temp=grid+last_cmd+last_goal
 		info.append(temp)
-		print(f"current info cmd:{last_cmd}, goal:{last_goal} ")
+		#print(f"current info cmd:{last_cmd}, goal:{last_goal} ")
 
 def callback_goal(msg):
-	last_goal=msg.data
+	global last_goal
+	last_goal=list(msg.data)
 
 def callback_point(msg):
-	save_bool=True
+	global save_bool
+	print("New goal")
 
-def callback_cmd(msg)
+def callback_cmd(msg):
+	global last_cmd
+	save_bool=True
 	last_cmd=[msg.linear.x, msg.angular.z]
 
 def main():
@@ -41,6 +48,10 @@ def main():
 
 if __name__ == '__main__':
 	try:
-		main()
+		while not rospy.is_shutdown():
+			main()
+		print("Save data")
+		data=np.asarray(info)
+		np.savez(dataset_folder + "data",data=data)
 	except rospy.ROSInterruptException:
 		pass
