@@ -50,7 +50,7 @@ def main():
     rospy.Subscriber('/clicked_point', PointStamped, callback_global_goal)
     pub_goal = rospy.Publisher("/NN_goal", Float32MultiArray  , queue_size=10)
 
-    loop = rospy.Rate(0.1)
+    loop = rospy.Rate(10)
     loop.sleep()
     msg=Float32MultiArray()
     [goal_x, goal_y, temp] = get_robot_pose(listener,"odom") ##Wait for the current pose

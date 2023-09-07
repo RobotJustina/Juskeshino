@@ -23,6 +23,8 @@
   <include file="$(find surge_et_ambula)/launch/justina/vision.launch"/>
   <include file="$(find surge_et_ambula)/launch/justina/speech.launch"/>
 
+  <node name="get_goal_point" pkg="machine_learning" type="get_goal_point.py"/>
+
   <node name="local_occ_grid" pkg="local_occ_grid" type="local_occ_grid">
     <param name="use_lidar" value="true"/>
     <param name="use_cloud" value="true"/>
