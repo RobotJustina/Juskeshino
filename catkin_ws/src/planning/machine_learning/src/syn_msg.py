@@ -52,6 +52,6 @@ if __name__ == '__main__':
 			main()
 		print("Save data")
 		data=np.asarray(info)
-		np.savez(dataset_folder + "data",data=data)
+		np.savez(dataset_folder + "/src/data_train",data=data)
 	except rospy.ROSInterruptException:
 		pass

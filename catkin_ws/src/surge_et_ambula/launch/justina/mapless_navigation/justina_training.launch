@@ -1,5 +1,4 @@
-<launch>
-  <arg name="obs_detector_debug" default="False"/>
+<launch> <arg name="obs_detector_debug" default="False"/>
   
   <param name="base_link_name" value="base_link"/>
   <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
@@ -29,7 +28,7 @@
 
   <node name="get_goal_point" pkg="machine_learning" type="get_goal_point.py"/>
 
-  <!--node name="sync_msg" pkg="machine_learning" type="sync_msg.py"/-->
+  <node name="sync_msg" pkg="machine_learning" type="sync_msg.py"/>
 
   <node name="local_occ_grid" pkg="local_occ_grid" type="local_occ_grid">
     <param name="use_lidar" value="true"/>
