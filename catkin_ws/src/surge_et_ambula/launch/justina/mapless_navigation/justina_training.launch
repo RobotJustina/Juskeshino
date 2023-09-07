@@ -27,7 +27,9 @@
     <arg name="training_dir"  value="$(find obj_reco)/training_dir"/>
   </include>
 
-  <node name="get_goal_point" pkg="machine_learning" type="get_goal_point.py"/>
+  <!--node name="get_goal_point" pkg="machine_learning" type="get_goal_point.py"/-->
+
+  <node name="sync_msg" pkg="machine_learning" type="sync_msg.py"/>
 
   <node name="local_occ_grid" pkg="local_occ_grid" type="local_occ_grid">
     <param name="use_lidar" value="true"/>
