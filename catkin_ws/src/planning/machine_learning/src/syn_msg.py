@@ -29,11 +29,10 @@ def callback_goal(msg):
 	last_goal=list(msg.data)
 
 def callback_point(msg):
-	global save_bool
 	print("New goal")
 
 def callback_cmd(msg):
-	global last_cmd
+	global last_cmd, save_bool
 	save_bool=True
 	last_cmd=[msg.linear.x, msg.angular.z]
 
@@ -51,7 +50,9 @@ if __name__ == '__main__':
 		while not rospy.is_shutdown():
 			main()
 		print("Save data")
+		#print(data)
 		data=np.asarray(info)
+		print(data)
 		np.savez(dataset_folder + "/src/data_train",data=data)
 	except rospy.ROSInterruptException:
 		pass
