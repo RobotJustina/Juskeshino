@@ -17,7 +17,7 @@ rospack = rospkg.RosPack()
 dataset_folder = rospack.get_path("machine_learning")
 
 def callback_grid(msg):
-	global save_bool, last_cmd, last_goal
+	global save_bool, last_cmd, last_goal, info
 	grid=list(msg.data)
 	if(save_bool):
 		temp=grid+last_cmd+last_goal
