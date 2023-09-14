@@ -10,19 +10,15 @@ from geometry_msgs.msg import PointStamped
 #list with each concatenated data => [grid+goal+cmd]
 info=[]
 ##temporary variables for saving data
-last_cmd=[0,0]
 last_goal=[0,0]
-save_bool=False
+grid=[]
 rospack = rospkg.RosPack()
 dataset_folder = rospack.get_path("machine_learning")
 
 def callback_grid(msg):
-	global save_bool, last_cmd, last_goal, info
+	global grid
 	grid=list(msg.data)
-	if(save_bool):
-		temp=grid+last_cmd+last_goal
-		info.append(temp)
-		#print(f"current info cmd:{last_cmd}, goal:{last_goal} ")
+	#print(f"current info cmd:{last_cmd}, goal:{last_goal} ")
 
 def callback_goal(msg):
 	global last_goal
@@ -32,9 +28,10 @@ def callback_point(msg):
 	print("New goal")
 
 def callback_cmd(msg):
-	global last_cmd, save_bool
-	save_bool=True
-	last_cmd=[msg.linear.x, msg.angular.z]
+	global last_goal, grid, info
+	cmd=[msg.linear.x, msg.angular.z]
+	temp=grid+cmd+last_goal
+    info.append(temp)
 
 def main():
 	rospy.init_node("sync_msg")
@@ -49,7 +46,7 @@ if __name__ == '__main__':
 	try:
 		while not rospy.is_shutdown():
 			main()
-		print("Save data")
+		print("Saving data")
 		#print(data)
 		data=np.asarray(info)
 		print(data)
