@@ -3,6 +3,8 @@
 import rospy
 import numpy as np
 import rospkg
+from datetime import datetime
+
 from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PointStamped
@@ -50,6 +52,8 @@ if __name__ == '__main__':
 		#print(data)
 		data=np.asarray(info)
 		print(data)
-		np.savez(dataset_folder + "/src/data_train",data=data)
+		date_time=str(datetime.now())
+		date_time=string.replace(" ", "_")
+		np.savez(dataset_folder + "/src/data_train"+date_time,data=data)
 	except rospy.ROSInterruptException:
 		pass
