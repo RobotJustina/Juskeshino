@@ -53,7 +53,7 @@ if __name__ == '__main__':
 		data=np.asarray(info)
 		print(data)
 		date_time=str(datetime.now())
-		date_time=string.replace(" ", "_")
+		date_time=date_time.replace(" ", "_")
 		np.savez(dataset_folder + "/src/data_train"+date_time,data=data)
 	except rospy.ROSInterruptException:
 		pass
