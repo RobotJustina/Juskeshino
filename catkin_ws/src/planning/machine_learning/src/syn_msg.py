@@ -31,7 +31,7 @@ def callback_cmd(msg):
 	global last_goal, grid, info
 	cmd=[msg.linear.x, msg.angular.z]
 	temp=grid+cmd+last_goal
-    info.append(temp)
+	info.append(temp)
 
 def main():
 	rospy.init_node("sync_msg")
