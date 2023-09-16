@@ -5,7 +5,7 @@ import numpy as np
 import tf
 import math
 import cv2
-from sensor_msgs.msg import PointCloud2
+from sensor_msgs.msg import PointCloud2, Image
 from geometry_msgs.msg import PointStamped, PoseStamped, Point, Pose, Twist
 from vision_msgs.srv import *
 from manip_msgs.srv import *
@@ -31,8 +31,8 @@ SM_PREPARE_ARM = 80
 SM_MOVE_LEFT_ARM = 100 
 VIRTUAL_LOCATION = [5.8, 4.36, 0.0]
 #LEFT_TABLE_NEAR = [5.45, 2.45, np.deg2rad(90)]
-LIVINGROOM = []
-KITCHEN = []
+LIVINGROOM = [5.2, 2.33, np.deg2rad(90)]
+KITCHEN = [5.2, 2.33, np.deg2rad(90)]
 PREPARE = [-1.27, 0.4, 0.0, 1.9, 0.01, 0.69, -0.01]
 HOME = [0,0,0,0,0,0]
 
@@ -97,13 +97,10 @@ def move_left_gripper(q, pubLaGoalGrip):
 
 
 
-def get_obj_pose(clt_pose_obj):
+def get_obj_pose(clt_pose_obj, obj_pc2, image):
     recognize_object_req = RecognizeObjectRequest()
-    try:
-        recognize_object_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
-        #recognize_object_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
-    except:
-        return None
+    recognize_object_req.point_cloud = obj_pc2
+    recognize_object_req.image = image
     return clt_pose_obj(recognize_object_req)
 
 
@@ -146,7 +143,7 @@ def get_robot_pose(listener):
 def parse_command(cmd):
     obj = "pringles" if "PRINGLES" in cmd else "drink"
     location = KITCHEN if "KITCHEN" in cmd else LIVINGROOM  # Ubicacion de LIVINGROOM y kitchen
-    return location
+    return location, obj
 
 
 def say(pub_say, text):
@@ -178,8 +175,13 @@ def main():
 
     rospy.wait_for_service("/vision/obj_segmentation/get_obj_pose")
     clt_pose_obj = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose", RecognizeObject)
+    """
     rospy.wait_for_service("/vision/obj_reco/recognize_object")
     clt_recognize_object = rospy.ServiceProxy("/vision/obj_reco/recognize_object", RecognizeObjects)
+    """
+    rospy.wait_for_service("/vision/obj_reco/detect_and_recognize_objects")
+    clt_recognize_objects = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_objects", RecognizeObjects)
+
     rospy.wait_for_service("/vision/get_best_grasp_traj")
     clt_best_grip = rospy.ServiceProxy("/vision/get_best_grasp_traj", BestGraspTraj )
     rospy.wait_for_service( '/manipulation/la_ik_trajectory' )
@@ -213,6 +215,7 @@ def main():
         
         if state == SM_INIT:
             print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
+            obj_target = "apple"
             state = SM_MOVE_HEAD#SM_WAITING_NEW_COMMAND
 
         elif state == SM_WAITING_NEW_COMMAND:
@@ -225,8 +228,9 @@ def main():
             if "ROBOT" in request:
                 print("Se ha hecho una peticion")
                 #say(pub_say , "has been requested"+recognized_speech)
-                local_target = parse_command(request)
-                state = -1#SM_NAVIGATE
+                local_target, obj_target = parse_command(request)
+                obj_target = "pringles"
+                state = SM_MOVE_HEAD #SM_NAVIGATE
             else:                
                 print("No se han recibido nuevas peticiones")
                 print("Regresando a E1...")
@@ -243,14 +247,13 @@ def main():
             if goal_reached:
                 x_p, y_p, a = get_robot_pose(listener)
                 print("Se llego al lugar solicitado con Pose: ", x_p,y_p,a )
-                #rospy.sleep(1.0)
+                rospy.sleep(1.0)
                 state = SM_MOVE_HEAD
 
         elif state == SM_MOVE_HEAD:
             move_head(pub_hd_goal_pose ,0, -1.0)
             move_head(pub_hd_goal_pose ,0, -1.0)
             print("state == SM_MOVE_HEAD")
-            #rospy.sleep(1.0)
             state = SM_WAIT_FOR_HEAD
 
         elif state == SM_WAIT_FOR_HEAD:
@@ -260,13 +263,37 @@ def main():
                 print("succesfull move head ")
                 rospy.sleep(1.0)
             """
-            #rospy.sleep(1.0)
-            state = SM_GET_OBJ_POSE
+            state = SM_RECO_OBJ
+
+
+
+        elif state == SM_RECO_OBJ:
+            print("state == SM_RECO_OBJ")
+            reco_objs_req = RecognizeObjectsRequest()
+            # LLenar msg
+            reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+            bridge = CvBridge()
+            reco_objs_resp = clt_recognize_objects(reco_objs_req)
+            recog_objects = reco_objs_resp.recog_objects
+            print("Objetos reconocidos:_________")
+
+            for obj in recog_objects:
+                print("* " + obj.id)
+                #print("PC", type(obj.point_cloud))
+                if obj_target == obj.id:
+                    print("Se encontró el objeto pedido.................")
+                    pc_obj_target = obj.point_cloud
+                    image_obj = obj.image
+                    state = SM_GET_OBJ_POSE
+                    break
+                else:state = -1
 
 
         elif state == SM_GET_OBJ_POSE:
             print("state == SM_GET_OBJ..........")
-            resp_pose_obj = get_obj_pose(clt_pose_obj)
+            resp_pose_obj = get_obj_pose(clt_pose_obj, pc_obj_target, image_obj)   # Envia la conexion al servicio y la pc_obj
+            
+            """
             x, y ,z = resp_pose_obj.recog_object.pose.position.x, resp_pose_obj.recog_object.pose.position.y, resp_pose_obj.recog_object.pose.position.z
             i = 0
             z_temp = z*10
@@ -284,27 +311,8 @@ def main():
                     break
             print("position object ", x,y,z)    
             state = SM_RECO_OBJ
+            
 
-        
-
-        elif state == SM_RECO_OBJ:
-            print("state == SM_RECO_OBJ")
-            reco_obj_req = RecognizeObjectsRequest()
-            # LLenar msg
-            #reco_obj_req.point_cloud = 
-            ros_image_obj = resp_pose_obj.recog_object.image        #imagen del objeto
-            ros_image_mask = resp_pose_obj.image
-            bridge = CvBridge()
-            cv_image_obj = bridge.imgmsg_to_cv2(ros_image_obj, "bgr8")
-            #cv2.imshow("imagen reconstruida", cv_image_obj) #*****************
-            #cv2.waitKey(0)
-            reco_obj_req.image = ros_image_obj
-            reco_obj_req.mask = ros_image_mask
-            reco_obj_resp = clt_recognize_object(reco_obj_req)
-            print("Objeto reconocido:_________")
-            print(reco_obj_resp.recog_objects[0].id)
-            #reco_obj_resp.image
-            state = SM_PREPARE_ARM
 
 
         elif state == SM_PREPARE_ARM:
@@ -336,7 +344,7 @@ def main():
             
             move_left_gripper(0.1, pub_la_goal_grip)
             rospy.sleep(1.0)
-            """
+            
             move_left_gripper(0.5, pub_la_goal_grip)
             rospy.sleep(1.0)
             move_left_gripper(0.1, pub_la_goal_grip)

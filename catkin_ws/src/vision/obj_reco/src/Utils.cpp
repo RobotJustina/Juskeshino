@@ -196,6 +196,7 @@ vision_msgs::RecognizeObjects::Response Utils::get_recog_objects_response(std::v
     cv_bridge::CvImage cv_img;
     cv_img.header.stamp = ros::Time::now();
     cv_img.image = result_img;
+    cv_img.encoding = "bgr8";
     cv_img.toImageMsg(resp.image);
 
     resp.recog_objects.resize(objects_bgr.size());
@@ -229,15 +230,16 @@ vision_msgs::VisionObject Utils::get_vision_object_msg(cv::Mat& obj_bgr, cv::Mat
     cv_bridge::CvImage cv_img;
     cv_img.header.stamp = ros::Time::now();
     cv_img.image = obj_bgr;
+    cv_img.encoding = "bgr8";
     cv_img.toImageMsg(msg.image);
 
-    cv::Scalar p = cv::mean(obj_xyz, obj_mask);
+    cv::Scalar p = cv::mean(obj_xyz, obj_mask);     //centroid
     msg.pose.position.x = p[0];
     msg.pose.position.y = p[1];
     msg.pose.position.z = p[2];
     msg.pose.orientation.w = 1.0;
 
-    cv::Mat obj_x_y_z[3];
+    cv::Mat obj_x_y_z[3];                           //object dimensions
     double min_x, min_y, min_z, max_x, max_y, max_z;
     int min_idx, max_idx;
     cv::split(obj_xyz, obj_x_y_z);
@@ -253,6 +255,9 @@ vision_msgs::VisionObject Utils::get_vision_object_msg(cv::Mat& obj_bgr, cv::Mat
     msg.color_rgba.g = c[1]/255.0;
     msg.color_rgba.b = c[0]/255.0;
     msg.color_rgba.a = 1.0;
+
+    //PointCloud2 point_cloud 
+    //Utils::cv_mat2_pointcloud_msg(obj_bgr, obj_xyz, frame_id, PointCloud2Msg);
     
     msg.graspable = true;
     return msg;

@@ -95,7 +95,7 @@ bool callback_detect_and_recog_objs(vision_msgs::RecognizeObjects::Request& req,
         cv::bitwise_or(img, objects_bgr[i], img);
         std::cout << "ObjReco.->Recognized object: " << labels[i] << " with confidence " << confidences[i] << std::endl;
     }
-    cv::imshow("Points above plane", img);
+    //cv::imshow("Points above plane", img);
 
     resp = Utils::get_recog_objects_response(objects_bgr, objects_xyz, objects_masks, labels, confidences, img, req.point_cloud.header.frame_id);
     pubMarkerArray.publish(Utils::get_objects_markers(resp.recog_objects));
