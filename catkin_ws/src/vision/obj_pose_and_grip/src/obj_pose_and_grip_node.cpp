@@ -1,5 +1,6 @@
 #include "ros/ros.h"
 #include <ros/package.h>
+#include "opencv2/opencv.hpp"
 #include <cv_bridge/cv_bridge.h>
 #include "vision_msgs/RecognizeObject.h"
 #include "vision_msgs/VisionObject.h"
