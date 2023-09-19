@@ -32,7 +32,7 @@ def callback_point(msg):
 def callback_cmd(msg):
 	global last_goal, grid, info
 	cmd=[msg.linear.x, msg.angular.z]
-	temp=grid+cmd+last_goal
+	temp=grid+last_goal+cmd
 	info.append(temp)
 
 def main():
