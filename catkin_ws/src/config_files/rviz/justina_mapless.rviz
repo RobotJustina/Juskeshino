@@ -277,12 +277,12 @@ Visualization Manager:
       Class: rviz/Map
       Color Scheme: map
       Draw Behind: false
-      Enabled: false
+      Enabled: true
       Name: Map
       Topic: /map
       Unreliable: false
       Use Timestamp: false
-      Value: false
+      Value: true
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
@@ -404,6 +404,22 @@ Visualization Manager:
           Value: false
         right_arm_grip_center:
           Value: false
+        right_arm_grip_left:
+          Value: true
+        right_arm_grip_right:
+          Value: true
+        right_arm_link1:
+          Value: true
+        right_arm_link2:
+          Value: true
+        right_arm_link3:
+          Value: true
+        right_arm_link4:
+          Value: true
+        right_arm_link5:
+          Value: true
+        right_arm_link6:
+          Value: true
         right_arm_link7:
           Value: false
         shoulders_left_link:
@@ -469,7 +485,19 @@ Visualization Manager:
                                 left_arm_grip_right:
                                   {}
                 shoulders_right_link:
-                  {}
+                  right_arm_link1:
+                    right_arm_link2:
+                      right_arm_link3:
+                        right_arm_link4:
+                          right_arm_link5:
+                            right_arm_link6:
+                              right_arm_link7:
+                                right_arm_grip_center:
+                                  {}
+                                right_arm_grip_left:
+                                  {}
+                                right_arm_grip_right:
+                                  {}
             wheel_back_x:
               wheel_back_y:
                 wheel_back_z:
@@ -478,9 +506,6 @@ Visualization Manager:
               wheel_front_y:
                 wheel_front_z:
                   {}
-        right_arm_link7:
-          right_arm_grip_center:
-            {}
       Update Interval: 0
       Value: true
     - Class: rviz/Marker
