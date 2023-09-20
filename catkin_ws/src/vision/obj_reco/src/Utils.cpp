@@ -257,7 +257,7 @@ vision_msgs::VisionObject Utils::get_vision_object_msg(cv::Mat& obj_bgr, cv::Mat
     msg.color_rgba.a = 1.0;
 
     //PointCloud2 point_cloud 
-    //Utils::cv_mat2_pointcloud_msg(obj_bgr, obj_xyz, frame_id, PointCloud2Msg);
+    Utils::cv_mat2_pointcloud_msg(obj_bgr, obj_xyz, frame_id, msg.point_cloud);
     
     msg.graspable = true;
     return msg;

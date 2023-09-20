@@ -25,8 +25,10 @@ def pc_array(cloud_msg, img_msg):
 
     print("PC", type(cloud_msg))
     obj_xyz = ros_numpy.point_cloud2.pointcloud2_to_array(cloud_msg) 
-    print("nube del objeto datos___________")
-    print(obj_xyz.data)
+    print("nube del objeto datos TYPE")
+    print("shape", obj_xyz.shape)
+    print("ndim", obj_xyz.ndim)
+    print("size", obj_xyz.size)
 
     return obj_xyz, obj_bgr
 
@@ -181,7 +183,7 @@ def publish_arow_marker(centroide_cam, p1,frame_id, ns, id):
 
 
 
-def get_get_obj_pose_response(obj_state, img_bgr, c_obj, header, size_obj, obj_pose):
+def get_obj_pose_response(obj_state, img_bgr, c_obj, header, size_obj, obj_pose):
     resp = RecognizeObjectResponse()
     resp.recog_object.main_axis_tilt = obj_state
     resp.recog_object.image = img_bgr
@@ -234,7 +236,7 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
     print("object category", c_obj)
     """
     # Rellenando msg 
-    resp = get_get_obj_pose_response( obj_state, img_bgr, c_obj, req.point_cloud.header, size_obj, obj_pose)
+    resp = RecognizeObjectResponse()#get_obj_pose_response( obj_state, img_bgr, c_obj, req.point_cloud.header, size_obj, obj_pose)
     return resp
 
 
