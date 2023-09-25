@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 import rospy
 import numpy as np
-from Redes import arch
+from Redes import architecture
 import torch as th
 from torch import nn
 import rospkg
@@ -15,7 +15,8 @@ rospack = rospkg.RosPack()
 
 ##Get NN Model
 model_folder = rospack.get_path("machine_learning")
-mired = arch.Red3_div(300, 300, 200, 200, 100)
+#mired = arch.Red3_div(300, 300, 200, 200, 100)
+mired = architecture.Red_conv()
 mired.load_state_dict(th.load(model_folder+"/src/Data_gazebo/modelo_gazebo.pth"))
 disp = 'cuda' if th.cuda.is_available() else 'cpu'
 mired.to(disp)
@@ -60,14 +61,14 @@ def main():
 	#pub_cmd = rospy.Publisher("/hardware/mobile_base/cmd_vel", Twist  , queue_size=10)
 	pub_cmd = rospy.Publisher("/cmd_vel", Twist  , queue_size=10)
 	print("NN_out has been started")
-	loop = rospy.Rate(5)
+	loop = rospy.Rate(50)
 	msg=Twist()
 	while not rospy.is_shutdown():
-		pub_cmd.publish(msg)
+		#pub_cmd.publish(msg)
 		msg.linear.x=linx
 		msg.angular.z=angz
 		pub_cmd.publish(msg)
-		loop.sleep
+		loop.sleep()
 
 if __name__ == '__main__':
 	try:

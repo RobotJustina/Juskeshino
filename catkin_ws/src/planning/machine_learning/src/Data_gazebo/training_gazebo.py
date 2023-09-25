@@ -15,8 +15,12 @@ rospack = rospkg.RosPack()
 Redes_folder = rospack.get_path("machine_learning") + "/src"
 sys.path.append(Redes_folder)
 #sys.path.append('/home/sergio/Juskeshino/catkin_ws/src/planning/machine_learning/src')
-from Redes import arch
+from Redes import architecture
 from Redes import training
+
+#def divide_data(data_ent, M_sal,porcentaje_entr, porcentaje_val, procentaje_pr):
+#	x_ent=th.tensor(data_ent[:int(n_class*porcentaje_entr), :])
+#	y_ent=th.tensor(M_sal[:int(n_class*porcentaje_entr), :])
 
 def main():
 	rospy.init_node("training_gazebo")
@@ -24,7 +28,8 @@ def main():
 	th.manual_seed(42)
 	#Get centroids
 	C=np.asarray([[0.3, 0.0],[0.0, 0.5],[0.0, -0.5]], dtype=np.float32)
-	data=training.get_data()
+	data_folder = rospack.get_path("machine_learning") + "/src/Data_gazebo"
+	data=training.get_data(data_folder)
 	#define index data
 	index=data[:, 6402:]
 	index=index.astype(int)
@@ -82,13 +87,19 @@ def main():
 	#mired = Red2(200, 200, 200, 200)
 	###Este modelo funciona bien
 	#mired = Red3(300, 300, 200, 200, 100)
-	mired = arch.Red3_div(300, 300, 200, 200, 100)
+
+	##Last fully connected
+	#mired = arch.Red3_div(300, 300, 200, 200, 100)
+
+	mired = architecture.Red_conv()
 	mired.to(disp)
 	#ecm = nn.L1Loss()
 	ecm = nn.MSELoss()
-	opt = AdamW(mired.parameters(), lr = 40e-6) #4e-3
+	opt = AdamW(mired.parameters(), lr = mired.lr) #4e-3, 40e-6
+	#opt = AdamW(mired.parameters(), lr = 40e-6)
 
-	hist = training.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=6)
+	#hist = training.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=5)
+	hist = training.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=mired.epoch) #50
 	#hist = entrena(mired, ecm, nn.functional.l1_loss, opt, entdl, valdl, n_epocas=4)
 
 	training.graficar(hist, entdl, valdl,"Red1")
@@ -101,7 +112,7 @@ def main():
 	entdl = DataLoader(TensorDataset(x_ent, y_ent), batch_size=1, shuffle=False, drop_last=False)
 	training.dataloader_eval(entdl, mired)
 
-	th.save(mired.state_dict(), "./modelo_gazebo.pth")
+	th.save(mired.state_dict(), data_folder+"/modelo_gazebo.pth")
 	plt.show()
 
 if __name__=="__main__":

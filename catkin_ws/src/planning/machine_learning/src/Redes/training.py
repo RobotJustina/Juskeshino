@@ -11,8 +11,10 @@ def graficar(hist, entdl, valdl, opt): ##Función para graficar y ahorrar línea
 	plt.legend()
 	#plt.show()
 
-def get_data():
-	files=glob.glob('*.npz')
+def get_data(folder):
+	folder=folder+'/*.npz'
+	#files=glob.glob('*.npz')
+	files=glob.glob(folder)
 	count=0
 	for file in files:
 		arr=np.load(file)
