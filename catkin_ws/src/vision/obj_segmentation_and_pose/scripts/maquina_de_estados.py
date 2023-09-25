@@ -4,8 +4,7 @@ import rospy
 import numpy as np
 import tf
 import math
-import cv2
-from sensor_msgs.msg import PointCloud2, Image
+from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import PointStamped, PoseStamped, Point, Pose, Twist
 from vision_msgs.srv import *
 from manip_msgs.srv import *
@@ -29,12 +28,17 @@ SM_MOVE_HEAD = 60
 SM_WAIT_FOR_HEAD = 70
 SM_PREPARE_ARM = 80
 SM_MOVE_LEFT_ARM = 100 
+SM_RETURN_LOCATION = 11
+
 VIRTUAL_LOCATION = [5.8, 4.36, 0.0]
 #LEFT_TABLE_NEAR = [5.45, 2.45, np.deg2rad(90)]
 LIVINGROOM = [5.2, 2.33, np.deg2rad(90)]
 KITCHEN = [5.2, 2.33, np.deg2rad(90)]
+STARTING_PLACE= [0,0,0]
+
 PREPARE = [-1.27, 0.4, 0.0, 1.9, 0.01, 0.69, -0.01]
 HOME = [0,0,0,0,0,0]
+
 
 
 def callback_goal_reached(msg): #¿?
@@ -216,6 +220,8 @@ def main():
         if state == SM_INIT:
             print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
             obj_target = "apple"
+            x_p, y_p, a = get_robot_pose(listener)
+            STARTING_PLACE = [x_p, y_p, a]
             state = SM_MOVE_HEAD#SM_WAITING_NEW_COMMAND
 
         elif state == SM_WAITING_NEW_COMMAND:
@@ -313,8 +319,6 @@ def main():
             state = SM_RECO_OBJ
             
 
-
-
         elif state == SM_PREPARE_ARM:
             print("state == SM_PREPARE_ARM")
             p_final = PREPARE
@@ -357,9 +361,25 @@ def main():
             goal_pose.append(resp_best_grip.yaw)
             #move_left_arm(goal_pose,  pub_la_goal_traj, clt_ik)
             """
-            
-
             state = -1
+            
+            """
+        elif state == SM_RETURN_LOCATION:
+            #global goal_reached
+            local_target = STARTING_PLACE
+            print("Returning to the starting place...."+ String(local_target))
+            go_to_goal_pose(pub_goal_pose, local_target)
+            #goal_reached = 1
+            state =  SM_WAIT_FOR_NAVIGATE
+
+
+        elif state == SM_WAIT_FOR_NAVIGATE:
+            if goal_reached:
+                x_p, y_p, a = get_robot_pose(listener)
+                print("Se llego al lugar solicitado con Pose: ", x_p,y_p,a )
+                rospy.sleep(1.0)
+                state = -1
+            """
 
         else:
             break
