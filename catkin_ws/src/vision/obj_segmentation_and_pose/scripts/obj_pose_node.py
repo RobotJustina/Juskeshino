@@ -15,22 +15,43 @@ from cv_bridge import CvBridge
 
 MAXIMUM_GRIP_LENGTH = 0.14
 
-def pc_array(cloud_msg, img_msg):
+
+def get_cv_mats_from_cloud_message(cloud_msg):
+    img_xyz = ros_numpy.point_cloud2.pointcloud2_to_array(cloud_msg)  # dim 480 x 640 
+    rgb_array = img_xyz['rgb'].copy()     # Pass a copy of rgb float32, 480 x 640
+    rgb_array.dtype = np.uint32       # Config data type of elements from array
+    r,g,b = ((rgb_array >> 16) & 255), ((rgb_array >> 8) & 255), (rgb_array & 255)  # 480 x 640 c/u
+    img_bgr = cv2.merge((np.asarray(b,dtype='uint8'),np.asarray(g,dtype='uint8'),np.asarray(r,dtype='uint8')))
+    if debug:
+        cv2.imshow("imagen reconstruida", img_bgr) #*****************
+        cv2.waitKey(0)
+    cv_mats = np.zeros((480, 640, 3))
+    for i in range(480):
+        for j in range(640):
+            cv_mats[i,j][0] = img_xyz[i,j][0]
+            cv_mats[i,j][1] = img_xyz[i,j][1]
+            cv_mats[i,j][2] = img_xyz[i,j][2]
+    return cv_mats
+
+
+def get_object_xyz(cloud_xyz, mask):
+    mask = imgmsg_to_cv2(mask)
+    th, mask = cv2.threshold(mask, 0, 255, cv2.THRESH_BINARY)
+    # Take xyz points only in mask and remove points with zero X
+    obj_xyz = cloud_xyz[(mask == 255) & (cloud_xyz[:,:,0] > 0.1)].copy()
+    
+    print("obj_xyz*********", obj_xyz.size )
+    return obj_xyz
+
+
+def imgmsg_to_cv2(img_array): # Entra imagen en forma de array
     global debug 
     bridge = CvBridge()
-    obj_bgr = bridge.imgmsg_to_cv2(img_msg)
+    obj_cv = bridge.imgmsg_to_cv2(img_array)
     if debug:
-        cv2.imshow("imagen reconstruida", obj_bgr) #*****************
+        cv2.imshow("Show image was called....", obj_cv) #*****************
         cv2.waitKey(0)
-
-    print("PC", type(cloud_msg))
-    obj_xyz = ros_numpy.point_cloud2.pointcloud2_to_array(cloud_msg) 
-    print("nube del objeto datos TYPE")
-    print("shape", obj_xyz.shape)
-    print("ndim", obj_xyz.ndim)
-    print("size", obj_xyz.size)
-
-    return obj_xyz, obj_bgr
+    return obj_cv
 
 
 def get_centroid(img_bgr):
@@ -183,14 +204,16 @@ def publish_arow_marker(centroide_cam, p1,frame_id, ns, id):
 
 
 
-def get_obj_pose_response(obj_state, img_bgr, c_obj, header, size_obj, obj_pose):
+def get_obj_pose_response(obj_state, c_obj, header, size_obj, obj_pose):
     resp = RecognizeObjectResponse()
-    resp.recog_object.main_axis_tilt = obj_state
-    resp.recog_object.image = img_bgr
+    resp.recog_object.object_state = obj_state
     resp.recog_object.category = c_obj
-    resp.recog_object.header = header
+    print("Function get_obj_response 5")
+    #resp.recog_object.header = header
     resp.recog_object.size = size_obj
+    print("Function get_obj_response 6")
     resp.recog_object.pose = obj_pose
+    print("Function get_obj_response 7")
     return resp
 
 
@@ -222,21 +245,26 @@ def object_category(fpc, spc, thpc):  # estima la forma geometrica del objeto. (
     
 
 
-def callback_RecognizeObject(req):  # Request is a PointCloud2
-    img_bgr, img_xyz = pc_array(req.point_cloud, req.image)
-    #centroid = get_centroid(img_bgr)
-    pca_vectors, eig_val, size_obj = pca(img_xyz)
+def callback_PoseObject(req):  # Request is a PointCloud2
+    #show_img(req.obj_mask)
+    cv_mats= get_cv_mats_from_cloud_message(req.point_cloud)
+    print(req.point_cloud.header)
+    #print("cv mats**********************************")
+    #print( cv_mats.shape )
+    obj_xyz = get_object_xyz(cv_mats , req.obj_mask)
+
+    centroid = np.mean(obj_xyz, axis=0)
+    print("centroide", centroid)
+    pca_vectors, eig_val, size_obj = pca(obj_xyz)
     c_obj = object_category(size_obj.x, size_obj.z, size_obj.y)
 
-    """
     obj_pose, axis_x_obj, obj_state = object_pose(centroid, pca_vectors[0], pca_vectors[1])
     publish_arow_marker(centroid, axis_x_obj, 'base_link', ns ="principal_component", id=22)
     broadcaster_frame_object("base_link", "object", obj_pose)
     print("size object i frame object", size_obj)
     print("object category", c_obj)
-    """
-    # Rellenando msg 
-    resp = RecognizeObjectResponse()#get_obj_pose_response( obj_state, img_bgr, c_obj, req.point_cloud.header, size_obj, obj_pose)
+    resp = get_obj_pose_response( obj_state, obj_xyz, c_obj, None, size_obj, obj_pose)
+    #resp = RecognizeObjectResponse()
     return resp
 
 
@@ -247,7 +275,7 @@ def main():
 
     global pub_point, marker_pub, debug
     debug = False
-    rospy.Service("/vision/obj_segmentation/get_obj_pose", RecognizeObject, callback_RecognizeObject) 
+    rospy.Service("/vision/obj_segmentation/get_obj_pose", RecognizeObject, callback_PoseObject) 
     pub_point = rospy.Publisher('/vision/detected_object', PointStamped, queue_size=10)
     marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10) 
 

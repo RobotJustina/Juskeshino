@@ -282,8 +282,11 @@ def main():
                 #print("PC", type(obj.point_cloud))
                 if obj_target == obj.id:
                     print("Se encontró el objeto pedido.................")
-                    pc_obj_target = obj.point_cloud
-                    image_obj = obj.image
+                    # msg para el servicio \vision\obj_pose
+                    recognize_object_req = RecognizeObjectRequest()
+                    recognize_object_req.point_cloud = obj.point_cloud
+                    recognize_object_req.image = obj.image
+                    recognize_object_req.obj_mask = obj.obj_mask
                     state = SM_GET_OBJ_POSE
                     break
                 else:state = -1
@@ -291,7 +294,7 @@ def main():
 
         elif state == SM_GET_OBJ_POSE:
             print("state == SM_GET_OBJ..........")
-            resp_pose_obj = get_obj_pose(clt_pose_obj, pc_obj_target, image_obj)   # Envia la conexion al servicio y la pc_obj
+            resp_pose_obj = clt_pose_obj(recognize_object_req)#get_obj_pose(clt_pose_obj, pc_obj_target, image_obj)   # Envia la conexion al servicio y la pc_obj
             
             """
             x, y ,z = resp_pose_obj.recog_object.pose.position.x, resp_pose_obj.recog_object.pose.position.y, resp_pose_obj.recog_object.pose.position.z

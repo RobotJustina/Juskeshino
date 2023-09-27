@@ -233,6 +233,13 @@ vision_msgs::VisionObject Utils::get_vision_object_msg(cv::Mat& obj_bgr, cv::Mat
     cv_img.encoding = "bgr8";
     cv_img.toImageMsg(msg.image);
 
+    //cv_bridge::CvImage cv_img;
+    //cv::imshow("mask", obj_mask);
+    cv_img.header.stamp = ros::Time::now();
+    cv_img.image = obj_mask;
+    cv_img.encoding = "mono8";
+    cv_img.toImageMsg(msg.obj_mask);
+
     cv::Scalar p = cv::mean(obj_xyz, obj_mask);     //centroid
     msg.pose.position.x = p[0];
     msg.pose.position.y = p[1];
