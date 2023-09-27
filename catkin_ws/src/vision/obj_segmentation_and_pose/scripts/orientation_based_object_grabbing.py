@@ -13,7 +13,7 @@ from visualization_msgs.msg import Marker, MarkerArray
 import geometry_msgs.msg
 
 MAXIMUM_GRIP_LENGTH = 0.17
-debug = False
+debug = True
 
 def pose_actual_to_pose_target(pose, f_actual, f_target):
     global listener
@@ -340,7 +340,7 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
     for pose1 in pose_rpy:  
         ik_msg.x = pose1[0] 
         ik_msg.y = pose1[1]
-        ik_msg.z = pose1[2] + 0.04
+        ik_msg.z = pose1[2] - 0.04
         ik_msg.roll = pose1[3]
         ik_msg.pitch = pose1[4]
         ik_msg.yaw = pose1[5]
@@ -350,8 +350,10 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
         try: 
             resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
             print("Suitable pose found.....................")
+            print("ULTIMO PUNTO DE LA TRAYECTORIA", resp_ik_srv.articular_trajectory.points[-1].positions)
             if obj_state == 'horizontal':
                 # genera una segunda trayectoria en vertical
+                # el ultimo punto de la 1a trayectoria es el primero de la segunda
                 print("ULTIMO PUNTO DE LA TRAYECTORIA", resp_ik_srv.articular_trajectory.points[-1].positions[0])
                 guess = [resp_ik_srv.articular_trajectory.points[-1].positions[0],
                          resp_ik_srv.articular_trajectory.points[-1].positions[1],
