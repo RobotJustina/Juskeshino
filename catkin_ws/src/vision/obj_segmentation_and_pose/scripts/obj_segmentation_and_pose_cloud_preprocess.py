@@ -276,15 +276,15 @@ def object_category(fpc, spc, thpc):  # estima la forma geometrica del objeto. (
         if (c31 > 70) or (c32 > 70):    # Means 2PC and 3PC are similar
             print("cubic bounding box") # debe verificarse grapabilidad
             return "cube"
-        if c31 <= 70 or c32 <= 70:
-            print("box")  #se puede confundir con prism
+        if c31 < 70 or c32 <= 70:
+            print("box 1")  #se puede confundir con prism
             return "box"
     
     elif c21 < 60:    # Means 1PC is much bigger than 2PC        
-        if c31 <= 70 or c32 <= 70:
-            print("box")
+        if c31 < 40 or c32 < 60:
+            print("box2")
             return "box"
-        if c32 > 70 and spc < MAXIMUM_GRIP_LENGTH:    # Means 2PC and 3PC are similar
+        elif c32 > 60 and spc < MAXIMUM_GRIP_LENGTH:    # Means 2PC and 3PC are similar
             print("prismatic bounding box") # debe verificarse grapabilidad
             return "prism"
         else: return 'box'
@@ -300,11 +300,6 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
     print("ObjSegmenter.->The service has been requested **************")
     req_ppc = PreprocessPointCloudRequest()
     req_ppc.input_cloud = req.point_cloud
-
-    bridge = CvBridge()
-    cv_image_obj = bridge.imgmsg_to_cv2(req.image)
-    cv2.imshow("imagen reconstruida", cv_image_obj) #*****************
-    cv2.waitKey(0)
 
     try:
         resp_clt_get_points = clt_get_points(req_ppc)
