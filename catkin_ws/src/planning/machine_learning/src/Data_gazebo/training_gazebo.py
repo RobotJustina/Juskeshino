@@ -16,7 +16,7 @@ Redes_folder = rospack.get_path("machine_learning") + "/src"
 sys.path.append(Redes_folder)
 #sys.path.append('/home/sergio/Juskeshino/catkin_ws/src/planning/machine_learning/src')
 from Redes import architecture
-from Redes import training
+from Redes import training_functions
 
 #def divide_data(data_ent, M_sal,porcentaje_entr, porcentaje_val, procentaje_pr):
 #	x_ent=th.tensor(data_ent[:int(n_class*porcentaje_entr), :])
@@ -29,7 +29,7 @@ def main():
 	#Get centroids
 	C=np.asarray([[0.3, 0.0],[0.0, 0.5],[0.0, -0.5]], dtype=np.float32)
 	data_folder = rospack.get_path("machine_learning") + "/src/Data_gazebo"
-	data=training.get_data(data_folder)
+	data=training_functions.get_data(data_folder)
 	#define index data
 	index=data[:, 6402:]
 	index=index.astype(int)
@@ -47,7 +47,7 @@ def main():
 	M_one[M_one==1]=0.994
 	M_one[M_one==0]=0.003
 	##Getting number of examples per class
-	max_n=training.examples_per_class(n_index, M_one)
+	max_n=training_functions.examples_per_class(n_index, M_one)
 	##Permutation data
 	perm=np.random.permutation(n_class)
 	data_ent=data.copy()
@@ -56,8 +56,8 @@ def main():
 	M_sal=M_sal[perm]
 	index=index[perm]
 	##Erase data if the examples for one class are more than the smallest one
-	data_ent, M_sal = training.clean_data(data_ent, M_sal, index,max_n)
-	training.examples_per_class(n_index, M_sal)
+	data_ent, M_sal = training_functions.clean_data(data_ent, M_sal, index,max_n)
+	training_functions.examples_per_class(n_index, M_sal)
 	n_class=3*int(max_n)
 
 	x_ent=th.tensor(data_ent[:n_class*7//10, :])
@@ -99,18 +99,18 @@ def main():
 	#opt = AdamW(mired.parameters(), lr = 40e-6)
 
 	#hist = training.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=5)
-	hist = training.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=mired.epoch) #50
+	hist = training_functions.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=mired.epoch) #50
 	#hist = entrena(mired, ecm, nn.functional.l1_loss, opt, entdl, valdl, n_epocas=4)
 
-	training.graficar(hist, entdl, valdl,"Red1")
+	training_functions.graficar(hist, entdl, valdl,"Red1")
 
 	print("prueba")
-	training.dataloader_eval(prudl, mired)
+	training_functions.dataloader_eval(prudl, mired)
 	print("validación")
-	training.dataloader_eval(valdl, mired)
+	training_functions.dataloader_eval(valdl, mired)
 	print("entrenamiento")
 	entdl = DataLoader(TensorDataset(x_ent, y_ent), batch_size=1, shuffle=False, drop_last=False)
-	training.dataloader_eval(entdl, mired)
+	training_functions.dataloader_eval(entdl, mired)
 
 	th.save(mired.state_dict(), data_folder+"/modelo_gazebo.pth")
 	plt.show()

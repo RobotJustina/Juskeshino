@@ -2,6 +2,7 @@ import glob
 import numpy as np
 import torch as th
 import matplotlib.pyplot as plt
+import sklearn.metrics as metrics
 
 def graficar(hist, entdl, valdl, opt): ##Función para graficar y ahorrar líneas de código
 	plt.plot(hist['perdida_ent'] / len(entdl), label='Entrenamiento '+opt)
@@ -46,6 +47,17 @@ def dataloader_eval(prudl,modelo):
 				incorr+=1
 	p=corr/(corr+incorr)*100
 	print(f'Porcentaje de respuestas correctas {p}%')
+
+def dataloader_r2(prudl,modelo):
+	modelo.eval()
+	for (Xlote, ylote) in prudl:
+		with th.no_grad():
+			y_pred = modelo(Xlote)
+			y_pred =y_pred.cpu().numpy()
+
+			ylote = ylote.cpu().numpy()
+		r2 = metrics.r2_score(ylote, y_pred)
+		print(f'R2: {r2}%')
 
 def entrena(modelo, fp, metrica, opt, entdl, valdl, n_epocas = 100):
 	hist = {'perdida_ent': np.zeros(n_epocas, dtype = np.float32),

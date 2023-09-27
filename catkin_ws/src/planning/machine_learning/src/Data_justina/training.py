@@ -16,7 +16,10 @@ sys.path.append(Redes_folder)
 
 from numpy import genfromtxt
 from Redes import architecture
-from Redes import training
+from Redes import training_functions
+import sklearn.metrics as metrics
+#mse = metrics.mean_squared_error(y_test, y_pred)
+#r2 = metrics.r2_score(y_test, y_pred)
 
 class Red_conv(nn.Module):
 	def __init__(self):
@@ -84,16 +87,21 @@ def main():
 	M_one[M_one==1]=0.985
 	M_one[M_one==0]=0.001
 	##Getting number of examples per class
-	training.examples_per_class(n_index, M_one)
+	training_functions.examples_per_class(n_index, M_one)
 	##Get matrix with data (grid+distance)
-	data=training.get_data(data_folder)
+	data=training_functions.get_data(data_folder)
 	data=data[:, :6402] ###this is different from training_gazebo
-	print(data.shape)
-	print(index.shape)
 	##Permutation data
 	perm=np.random.permutation(n_class)
 	data_ent=data.copy()
 	M_sal=M_one.copy()
+	data_ent=data_ent[perm]
+	M_sal=M_sal[perm]
+
+	##Regresion changes
+	data=training_functions.get_data(data_folder)
+	M_sal=data[:, 6402:]
+	data=data[:, :6402]
 	data_ent=data_ent[perm]
 	M_sal=M_sal[perm]
 
@@ -120,25 +128,33 @@ def main():
 	valdl = DataLoader(TensorDataset(x_vad, y_vad), batch_size=1, shuffle=False, drop_last=False)
 	prudl = DataLoader(TensorDataset(x_pru, y_pru), batch_size=1, shuffle=False, drop_last=False)
 
-	#mired = Red1_drop_normal(200, 200, 200) ##Activación tanh, 3 capas ocultas
-	#mired = Red2(200, 200, 200, 200)
-	#mired = Red3(300, 300, 200, 200, 100)
-	mired = Red_conv()
+	#mired = Red_conv()
+	mired = architecture.Reg()
 	mired.to(disp)
 	ecm = nn.MSELoss()
-	opt = AdamW(mired.parameters(), lr = 50e-6) #4e-3
+	opt = AdamW(mired.parameters(), lr = 1e-4) #4e-3
 
-	hist = training.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=4)
+	hist = training_functions.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=4)
 
-	training.graficar(hist, entdl, valdl,"Red1")
+	training_functions.graficar(hist, entdl, valdl,"Red1")
 
-	print("prueba")
-	training.dataloader_eval(prudl, mired)
+	entdl = DataLoader(TensorDataset(x_ent, y_ent), batch_size=len(x_ent)//3, shuffle=False, drop_last=False)
+	valdl = DataLoader(TensorDataset(x_vad, y_vad), batch_size=len(x_vad), shuffle=False, drop_last=False)
+	prudl = DataLoader(TensorDataset(x_pru, y_pru), batch_size=len(x_pru), shuffle=False, drop_last=False)
+
+	print("Prueba")
+	training_functions.dataloader_r2(prudl,mired)
 	print("validación")
-	training.dataloader_eval(valdl, mired)
+	training_functions.dataloader_r2(valdl,mired)
 	print("entrenamiento")
-	entdl = DataLoader(TensorDataset(x_ent, y_ent), batch_size=1, shuffle=False, drop_last=False)
-	training.dataloader_eval(entdl, mired)
+	training_functions.dataloader_r2(entdl,mired)
+	#print("prueba")
+	#training.dataloader_eval(prudl, mired)
+	#print("validación")
+	#training.dataloader_eval(valdl, mired)
+	#print("entrenamiento")
+	#entdl = DataLoader(TensorDataset(x_ent, y_ent), batch_size=1, shuffle=False, drop_last=False)
+	#training.dataloader_eval(entdl, mired)
 
 	th.save(mired.state_dict(), data_folder+"/modelo.pth")
 	plt.show()
