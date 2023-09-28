@@ -199,9 +199,9 @@ def main():
             elif(speedX<-0.2):
                 msgTwist.linear.x = -0.3
             elif(yaw>0.25):
-                msgTwist.angular.z = 0.5
+                msgTwist.angular.z = 0.8
             elif(yaw<-0.25):
-                msgTwist.angular.z = -0.5
+                msgTwist.angular.z = -0.8
             msgTwist.linear.y = 0
             msgTwist.linear.z = 0
             #print "x: " + str(msgTwist.linear.x) + "  y: " + str(msgTwist.linear.y) + " yaw: " + str(msgTwist.angular.z)
