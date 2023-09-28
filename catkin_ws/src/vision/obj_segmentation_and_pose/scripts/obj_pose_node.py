@@ -204,7 +204,7 @@ def publish_arow_marker(centroide_cam, p1,frame_id, ns, id):
 
 
 
-def get_obj_pose_response(obj_state, c_obj, header, size_obj, obj_pose):
+def get_obj_pose_response(obj_state, c_obj, size_obj, obj_pose):
     resp = RecognizeObjectResponse()
     resp.recog_object.object_state = obj_state
     resp.recog_object.category = c_obj
@@ -263,7 +263,8 @@ def callback_PoseObject(req):  # Request is a PointCloud2
     broadcaster_frame_object("base_link", "object", obj_pose)
     print("size object i frame object", size_obj)
     print("object category", c_obj)
-    resp = get_obj_pose_response( obj_state, obj_xyz, c_obj, None, size_obj, obj_pose)
+    resp = get_obj_pose_response( obj_state, c_obj, size_obj, obj_pose)
+
     #resp = RecognizeObjectResponse()
     return resp
 

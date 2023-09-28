@@ -30,15 +30,22 @@ SM_PREPARE_ARM = 80
 SM_MOVE_LEFT_ARM = 100 
 SM_RETURN_LOCATION = 11
 
-VIRTUAL_LOCATION = [5.8, 4.36, 0.0]
-#LEFT_TABLE_NEAR = [5.45, 2.45, np.deg2rad(90)]
+# ROBOT REAL LOCATION
+LEFT_TABLE_NEAR = [5.45, 2.45, np.deg2rad(90)]
 LIVINGROOM = [5.2, 2.33, np.deg2rad(90)]
-KITCHEN = [5.2, 2.33, np.deg2rad(90)]
+KITCHEN = [5.35, 2.33, np.deg2rad(90)]
 STARTING_PLACE= [0,0,0]
+# ROBOT VIRTUAL LOCATION
+V_LIVINGROOM = [5.2, 2.33, np.deg2rad(90)]
+V_KITCHEN = [3.4, 5.6, np.deg2rad(90)]
+V_STARTING_PLACE= [5.6 , 4.5, 0]
 
+# left arm poses
 PREPARE = [-1.27, 0.4, 0.0, 1.9, 0.01, 0.69, -0.01]
+TAKEN_OBJECT = [0.76, 0.01, -0.27, 1.47, 0.01, -0.65, 0.0]
 HOME = [0,0,0,0,0,0]
 
+simulate = False
 
 
 def callback_goal_reached(msg): #¿?
@@ -163,10 +170,9 @@ def say(pub_say, text):
 
 def callback_recognized_speech(msg):
     global recognized_speech, new_command, executing_command
-    print(recognized_speech, "****************************")
     if not executing_command:  
         new_command = True
-        recognized_speech = msg.hypothesis
+        recognized_speech = msg.hypothesis[0]
 
 
 
@@ -219,16 +225,17 @@ def main():
         
         if state == SM_INIT:
             print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
-            obj_target = "apple"
+            #obj_target = "apple"
             x_p, y_p, a = get_robot_pose(listener)
             STARTING_PLACE = [x_p, y_p, a]
-            state = SM_MOVE_HEAD#SM_WAITING_NEW_COMMAND
+            state = SM_WAITING_NEW_COMMAND
 
         elif state == SM_WAITING_NEW_COMMAND:
             print("state == SM_WAITING_NEW_COMMAND") 
             #say(pub_say , "Hello, I am waiting for new task")
             rospy.sleep(3.0)
             request = recognized_speech
+            print("TYPE request", type(request))
             print(request)
         
             if "ROBOT" in request:
@@ -236,17 +243,17 @@ def main():
                 #say(pub_say , "has been requested"+recognized_speech)
                 local_target, obj_target = parse_command(request)
                 obj_target = "pringles"
-                state = SM_MOVE_HEAD #SM_NAVIGATE
+                state = SM_NAVIGATE
             else:                
                 print("No se han recibido nuevas peticiones")
                 print("Regresando a E1...")
                 state = SM_INIT
 
         elif state == SM_NAVIGATE:
-            #global goal_reached
-            print("going to the target place...."+ String(local_target))
+            global goal_reached
+            print("going to the target place...."+ str(local_target))
             go_to_goal_pose(pub_goal_pose, local_target)
-            #goal_reached = 1
+            goal_reached = 1
             state =  SM_WAIT_FOR_NAVIGATE
 
         elif state == SM_WAIT_FOR_NAVIGATE:
@@ -277,7 +284,10 @@ def main():
             print("state == SM_RECO_OBJ")
             reco_objs_req = RecognizeObjectsRequest()
             # LLenar msg
-            reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+            
+            #reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+            
+            reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
             bridge = CvBridge()
             reco_objs_resp = clt_recognize_objects(reco_objs_req)
             recog_objects = reco_objs_resp.recog_objects
@@ -285,7 +295,6 @@ def main():
 
             for obj in recog_objects:
                 print("* " + obj.id)
-                #print("PC", type(obj.point_cloud))
                 if obj_target == obj.id:
                     print("Se encontró el objeto pedido.................")
                     # msg para el servicio \vision\obj_pose
@@ -300,28 +309,12 @@ def main():
 
         elif state == SM_GET_OBJ_POSE:
             print("state == SM_GET_OBJ..........")
-            resp_pose_obj = clt_pose_obj(recognize_object_req)#get_obj_pose(clt_pose_obj, pc_obj_target, image_obj)   # Envia la conexion al servicio y la pc_obj
-            
-            """
+            resp_pose_obj = clt_pose_obj(recognize_object_req)
             x, y ,z = resp_pose_obj.recog_object.pose.position.x, resp_pose_obj.recog_object.pose.position.y, resp_pose_obj.recog_object.pose.position.z
-            i = 0
-            z_temp = z*10
-            z_temp2 = str(z)
-            while  z_temp <= 0 or z_temp2 == 'nan': 
-                resp_pose_obj = get_obj_pose(clt_pose_obj)
-                x, y ,z = resp_pose_obj.recog_object.pose.position.x, resp_pose_obj.recog_object.pose.position.y, resp_pose_obj.recog_object.pose.position.z
-                z_temp = z*10
-                z_temp2 = str(z)
-                print("                     ")
-                print("Intento:", i)
-                print("                     ")
-                i = i + 1
-                if i > 15:
-                    break
             print("position object ", x,y,z)    
-            state = SM_RECO_OBJ
+            state = SM_PREPARE_ARM
             
-
+            
         elif state == SM_PREPARE_ARM:
             print("state == SM_PREPARE_ARM")
             p_final = PREPARE
@@ -337,42 +330,31 @@ def main():
             
 
         elif state == SM_MOVE_LEFT_ARM:
+            print("state == SM_MOVE_ARM")
             req_best_grip = BestGraspTrajRequest()
             req_best_grip.recog_object = resp_pose_obj.recog_object
             resp_best_grip = clt_best_grip(req_best_grip)
-            print("state == SM_MOVE_ARM")
             move_left_gripper(0.9, pub_la_goal_grip)
             if resp_best_grip.graspable:
-                #pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
+                pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
                 print("moviendo brazo izquierdo...................")
-                rospy.sleep(7.0)
+                rospy.sleep(13.0)
             else:
                 print("No se encontraron poses posibles...................")
             
             move_left_gripper(0.1, pub_la_goal_grip)
-            rospy.sleep(1.0)
+            p_final = TAKEN_OBJECT
+            q2q_traj(p_final, clt_traj_planner, pub_la_goal_traj)
+            print("end.......")
+            state = SM_RETURN_LOCATION
             
-            move_left_gripper(0.5, pub_la_goal_grip)
-            rospy.sleep(1.0)
-            move_left_gripper(0.1, pub_la_goal_grip)
-            goal_pose = []
-            goal_pose.append(resp_best_grip.x)
-            goal_pose.append(resp_best_grip.y)
-            goal_pose.append(resp_best_grip.z + 0.20)
-            goal_pose.append(resp_best_grip.roll)
-            goal_pose.append(resp_best_grip.pitch)
-            goal_pose.append(resp_best_grip.yaw)
-            #move_left_arm(goal_pose,  pub_la_goal_traj, clt_ik)
-            """
-            state = -1
-            
-            """
+        
         elif state == SM_RETURN_LOCATION:
             #global goal_reached
             local_target = STARTING_PLACE
-            print("Returning to the starting place...."+ String(local_target))
+            print("Returning to the starting place...."+ str(local_target))
             go_to_goal_pose(pub_goal_pose, local_target)
-            #goal_reached = 1
+            goal_reached = 1
             state =  SM_WAIT_FOR_NAVIGATE
 
 
@@ -382,7 +364,7 @@ def main():
                 print("Se llego al lugar solicitado con Pose: ", x_p,y_p,a )
                 rospy.sleep(1.0)
                 state = -1
-            """
+            
 
         else:
             break

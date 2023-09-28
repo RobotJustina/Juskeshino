@@ -13,7 +13,7 @@ from visualization_msgs.msg import Marker, MarkerArray
 import geometry_msgs.msg
 
 MAXIMUM_GRIP_LENGTH = 0.17
-debug = True
+debug = False
 
 def pose_actual_to_pose_target(pose, f_actual, f_target):
     global listener
@@ -391,7 +391,7 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
 def callback(req):
     global listener, ik_srv
     resp = BestGraspTrajResponse()
-    obj_state = req.recog_object.main_axis_tilt     #"horizontal"
+    obj_state = req.recog_object.object_state     #"horizontal"
     print("OBJ STATE ", obj_state)
 
     pose_list_q = grip_rules(req.recog_object.pose, req.recog_object.category, obj_state, req.recog_object.size )
