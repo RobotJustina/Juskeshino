@@ -188,10 +188,22 @@ def main():
     loop = rospy.Rate(10)
     while not rospy.is_shutdown():
         if math.fabs(speedX) > 0 or math.fabs(speedY) > 0 or math.fabs(yaw) > 0:
-            msgTwist.linear.x = speedX
-            msgTwist.linear.y = speedY/2.0
+			#Comented by Sergio
+            #msgTwist.linear.x = speedX
+            #msgTwist.linear.y = speedY/2.0
+			#msgTwist.angular.z = yaw
+            msgTwist.angular.z = 0
+            msgTwist.linear.x = 0
+            if(speedX>0.2):
+                msgTwist.linear.x = 0.2
+            #elif(speedX<-0.2):
+                #msgTwist.linear.x = -0.2
+            elif(yaw>0.25):
+                msgTwist.angular.z = 0.5
+            elif(yaw<-0.25):
+                msgTwist.angular.z = -0.5
+            msgTwist.linear.y = 0
             msgTwist.linear.z = 0
-            msgTwist.angular.z = yaw
             #print "x: " + str(msgTwist.linear.x) + "  y: " + str(msgTwist.linear.y) + " yaw: " + str(msgTwist.angular.z)
             pubTwist.publish(msgTwist)
 
