@@ -37,7 +37,7 @@ KITCHEN = [5.35, 2.33, np.deg2rad(90)]
 STARTING_PLACE= [0,0,0]
 # ROBOT VIRTUAL LOCATION
 V_LIVINGROOM = [5.2, 2.33, np.deg2rad(90)]
-V_KITCHEN = [3.3, 5.56 , np.deg2rad(-85)]
+V_KITCHEN = [3.3, 5.56 , np.deg2rad(-90)]
 V_STARTING_PLACE= [5.6 , 4.5, 0]
 
 # left arm poses
@@ -292,8 +292,8 @@ def main():
             # LLenar msg
             
             reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
-            
             #reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
+            
             bridge = CvBridge()
             reco_objs_resp = clt_recognize_objects(reco_objs_req)
             recog_objects = reco_objs_resp.recog_objects
@@ -345,14 +345,16 @@ def main():
                 pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
                 print("moviendo brazo izquierdo...................")
                 rospy.sleep(13.0)
+                move_left_gripper(0.1, pub_la_goal_grip)
+                p_final = TAKEN_OBJECT
+                q2q_traj(p_final, clt_traj_planner, pub_la_goal_traj)
+                print("end.......")
+                state = SM_RETURN_LOCATION
             else:
                 print("No se encontraron poses posibles...................")
+                state = -1
             
-            move_left_gripper(0.1, pub_la_goal_grip)
-            p_final = TAKEN_OBJECT
-            q2q_traj(p_final, clt_traj_planner, pub_la_goal_traj)
-            print("end.......")
-            state = SM_RETURN_LOCATION
+
             
         
         elif state == SM_RETURN_LOCATION:
