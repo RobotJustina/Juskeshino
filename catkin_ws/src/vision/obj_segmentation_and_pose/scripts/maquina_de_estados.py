@@ -37,7 +37,7 @@ KITCHEN = [5.35, 2.33, np.deg2rad(90)]
 STARTING_PLACE= [0,0,0]
 # ROBOT VIRTUAL LOCATION
 V_LIVINGROOM = [5.2, 2.33, np.deg2rad(90)]
-V_KITCHEN = [3.4, 5.6, np.deg2rad(90)]
+V_KITCHEN = [3.3, 5.56 , np.deg2rad(-85)]
 V_STARTING_PLACE= [5.6 , 4.5, 0]
 
 # left arm poses
@@ -50,7 +50,9 @@ simulate = False
 
 def callback_goal_reached(msg): #¿?
     global goal_reached
-    goal_reached = msg.status == 3
+    print("STATUS", msg.status)
+    if msg.status == 3: 
+        goal_reached = 1
 
 
 def callback_hd_goal_reached(msg):  # head
@@ -70,13 +72,14 @@ def go_to_goal_pose(pub_goal_pose, local_target):   # movil base
     goal_pose.pose.orientation.z = math.sin(local_target[2] /2)
     goal_pose.pose.position.x = local_target[0]
     goal_pose.pose.position.y = local_target[1]
-    print("sending goal pose", goal_pose)
+    
     counter = 3
     while not rospy.is_shutdown() and counter > 0:
         pub_goal_pose.publish(goal_pose)
         counter -=1
+        #print("status goal_reached", goal_reached)
         loop.sleep()
-
+    
 
 def move_base(pub_cmd_vel, linear, angular):
     cmd = Twist()
@@ -153,7 +156,7 @@ def get_robot_pose(listener):
 
 def parse_command(cmd):
     obj = "pringles" if "PRINGLES" in cmd else "drink"
-    location = KITCHEN if "KITCHEN" in cmd else LIVINGROOM  # Ubicacion de LIVINGROOM y kitchen
+    location = V_KITCHEN if "KITCHEN" in cmd else LIVINGROOM  # Ubicacion de LIVINGROOM y kitchen
     return location, obj
 
 
@@ -206,7 +209,7 @@ def main():
     pub_goal_pose    = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
     pub_cmd_vel      = rospy.Publisher('/hardware/mobile_base/cmd_vel', Twist, queue_size=10)
     pub_say           = rospy.Publisher('/hri/speech_generator', SoundRequest, queue_size=10)
-    rospy.Subscriber('/navigation/status',Bool ,callback_hd_goal_reached)
+    rospy.Subscriber('/navigation/status', GoalStatus ,callback_goal_reached)
     rospy.Subscriber('/manipulation/head/goal_reached',Bool ,callback_hd_goal_reached)
     rospy.Subscriber('/manipulation/left_arm/goal_reached',Bool , callback_la_goal_reached)
     rospy.Subscriber('/hri/sp_rec/recognized', RecognizedSpeech, callback_recognized_speech)
@@ -250,10 +253,13 @@ def main():
                 state = SM_INIT
 
         elif state == SM_NAVIGATE:
-            global goal_reached
-            print("going to the target place...."+ str(local_target))
+            print("going to the target place....")
             go_to_goal_pose(pub_goal_pose, local_target)
-            goal_reached = 1
+            goal_reached = False
+            while not goal_reached and (not rospy.is_shutdown()):
+                time.sleep(1)
+
+            print("Se llego al lugar solicitado")
             state =  SM_WAIT_FOR_NAVIGATE
 
         elif state == SM_WAIT_FOR_NAVIGATE:
@@ -285,9 +291,9 @@ def main():
             reco_objs_req = RecognizeObjectsRequest()
             # LLenar msg
             
-            #reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+            reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
             
-            reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
+            #reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
             bridge = CvBridge()
             reco_objs_resp = clt_recognize_objects(reco_objs_req)
             recog_objects = reco_objs_resp.recog_objects
