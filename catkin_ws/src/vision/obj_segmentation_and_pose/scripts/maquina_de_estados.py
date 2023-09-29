@@ -172,6 +172,7 @@ def say(pub_say, text):
 
 def callback_recognized_speech(msg):
     global recognized_speech, new_command, executing_command
+    print("msg______", msg)
     if not executing_command:  
         new_command = True
         recognized_speech = msg.hypothesis[0]
@@ -227,10 +228,10 @@ def main():
         
         if state == SM_INIT:
             print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
-            obj_target = "pringles"
+            #obj_target = "pringles"
             x_p, y_p, a = get_robot_pose(listener)
             STARTING_PLACE = [x_p, y_p, a]
-            state = SM_MOVE_HEAD#SM_WAITING_NEW_COMMAND
+            state = SM_WAITING_NEW_COMMAND
 
         elif state == SM_WAITING_NEW_COMMAND:
             print("state == SM_WAITING_NEW_COMMAND") 
@@ -243,7 +244,7 @@ def main():
                 print("Se ha hecho una peticion")
                 #say(pub_say , "has been requested"+recognized_speech)
                 local_target, obj_target = parse_command(request)
-                obj_target = "pringles"
+                #obj_target = "pringles"
                 state = SM_MOVE_HEAD#SM_NAVIGATE
             else:                
                 print("No se han recibido nuevas peticiones")
@@ -289,8 +290,8 @@ def main():
             reco_objs_req = RecognizeObjectsRequest()
             # LLenar msg
             
-            reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
-            #reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
+            #reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+            reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
             
             bridge = CvBridge()
             reco_objs_resp = clt_recognize_objects(reco_objs_req)
