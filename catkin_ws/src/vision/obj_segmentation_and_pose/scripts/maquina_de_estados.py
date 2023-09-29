@@ -77,7 +77,6 @@ def go_to_goal_pose(pub_goal_pose, local_target):   # movil base
     while not rospy.is_shutdown() and counter > 0:
         pub_goal_pose.publish(goal_pose)
         counter -=1
-        #print("status goal_reached", goal_reached)
         loop.sleep()
     
 
@@ -228,17 +227,16 @@ def main():
         
         if state == SM_INIT:
             print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
-            #obj_target = "apple"
+            obj_target = "pringles"
             x_p, y_p, a = get_robot_pose(listener)
             STARTING_PLACE = [x_p, y_p, a]
-            state = SM_WAITING_NEW_COMMAND
+            state = SM_MOVE_HEAD#SM_WAITING_NEW_COMMAND
 
         elif state == SM_WAITING_NEW_COMMAND:
             print("state == SM_WAITING_NEW_COMMAND") 
             #say(pub_say , "Hello, I am waiting for new task")
             rospy.sleep(3.0)
             request = recognized_speech
-            print("TYPE request", type(request))
             print(request)
         
             if "ROBOT" in request:
@@ -246,7 +244,7 @@ def main():
                 #say(pub_say , "has been requested"+recognized_speech)
                 local_target, obj_target = parse_command(request)
                 obj_target = "pringles"
-                state = SM_NAVIGATE
+                state = SM_MOVE_HEAD#SM_NAVIGATE
             else:                
                 print("No se han recibido nuevas peticiones")
                 print("Regresando a E1...")
@@ -349,7 +347,7 @@ def main():
                 p_final = TAKEN_OBJECT
                 q2q_traj(p_final, clt_traj_planner, pub_la_goal_traj)
                 print("end.......")
-                state = SM_RETURN_LOCATION
+                state = -1#SM_RETURN_LOCATION
             else:
                 print("No se encontraron poses posibles...................")
                 state = -1

@@ -246,11 +246,8 @@ def object_category(fpc, spc, thpc):  # estima la forma geometrica del objeto. (
 
 
 def callback_PoseObject(req):  # Request is a PointCloud2
-    #show_img(req.obj_mask)
     cv_mats= get_cv_mats_from_cloud_message(req.point_cloud)
     print(req.point_cloud.header)
-    #print("cv mats**********************************")
-    #print( cv_mats.shape )
     obj_xyz = get_object_xyz(cv_mats , req.obj_mask)
 
     centroid = np.mean(obj_xyz, axis=0)
@@ -264,8 +261,6 @@ def callback_PoseObject(req):  # Request is a PointCloud2
     print("size object i frame object", size_obj)
     print("object category", c_obj)
     resp = get_obj_pose_response( obj_state, c_obj, size_obj, obj_pose)
-
-    #resp = RecognizeObjectResponse()
     return resp
 
 
@@ -279,6 +274,14 @@ def main():
     rospy.Service("/vision/obj_segmentation/get_obj_pose", RecognizeObject, callback_PoseObject) 
     pub_point = rospy.Publisher('/vision/detected_object', PointStamped, queue_size=10)
     marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10) 
+
+    obj_pose = Pose()
+    obj_pose.position.x, obj_pose.position.y, obj_pose.position.z = 0, 0, 0
+    obj_pose.orientation.x = 0
+    obj_pose.orientation.y = 0
+    obj_pose.orientation.z = 0
+    obj_pose.orientation.w = 1.0
+    broadcaster_frame_object("base_link", "object", obj_pose)
 
     loop = rospy.Rate(30)
     while not rospy.is_shutdown():
