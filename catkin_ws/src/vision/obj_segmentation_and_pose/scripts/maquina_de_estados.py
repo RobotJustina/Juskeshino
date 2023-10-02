@@ -29,6 +29,7 @@ SM_WAIT_FOR_HEAD = 70
 SM_PREPARE_ARM = 80
 SM_MOVE_LEFT_ARM = 100 
 SM_RETURN_LOCATION = 11
+SM_GRASP_OBJECT = 13
 
 # ROBOT REAL LOCATION
 LEFT_TABLE_NEAR = [5.45, 2.45, np.deg2rad(90)]
@@ -42,7 +43,7 @@ V_STARTING_PLACE= [5.6 , 4.5, 0]
 
 # left arm poses
 PREPARE = [-1.27, 0.4, 0.0, 1.9, 0.01, 0.69, -0.01]
-TAKEN_OBJECT = [0.76, 0.01, -0.27, 1.47, 0.01, -0.65, 0.0]
+TAKEN_OBJECT = [0.8, 0.2, -1.4, 1.5, 0.17, 0.6, 0.5]
 HOME = [0,0,0,0,0,0]
 
 simulate = False
@@ -222,6 +223,7 @@ def main():
     goal_reached = False
     state = SM_INIT
     loop = rospy.Rate(30)
+    goal_la_reached = False
 
     
     while not rospy.is_shutdown():
@@ -244,7 +246,7 @@ def main():
                 print("Se ha hecho una peticion")
                 #say(pub_say , "has been requested"+recognized_speech)
                 local_target, obj_target = parse_command(request)
-                #obj_target = "pringles"
+                obj_target = "soda"
                 state = SM_MOVE_HEAD#SM_NAVIGATE
             else:                
                 print("No se han recibido nuevas peticiones")
@@ -290,8 +292,8 @@ def main():
             reco_objs_req = RecognizeObjectsRequest()
             # LLenar msg
             
-            #reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
-            reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
+            reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+            #reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
             
             bridge = CvBridge()
             reco_objs_resp = clt_recognize_objects(reco_objs_req)
@@ -316,6 +318,11 @@ def main():
             print("state == SM_GET_OBJ..........")
             resp_pose_obj = clt_pose_obj(recognize_object_req)
             x, y ,z = resp_pose_obj.recog_object.pose.position.x, resp_pose_obj.recog_object.pose.position.y, resp_pose_obj.recog_object.pose.position.z
+            print("graspable:_____ ", resp_pose_obj.recog_object.graspable )
+            if not resp_pose_obj.recog_object.graspable:
+                print("request an object again............")
+                state = SM_WAITING_NEW_COMMAND
+
             print("position object ", x,y,z)    
             state = SM_PREPARE_ARM
             
@@ -324,31 +331,52 @@ def main():
             print("state == SM_PREPARE_ARM")
             p_final = PREPARE
             q2q_traj(p_final, clt_traj_planner, pub_la_goal_traj)
-            """
-            print(goal_la_reached)
-            if goal_la_reached:
-                print("succesfull move arm ")
+            rospy.sleep(2.0)
+            
+            while (not goal_la_reached) or not rospy.is_shutdown:
+                print("status: moving arm....")
                 time.sleep(1)
-                state = SM_GET_OBJ_POSE
-            """
-            state = SM_MOVE_LEFT_ARM
+            goal_la_reached = False
+            
+            state = SM_GRASP_OBJECT
             
 
-        elif state == SM_MOVE_LEFT_ARM:
+        elif state == SM_GRASP_OBJECT:
             print("state == SM_MOVE_ARM")
+            count = 0
             req_best_grip = BestGraspTrajRequest()
             req_best_grip.recog_object = resp_pose_obj.recog_object
             resp_best_grip = clt_best_grip(req_best_grip)
             move_left_gripper(0.9, pub_la_goal_grip)
             if resp_best_grip.graspable:
+                move_left_gripper(0.9, pub_la_goal_grip)
+                print("publicando trayectoria en q para brazo izquierdo...................")
                 pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
-                print("moviendo brazo izquierdo...................")
-                rospy.sleep(13.0)
-                move_left_gripper(0.1, pub_la_goal_grip)
-                p_final = TAKEN_OBJECT
-                q2q_traj(p_final, clt_traj_planner, pub_la_goal_traj)
-                print("end.......")
-                state = -1#SM_RETURN_LOCATION
+                while (not goal_la_reached) or not rospy.is_shutdown:
+                    print("status: moving arm....")
+                    time.sleep(1)
+                    count += 1
+                    if count > 40:
+                        state = -1
+                        print("object could not be taken......:'(")
+                        break
+                    
+                if goal_la_reached:
+                    print("succesfull move arm...")
+                    goal_la_reached = False
+                    time.sleep(2)
+                    move_left_gripper(0.1, pub_la_goal_grip)
+                    time.sleep(3)
+                    print("Cambiando posicion de brazo ....")
+                    q2q_traj(TAKEN_OBJECT , clt_traj_planner, pub_la_goal_traj)
+                    while (not goal_la_reached) or not rospy.is_shutdown:
+                        print("status: moving arm....")
+                        time.sleep(1)
+                    goal_la_reached = False
+
+                    print("succesfull move arm...")
+                    
+                    state = -1#SM_RETURN_LOCATION
             else:
                 print("No se encontraron poses posibles...................")
                 state = -1

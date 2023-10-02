@@ -204,16 +204,13 @@ def publish_arow_marker(centroide_cam, p1,frame_id, ns, id):
 
 
 
-def get_obj_pose_response(obj_state, c_obj, size_obj, obj_pose):
+def get_obj_pose_response(obj_state, c_obj, size_obj, obj_pose, graspable):
     resp = RecognizeObjectResponse()
     resp.recog_object.object_state = obj_state
     resp.recog_object.category = c_obj
-    print("Function get_obj_response 5")
-    #resp.recog_object.header = header
+    resp.recog_object.graspable  = graspable 
     resp.recog_object.size = size_obj
-    print("Function get_obj_response 6")
     resp.recog_object.pose = obj_pose
-    print("Function get_obj_response 7")
     return resp
 
 
@@ -221,27 +218,24 @@ def get_obj_pose_response(obj_state, c_obj, size_obj, obj_pose):
 def object_category(fpc, spc, thpc):  # estima la forma geometrica del objeto. (x,z,y)
     print("1pca, 2pca, 3pca", fpc,spc,thpc)
     # coeficiente de similitud entre aristas de bounding box del objeto
-    c21, c31, c32 =  spc * ( 100 / fpc),   thpc * ( 100 / fpc),    thpc * ( 100 / spc)  
+    c21, c31, c32 =  spc * ( 100 / fpc),   thpc * ( 100 / fpc),    thpc * ( 100 / spc)
     print("c21, c31, c32", c21, c31, c32)
-    if c21 >= 60:    # Means 1PC and 2PC are similar
-        if (c31 > 70) or (c32 > 70):    # Means 2PC and 3PC are similar
-            print("cubic bounding box") # debe verificarse grapabilidad
-            return "cube"
-        if c31 <= 70 or c32 <= 70:
-            print("box")  #se puede confundir con prism
-            return "box"
-    
-    elif c21 < 60:    # Means 1PC is much bigger than 2PC        
-        if c31 <= 70 or c32 <= 70:
-            print("box")
-            return "box"
-        if c32 > 70 and spc < MAXIMUM_GRIP_LENGTH:    # Means 2PC and 3PC are similar
-            print("prismatic bounding box") # debe verificarse grapabilidad
-            return "prism"
-        else: return 'box'
+    if spc > 0.15 and thpc > 0.15:
+        print("Object no graspable......")
+        return "0",False  
+    if fpc < 0.1:   # Objeto pequeño
+        print("objeto pequeño.........")
+        print("box......")
+        return "box", True
     else:
-        print("Could not determine the shape of the object...")
-        return "0"
+        if c32 > 60 and (spc < 0.15) :    # Means 2PC and 3PC are similar
+
+            if c21 < 60:
+                print("prism.......")
+                return "prism", True
+        
+        print("box.........") 
+        return "box", True
     
 
 
@@ -253,14 +247,16 @@ def callback_PoseObject(req):  # Request is a PointCloud2
     centroid = np.mean(obj_xyz, axis=0)
     print("centroide", centroid)
     pca_vectors, eig_val, size_obj = pca(obj_xyz)
-    c_obj = object_category(size_obj.x, size_obj.z, size_obj.y)
+    c_obj, graspable = object_category(size_obj.x, size_obj.z, size_obj.y)
 
     obj_pose, axis_x_obj, obj_state = object_pose(centroid, pca_vectors[0], pca_vectors[1])
     publish_arow_marker(centroid, axis_x_obj, 'base_link', ns ="principal_component", id=22)
     broadcaster_frame_object("base_link", "object", obj_pose)
     print("size object i frame object", size_obj)
     print("object category", c_obj)
-    resp = get_obj_pose_response( obj_state, c_obj, size_obj, obj_pose)
+    print("object state", obj_state)
+    
+    resp = get_obj_pose_response( obj_state, c_obj, size_obj, obj_pose, graspable)
     return resp
 
 

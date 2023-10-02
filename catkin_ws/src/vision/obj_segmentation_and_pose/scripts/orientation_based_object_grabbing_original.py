@@ -53,9 +53,8 @@ def obj_grip(grip_point , obj_pose, rotacion, obj_state , object_frame):    # Ca
     """
     grasp_candidates_quaternion = []
     candidate_grasp = Pose()
-    marker_array_publish(grip_point , 'shoulders_left_link', 0, 7)    # publica el punto de agarre para brazo izquierdo
+    marker_array_publish(grip_point , 'base_link', 0, 7)    # publica el punto de agarre para brazo izquierdo
 
-    print("obj state in generate candidates:_____", obj_state)
     if obj_state == "horizontal": 
         num_candidates = 5
         grip_point[2] = grip_point[2] + 0.10  # 12 cm por encima del objeto (z_base_link)
@@ -63,7 +62,7 @@ def obj_grip(grip_point , obj_pose, rotacion, obj_state , object_frame):    # Ca
 
     else: num_candidates = 3
 
-    obj_pose_frame_object = pose_actual_to_pose_target(obj_pose , 'shoulders_left_link', object_frame) # pose en frame 'object'
+    obj_pose_frame_object = pose_actual_to_pose_target(obj_pose , 'base_link', object_frame) # pose en frame 'object'
     
     R, P, Y = tft.euler_from_quaternion([obj_pose_frame_object.orientation.x ,  # pose expresada en RPY
                                              obj_pose_frame_object.orientation.y ,
@@ -82,12 +81,12 @@ def obj_grip(grip_point , obj_pose, rotacion, obj_state , object_frame):    # Ca
         else:
             if rotacion == "R": R = R + np.deg2rad(10)  #vertical grip
         # TRANSFORMAR DIRECTAMENTE A LEFT ARM???
-        candidate_grasp = pose_actual_to_pose_target(obj_pose_frame_object , object_frame, 'shoulders_left_link')    # pose en frame 'base_link'
+        candidate_grasp = pose_actual_to_pose_target(obj_pose_frame_object , object_frame, 'base_link')    # pose en frame 'base_link'
         candidate_grasp.position.x = grip_point[0] 
         candidate_grasp.position.y = grip_point[1] 
         candidate_grasp.position.z = grip_point[2] 
         if debug:
-            broadcaster_frame_object('shoulders_left_link', 'test_candidates'+str(j)+obj_state , candidate_grasp )  # emite la pose en 'base_link'
+            broadcaster_frame_object('base_link', 'test_candidates'+str(j)+obj_state , candidate_grasp )  # emite la pose en 'base_link'
             rospy.sleep(1.0)
         grasp_candidates_quaternion.append(candidate_grasp )     # guarda el candidato en frame bl
 
@@ -118,17 +117,17 @@ def box(obj_pose, size, obj_state):
     if obj_state == 'horizontal':   
         print("Horizontal box")
         if debug:
-            broadcaster_frame_object('shoulders_left_link', 'horizontal_box' , obj_pose )  # emite la pose en 'base_link'
+            broadcaster_frame_object('base_link', 'horizontal_box' , obj_pose )  # emite la pose en 'base_link'
             rospy.sleep(1.0)
-        grip_point = points_actual_to_points_target([0, 0, size.z/3], 'object', 'shoulders_left_link')    # Establece punto de agarre
+        grip_point = points_actual_to_points_target([0, 0, size.z/3], 'object', 'base_link')    # Establece punto de agarre
         return obj_grip(grip_point , obj_pose, "P", obj_state , 'object')   # Retorna la lista de candidatos generados por un 'Pitch'
 
     else:  # VERTICAL object
-        grip_point1 = points_actual_to_points_target([0, 0, size.z/3] , 'object', 'shoulders_left_link')  # punto lateral en frame object
-        grip_point2 = points_actual_to_points_target([size.x/3, 0, 0]  , 'object', 'shoulders_left_link')     # punto vertical en frame object
+        grip_point1 = points_actual_to_points_target([0, 0, size.z/3] , 'object', 'base_link')  # punto lateral en frame object
+        grip_point2 = points_actual_to_points_target([size.x/3, 0, 0]  , 'object', 'base_link')     # punto vertical en frame object
         poses_list1 = obj_grip(grip_point1 , obj_pose, "R", obj_state ,'object')    # Candidatos generados por un 'Roll'
         
-        obj_pose_frame_object = pose_actual_to_pose_target(obj_pose , 'shoulders_left_link', 'object') # Transforma pose en frame 'object' para generar candidatos
+        obj_pose_frame_object = pose_actual_to_pose_target(obj_pose , 'base_link', 'object') # Transforma pose en frame 'object' para generar candidatos
         R, P, Y = tft.euler_from_quaternion([obj_pose_frame_object.orientation.x ,  # pose expresada en RPY para realizar rotaciones
                                              obj_pose_frame_object.orientation.y ,
                                              obj_pose_frame_object.orientation.z, 
@@ -139,9 +138,9 @@ def box(obj_pose, size, obj_state):
         obj_pose_frame_object.orientation.y = q_gripper[1]
         obj_pose_frame_object.orientation.z = q_gripper[2]
         obj_pose_frame_object.orientation.w = q_gripper[3]
-        obj_pose_frame_bl = pose_actual_to_pose_target(obj_pose , 'shoulders_left_link', 'object')
+        obj_pose_frame_bl = pose_actual_to_pose_target(obj_pose , 'base_link', 'object')
         if debug:
-            broadcaster_frame_object('shoulders_left_link', 'test', obj_pose_frame_bl)  # emite la pose en 'base_link'
+            broadcaster_frame_object('base_link', 'test', obj_pose_frame_bl)  # emite la pose en 'base_link'
             rospy.sleep(1.0)
 
         poses_list2 = obj_grip(grip_point2 , obj_pose_frame_bl, "P", 'horizontal' ,'object')    
@@ -151,7 +150,7 @@ def box(obj_pose, size, obj_state):
 
 
 
-def prism(obj_pose, obj_state):   # obj_pose viene en el frame 'shoulders_left_link'
+def prism(obj_pose, obj_state):   
     global listener, debug
     grasp_candidates_quaternion = []
     epsilon = 0.01 # radio de la circunferencia
@@ -162,8 +161,8 @@ def prism(obj_pose, obj_state):   # obj_pose viene en el frame 'shoulders_left_l
     
     step_size = np.deg2rad(20)
     range_points = np.deg2rad(300)          # rango dentro del cual se generan los candidatos 360 grados
-    num_points = 10#int(range_points / step_size) 
-    theta_offset = np.deg2rad(-35)
+    num_points = int(range_points / step_size) 
+    theta_offset = np.deg2rad(-40)
     theta = theta_offset
     count = 0
     id = 0
@@ -179,10 +178,10 @@ def prism(obj_pose, obj_state):   # obj_pose viene en el frame 'shoulders_left_l
     else:
         print("Vertical grip.................")
         for i in range( num_points):   # generación de puntos alrededor del objeto
-            point = np.asarray([ 0, epsilon*np.sin(theta), epsilon*np.cos(theta)  ])    # punto en frame 'object'
-            point = points_actual_to_points_target(point, 'object', 'shoulders_left_link')
+            point = np.asarray([ 0, epsilon*np.sin(theta), epsilon*np.cos(theta)  ])
+            point = points_actual_to_points_target(point, 'object', 'base_link')
             points.append(point)
-            marker_array_publish(point, 'shoulders_left_link', count, id)
+            marker_array_publish(point, 'base_link', count, id)
             count += 1
             id += 1
             theta = theta - step_size 
@@ -211,7 +210,7 @@ def prism(obj_pose, obj_state):   # obj_pose viene en el frame 'shoulders_left_l
             candidate_grasp.orientation.w = q_gripper[3]
             grasp_candidates_quaternion.append(candidate_grasp) 
             if debug:
-                broadcaster_frame_object('shoulders_left_link', 'vertical_prism'+str(j) , candidate_grasp )  # emite la pose en 'base_link'
+                broadcaster_frame_object('base_link', 'vertical_prism'+str(j) , candidate_grasp )  # emite la pose en 'base_link'
                 rospy.sleep(1.0)
             j += 1
         print("number of candidates vertical grip prism", len(grasp_candidates_quaternion))
@@ -300,18 +299,6 @@ def convert_frame_of_candidates_poses(pose_list_q, obj_state):
     return new_pose_rpy_list
 
 
-
-def get_pose_rpy_list(pose_list_q):
-    new_pose_rpy_list = []
-    for pos in pose_list_q:
-        x , y, z = pos.position.x , pos.position.y , pos.position.z
-        roll,pitch,yaw = tft.euler_from_quaternion( [pos.orientation.x , pos.orientation.y , 
-                                          pos.orientation.z , pos.orientation.w ])
-        pose_shoulder_frame = np.asarray([x ,y ,z , roll, pitch , yaw])
-        new_pose_rpy_list.append(pose_shoulder_frame)
-    return new_pose_rpy_list
-
-
     
 def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
     """
@@ -376,23 +363,18 @@ def callback(req):
     global listener, ik_srv
     resp = BestGraspTrajResponse()
     obj_state = req.recog_object.object_state     #"horizontal"
-
-    obj_pose = pose_actual_to_pose_target(req.recog_object.pose , 'base_link', 'shoulders_left_link')
-
     print("OBJ STATE ", obj_state)
-    print("OBJ CATEGORY ", req.recog_object.category)
 
-
-    pose_list_quaternion = grip_rules(obj_pose, req.recog_object.category, obj_state, req.recog_object.size )
+    pose_list_quaternion = grip_rules(req.recog_object.pose, req.recog_object.category, obj_state, req.recog_object.size )
     if len( pose_list_quaternion) <= 0:
         print("object is no graspable")
         return resp
     
-    candidates_poses_rpy = get_pose_rpy_list(pose_list_quaternion)
+    candidates_poses_rpy = convert_frame_of_candidates_poses( pose_list_quaternion , obj_state)
     trajectory, pose, rpy_pose, graspable = evaluating_possibility_grip(candidates_poses_rpy ,  pose_list_quaternion , obj_state)
 
     if graspable:
-        broadcaster_frame_object('shoulders_left_link' , 'suitable_pose' , pose)
+        broadcaster_frame_object('base_link', 'suitable_pose' , pose)
         rospy.sleep(1.0)
         resp.articular_trajectory = trajectory
         resp.graspable = True
