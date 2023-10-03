@@ -2,6 +2,54 @@
 import torch as th
 from torch import nn
 
+class Reg(nn.Module):
+	def __init__(self):
+		super(Reg, self).__init__()
+		f1=32   ##Mejor configuración f1 =32, l1=64, lr=8.1e-3, epoch=14
+		l1=64
+		expand=32
+		self.conv1 = nn.Conv2d(1, f1, 3)
+		self.dropout1 = nn.Dropout2d(p=0.5)
+		self.norm1 = nn.GroupNorm(1, f1)
+
+		self.c1 = nn.Linear(int(39*39*f1), l1) #27380
+		self.norm3 = nn.LayerNorm(l1)
+		self.dropout3 = nn.Dropout(p=0.5)
+
+		self.c2 = nn.Linear(l1+expand, 100)
+
+		self.c3 = nn.Linear(100, 2)
+		#self.c4 = nn.Linear(512, 2)
+		self.lr = 8.1e-1
+		self.epoch = 50
+
+		self.extra = nn.Linear(2,expand)
+		self.extra_norm = nn.LayerNorm(expand)
+
+	def forward(self,x):
+		pos=x[:, 6400:]
+		pos= self.extra(pos)
+		pos = nn.functional.relu(self.extra_norm(pos))
+		x=x[:,0:6400]
+		x = x.view(x.size(0),1,80,80)
+
+		x = self.conv1(x)
+		x = nn.functional.relu(self.norm1(x))
+		x = nn.functional.avg_pool2d(x, kernel_size=2, stride=2)
+		x = self.dropout1(x)
+
+		x = th.flatten(x,1)
+		x = self.c1(x)
+		x = nn.functional.relu(self.norm3(x))
+		x = self.dropout3(x)
+
+		x = th.cat((x, pos), 1)
+		x = self.c2(x)
+		x = nn.functional.tanh(x)
+		x = self.c3(x)
+		#x = self.c4(x)
+		return x
+
 class Red_lin(nn.Module):
 	def __init__(self):
 		super(Red_lin, self).__init__()
@@ -46,7 +94,7 @@ class Red_lin(nn.Module):
 		return nn.functional.softmax(x,dim=1)
 
 class Red_conv(nn.Module):
-	def __init__(self):
+	def __init__(self, salida):
 		f1=32   ##Mejor configuración f1 =32, l1=64, lr=8.1e-3, epoch=14
 		l1=64
 		expand=32
@@ -59,7 +107,7 @@ class Red_conv(nn.Module):
 		self.norm3 = nn.LayerNorm(l1)
 		self.dropout3 = nn.Dropout(p=0.5)
 
-		self.c2 = nn.Linear(l1+expand, 3)
+		self.c2 = nn.Linear(l1+expand, salida)
 
 		self.lr = 8.1e-3
 		self.epoch = 14
