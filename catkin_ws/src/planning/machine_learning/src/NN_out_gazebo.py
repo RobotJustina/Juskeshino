@@ -16,7 +16,7 @@ rospack = rospkg.RosPack()
 ##Get NN Model
 model_folder = rospack.get_path("machine_learning")
 #mired = arch.Red3_div(300, 300, 200, 200, 100)
-mired = architecture.Red_conv()
+mired = architecture.Red_conv(3)
 mired.load_state_dict(th.load(model_folder+"/src/Data_gazebo/modelo_gazebo.pth"))
 disp = 'cuda' if th.cuda.is_available() else 'cpu'
 mired.to(disp)

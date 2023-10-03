@@ -10,22 +10,25 @@ from numpy import genfromtxt
 import sys
 import rospy
 import rospkg
+from sklearn.model_selection import train_test_split
 
 rospack = rospkg.RosPack()
 Redes_folder = rospack.get_path("machine_learning") + "/src"
 sys.path.append(Redes_folder)
-#sys.path.append('/home/sergio/Juskeshino/catkin_ws/src/planning/machine_learning/src')
+
+rospy.init_node("training_gazebo")
+np.random.seed(42)
+th.manual_seed(42)
+th.cuda.manual_seed(42)
+th.backends.cudnn.deterministic = True
+#th.backends.cudnn.benchmark = False
+
 from Redes import architecture
 from Redes import training_functions
 
-#def divide_data(data_ent, M_sal,porcentaje_entr, porcentaje_val, procentaje_pr):
-#	x_ent=th.tensor(data_ent[:int(n_class*porcentaje_entr), :])
-#	y_ent=th.tensor(M_sal[:int(n_class*porcentaje_entr), :])
-
 def main():
-	rospy.init_node("training_gazebo")
-	np.random.seed(42)
-	th.manual_seed(42)
+	x = np.random.rand()
+	print(x)
 	#Get centroids
 	C=np.asarray([[0.3, 0.0],[0.0, 0.5],[0.0, -0.5]], dtype=np.float32)
 	data_folder = rospack.get_path("machine_learning") + "/src/Data_gazebo"
@@ -35,49 +38,27 @@ def main():
 	index=index.astype(int)
 	data=data[:, :6402]
 	#finding number of classes
-	n_index=int(3)
+	n_index=int(np.max(index)+1)
 	#One hot matrix with labels
-	n_class=len((index))
-	print(data.shape)
-	index=index.reshape(-1)
-	print(index.shape)
-	M_one=np.eye(n_class)[index]
-	M_one=M_one[:,:n_index] ##Taking the n_index numbers
-	##Smoothed labels
-	M_one[M_one==1]=0.994
-	M_one[M_one==0]=0.003
-	##Getting number of examples per class
+	n_class=len(index)
+	M_one=training_functions.class_one_hot(index, n_index, n_class)
+	##Getting number of maximum examples per class
 	max_n=training_functions.examples_per_class(n_index, M_one)
-	##Permutation data
-	perm=np.random.permutation(n_class)
-	data_ent=data.copy()
-	M_sal=M_one.copy()
-	data_ent=data_ent[perm]
-	M_sal=M_sal[perm]
-	index=index[perm]
 	##Erase data if the examples for one class are more than the smallest one
-	data_ent, M_sal = training_functions.clean_data(data_ent, M_sal, index,max_n)
-	training_functions.examples_per_class(n_index, M_sal)
-	n_class=3*int(max_n)
+	data_ent, M_sal = training_functions.clean_data(data, M_one, index,max_n)
 
-	x_ent=th.tensor(data_ent[:n_class*7//10, :])
-	y_ent=th.tensor(M_sal[:n_class*7//10, :])
-
-	x_vad=th.tensor(data_ent[n_class*7//10:n_class*85//100, :])
-	y_vad=th.tensor(M_sal[n_class*7//10:n_class*85//100, :])
-
-	x_pru=th.tensor(data_ent[n_class*85//100:, :])
-	y_pru=th.tensor(M_sal[n_class*85//100:, :])
+	x_ent, x_pru, y_ent, y_pru = train_test_split(data_ent, M_sal, test_size = 0.3, shuffle=True, random_state=42)
+	x_pru, x_vad, y_pru, y_vad = train_test_split(x_pru, y_pru, test_size = 0.5, shuffle=True, random_state=42)
 
 	disp = 'cuda' if th.cuda.is_available() else 'cpu'
-	x_ent=x_ent.to(th.device(disp), th.float32)
-	y_ent=y_ent.to(th.device(disp), th.float32)
+	x_ent = th.tensor(x_ent, dtype=th.float32, device=disp)
+	y_ent = th.tensor(y_ent, dtype=th.float32, device=disp)
 
-	x_pru=x_pru.to(th.device(disp), th.float32)
-	y_pru=y_pru.to(th.device(disp), th.float32)
+	x_pru = th.tensor(x_pru, dtype=th.float32, device=disp)
+	y_pru = th.tensor(y_pru, dtype=th.float32, device=disp)
 
-	x_vad=x_vad.to(th.device(disp), th.float32)
-	y_vad=y_vad.to(th.device(disp), th.float32)
+	x_vad = th.tensor(x_vad, dtype=th.float32, device=disp)
+	y_vad = th.tensor(y_vad, dtype=th.float32, device=disp)
 
 	entdl = DataLoader(TensorDataset(x_ent, y_ent), batch_size=8, shuffle=True, drop_last=True)
 	valdl = DataLoader(TensorDataset(x_vad, y_vad), batch_size=1, shuffle=False, drop_last=False)
@@ -91,8 +72,9 @@ def main():
 	##Last fully connected
 	#mired = arch.Red3_div(300, 300, 200, 200, 100)
 
-	mired = architecture.Red_conv()
+	mired = architecture.Red_conv(3)
 	mired.to(disp)
+
 	#ecm = nn.L1Loss()
 	ecm = nn.MSELoss()
 	opt = AdamW(mired.parameters(), lr = mired.lr) #4e-3, 40e-6

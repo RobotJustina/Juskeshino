@@ -4,6 +4,17 @@ import torch as th
 import matplotlib.pyplot as plt
 import sklearn.metrics as metrics
 
+def class_one_hot(index, n_index, n_class):
+	#One hot matrix with labels
+	index=index.reshape(-1)
+	print(index.shape)
+	M_one=np.eye(n_class)[index]
+	M_one=M_one[:,:n_index] ##Taking the n_index numbers
+	##Smoothed labels
+	M_one[M_one==1]=0.994
+	M_one[M_one==0]=0.003
+	return M_one
+
 def graficar(hist, entdl, valdl, opt): ##Función para graficar y ahorrar líneas de código
 	plt.plot(hist['perdida_ent'] / len(entdl), label='Entrenamiento '+opt)
 	plt.plot(hist['perdida_val'] / len(valdl), label='Validación '+opt)
@@ -50,14 +61,23 @@ def dataloader_eval(prudl,modelo):
 
 def dataloader_r2(prudl,modelo):
 	modelo.eval()
+	count=0
 	for (Xlote, ylote) in prudl:
 		with th.no_grad():
 			y_pred = modelo(Xlote)
 			y_pred =y_pred.cpu().numpy()
-
 			ylote = ylote.cpu().numpy()
-		r2 = metrics.r2_score(ylote, y_pred)
-		print(f'R2: {r2}%')
+			if(count==0):
+				total_pred=y_pred
+				total_lote=ylote
+				count+=1
+			else:
+				total_pred=np.concatenate((total_pred, y_pred), axis=0)
+				total_lote=np.concatenate((total_lote, ylote), axis=0)
+			#print(ylote.shape)
+	r2 = metrics.r2_score(total_lote, total_pred)
+	mse = metrics.mean_squared_error(total_lote, total_pred)
+	print(f'R2: {r2}, MSE: {mse}')
 
 def entrena(modelo, fp, metrica, opt, entdl, valdl, n_epocas = 100):
 	hist = {'perdida_ent': np.zeros(n_epocas, dtype = np.float32),
@@ -67,7 +87,6 @@ def entrena(modelo, fp, metrica, opt, entdl, valdl, n_epocas = 100):
 		modelo.train()
 		for lote, (Xlote, ylote) in enumerate(entdl):
 			hist['perdida_ent'][e] += paso_ent(modelo, fp, opt, Xlote, ylote)
-
 		# bucle de evaluación
 		modelo.eval()
 		for (Xlote, ylote) in valdl:
