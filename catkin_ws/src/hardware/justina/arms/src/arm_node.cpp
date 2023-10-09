@@ -334,6 +334,7 @@ int main(int argc, char **argv)
     std_msgs::Float64MultiArray msg_current_pose;
     std_msgs::Float64 msg_current_gripper;
     std_msgs::Float64 msg_voltage;
+    std_msgs::Bool msg_goal_reached;
     joint_states.name.insert(joint_states.name.end(), joint_names.begin(), joint_names.end());
     joint_states.position = positions_bits_to_radians(current_position_bits, servo_zeros, servo_directions,servo_bits_per_radian);
     msg_current_pose.data.resize(servo_arm_ids.size());
@@ -401,6 +402,8 @@ int main(int argc, char **argv)
 
         case SM_FINISH_TASK:
             std::cout << prompt << "Task finished. " << std::endl;
+            msg_goal_reached.data = true;
+            pub_goal_reached.publish(msg_goal_reached);
             state = SM_INIT;
             break;
         }

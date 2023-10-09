@@ -57,7 +57,7 @@ def obj_grip(grip_point , obj_pose, rotacion, obj_state , object_frame):    # Ca
 
     if obj_state == "horizontal": 
         num_candidates = 5
-        grip_point[2] = grip_point[2] + 0.10  # 12 cm por encima del objeto (z_base_link)
+        grip_point[2] = grip_point[2] + 0.08  # 12 cm por encima del objeto (z_base_link)
         print("Se agregó 0.1 m de altura")
 
     else: num_candidates = 3
@@ -337,7 +337,7 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
                 
                 ik_msg.x = pose1[0] 
                 ik_msg.y = pose1[1]
-                ik_msg.z = pose1[2] - 0.13
+                ik_msg.z = pose1[2] - 0.10
                 ik_msg.roll = pose1[3]
                 ik_msg.pitch = pose1[4]
                 ik_msg.yaw = pose1[5]
@@ -389,7 +389,7 @@ def callback(req):
 
 def main():
     global listener , ik_srv, marker_pub, marker_array_pub, debug
-    debug = True
+    debug = False
     print("Node to grab objects based on their orientation..............ʕ•ᴥ•ʔ")
     rospy.init_node("gripper_orientation_for_grasping")
     rospy.Service("/vision/get_best_grasp_traj", BestGraspTraj, callback)
