@@ -46,12 +46,8 @@ def main():
 	##Regresion changes
 	data=training_functions.get_data(data_folder)
 	##Clear some data
-	data=data[data[:,6402]>=0]
 
-	data[data[:,6402]>0, 6402]=0.2
-	data[data[:,6403]<0, 6403]=-0.4
-	data[data[:,6403]>0, 6403]=0.4
-	data[(data[:,6402]==0) & (data[:,6403]==0), 6400]=0.1
+	#data[(data[:,6402]==0) & (data[:,6403]==0), 6400]=0.1
 	##Split data in M_sal and data
 	M_sal=data[:, 6402:]
 	data=data[:, :6402]
@@ -79,9 +75,9 @@ def main():
 	mired.to(disp)
 	ecm = nn.MSELoss()
 	#ecm = nn.L1Loss()
-	opt = AdamW(mired.parameters(), lr = 4e-3) #4e-3
+	opt = AdamW(mired.parameters(), lr = 3e-5) #4e-3
 	plt.figure()
-	hist = training_functions.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=18)
+	hist = training_functions.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=4)
 	#hist = training_functions.entrena(mired, ecm, nn.functional.l1_loss, opt, entdl, valdl, n_epocas=18)
 	training_functions.graficar(hist, entdl, valdl,"Red1")
 

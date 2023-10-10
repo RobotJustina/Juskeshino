@@ -34,6 +34,11 @@ def get_direction():
     if ang_pos > math.pi:
         ang_pos=ang_pos-2*math.pi
     ang=ang_pos-robot_a
+
+    if(ang>=math.pi):
+        ang=ang-2*math.pi
+    if(ang<-math.pi):
+        ang=ang+2*math.pi
     print("-------------")
     print("Angulo", ang)
     print("Distancia", d)

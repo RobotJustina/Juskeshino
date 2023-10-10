@@ -4,6 +4,14 @@ import torch as th
 import matplotlib.pyplot as plt
 import sklearn.metrics as metrics
 
+def index_data(data, C):
+	index = data[:, 6402] ##Se eliminan datos con velociades negativas
+	x,y=C.shape
+	#print(x,y)
+	for i in range(x):
+		index[(data[:,6402]==C[i,0]) & (data[:,6403]==C[i,1])]=i
+	return index
+
 def class_one_hot(index, n_index, n_class):
 	#One hot matrix with labels
 	index=index.reshape(-1)

@@ -43,8 +43,10 @@ def set_offset():
     if ang_pos > math.pi:
         ang_pos=ang_pos-2*math.pi
     ang=ang_pos-robot_a
-    if ang > math.pi:
+    if ang >= math.pi:
         ang=ang-2*math.pi
+	if ang < -math.pi:
+		ang=ang+2*math.pi
     if (ang>=0 and ang< math.pi/4.0) or (ang<0 and ang > -math.pi/4.0):
         #print("Al frente")
         offset=0

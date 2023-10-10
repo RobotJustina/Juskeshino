@@ -96,7 +96,7 @@ class Red_lin(nn.Module):
 class Red_conv(nn.Module):
 	def __init__(self, salida):
 		f1=32   ##Mejor configuración f1 =32, l1=64, lr=8.1e-3, epoch=14
-		l1=64
+		l1=128
 		expand=32
 		super(Red_conv, self).__init__()
 		self.conv1 = nn.Conv2d(1, f1, 3)
