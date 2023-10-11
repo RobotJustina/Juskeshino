@@ -45,7 +45,7 @@ class Node:
         self.data_centroids=0
         self.inflated_cells=0.3#Attribute where the inflated ratio is defined
         #Attributes where the handler of the services are saved
-	self.client_map=0
+        self.client_map=0
         self.client_pos_robot=0
         self.client_inflated_map=0
         self.client_boundary_points=0
@@ -107,7 +107,7 @@ class Node:
             
             except rospy.ServiceException as e:
                 #print("The request for the map server failed: %s"%e)
-		pass
+                pass
 
             
             #print("Already we get the data related with the GetMap service\n")
@@ -128,7 +128,7 @@ class Node:
             
             except rospy.ServiceException as e:
                 #print("The request for the inflated map server failed: %s"%e)
-		pass
+                pass
 
             
             #print("Already we get the data related with the GetInflatedMap service\n")
@@ -154,7 +154,7 @@ class Node:
             
             except rospy.ServiceException as e:
                 #print("The request for the centorids server failed: %s"%e)
-		pass
+                pass
 
             
             #print("Already we get {0} clusters from the boundary points\n".format(len(self.data_centroids.points))) 
@@ -174,7 +174,7 @@ class Node:
             
             except rospy.ServiceException as e:
                 #print("The request for the objective point server failed: %s"%e)
-		pass
+                pass
 
             
             #print("Already we get the objective: [{} , {}]".format(self.data_o.goal.x,self.data_o.goal.y)) 

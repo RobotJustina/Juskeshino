@@ -175,8 +175,8 @@ def callbackRetractFact(data):
 
         for _fact in env.facts():
             if (_fact.index == data.data):
-            	print ('\nRetracting Fact: %d'%data.data) 
-            	_fact.retract()
+                print ('\nRetracting Fact: %d'%data.data) 
+                _fact.retract()
         
         _clipsLock.release()
     except:
