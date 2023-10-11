@@ -57,7 +57,7 @@ def obj_grip(grip_point , obj_pose, rotacion, obj_state , object_frame):    # Ca
 
     if obj_state == "horizontal": 
         num_candidates = 5
-        grip_point[2] = grip_point[2] + 0.08  # 12 cm por encima del objeto (z_base_link)
+        grip_point[2] = grip_point[2] + 0.1  # 12 cm por encima del objeto (z_base_link)
         print("Se agregó 0.1 m de altura")
 
     else: num_candidates = 3
@@ -97,17 +97,14 @@ def obj_grip(grip_point , obj_pose, rotacion, obj_state , object_frame):    # Ca
 
 
 def grip_rules(obj_pose, type_obj, obj_state, size):
-    if type_obj == 'box': return box(obj_pose, size, obj_state )
-    else: return prism(obj_pose, obj_state)
-        
-
-    if size.y <= MAXIMUM_GRIP_LENGTH:
+    if (size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x > 0.11):
         print("size object < MAX LENGHT GRIP")
-        grasp_candidates_quaternion = prism(obj_pose, obj_state, angle, size)
-        return grasp_candidates_quaternion 
+        print("The object will be grabbed as Prism..................")
+        return prism(obj_pose, obj_state)
     else:
         print("size object > MAX LENGHT GRIP")
-        return box(obj_pose, size, obj_state)
+        print("The object will be grabbed as Box....................")
+        return box(obj_pose, size, obj_state )
 
 
 
@@ -123,7 +120,7 @@ def box(obj_pose, size, obj_state):
         return obj_grip(grip_point , obj_pose, "P", obj_state , 'object')   # Retorna la lista de candidatos generados por un 'Pitch'
 
     else:  # VERTICAL object
-        grip_point1 = points_actual_to_points_target([0, 0, size.z/3] , 'object', 'base_link')  # punto lateral en frame object
+        grip_point1 = points_actual_to_points_target([0, 0, size.z/4] , 'object', 'base_link')  # punto lateral en frame object
         grip_point2 = points_actual_to_points_target([size.x/3, 0, 0]  , 'object', 'base_link')     # punto vertical en frame object
         poses_list1 = obj_grip(grip_point1 , obj_pose, "R", obj_state ,'object')    # Candidatos generados por un 'Roll'
         
@@ -337,7 +334,7 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
                 
                 ik_msg.x = pose1[0] 
                 ik_msg.y = pose1[1]
-                ik_msg.z = pose1[2] - 0.10
+                ik_msg.z = pose1[2] - 0.08
                 ik_msg.roll = pose1[3]
                 ik_msg.pitch = pose1[4]
                 ik_msg.yaw = pose1[5]

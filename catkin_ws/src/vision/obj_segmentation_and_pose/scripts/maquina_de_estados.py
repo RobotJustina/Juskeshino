@@ -42,7 +42,8 @@ V_KITCHEN = [3.3, 5.56 , np.deg2rad(-90)]
 V_STARTING_PLACE= [5.6 , 4.5, 0]
 
 # left arm poses
-PREPARE = [-1.27, 0.4, 0.0, 1.9, 0.01, 0.69, -0.01]
+# PREPARE = [-0.8, 0.4, 0.0, 1.9, 0.01, 1.2, -0.01]  funciona para pringles horizontal
+PREPARE = [-0.8, 0.4, 0.0, 1.9, 0.01, 1, -0.01]
 TAKEN_OBJECT = [0.8, 0.2, -1.4, 1.5, 0.17, 0.6, 0.5]
 HOME = [0,0,0,0,0,0]
 
@@ -355,16 +356,11 @@ def main():
                 while (not goal_la_reached) or not rospy.is_shutdown:
                     print("status: moving arm....")
                     time.sleep(1)
-                    count += 1
-                    if count > 40:
-                        state = -1
-                        print("object could not be taken......:'(")
-                        break
                     
                 if goal_la_reached:
                     print("succesfull move arm...")
                     goal_la_reached = False
-                    #time.sleep(2)
+                    time.sleep(2)
                     move_left_gripper(0.1, pub_la_goal_grip)
                     time.sleep(3)
                     """
