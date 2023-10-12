@@ -42,8 +42,8 @@ V_KITCHEN = [3.3, 5.56 , np.deg2rad(-90)]
 V_STARTING_PLACE= [5.6 , 4.5, 0]
 
 # left arm poses
-# PREPARE = [-0.8, 0.4, 0.0, 1.9, 0.01, 1.2, -0.01]  funciona para pringles horizontal
-PREPARE = [-0.8, 0.4, 0.0, 1.9, 0.01, 1, -0.01]
+PREPARE = [-0.8, 0.4, 0.0, 1.9, 0.01, 1, -0.01]  #funciona para pringles horizontal (prisma horizontal)
+#PREPARE = [-1.2, 0.2, 0, 1.6, 0, 1, 0] #funciona bien para pringles vertical (prisma vertical) 
 TAKEN_OBJECT = [0.8, 0.2, -1.4, 1.5, 0.17, 0.6, 0.5]
 HOME = [0,0,0,0,0,0]
 
