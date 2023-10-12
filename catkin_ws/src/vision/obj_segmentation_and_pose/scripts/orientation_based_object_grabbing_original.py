@@ -97,11 +97,16 @@ def obj_grip(grip_point , obj_pose, rotacion, obj_state , object_frame):    # Ca
 
 
 def grip_rules(obj_pose, type_obj, obj_state, size):
-    if (size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x > 0.11):
+    if (size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x >= 0.11):
         print("size object < MAX LENGHT GRIP")
         print("The object will be grabbed as Prism..................")
         return prism(obj_pose, obj_state)
     else:
+        if size.x < 0.11:
+            print("Object too small, superior grip will be made")
+            return box(obj_pose, size, obj_state )
+            
+
         print("size object > MAX LENGHT GRIP")
         print("The object will be grabbed as Box....................")
         return box(obj_pose, size, obj_state )
@@ -121,7 +126,7 @@ def box(obj_pose, size, obj_state):
 
     else:  # VERTICAL object
         grip_point1 = points_actual_to_points_target([0, 0, size.z/4] , 'object', 'base_link')  # punto lateral en frame object
-        grip_point2 = points_actual_to_points_target([size.x/3, 0, 0]  , 'object', 'base_link')     # punto vertical en frame object
+        grip_point2 = points_actual_to_points_target([size.x/3, 0, 0]  , 'object', 'base_link')     # punto superior en frame object
         poses_list1 = obj_grip(grip_point1 , obj_pose, "R", obj_state ,'object')    # Candidatos generados por un 'Roll'
         
         obj_pose_frame_object = pose_actual_to_pose_target(obj_pose , 'base_link', 'object') # Transforma pose en frame 'object' para generar candidatos
@@ -140,7 +145,10 @@ def box(obj_pose, size, obj_state):
             broadcaster_frame_object('base_link', 'test', obj_pose_frame_bl)  # emite la pose en 'base_link'
             rospy.sleep(1.0)
 
-        poses_list2 = obj_grip(grip_point2 , obj_pose_frame_bl, "P", 'horizontal' ,'object')    
+        poses_list2 = obj_grip(grip_point2 , obj_pose_frame_bl, "P", 'horizontal' ,'object')  
+        if size.x < 0.11:
+            print("Object too small, top grip only!!!.......")
+            return poses_list2  
 
 
         return poses_list1 + poses_list2    # En frame base_link
@@ -156,10 +164,10 @@ def prism(obj_pose, obj_state):
     MT = tft.quaternion_matrix([obj_pose.orientation.x ,obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w])
     axis_x_obj = np.asarray( [MT[0,0], MT[1,0], MT[2,0]])   # eje x del objeto vector normal al plano que corta al objet
     
-    step_size = np.deg2rad(20)
+    step_size = np.deg2rad(15)
     range_points = np.deg2rad(300)          # rango dentro del cual se generan los candidatos 360 grados
     num_points = int(range_points / step_size) 
-    theta_offset = np.deg2rad(-40)
+    theta_offset = np.deg2rad(-30)
     theta = theta_offset
     count = 0
     id = 0
@@ -386,7 +394,7 @@ def callback(req):
 
 def main():
     global listener , ik_srv, marker_pub, marker_array_pub, debug
-    debug = False
+    debug = True
     print("Node to grab objects based on their orientation..............ʕ•ᴥ•ʔ")
     rospy.init_node("gripper_orientation_for_grasping")
     rospy.Service("/vision/get_best_grasp_traj", BestGraspTraj, callback)
