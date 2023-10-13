@@ -42,8 +42,8 @@ V_KITCHEN = [3.3, 5.56 , np.deg2rad(-90)]
 V_STARTING_PLACE= [5.6 , 4.5, 0]
 
 # left arm poses
-PREPARE = [-0.9, 0.4, 0.0, 1.9, 0.01, 1, -0.01]  #funciona para pringles horizontal (prisma horizontal)
-#PREPARE =  [-1.2, 0.2, 0  , 1.6, 0   , 1,     0] #Prepare original:funciona bien para pringles vertical (prisma vertical) 
+PREPARE_TOP_GRIP = [-0.9, 0.4, 0.0, 1.9, 0.01, 1, -0.01]  #funciona para pringles horizontal (prisma horizontal)
+PREPARE_LATERAL_GRIP =  [-1.2, 0.2, 0  , 1.6, 0   , 1,     0] #Prepare original:funciona bien para pringles vertical (prisma vertical) 
 TAKEN_OBJECT = [0.8, 0.2, -1.4, 1.5, 0.17, 0.6, 0.5]
 HOME = [0,0,0,0,0,0]
 
@@ -230,7 +230,7 @@ def main():
         
         if state == SM_INIT:
             print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
-            obj_target = "soda"
+            obj_target = "pringles"
             print("OBJECT TARGET:____", obj_target)
             x_p, y_p, a = get_robot_pose(listener)
             STARTING_PLACE = [x_p, y_p, a]
@@ -293,15 +293,15 @@ def main():
             reco_objs_req = RecognizeObjectsRequest()
             # LLenar msg
             
-            reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
-            #reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
+            #reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+            #
+            reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
             
-            bridge = CvBridge()
             reco_objs_resp = clt_recognize_objects(reco_objs_req)
-            recog_objects = reco_objs_resp.recog_objects
+            recog_objects = reco_objs_resp.recog_objects    # Accede a la lista de VisionObjects
             print("Objetos reconocidos:_________")
 
-            for obj in recog_objects:
+            for obj in recog_objects:   # Para cada objeto de la lista de VisionObjects
                 print("* " + obj.id)
                 if obj_target == obj.id:
                     print("Se encontró el objeto pedido.................")
@@ -310,6 +310,7 @@ def main():
                     recognize_object_req.point_cloud = obj.point_cloud
                     recognize_object_req.image = obj.image
                     recognize_object_req.obj_mask = obj.obj_mask
+
                     state = SM_GET_OBJ_POSE
                     break
                 else:state = -1
@@ -320,6 +321,8 @@ def main():
             resp_pose_obj = clt_pose_obj(recognize_object_req)
             x, y ,z = resp_pose_obj.recog_object.pose.position.x, resp_pose_obj.recog_object.pose.position.y, resp_pose_obj.recog_object.pose.position.z
             print("graspable:_____ ", resp_pose_obj.recog_object.graspable )
+            shape_obj = resp_pose_obj.recog_object.size
+            print("SHAPE OBJ:___", shape_obj)
             if not resp_pose_obj.recog_object.graspable:
                 print("request an object again............")
                 state = SM_WAITING_NEW_COMMAND
@@ -330,7 +333,14 @@ def main():
             
         elif state == SM_PREPARE_ARM:
             print("state == SM_PREPARE_ARM")
-            p_final = PREPARE
+            if (resp_pose_obj.recog_object.size.x < 0.11) or resp_pose_obj.recog_object.object_state == "horizontal":
+                p_final = PREPARE_TOP_GRIP
+                print("PREPARE_TOP_GRIP..........................")
+            else:
+                p_final = PREPARE_LATERAL_GRIP
+                print("PREPARE_LATERAL_GRIP..........................")
+
+
             q2q_traj(p_final, clt_traj_planner, pub_la_goal_traj)
             while (not goal_la_reached) or not rospy.is_shutdown:
                 print("status: moving arm....", goal_la_reached)                

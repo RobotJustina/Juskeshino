@@ -167,7 +167,7 @@ def prism(obj_pose, obj_state):
     step_size = np.deg2rad(15)
     range_points = np.deg2rad(300)          # rango dentro del cual se generan los candidatos 360 grados
     num_points = int(range_points / step_size) 
-    theta_offset = np.deg2rad(-30)
+    theta_offset = np.deg2rad(-20)
     theta = theta_offset
     count = 0
     id = 0
@@ -369,6 +369,7 @@ def callback(req):
     resp = BestGraspTrajResponse()
     obj_state = req.recog_object.object_state     #"horizontal"
     print("OBJ STATE ", obj_state)
+    print("SIZE OBJECT:__", req.recog_object.size)
 
     pose_list_quaternion = grip_rules(req.recog_object.pose, req.recog_object.category, obj_state, req.recog_object.size )
     if len( pose_list_quaternion) <= 0:
@@ -394,7 +395,7 @@ def callback(req):
 
 def main():
     global listener , ik_srv, marker_pub, marker_array_pub, debug
-    debug = True
+    debug = False
     print("Node to grab objects based on their orientation..............ʕ•ᴥ•ʔ")
     rospy.init_node("gripper_orientation_for_grasping")
     rospy.Service("/vision/get_best_grasp_traj", BestGraspTraj, callback)
