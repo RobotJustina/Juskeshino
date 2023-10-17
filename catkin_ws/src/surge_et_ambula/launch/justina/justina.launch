@@ -1,5 +1,5 @@
 <launch>
-  <arg name="obs_detector_debug" default="False"/>
+  <arg name="debug" default="False"/>
   
   <param name="base_link_name" value="base_link"/>
   <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
@@ -53,7 +53,7 @@
 
   <include file="$(find surge_et_ambula)/launch/justina/manipulation.launch"/>
   <include file="$(find surge_et_ambula)/launch/justina/vision.launch">
-    <arg name="debug"         value="False"/>
+    <arg name="debug"         value="$(arg debug)"/>
     <arg name="training_dir"  value="$(find obj_reco)/training_dir"/>
   </include>
   
