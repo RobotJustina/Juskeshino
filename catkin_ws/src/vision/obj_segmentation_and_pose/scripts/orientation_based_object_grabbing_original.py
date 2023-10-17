@@ -102,7 +102,7 @@ def grip_rules(obj_pose, type_obj, obj_state, size):
         print("The object will be grabbed as Prism..................")
         return prism(obj_pose, obj_state)
     else:
-        if size.x < 0.11:
+        if size.x < 0.14:
             print("Object too small, superior grip will be made")
             return box(obj_pose, size, obj_state )
             

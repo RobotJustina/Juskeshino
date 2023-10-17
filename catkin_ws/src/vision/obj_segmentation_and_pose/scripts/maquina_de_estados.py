@@ -295,8 +295,8 @@ def main():
             reco_objs_req = RecognizeObjectsRequest()
             # LLenar msg
             
-            reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
-            #reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
+            #reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+            reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
             
             reco_objs_resp = clt_recognize_objects(reco_objs_req)
             recog_objects = reco_objs_resp.recog_objects    # Accede a la lista de VisionObjects
@@ -394,8 +394,8 @@ def main():
 
             while (decrement > 0.1):
                 move_left_gripper(decrement , pub_la_goal_grip)
-                time.sleep(0.2)
-                decrement = decrement - 0.03
+                time.sleep(0.06)
+                decrement = decrement - 0.08
                 print("DECREMENT:_____", decrement)
 
             state =  -1#SM_RETURN_LOCATION
