@@ -30,6 +30,7 @@ SM_PREPARE_ARM = 80
 SM_MOVE_LEFT_ARM = 100 
 SM_RETURN_LOCATION = 11
 SM_GRASP_OBJECT = 13
+SM_PICK_UP_OBJECT = 14
 
 # ROBOT REAL LOCATION
 LEFT_TABLE_NEAR = [5.45, 2.45, np.deg2rad(90)]
@@ -46,6 +47,7 @@ PREPARE_TOP_GRIP = [-0.9, 0.4, 0.0, 1.9, 0.01, 1, -0.01]  #funciona para pringle
 PREPARE_LATERAL_GRIP =  [-1.2, 0.2, 0  , 1.6, 0   , 1,     0] #Prepare original:funciona bien para pringles vertical (prisma vertical) 
 TAKEN_OBJECT = [0.8, 0.2, -1.4, 1.5, 0.17, 0.6, 0.5]
 HOME = [0,0,0,0,0,0]
+GRIPPER_OPENING = 0.9   # Apertura de gripper
 
 simulate = False
 
@@ -230,7 +232,7 @@ def main():
         
         if state == SM_INIT:
             print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
-            obj_target = "pringles"
+            obj_target = "apple"
             print("OBJECT TARGET:____", obj_target)
             x_p, y_p, a = get_robot_pose(listener)
             STARTING_PLACE = [x_p, y_p, a]
@@ -293,9 +295,8 @@ def main():
             reco_objs_req = RecognizeObjectsRequest()
             # LLenar msg
             
-            #reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
-            #
-            reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
+            reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+            #reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
             
             reco_objs_resp = clt_recognize_objects(reco_objs_req)
             recog_objects = reco_objs_resp.recog_objects    # Accede a la lista de VisionObjects
@@ -359,7 +360,7 @@ def main():
             resp_best_grip = clt_best_grip(req_best_grip)
             move_left_gripper(0.9, pub_la_goal_grip)
             if resp_best_grip.graspable:
-                move_left_gripper(0.9, pub_la_goal_grip)
+                move_left_gripper(GRIPPER_OPENING, pub_la_goal_grip)
                 print("publicando trayectoria en q para brazo izquierdo...................")
                 pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
                 while (not goal_la_reached) or not rospy.is_shutdown:
@@ -370,8 +371,8 @@ def main():
                     print("succesfull move arm...")
                     goal_la_reached = False
                     time.sleep(2)
-                    move_left_gripper(0.1, pub_la_goal_grip)
-                    time.sleep(3)
+                    print("succesfull move arm...")
+                    state = SM_PICK_UP_OBJECT
                     """
                     print("Cambiando posicion de brazo ....")
                     q2q_traj(TAKEN_OBJECT , clt_traj_planner, pub_la_goal_traj)
@@ -380,14 +381,24 @@ def main():
                         time.sleep(1)
                     goal_la_reached = False
                     """
-                    print("succesfull move arm...")
                     
-                    state = -1#SM_RETURN_LOCATION
+                    
+                    #state = -1#SM_RETURN_LOCATION
             else:
                 print("No se encontraron poses posibles...................")
                 state = -1
             
+        elif state == SM_PICK_UP_OBJECT:
+            print("state == SM_PICK_UP_OBJECT")
+            decrement = GRIPPER_OPENING 
 
+            while (decrement > 0.1):
+                move_left_gripper(decrement , pub_la_goal_grip)
+                time.sleep(0.2)
+                decrement = decrement - 0.03
+                print("DECREMENT:_____", decrement)
+
+            state =  -1#SM_RETURN_LOCATION
             
         
         elif state == SM_RETURN_LOCATION:

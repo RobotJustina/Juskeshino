@@ -131,10 +131,6 @@ def object_pose(centroid, principal_component, second_component):  # vectores de
                 angle_2pc_x_bl =  math.atan2(second_component[1], second_component[0]) 
                 print("angulo de z_obj respecto de eje x base link despues", np.rad2deg(angle_2pc_x_bl))
 
-                #sec_comp = Point(x = second_component[0], y =second_component[1], z=second_component[2])
-                #publish_arow_marker(centroid, sec_comp, 'base_link', ns ="second_component", id=23)
-                #publish_arow_marker( centroid, sec_comp, 'base_link')
-
         # Asignacion de ejes del objeto
         eje_z_obj = second_component 
         eje_x_obj = principal_component 
