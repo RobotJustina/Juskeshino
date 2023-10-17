@@ -184,6 +184,11 @@ bool callback_detect_and_train_object(vision_msgs::TrainObject::Request& req, vi
     }
     std::vector<cv::Mat> objects_bgr, objects_xyz, objects_masks;
     bool success = ObjectRecognizer::segment_by_contours(cloud, img, output_mask, min_points_per_object, objects_bgr, objects_xyz, objects_masks, debug);
+    if(!success)
+    {
+        std::cout << "ObjReco.->Cannot detect any object above a plane." << std::endl;
+        return false;
+    }
     if(objects_bgr.size() != 1)
     {
         std::cout << "ObjReco.->ERROR! Only one object can be placed above a plane to be stored. " << std::endl;
