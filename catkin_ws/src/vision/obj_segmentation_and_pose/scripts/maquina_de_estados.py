@@ -31,6 +31,7 @@ SM_MOVE_LEFT_ARM = 100
 SM_RETURN_LOCATION = 11
 SM_GRASP_OBJECT = 13
 SM_PICK_UP_OBJECT = 14
+SM_LIFT_OBJECT = 15
 
 # ROBOT REAL LOCATION
 LEFT_TABLE_NEAR = [5.45, 2.45, np.deg2rad(90)]
@@ -373,17 +374,6 @@ def main():
                     time.sleep(2)
                     print("succesfull move arm...")
                     state = SM_PICK_UP_OBJECT
-                    """
-                    print("Cambiando posicion de brazo ....")
-                    q2q_traj(TAKEN_OBJECT , clt_traj_planner, pub_la_goal_traj)
-                    while (not goal_la_reached) or not rospy.is_shutdown:
-                        print("status: moving arm....")
-                        time.sleep(1)
-                    goal_la_reached = False
-                    """
-                    
-                    
-                    #state = -1#SM_RETURN_LOCATION
             else:
                 print("No se encontraron poses posibles...................")
                 state = -1
@@ -398,9 +388,19 @@ def main():
                 decrement = decrement - 0.03
                 print("DECREMENT:_____", decrement)
 
-            state =  -1#SM_RETURN_LOCATION
-            
-        
+            state =  SM_LIFT_OBJECT
+
+
+        elif state == SM_LIFT_OBJECT:
+            print("Cambiando posicion de brazo ....")
+            q2q_traj(TAKEN_OBJECT , clt_traj_planner, pub_la_goal_traj)
+            while (not goal_la_reached) or not rospy.is_shutdown:
+                print("status: moving arm....")
+                time.sleep(1)
+            goal_la_reached = False
+            state = -1
+
+
         elif state == SM_RETURN_LOCATION:
             #global goal_reached
             local_target = STARTING_PLACE
