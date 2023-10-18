@@ -52,10 +52,10 @@
   </node>
 
   <include file="$(find surge_et_ambula)/launch/justina/manipulation.launch"/>
-  <include file="$(find surge_et_ambula)/launch/justina/vision.launch">
-    <arg name="debug"         value="$(arg debug)"/>
-    <arg name="training_dir"  value="$(find obj_reco)/training_dir"/>
-  </include>
+  <!-- <include file="$(find surge_et_ambula)/launch/justina/vision.launch"> -->
+  <!--   <arg name="debug"         value="$(arg debug)"/> -->
+  <!--   <arg name="training_dir"  value="$(find obj_reco)/training_dir"/> -->
+  <!-- </include> -->
   
   <node name="sound_play" pkg="sound_play" type="soundplay_node.py" output="screen"/>
   <node name="speech_recog" pkg="sprec_pocketsphinx" type="asr.py">
