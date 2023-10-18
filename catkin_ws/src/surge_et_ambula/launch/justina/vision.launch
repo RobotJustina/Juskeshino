@@ -15,7 +15,7 @@
     <param name="canny_threshold1"    value="50"/>
     <param name="canny_threshold2"    value="150"/>
     <param name="canny_window_size"   value="3"/>
-    <param name="hough_threshold"     value="800"/>
+    <param name="hough_threshold"     value="200"/>
     <param name="hough_min_rho"       value="0"/>
     <param name="hough_max_rho"       value="800"/>
     <param name="hough_step_rho"      value="5"/>

@@ -67,7 +67,7 @@ bool callback_find_planes(vision_msgs::FindPlanes::Request& req, vision_msgs::Fi
     Utils::transform_cloud_wrt_base(req.point_cloud, img, cloud, tf_listener);
     Utils::filter_by_distance(cloud, img, min_x, min_y, min_z, max_x, max_y, max_z, cloud, img);
     std::vector<cv::Vec3f> plane = GeometricFeatures::get_horizontal_planes(cloud, normal_min_z, plane_dist_threshold, plane_min_area, output_mask, debug);
-    pubMarkers.publish(Utils::get_plane_marker(plane));
+    pubMarkers.publish(Utils::get_plane_marker(plane, 2*plane_dist_threshold));
     if(plane.size() > 0) std::cout << "ObjReco.->Found Plane. Center: " << plane[0] << " Normal: " << plane[1] <<std::endl;
     else std::cout << "ObjReco.->Cannot find plane. " << std::endl;
     return plane.size() > 0;
@@ -104,7 +104,7 @@ bool callback_detect_and_recog_objs(vision_msgs::RecognizeObjects::Request& req,
 
 bool callback_detect_and_recog_obj(vision_msgs::RecognizeObject::Request& req, vision_msgs::RecognizeObject::Response& resp)
 {
-    std::cout << "ObjReco.->Trying to recognize " << req.name << " by Jebug's method." << std::endl;
+    std::cout << "ObjReco.->Trying to recognize " << req.name << " in a Jebusly manner" << std::endl;
     cv::Mat img, cloud, output_mask;
     if(debug) cv::destroyAllWindows();
         
