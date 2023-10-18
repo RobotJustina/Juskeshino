@@ -329,7 +329,7 @@ int main(int argc, char **argv)
     ros::Publisher pub_battery         = n.advertise<std_msgs::Float64>("/hardware/robot_state/arm_battery", 1);
     ros::Publisher pub_goal_reached    = n.advertise<std_msgs::Bool>("/manipulation/arm/goal_reached", 1);
     ros::Publisher pub_current_voltage = n.advertise<std_msgs::Float64>("/hardware/arm_voltage",1);
-    ros::Rate rate(40);
+    ros::Rate rate(20);
     sensor_msgs::JointState joint_states;
     std_msgs::Float64MultiArray msg_current_pose;
     std_msgs::Float64 msg_current_gripper;
@@ -413,8 +413,8 @@ int main(int argc, char **argv)
             joint_states.position = positions_bits_to_radians(current_position_bits, servo_zeros, servo_directions, servo_bits_per_radian);
         else
             std::cout<<prompt << "Cannot get arm current position..." << std::endl;
-        if(!get_current_voltage_bits(groupBulkReadVoltages, servo_ids, msg_voltage.data))
-            std::cout<<prompt<< "Cannot get arm current voltage"<< std::endl;
+        // if(!get_current_voltage_bits(groupBulkReadVoltages, servo_ids, msg_voltage.data))
+        //     std::cout<<prompt<< "Cannot get arm current voltage"<< std::endl;
         
         joint_states.header.stamp = ros::Time::now();
         for(int i=0; i<servo_arm_ids.size(); i++) msg_current_pose.data[i] = joint_states.position[i];

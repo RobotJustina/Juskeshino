@@ -14,7 +14,7 @@ public:
     
     static std::vector<cv::Vec3f> plane_from_points(cv::Vec3f p1, cv::Vec3f p2, cv::Vec3f p3);
     static std::vector<cv::Vec3f> plane_by_pca(cv::Mat points, float& approx_area, bool debug=false);
-    static std::vector<cv::Vec3f> plane_by_ransac(cv::Mat cloud, cv::Mat mask, float normal_min_z, float distance_tol, float min_area,
+    static std::vector<cv::Vec3f> plane_by_ransac(cv::Mat cloud, cv::Mat& mask, float normal_min_z, float distance_tol, float min_area,
                                                   std::vector<cv::Vec3f>& inliers, std::vector<cv::Vec3f>& outliers, bool debug=false);
 
     static float dist_point_to_line_segment(float px, float py, float pz, float x1, float y1, float z1, float x2, float y2, float z2);

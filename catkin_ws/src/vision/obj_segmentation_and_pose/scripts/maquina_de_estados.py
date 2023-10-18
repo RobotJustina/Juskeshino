@@ -233,7 +233,7 @@ def main():
         
         if state == SM_INIT:
             print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
-            obj_target = "apple"
+            obj_target = "pringles"
             print("OBJECT TARGET:____", obj_target)
             x_p, y_p, a = get_robot_pose(listener)
             STARTING_PLACE = [x_p, y_p, a]
@@ -296,8 +296,8 @@ def main():
             reco_objs_req = RecognizeObjectsRequest()
             # LLenar msg
             
-            reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
-            #reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
+            #reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+            reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
             
             reco_objs_resp = clt_recognize_objects(reco_objs_req)
             recog_objects = reco_objs_resp.recog_objects    # Accede a la lista de VisionObjects
@@ -382,10 +382,10 @@ def main():
             print("state == SM_PICK_UP_OBJECT")
             decrement = GRIPPER_OPENING 
 
-            while (decrement > 0.1):
+            while (decrement > 0.0):
                 move_left_gripper(decrement , pub_la_goal_grip)
-                time.sleep(0.2)
-                decrement = decrement - 0.03
+                time.sleep(0.01)
+                decrement = decrement - 0.08
                 print("DECREMENT:_____", decrement)
 
             state =  SM_LIFT_OBJECT

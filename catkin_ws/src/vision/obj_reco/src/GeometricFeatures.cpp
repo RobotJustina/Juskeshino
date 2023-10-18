@@ -85,7 +85,7 @@ std::vector<cv::Vec3f> GeometricFeatures::plane_from_points(cv::Vec3f p1, cv::Ve
 
 /*
  * Returns a plane given by a set of 6 xyz vectors: [center, normal and four bounding points].
- * Yes, it is assumed only a planar segment with a rectangular shape. Sorry for that limitation.
+ * Yes, it is assumed only one planar segment with a rectangular shape. Sorry for that limitation.
  */
 std::vector<cv::Vec3f> GeometricFeatures::plane_by_pca(cv::Mat points, float& approx_area, bool debug)
 {
@@ -112,8 +112,15 @@ std::vector<cv::Vec3f> GeometricFeatures::plane_by_pca(cv::Mat points, float& ap
 
 /*
  * Returns the first found plane with more than 'min_area' inliers
+ * cloud: point cloud with xyz information
+ * mask: indicates which points are going to be used for the initial random sample.
+ *       This mask is previously obtained by filtering only points with vertical normals.
+ *       After plane adjustment, this mask will be a binary image indicating the inliers. 
+ * normal_min_z: min value of the z-component of a unitary normal vector to be considered as vertical
+ * dis_threshold: max distance for a point to be considered as part of the candidate plane
+ * min_area: min area for a plane to be accepted. This area is calculated using the PCA eigenvectors
  */
-std::vector<cv::Vec3f> GeometricFeatures::plane_by_ransac(cv::Mat cloud, cv::Mat mask, float normal_min_z, float dist_threshold, float min_area,
+std::vector<cv::Vec3f> GeometricFeatures::plane_by_ransac(cv::Mat cloud, cv::Mat& mask, float normal_min_z, float dist_threshold, float min_area,
                                                           std::vector<cv::Vec3f>& inliers, std::vector<cv::Vec3f>& outliers, bool debug)
 {
     std::vector<cv::Point> indices;
@@ -147,7 +154,10 @@ std::vector<cv::Vec3f> GeometricFeatures::plane_by_ransac(cv::Mat cloud, cv::Mat
             cv::Vec3f v = cloud.at<cv::Vec3f>(i,j) - center;
             float dist = fabs(normal[0]*v[0] + normal[1]*v[1] + normal[2]*v[2]);
             if (dist < dist_threshold)
+            {
                 inliers.push_back(cloud.at<cv::Vec3f>(i,j));
+                mask.at<char>(i,j) = 255;
+            }
             else
             {
                 outliers.push_back(cloud.at<cv::Vec3f>(i,j));
@@ -291,15 +301,16 @@ std::vector<cv::Vec3f> GeometricFeatures::find_table_edge(cv::Mat& cloud, float 
     cv::cvtColor(normals, output_img_mask, cv::COLOR_BGR2GRAY);
     output_img_mask.convertTo(output_img_mask, CV_8UC1, 255);
     cv::threshold(output_img_mask, output_img_mask, 10, 255, cv::THRESH_BINARY);
-    if(debug) cv::imshow("Binary image with normals", output_img_mask);
     std::vector<cv::Vec3f> inliers, outliers;
     std::vector<cv::Vec3f> plane = GeometricFeatures::plane_by_ransac(cloud, output_img_mask, normal_min_z, 0.04, 0.4, inliers,
                                                                       outliers, debug);
-    
     //cv::cvtColor(normals, grayscale_normals, cv::COLOR_BGR2GRAY);
     //grayscale_normals.convertTo(grayscale_normals, CV_8UC1, 255);
     //cv::Canny(grayscale_normals, borders, canny_threshold1, canny_threshold2, canny_window_size);
-    cv::Canny(output_img_mask, borders, canny_threshold1, canny_threshold2, canny_window_size);    
+    cv::Mat element = getStructuringElement( cv::MORPH_ELLIPSE, cv::Size( 3,3 ), cv::Point( 1,1 ) );
+    cv::erode(output_img_mask, output_img_mask, element);
+    cv::Canny(output_img_mask, borders, canny_threshold1, canny_threshold2, canny_window_size);
+    if(debug) cv::imshow("Canny borders", borders);
     std::vector<cv::Vec3f> lines = GeometricFeatures::hough_lines(borders, cloud,  hough_min_rho, hough_max_rho, hough_step_rho, hough_min_theta,
                                                                   hough_max_theta, hough_step_theta, hough_threshold, output_bgr, debug);
     float min_dist = 1000;
@@ -315,7 +326,5 @@ std::vector<cv::Vec3f> GeometricFeatures::find_table_edge(cv::Mat& cloud, float 
         }
     }
     if(min_dist == 1000) nearest_line.clear();
-    if(debug)
-        cv::imshow("Canny borders", borders);
     return nearest_line;
 }

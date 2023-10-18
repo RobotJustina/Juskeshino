@@ -25,7 +25,7 @@ public:
     static visualization_msgs::Marker get_lines_marker(std::vector<cv::Vec3f> lines);
     static std::vector<geometry_msgs::Point> get_lines_msg(std::vector<cv::Vec3f> line);
 
-    static visualization_msgs::Marker get_plane_marker(std::vector<cv::Vec3f> plane);
+    static visualization_msgs::Marker get_plane_marker(std::vector<cv::Vec3f> plane, float thickness);
 
     static vision_msgs::RecognizeObjects::Response get_recog_objects_response(std::vector<cv::Mat>& objects_bgr, std::vector<cv::Mat>& objects_xyz,
                                                                               std::vector<cv::Mat>& objects_masks, std::vector<std::string>& labels,

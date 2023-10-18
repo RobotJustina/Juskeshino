@@ -157,9 +157,10 @@ std::vector<geometry_msgs::Point> Utils::get_lines_msg(std::vector<cv::Vec3f> li
     return msg;
 }
 
-visualization_msgs::Marker Utils::get_plane_marker(std::vector<cv::Vec3f> plane)
+visualization_msgs::Marker Utils::get_plane_marker(std::vector<cv::Vec3f> plane, float thickness)
 {
     //Intended only for horizontal planes
+    //Assumes a plane given by a set of 6 xyz vectors: [center, normal and four bounding points].
     visualization_msgs::Marker marker;
     if(plane.size() < 6) return marker;
     marker.header.frame_id = "base_link";
@@ -177,7 +178,7 @@ visualization_msgs::Marker Utils::get_plane_marker(std::vector<cv::Vec3f> plane)
     marker.pose.orientation.w = 1.0;
     marker.scale.x = fabs(plane[2][0] - plane[4][0]);
     marker.scale.y = fabs(plane[2][1] - plane[4][1]);
-    marker.scale.z = 0.1;
+    marker.scale.z = thickness;
     marker.color.a = 0.5; // Don't forget to set the alpha!
     marker.color.r = 0.0;
     marker.color.g = 0.5;

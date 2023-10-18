@@ -502,10 +502,10 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /vision/object_recognition/markers
+      Marker Topic: /vision/obj_reco/markers
       Name: ObjRecoMarkers
       Namespaces:
-        {}
+        plane_markers: true
       Queue Size: 100
       Value: true
     - Alpha: 1
