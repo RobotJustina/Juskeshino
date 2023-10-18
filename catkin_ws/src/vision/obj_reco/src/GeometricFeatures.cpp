@@ -291,7 +291,7 @@ std::vector<cv::Vec3f> GeometricFeatures::find_table_edge(cv::Mat& cloud, float 
     cv::cvtColor(normals, output_img_mask, cv::COLOR_BGR2GRAY);
     output_img_mask.convertTo(output_img_mask, CV_8UC1, 255);
     cv::threshold(output_img_mask, output_img_mask, 10, 255, cv::THRESH_BINARY);
-    if(debug) cv::imshow("Binary image with normals", output_img_mask);
+    if(debug) cv::imshow("Points with vertical normals", output_img_mask);
     std::vector<cv::Vec3f> inliers, outliers;
     std::vector<cv::Vec3f> plane = GeometricFeatures::plane_by_ransac(cloud, output_img_mask, normal_min_z, 0.04, 0.4, inliers,
                                                                       outliers, debug);
