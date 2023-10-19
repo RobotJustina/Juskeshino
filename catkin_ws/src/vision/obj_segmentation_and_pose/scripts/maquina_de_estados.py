@@ -46,7 +46,7 @@ V_STARTING_PLACE= [5.6 , 4.5, 0]
 # left arm poses
 PREPARE_TOP_GRIP = [-0.9, 0.4, 0.0, 1.9, 0.01, 1, -0.01]  #funciona para pringles horizontal (prisma horizontal)
 PREPARE_LATERAL_GRIP =  [-1.2, 0.2, 0  , 1.6, 0   , 1,     0] #Prepare original:funciona bien para pringles vertical (prisma vertical) 
-TAKEN_OBJECT = [0.8, 0.2, -1.4, 1.5, 0.17, 0.6, 0.5]
+TAKEN_OBJECT = [0.98, 0.22, -1.47, 1.76, 0.15, 0.5, 0.5]
 HOME = [0,0,0,0,0,0]
 GRIPPER_OPENING = 0.9   # Apertura de gripper
 
@@ -238,7 +238,7 @@ def main():
         
         if state == SM_INIT:
             print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
-            obj_target = "matrushka"
+            obj_target = "apple"
             print("OBJECT TARGET:____", obj_target)
             x_p, y_p, a = get_robot_pose(listener)
             STARTING_PLACE = [x_p, y_p, a]
@@ -359,7 +359,6 @@ def main():
             
             state = SM_GRASP_OBJECT
             
-
         elif state == SM_GRASP_OBJECT:
             print("state == SM_GRASP_OBJECT")
             req_best_grip = BestGraspTrajRequest()
@@ -372,15 +371,17 @@ def main():
                 move_left_gripper(GRIPPER_OPENING, pub_la_goal_grip)
                 print("publicando trayectoria en q para brazo izquierdo...................")
                 pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
+                
+                goal_la_reached =  False
+                print("goal_la_reached STATUS", goal_la_reached)
                 while (not goal_la_reached) or not rospy.is_shutdown:
-                    print("status: moving arm....")
+
+                    print("goal_la_reached status: moving arm....", goal_la_reached)
                     time.sleep(1)
                     
                 if goal_la_reached:
                     print("succesfull move arm...")
-                    goal_la_reached = False
                     time.sleep(2)
-                    print("succesfull move arm...")
                     print("goal_la_reached STATUS", goal_la_reached)
                     state = SM_PICK_UP_OBJECT
             else:
