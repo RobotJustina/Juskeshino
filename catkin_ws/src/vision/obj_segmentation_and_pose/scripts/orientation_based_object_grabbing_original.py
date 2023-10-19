@@ -41,13 +41,14 @@ def points_actual_to_points_target(point_in, f_actual, f_target):
 
 
 
-def obj_grip(grip_point , obj_pose, rotacion, obj_state , object_frame):    # Cambiar nombre por generates_candidates
+def obj_grip(grip_point , obj_pose, rotacion, obj_state , object_frame, step):    # Cambiar nombre por generates_candidates
     """
-        grip_point: punto origen de los sistemas candidatos, entra en el sistema base_link
-        obj_pose:   orientacion del objeto en msg Pose en frame 'base_link'
-        rotacion:   roll , pitch o yaw: 'R', 'P', 'Y', tipo de rotacion a realizar en el object_frame
-        obj_state: 'horizontal' o 'vertical'
-        object_frame: el frame en el cual se van a generar los candidatos
+        grip_point:   Vector que contiene  el punto origen de los sistemas candidatos, entra en el sistema base_link.
+        obj_pose:     Orientacion del objeto en msg Pose en frame 'base_link', expresado en cuaterniones.
+        rotacion:     Es un string: roll , pitch o yaw: 'R', 'P', 'Y', tipo de rotacion a realizar en el object_frame.
+        obj_state:    Es un string que  indica si el objeto esta 'horizontal' o 'vertical'.
+        object_frame: Es el frame en el cual se van a generar los candidatos de retorno.
+        step:         Grados de distancia entre un candidato y otro, pueden ser negativos o positivos.
 
         Retorna una lista de poses candidatas expresadas en cuaterniones
     """
@@ -77,10 +78,10 @@ def obj_grip(grip_point , obj_pose, rotacion, obj_state , object_frame):    # Ca
         obj_pose_frame_object.orientation.z = q_gripper[2]
         obj_pose_frame_object.orientation.w = q_gripper[3]
         if rotacion == "P": 
-            P = P + np.deg2rad(-14) #horizontal grip
+            P = P + np.deg2rad(step) #horizontal grip
             print("horizontal grip")
         else:
-            if rotacion == "R": R = R + np.deg2rad(10)  #vertical grip
+            if rotacion == "R": R = R + np.deg2rad(step)  #vertical grip
         # TRANSFORMAR DIRECTAMENTE A LEFT ARM???
         candidate_grasp = pose_actual_to_pose_target(obj_pose_frame_object , object_frame, 'base_link')    # pose en frame 'base_link'
         candidate_grasp.position.x = grip_point[0] 
@@ -123,13 +124,10 @@ def box(obj_pose, size, obj_state):     # obj_pose  esta referenciada a 'base_li
             broadcaster_frame_object('base_link', 'horizontal_box' , obj_pose )  # emite la pose en 'base_link'
             rospy.sleep(1.0)
         grip_point = points_actual_to_points_target([0, 0, size.z/3], 'object', 'base_link')    # Establece punto de agarre
-        
-        pose_list1 = obj_grip(grip_point , obj_pose, "P", obj_state , 'object')   # Retorna la lista de candidatos generados por un 'Pitch'
+        # Primera lista de candidatos
+        pose_list1 = obj_grip(grip_point , obj_pose, "P", obj_state , 'object', step = -14)   # Retorna la lista de candidatos generados por un 'Pitch'
 
-
-
-
-
+        # Segunda lista de candidatos
         obj_pose_frame_object = pose_actual_to_pose_target(obj_pose , 'base_link', 'object') # Transforma pose en frame 'object' para generar candidatos
         
         R, P, Y = tft.euler_from_quaternion([obj_pose_frame_object.orientation.x ,  # pose expresada en RPY para realizar rotaciones
@@ -148,15 +146,13 @@ def box(obj_pose, size, obj_state):     # obj_pose  esta referenciada a 'base_li
             broadcaster_frame_object('base_link', 'test_h', obj_pose_frame_bl)  # emite la pose en 'base_link'
             rospy.sleep(1.0)
 
-        #poses_list2 = obj_grip(grip_point2 , obj_pose_frame_bl, "P", 'horizontal' ,'object')
-        #spose_list2 = 0
         return pose_list1 #+ pose_list2
     
 
     else:  # VERTICAL object
         grip_point1 = points_actual_to_points_target([0, 0, size.z/4] , 'object', 'base_link')  # punto lateral en frame object
         grip_point2 = points_actual_to_points_target([size.x/3, 0, 0]  , 'object', 'base_link')     # punto superior en frame object
-        poses_list1 = obj_grip(grip_point1 , obj_pose, "R", obj_state ,'object')    # Candidatos generados por un 'Roll'
+        poses_list1 = obj_grip(grip_point1 , obj_pose, "R", obj_state ,'object', step = 10)    # Candidatos generados por un 'Roll'
         
         obj_pose_frame_object = pose_actual_to_pose_target(obj_pose , 'base_link', 'object') # Transforma pose en frame 'object' para generar candidatos
         
@@ -176,7 +172,7 @@ def box(obj_pose, size, obj_state):     # obj_pose  esta referenciada a 'base_li
             broadcaster_frame_object('base_link', 'test_v', obj_pose_frame_bl)  # emite la pose en 'base_link'
             rospy.sleep(1.0)
 
-        poses_list2 = obj_grip(grip_point2 , obj_pose_frame_bl, "P", 'horizontal' ,'object')  
+        poses_list2 = obj_grip(grip_point2 , obj_pose_frame_bl, "P", 'horizontal' ,'object', step = -14)  
         if size.x < 0.11:   # Se construye frame 
             print("Object too small, top grip only!!!.......")
             return poses_list2  
@@ -209,7 +205,7 @@ def prism(obj_pose, obj_state):
     if obj_state == 'horizontal':  # *******************************************************************
         print("Horizontal grip prism............")  # Agarre horizontal
         grip_point = [obj_pose.position.x , obj_pose.position.y, obj_pose.position.z]  
-        return obj_grip(grip_point , obj_pose, "P", obj_state ,  'object')
+        return obj_grip(grip_point , obj_pose, "P", obj_state ,  'object', step = -14)
         
     else:
         print("Vertical grip.................")
