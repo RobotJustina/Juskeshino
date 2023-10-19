@@ -184,6 +184,11 @@ def callback_recognized_speech(msg):
 
 
 
+def move_arm():
+    print("llalala")
+
+
+
 def main():
 
     print("STATE MACHINE.......................")
@@ -233,7 +238,7 @@ def main():
         
         if state == SM_INIT:
             print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
-            obj_target = "pringles"
+            obj_target = "matrushka"
             print("OBJECT TARGET:____", obj_target)
             x_p, y_p, a = get_robot_pose(listener)
             STARTING_PLACE = [x_p, y_p, a]
@@ -347,18 +352,21 @@ def main():
             while (not goal_la_reached) or not rospy.is_shutdown:
                 print("status: moving arm....", goal_la_reached)                
                 time.sleep(1)
-            goal_la_reached = False
+            
+            goal_la_reached =  False       
+            print("goal_la_reached STATUS", goal_la_reached)
             rospy.sleep(2.0)
             
             state = SM_GRASP_OBJECT
             
 
         elif state == SM_GRASP_OBJECT:
-            print("state == SM_MOVE_ARM")
-            count = 0
+            print("state == SM_GRASP_OBJECT")
             req_best_grip = BestGraspTrajRequest()
             req_best_grip.recog_object = resp_pose_obj.recog_object
             resp_best_grip = clt_best_grip(req_best_grip)
+            goal_la_reached =  False       
+            print("goal_la_reached STATUS", goal_la_reached)
             move_left_gripper(0.9, pub_la_goal_grip)
             if resp_best_grip.graspable:
                 move_left_gripper(GRIPPER_OPENING, pub_la_goal_grip)
@@ -373,6 +381,7 @@ def main():
                     goal_la_reached = False
                     time.sleep(2)
                     print("succesfull move arm...")
+                    print("goal_la_reached STATUS", goal_la_reached)
                     state = SM_PICK_UP_OBJECT
             else:
                 print("No se encontraron poses posibles...................")
@@ -381,22 +390,27 @@ def main():
         elif state == SM_PICK_UP_OBJECT:
             print("state == SM_PICK_UP_OBJECT")
             decrement = GRIPPER_OPENING 
+            goal_la_reached =  False
+            print("goal_la_reached STATUS", goal_la_reached)
 
             while (decrement > 0.0):
                 move_left_gripper(decrement , pub_la_goal_grip)
                 time.sleep(0.01)
                 decrement = decrement - 0.08
                 print("DECREMENT:_____", decrement)
-
-            state =  SM_LIFT_OBJECT
+            state = SM_LIFT_OBJECT
+   
 
 
         elif state == SM_LIFT_OBJECT:
             print("Cambiando posicion de brazo ....")
+            goal_la_reached =  False       
+            print("goal_la_reached STATUS", goal_la_reached)
             q2q_traj(TAKEN_OBJECT , clt_traj_planner, pub_la_goal_traj)
             while (not goal_la_reached) or not rospy.is_shutdown:
                 print("status: moving arm....")
                 time.sleep(1)
+
             goal_la_reached = False
             state = -1
 
