@@ -41,7 +41,7 @@ def points_actual_to_points_target(point_in, f_actual, f_target):
 
 
 
-def obj_grip(grip_point , obj_pose, rotacion, obj_state , object_frame, step):    # Cambiar nombre por generates_candidates
+def generates_candidates(grip_point , obj_pose, rotacion, obj_state , object_frame, step):    # Cambiar nombre por generates_candidates
     """
         grip_point:   Vector que contiene  el punto origen de los sistemas candidatos, entra en el sistema base_link.
         obj_pose:     Orientacion del objeto en msg Pose en frame 'base_link', expresado en cuaterniones.
@@ -120,9 +120,6 @@ def box(obj_pose, size, obj_state):     # obj_pose  esta referenciada a 'base_li
 
     if obj_state == 'horizontal':   
         print("Horizontal box")
-        if debug:
-            broadcaster_frame_object('base_link', 'horizontal_box' , obj_pose )  # emite la pose en 'base_link'
-            rospy.sleep(1.0)
         grip_point = points_actual_to_points_target([0, 0, size.z/3], 'object', 'base_link')    # Establece punto de agarre
         # Primera lista de candidatos
         pose_list1 = obj_grip(grip_point , obj_pose, "P", obj_state , 'object', step = -14)   # Retorna la lista de candidatos generados por un 'Pitch'
