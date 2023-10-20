@@ -238,7 +238,7 @@ def main():
         
         if state == SM_INIT:
             print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
-            obj_target = "apple"
+            obj_target = "watermelon"
             print("OBJECT TARGET:____", obj_target)
             x_p, y_p, a = get_robot_pose(listener)
             STARTING_PLACE = [x_p, y_p, a]
@@ -335,7 +335,7 @@ def main():
                 state = SM_WAITING_NEW_COMMAND
 
             print("position object ", x,y,z)    
-            state = SM_PREPARE_ARM
+            state =-1# SM_PREPARE_ARM
             
             
         elif state == SM_PREPARE_ARM:

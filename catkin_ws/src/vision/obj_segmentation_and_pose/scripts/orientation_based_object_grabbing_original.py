@@ -145,8 +145,10 @@ def box(obj_pose, size, obj_state):     # obj_pose  esta referenciada a 'base_li
         if debug:
             broadcaster_frame_object('base_link', 'test_h', obj_pose_frame_bl)  # emite la pose en 'base_link'
             rospy.sleep(1.0)
+         
+        pose_list2 = obj_grip(grip_point,  obj_pose, "P", obj_state , 'object', step = 14)
 
-        return pose_list1 #+ pose_list2
+        return pose_list1 + pose_list2
     
 
     else:  # VERTICAL object
