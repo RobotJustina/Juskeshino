@@ -125,6 +125,7 @@ def object_pose(centroid, principal_component, second_component, size_x):  # vec
         eje_x_obj = np.asarray([1, 0, 0], dtype=np.float64)
         eje_z_obj = eje_z
         eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+        obj_state = 'horizontal'
 
     # **************************************************************************************************
     else: # Realiza agarre lateral

@@ -335,7 +335,7 @@ def main():
                 state = SM_WAITING_NEW_COMMAND
 
             print("position object ", x,y,z)    
-            state =-1# SM_PREPARE_ARM
+            state = SM_PREPARE_ARM
             
             
         elif state == SM_PREPARE_ARM:
@@ -396,8 +396,8 @@ def main():
 
             while (decrement > 0.0):
                 move_left_gripper(decrement , pub_la_goal_grip)
-                time.sleep(0.01)
-                decrement = decrement - 0.08
+                # time.sleep(0.001)
+                decrement = decrement - 0.1
                 print("DECREMENT:_____", decrement)
             state = SM_LIFT_OBJECT
    
