@@ -58,7 +58,7 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , object_fra
     marker_array_publish(grip_point , 'base_link', 0, 7)    # publica el punto de agarre para brazo izquierdo
 
 
-    if obj_state == "horizontal": grip_point[2] = grip_point[2] + 0.0  # 10 cm por encima del objeto (z_base_link)
+    if obj_state == "horizontal": grip_point[2] = grip_point[2] + 0.1  # 10 cm por encima del objeto (z_base_link)
 
     obj_pose_frame_object = pose_actual_to_pose_target(obj_pose , 'base_link', object_frame) # pose en frame 'object'
     
@@ -148,13 +148,14 @@ def small_obj(obj_pose, obj_state):
 def box(obj_pose, size, obj_state):     # obj_pose  esta referenciada a 'base_link'
     global debug
 
-    if obj_state == 'horizontal':   
+    # HORIZONTAL GRASP *****************************************************************************************************************************************************************
+    if obj_state == 'horizontal':  
         print("Horizontal box")
+        # Primera lista de candidatos**************************************************************************************************************************************************
         grip_point = points_actual_to_points_target([0, 0, size.z/3], 'object', 'base_link')    # Establece punto de agarre
-        # Primera lista de candidatos
         pose_list1 = generates_candidates(grip_point , obj_pose, "P", obj_state , 'object', step = -14, num_candidates = 6)   # Retorna la lista de candidatos generados por un 'Pitch'
 
-        # Segunda lista de candidatos
+        # Segunda lista de candidatos **************************************************************************************************************************************************
         obj_pose_frame_object = pose_actual_to_pose_target(obj_pose , 'base_link', 'object') # Transforma pose en frame 'object' para generar candidatos
         
         R, P, Y = tft.euler_from_quaternion([obj_pose_frame_object.orientation.x ,  # pose expresada en RPY para realizar rotaciones
@@ -168,16 +169,17 @@ def box(obj_pose, size, obj_state):     # obj_pose  esta referenciada a 'base_li
         obj_pose_frame_object.orientation.z = q_gripper[2]
         obj_pose_frame_object.orientation.w = q_gripper[3]
 
-        obj_pose_frame_bl = pose_actual_to_pose_target(obj_pose_frame_object , 'object', 'base_link')
+        obj_pose2 = pose_actual_to_pose_target(obj_pose_frame_object , 'object', 'base_link')
         if debug:
-            broadcaster_frame_object('base_link', 'test_h', obj_pose_frame_bl)  # emite la pose en 'base_link'
+            broadcaster_frame_object('base_link', 'test_h_box2', obj_pose_frame_bl)  # emite la pose en 'base_link'
             rospy.sleep(1.0)
-         
-        pose_list2 = generates_candidates(grip_point,  obj_pose, "P", obj_state , 'object', step = 14, num_candidates = 6)
+
+        grip_point = [obj_pose2.position.x, obj_pose2.position.y, obj_pose2.position.z]         
+        pose_list2 = generates_candidates(grip_point,  obj_pose2, "P", obj_state , 'object', step = 14, num_candidates = 6)
 
         return pose_list1 + pose_list2
     
-
+    # VERTICAL GRASP *************************************************************************************************************************************************
     else:  # VERTICAL object
         grip_point1 = points_actual_to_points_target([0, 0, size.z/4] , 'object', 'base_link')  # punto lateral en frame object
         grip_point2 = points_actual_to_points_target([size.x/3, 0, 0]  , 'object', 'base_link')     # punto superior en frame object
@@ -236,9 +238,11 @@ def prism(obj_pose, obj_state):
         print("Horizontal grip prism............")  # Agarre horizontal
         grip_point = [obj_pose.position.x , obj_pose.position.y, obj_pose.position.z] 
 
-        pose_list1 = generates_candidates(grip_point , obj_pose, "P", obj_state ,  'object', step = -10, num_candidates = 6)
-
+        pose_list1 = generates_candidates(grip_point , obj_pose, "P", obj_state ,  'object', step = -10, num_candidates = 5)
+        grip_point = [obj_pose.position.x , obj_pose.position.y, obj_pose.position.z]
         # Segunda lista de candidatos******************************************************************************
+        pose_list2 = generates_candidates(grip_point , obj_pose, "P", obj_state ,  'object', step = 10, num_candidates = 4)
+        """
         obj_pose_frame_object = pose_actual_to_pose_target(obj_pose , 'base_link', 'object') # Transforma pose en frame 'object' para generar candidatos
         
         R, P, Y = tft.euler_from_quaternion([obj_pose_frame_object.orientation.x ,  # pose expresada en RPY para realizar rotaciones
@@ -261,7 +265,7 @@ def prism(obj_pose, obj_state):
         
         grip_point = [obj_pose_2.position.x, obj_pose_2.position.y, obj_pose_2.position.z]
         pose_list2 = generates_candidates(grip_point, obj_pose_2 , "P", obj_state , 'object', step = 0, num_candidates = 1)
-        
+        """
         return pose_list2 + pose_list1
 
     # VERTICAL ***************************************************************************************************    

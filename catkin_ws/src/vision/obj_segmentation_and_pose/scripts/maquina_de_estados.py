@@ -46,7 +46,8 @@ V_STARTING_PLACE= [5.6 , 4.5, 0]
 # left arm poses
 PREPARE_TOP_GRIP = [-0.9, 0.4, 0.0, 1.9, 0.01, 1, -0.01]  #funciona para pringles horizontal (prisma horizontal)
 PREPARE_LATERAL_GRIP =  [-1.2, 0.2, 0  , 1.6, 0   , 1,     0] #Prepare original:funciona bien para pringles vertical (prisma vertical) 
-TAKEN_OBJECT = [0.98, 0.22, -1.47, 1.76, 0.15, 0.5, 0.5]
+TAKEN_OBJECT_VERTICAL = [0.05, 0.95, -0.35, 1.87, -1, 0.3, -0.9]#[0.98, 0.22, -1.47, 1.76, 0.15, 0.5, 0.5]
+TAKEN_OBJECT_HORIZONTAL = []
 HOME = [0,0,0,0,0,0]
 GRIPPER_OPENING = 0.9   # Apertura de gripper
 
@@ -238,7 +239,7 @@ def main():
         
         if state == SM_INIT:
             print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
-            obj_target = "watermelon"
+            obj_target = "pringles"
             print("OBJECT TARGET:____", obj_target)
             x_p, y_p, a = get_robot_pose(listener)
             STARTING_PLACE = [x_p, y_p, a]
@@ -301,8 +302,8 @@ def main():
             reco_objs_req = RecognizeObjectsRequest()
             # LLenar msg
             
-            #reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
-            reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
+            reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+            #reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
             
             reco_objs_resp = clt_recognize_objects(reco_objs_req)
             recog_objects = reco_objs_resp.recog_objects    # Accede a la lista de VisionObjects
@@ -367,6 +368,7 @@ def main():
             goal_la_reached =  False       
             print("goal_la_reached STATUS", goal_la_reached)
             move_left_gripper(0.9, pub_la_goal_grip)
+            """
             if resp_best_grip.graspable:
                 move_left_gripper(GRIPPER_OPENING, pub_la_goal_grip)
                 print("publicando trayectoria en q para brazo izquierdo...................")
@@ -387,6 +389,8 @@ def main():
             else:
                 print("No se encontraron poses posibles...................")
                 state = -1
+            """
+            state = -1
             
         elif state == SM_PICK_UP_OBJECT:
             print("state == SM_PICK_UP_OBJECT")
@@ -407,7 +411,7 @@ def main():
             print("Cambiando posicion de brazo ....")
             goal_la_reached =  False       
             print("goal_la_reached STATUS", goal_la_reached)
-            q2q_traj(TAKEN_OBJECT , clt_traj_planner, pub_la_goal_traj)
+            q2q_traj(TAKEN_OBJECT_VERTICAL , clt_traj_planner, pub_la_goal_traj)
             while (not goal_la_reached) or not rospy.is_shutdown:
                 print("status: moving arm....")
                 time.sleep(1)
