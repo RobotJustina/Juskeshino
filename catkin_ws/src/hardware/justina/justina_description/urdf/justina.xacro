@@ -9,17 +9,17 @@
   <xacro:include filename="$(find justina_description)/urdf/justina_head.xacro"/>
   
   <joint name="torso_connect" type="fixed">
-    <origin xyz= "0.05 0 1.08" rpy="0 0 0"/>
+    <origin xyz= "0.03 0 1.08" rpy="0 0 0"/>
     <parent link="base_link"/>
     <child link="torso_link"/>
   </joint>
   <joint name="shoulder_left_connect" type="fixed">
-    <origin xyz="0 0.195 -0.08" rpy="0 0 0"/>
+    <origin xyz="0 0.225 -0.08" rpy="0 0 0"/>
     <parent link="spine_link"/>
     <child link="shoulders_left_link"/>
   </joint>
   <joint name="shoulder_right_connect" type="fixed">
-    <origin xyz="0 -0.195 -0.08" rpy="0 0 0"/>
+    <origin xyz="0 -0.225 -0.08" rpy="0 0 0"/>
     <parent link="spine_link"/>
     <child link="shoulders_right_link"/>
   </joint>

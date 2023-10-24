@@ -139,6 +139,7 @@ def object_pose(centroid, principal_component, second_component, size_x):  # vec
     # **************************************************************************************************
     # Si el objeto es pequenio se construye un frame que permita el agarre superior
     if (size_x < 0.13):
+        print("Objeto menor a 13 centimetros")
         eje_x_obj = np.asarray([1, 0, 0], dtype=np.float64)
         eje_z_obj = eje_z
         eje_y_obj = np.cross(eje_z_obj , eje_x_obj )

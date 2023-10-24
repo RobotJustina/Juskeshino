@@ -98,7 +98,7 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , object_fra
 
 
 def grip_rules(obj_pose, type_obj, obj_state, size):
-    if (size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x >= 0.11):
+    if (size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x >= 0.14):
         print("size object < MAX LENGHT GRIP")
         print("The object will be grabbed as Prism..................")
         return prism(obj_pose, obj_state)
@@ -118,7 +118,7 @@ def small_obj(obj_pose, obj_state):
     global debug
     print("Small object")
     grip_point = [obj_pose.position.x, obj_pose.position.y, obj_pose.position.z]
-    pose_list1 = generates_candidates(grip_point, obj_pose, "P", obj_state, 'object',  step = -13, num_candidates = 5)
+    pose_list1 = generates_candidates(grip_point, obj_pose, "P", obj_state, 'object',  step = -13, num_candidates = 7)
     
     # Segunda lista de poses
     obj_pose_frame_object = pose_actual_to_pose_target(obj_pose , 'base_link', 'object') # Transforma pose en frame 'object' para generar candidatos
@@ -127,7 +127,7 @@ def small_obj(obj_pose, obj_state):
                                              obj_pose_frame_object.orientation.y ,
                                              obj_pose_frame_object.orientation.z, 
                                              obj_pose_frame_object.orientation.w])
-    Y = Y + np.deg2rad(-45) 
+    Y = Y + np.deg2rad(-90) 
     q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
     obj_pose_frame_object.orientation.x = q_gripper[0]
     obj_pose_frame_object.orientation.y = q_gripper[1]
