@@ -366,7 +366,9 @@ def main():
             resp_best_grip = clt_best_grip(req_best_grip)
             goal_la_reached =  False       
             print("goal_la_reached STATUS", goal_la_reached)
-            move_left_gripper(0.9, pub_la_goal_grip)
+            move_left_gripper(0.8, pub_la_goal_grip)
+
+            """
             if resp_best_grip.graspable:
                 move_left_gripper(GRIPPER_OPENING, pub_la_goal_grip)
                 print("publicando trayectoria en q para brazo izquierdo...................")
@@ -387,7 +389,10 @@ def main():
             else:
                 print("No se encontraron poses posibles...................")
                 state = -1
-            
+            """
+            state = -1
+
+
         elif state == SM_PICK_UP_OBJECT:
             print("state == SM_PICK_UP_OBJECT")
             decrement = GRIPPER_OPENING 
@@ -397,7 +402,7 @@ def main():
             while (decrement > 0.0):
                 move_left_gripper(decrement , pub_la_goal_grip)
                 # time.sleep(0.001)
-                decrement = decrement - 0.1
+                decrement = decrement - 0.2
                 print("DECREMENT:_____", decrement)
             state = SM_LIFT_OBJECT
    
