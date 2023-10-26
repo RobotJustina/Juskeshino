@@ -203,7 +203,7 @@ def box(obj_pose, size, obj_state):     # obj_pose  esta referenciada a 'base_li
             broadcaster_frame_object('base_link', 'test_v', obj_pose_frame_bl)  # emite la pose en 'base_link'
             rospy.sleep(1.0)
 
-        poses_list2 = generates_candidates(grip_point2 , obj_pose_frame_bl, "P", 'horizontal' ,'object', step = -14, num_candidates = 3)  
+        poses_list2 = generates_candidates(grip_point2 , obj_pose_frame_bl, "P", 'horizontal' ,'object', step = -14)  
         if size.x < 0.11:   # Se construye frame 
             print("Object too small, top grip only!!!.......")
             return poses_list2  
@@ -464,7 +464,6 @@ def callback(req):
     if len( pose_list_quaternion) <= 0:
         print("object is no graspable")
         return resp
-    
     
     candidates_poses_rpy = convert_frame_of_candidates_poses( pose_list_quaternion , obj_state)
     trajectory, pose, rpy_pose, graspable = evaluating_possibility_grip(candidates_poses_rpy ,  pose_list_quaternion , obj_state)
