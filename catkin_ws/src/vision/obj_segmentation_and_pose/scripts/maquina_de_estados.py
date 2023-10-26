@@ -356,7 +356,7 @@ def main():
             
             goal_la_reached =  False       
             print("goal_la_reached STATUS", goal_la_reached)
-            rospy.sleep(2.0)
+            
             
             state = SM_GRASP_OBJECT
             
@@ -383,7 +383,7 @@ def main():
                     
                 if goal_la_reached:
                     print("succesfull move arm...")
-                    time.sleep(2)
+                    
                     print("goal_la_reached STATUS", goal_la_reached)
                     state = SM_PICK_UP_OBJECT
             else:
@@ -398,7 +398,7 @@ def main():
             goal_la_reached =  False
             print("goal_la_reached STATUS", goal_la_reached)
 
-            while (decrement > 0.0):
+            while (decrement > -0.3):
                 move_left_gripper(decrement , pub_la_goal_grip)
                 # time.sleep(0.001)
                 decrement = decrement - 0.25

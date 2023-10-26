@@ -431,7 +431,7 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
                 
                 ik_msg.x = pose1[0] 
                 ik_msg.y = pose1[1]
-                ik_msg.z = pose1[2] - 0.08
+                ik_msg.z = pose1[2] - 0.1
                 ik_msg.roll = pose1[3]
                 ik_msg.pitch = pose1[4]
                 ik_msg.yaw = pose1[5]
