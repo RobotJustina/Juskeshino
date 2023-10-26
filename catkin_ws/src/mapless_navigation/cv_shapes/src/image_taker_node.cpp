@@ -14,7 +14,7 @@ private:
     ros::Subscriber sub;
     image_transport::Subscriber img_sub;
     std::string path_files;
-    int cv_writer;
+    int img_writed;
 
 public:
     ImageManager(ros::NodeHandle *node_handle, std::string topic, int queue)
@@ -42,8 +42,8 @@ public:
             std::string img_name = msg->header.frame_id + "_" + frame_id.c_str() + ".jpg";
             std::string img_path = path_files + img_name;
 
-            cv_writer = cv::imwrite(img_path, cv_bridge::toCvShare(msg, "bgr8")->image);
-            if(cv_writer)
+            img_writed = cv::imwrite(img_path, cv_bridge::toCvShare(msg, "bgr8")->image);
+            if(img_writed)
                 ROS_INFO_STREAM("image saved: " << img_name.c_str() << std::endl);
             else    
                 ROS_WARN("image not saved!");

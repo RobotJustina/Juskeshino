@@ -47,7 +47,7 @@ bool DirectoryUtils::deleteDir(std::string directory_path, bool verbose)
 
 bool DirectoryUtils::createDir(std::string directory_path, bool verbose)
 {
-    std::string command = "mkdir " + directory_path;
+    std::string command = "mkdir -p " + directory_path;
     const char *_command = command.c_str();
 
     int sys_value;

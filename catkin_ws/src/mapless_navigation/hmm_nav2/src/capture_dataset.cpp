@@ -1,110 +1,220 @@
 #include <ros/ros.h>
+#include <ros/package.h>
+#include <fstream>
 #include <sensor_msgs/LaserScan.h>
-#include <sensor_msgs/PointCloud2.h>
 #include <laser_geometry/laser_geometry.h>
-
 #include <nav_msgs/Odometry.h>
-#include <tf/transform_listener.h>
-// #include <tf/tf.h> // TODO: Reduce
+#include <cv_bridge/cv_bridge.h>
 
+// Sync messages
+#include <message_filters/subscriber.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include <message_filters/sync_policies/exact_time.h>
 
-// Include pcl
+// Pcl
 #include <pcl_conversions/pcl_conversions.h>
-// #include <pcl/point_cloud.h>
-// #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
 
-std::string PUBLISH_TOPIC = "/pcl/points";
-// ROS Publisher
-ros::Publisher pub;
+#include "general_utils/files_utils.h" // DirectoryUtils
 
-// High fidelity projection
-// laser_geometry::LaserProjection projector_;
-// tf::TransformListener listener_;
-
-void odomCallback(const nav_msgs::Odometry::ConstPtr &msg)
+class DataGenerator
 {
-    ROS_INFO("Seq: [%d]", msg->header.seq);
-    ROS_INFO("Position-> x: [%f], y: [%f], z: [%f]", msg->pose.pose.position.x, msg->pose.pose.position.y,
-             msg->pose.pose.position.z);
-    ROS_INFO("Orientation-> x: [%f], y: [%f], z: [%f], w: [%f]", msg->pose.pose.orientation.x,
-             msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
-    ROS_INFO("Vel-> Linear: [%f], Angular: [%f]", msg->twist.twist.linear.x, msg->twist.twist.angular.z);
-}
+private:
+    // Basics
+    ros::NodeHandle nh;
+    std::ofstream file_stream;
+    bool set_header;
+    std::string header_odom_laser;
+    std::string path_file;
+    // RGBD
+    ros::Subscriber sub_rgbd;
+    // --Synchronizer
+    message_filters::Subscriber<sensor_msgs::Image> sub_rgb;
+    message_filters::Subscriber<sensor_msgs::Image> sub_depth;
+    typedef message_filters::sync_policies::ExactTime<sensor_msgs::Image, sensor_msgs::Image> SyncPolicyImgImg;
+    typedef message_filters::Synchronizer<SyncPolicyImgImg> SyncImgImg;
+    boost::shared_ptr<SyncImgImg> Syncr_img_img;
+    // Laser_scan
+    float max_laser_range;
+    // --Synchronizer
+    message_filters::Subscriber<sensor_msgs::LaserScan> sub_laser_scan;
+    message_filters::Subscriber<nav_msgs::Odometry> sub_odom;
+    typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::LaserScan, nav_msgs::Odometry> SyncPolicyLaOd;
+    typedef message_filters::Synchronizer<SyncPolicyLaOd> SyncrLaOd;
+    boost::shared_ptr<SyncrLaOd> Syncr_la_od;
 
-void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr &msg)
-{
-    std::vector<float> nums = msg->ranges;
-    std::string vector_str = "";
-    tf::TransformListener listener_;
-    laser_geometry::LaserProjection projector_;
-
-    for (auto elem : nums)
+public:
+    DataGenerator(bool save_laser_odom = false, bool save_rgbd = false)
     {
-        vector_str += " " + std::to_string(elem);
+        // Prepare directory
+        bool directory_created;
+        path_file = ros::package::getPath("hmm_nav2") + "/Dataset/";
+        directory_created = DirectoryUtils::replaceDir(path_file + "Images", true); // Create the directory, replace if already exist
+        if (!directory_created)
+        {
+            ROS_ERROR_STREAM("Can't create directory: " << path_file);
+            this->~DataGenerator(); // End program if path error occurs
+        }
+
+        if (save_laser_odom)
+        {
+            ROS_INFO("Save laser_odom enabled");
+            file_stream.open(path_file + "laser_odom_data.csv", std::ios::out);
+            max_laser_range = 10.001;
+            set_header = true;
+            sub_laser_scan.subscribe(nh, "/hsrb/base_scan", 1);
+            sub_odom.subscribe(nh, "/hsrb/wheel_odom", 1);
+            Syncr_la_od.reset(new SyncrLaOd(SyncPolicyLaOd(5), sub_laser_scan, sub_odom));
+            Syncr_la_od->registerCallback(boost::bind(&DataGenerator::saveLaserOdomCallback, this, _1, _2));
+        }
+
+        if (save_rgbd)
+        {
+            ROS_INFO("Save RGBD enabled");
+            sub_rgb.subscribe(nh, "/hsrb/head_rgbd_sensor/rgb/image_raw", 1);            // set queue_size to 1 to synchronize with loop_rate
+            sub_depth.subscribe(nh, "/hsrb/head_rgbd_sensor/depth_registered/image", 1); // set queue_size to 1 to synchronize with loop_rate
+            Syncr_img_img.reset(new SyncImgImg(SyncPolicyImgImg(5), sub_rgb, sub_depth));
+            Syncr_img_img->registerCallback(boost::bind(&DataGenerator::saveRGBDCallback, this, _1, _2));
+        }
+    }
+    ~DataGenerator()
+    {
+        if (file_stream.is_open())
+            file_stream.close();
     }
 
-    ROS_INFO_STREAM("ranges = " << vector_str << std::endl);
-    ROS_INFO("LaserScan (range)=(%f,%f)", msg->range_min, msg->range_max);
-    ROS_INFO("LaserScan (angle)=(%f,%f)", msg->angle_min, msg->angle_max);
-    ROS_INFO_STREAM(msg->header);
-
-    // Save
-    if (!listener_.waitForTransform(msg->header.frame_id, "/base_link",
-                                    msg->header.stamp + ros::Duration().fromSec(msg->ranges.size() * msg->time_increment),
-                                    ros::Duration(1.0)))
+    void saveLaserOdomCallback(const sensor_msgs::LaserScan::ConstPtr &scan, const nav_msgs::Odometry::ConstPtr &odom)
     {
-        return;
+        int ranges_size = scan->ranges.size();
+        int index;
+        // Get Euler orientation
+        tf::Quaternion tf_quaternion(odom->pose.pose.orientation.x, odom->pose.pose.orientation.y, odom->pose.pose.orientation.z, odom->pose.pose.orientation.w);
+        tf::Matrix3x3 rot_mat(tf_quaternion);
+        double roll, pitch, yaw;
+        rot_mat.getRPY(roll, pitch, yaw);
+
+        if (set_header)
+        {
+            header_odom_laser = "Px,Py,e-th,";
+            for (int i = 0; i < ranges_size; i++)
+            {
+                header_odom_laser += "lect_" + std::to_string(i) + ",";
+            }
+            // header_odom_laser.pop_back();
+            // file_stream << header_odom_laser << std::endl;
+            file_stream << header_odom_laser << "time_stamp" << std::endl;
+            set_header = false;
+        }
+
+        // ODOMETRY
+        file_stream << odom->pose.pose.position.x << "," << odom->pose.pose.position.y << "," << yaw << ",";
+        ROS_INFO_STREAM("save odom: (" << odom->pose.pose.position.x << ", " << odom->pose.pose.position.y << ", " << yaw << ")");
+
+        // LASER SCAN
+        std::vector<float> laser_lectures = scan->ranges;
+        // Lectures: sim_takeshi = 721,  real_takeshi = 963
+        // index = 0; // TODO: remove?
+        for (auto elem : laser_lectures)
+        {
+            if (elem > max_laser_range)
+                file_stream << max_laser_range;
+            else
+                file_stream << elem;
+
+            // index++;
+            // if (index < ranges_size)
+            file_stream << ",";
+        }
+        // file_stream << std::endl; // END TODO
+        //  >> added
+        std::string time_frame = std::to_string(scan->header.stamp.sec) + "-" + std::to_string(scan->header.stamp.nsec).substr(0, 3);
+        file_stream << time_frame << std::endl;
+        // <<
+        ROS_INFO_STREAM("Ranges saved: " << ranges_size);
     }
 
-    sensor_msgs::PointCloud cloud;
-    projector_.transformLaserScanToPointCloud("/base_link", *msg, cloud, listener_);
-    pub.publish(cloud);
-}
+    void saveRGBDCallback(const sensor_msgs::Image::ConstPtr &rgb_msg, const sensor_msgs::Image::ConstPtr &depth_msg)
+    {
+        // ROS_INFO("> rgbdCallback");
+        // ROS_INFO_STREAM("Encoding: " << rgb_msg->encoding);
 
-void rgbdCallback(const sensor_msgs::PointCloud2ConstPtr &cloud_msg)
-{
-    // Container for original & filtered data
-    pcl::PCLPointCloud2 *cloud = new pcl::PCLPointCloud2;
-    pcl::PCLPointCloud2ConstPtr cloudPtr(cloud);
-    pcl::PCLPointCloud2 cloud_filtered;
+        cv::Mat rgb_image = cv_bridge::toCvShare(rgb_msg)->image;
+        cv::Mat depth_image = cv_bridge::toCvShare(depth_msg)->image;
+        if (depth_msg->encoding == "32FC1")
+        { // Depth channel
+            depth_image.convertTo(depth_image, CV_8UC3, 32.0);
+        }
 
-    // Convert to PCL data type
-    pcl_conversions::toPCL(*cloud_msg, *cloud);
+        if (rgb_msg->encoding == "rgb8")
+        { // invert channels on real robot
+            ROS_INFO("rgb8");
+            cv::cvtColor(rgb_image, rgb_image, cv::COLOR_RGB2BGR);
+        }
 
-    // Perform the actual filtering
-    pcl::VoxelGrid<pcl::PCLPointCloud2> sor;
-    sor.setInputCloud(cloudPtr);
-    sor.setLeafSize(0.1, 0.1, 0.1);
-    sor.filter(cloud_filtered);
+        std::string rgb_frame = std::to_string(rgb_msg->header.stamp.sec) + "-" + std::to_string(rgb_msg->header.stamp.nsec).substr(0, 3);
+        std::string rgb_img_name = rgb_msg->header.frame_id.substr(0, 16) + "_image_raw-frame--" + rgb_frame.c_str() + ".png"; // 17-25
+        std::string rgb_img_path = path_file + "Images/" + rgb_img_name;
 
-    // Convert to ROS data type
-    sensor_msgs::PointCloud2 output;
-    pcl_conversions::moveFromPCL(cloud_filtered, output);
+        std::string depth_frame = std::to_string(depth_msg->header.stamp.sec) + "_" + std::to_string(depth_msg->header.stamp.nsec).substr(0, 3);
+        std::string depth_img_name = depth_msg->header.frame_id.substr(0, 16) + "_depth_registered_image-frame--" + depth_frame.c_str() + ".png";
+        std::string depth_img_path = path_file + "Images/" + depth_img_name;
 
-    // Publish the data
-    pub.publish(output);
-}
+        int rgb_writed = cv::imwrite(rgb_img_path, rgb_image);
+        if (rgb_writed)
+            ROS_INFO_STREAM("image saved: " << rgb_img_name.c_str());
+        else
+            ROS_WARN("image not saved!");
+
+        int depth_writed = cv::imwrite(depth_img_path, depth_image);
+        if (depth_writed)
+            ROS_INFO_STREAM("image saved: " << depth_img_name.c_str());
+        else
+            ROS_WARN("image not saved!");
+
+        cv::imshow("image_viewer", rgb_image);
+        cv::imshow("depth_viewer", depth_image);
+        // ROS_INFO_STREAM("image_viewer time: " << rgb_msg->header.stamp);
+        // ROS_INFO_STREAM("depth_viewer time: " << depth_msg->header.stamp << std::endl);
+
+        cv::waitKey(1);
+    }
+};
 
 int main(int argc, char *argv[])
 {
+    bool enable_laser_odometry = true, enable_rgbd = true; // Change to enable/disable save_topic
+
+    bool save_laser_odometry = false, save_rgbd = false; // DON'T change it, used internally on callback
     ros::init(argc, argv, "hmm_capture_data_node");
     ros::NodeHandle nh("~");
-
+    cv::namedWindow("image_viewer");
+    cv::namedWindow("depth_viewer");
     ROS_INFO("Starting  hmm_capture_data_node");
 
-    // Odometry
-    // ros::Subscriber sub_odom = nh.subscribe("/hsrb/wheel_odom", 5, odomCallback);
+    if (enable_laser_odometry)
+        save_laser_odometry = true;
+    if (enable_rgbd)
+        save_rgbd = true;
+    DataGenerator data_obtainer(save_laser_odometry, save_rgbd);
 
-    // LaserScan
-    ros::Subscriber sub_laser_scan = nh.subscribe("/hsrb/base_scan", 10, laserScanCallback);
-
-    // RGBD
-    //ros::Subscriber sub_rgbd = nh.subscribe("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", 2, rgbdCallback);
-
-    // Create a ROS publisher to PUBLISH_TOPIC with a queue_size of 1
-    pub = nh.advertise<sensor_msgs::PointCloud2>(PUBLISH_TOPIC, 1);
-
-    ros::spin();
+    ros::Rate loop_rate(1); // <<<<< TIME controller
+    while (ros::ok())
+    {
+        // Disable and sleep
+        if (enable_laser_odometry)
+            save_laser_odometry = false;
+        if (enable_rgbd)
+            save_rgbd = false;
+        ROS_INFO_STREAM("callback sleep" << std::endl);
+        ros::spinOnce();
+        loop_rate.sleep();
+        // Enable after sleep
+        if (enable_laser_odometry)
+            save_laser_odometry = true;
+        if (enable_rgbd)
+            save_rgbd = true;
+    }
+    cv::destroyAllWindows();
     return 0;
 }

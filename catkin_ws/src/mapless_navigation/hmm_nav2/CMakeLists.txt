@@ -13,8 +13,11 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   sensor_msgs
+  nav_msgs
+  message_filters
   tf
   laser_geometry
+  general_utils
   pcl_conversions # test
   pcl_ros # test
 )
@@ -111,7 +114,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES hmm_nav2
-   CATKIN_DEPENDS actionlib_msgs roscpp rospy std_msgs sensor_msgs tf
+   CATKIN_DEPENDS actionlib_msgs roscpp rospy std_msgs sensor_msgs tf laser_geometry pcl_conversions pcl_ros
 #  DEPENDS system_lib
 )
 
@@ -140,9 +143,10 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/hmm_node.cpp)
-add_executable(markov_model
+add_executable(take_markov_dataset
  src/capture_dataset.cpp
 )
+
 
 
 ## Rename C++ executable without prefix
@@ -154,13 +158,15 @@ add_executable(markov_model
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(markov_model ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(take_markov_dataset ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-target_link_libraries(markov_model ${catkin_LIBRARIES})
+target_link_libraries(take_markov_dataset ${catkin_LIBRARIES})
+
 
 #############
 ## Install ##
