@@ -1,4 +1,5 @@
 <launch>
+  <arg name="debug" default="False"/>
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch"/>
   
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_gazebo.rviz"/>
@@ -33,7 +34,10 @@
   </include>
 
   <include file="$(find surge_et_ambula)/launch/justina/justina_manipulation.launch"/>
-  <include file="$(find surge_et_ambula)/launch/justina/vision.launch"/>
+  <include file="$(find surge_et_ambula)/launch/justina/vision.launch">
+    <arg name="debug"         value="$(arg debug)"/>
+    <arg name="training_dir"  value="$(find obj_reco)/training_dir"/>
+  </include>
   <include file="$(find surge_et_ambula)/launch/justina/speech.launch"/>
 
 </launch>
