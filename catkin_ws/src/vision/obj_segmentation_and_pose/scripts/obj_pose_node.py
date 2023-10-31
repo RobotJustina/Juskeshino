@@ -39,8 +39,6 @@ def get_object_xyz(cloud_xyz, mask):
     th, mask = cv2.threshold(mask, 0, 255, cv2.THRESH_BINARY)
     # Take xyz points only in mask and remove points with zero X
     obj_xyz = cloud_xyz[(mask == 255) & (cloud_xyz[:,:,0] > 0.1)].copy()
-    
-    print("obj_xyz*********", obj_xyz.size )
     return obj_xyz
 
 
@@ -83,7 +81,7 @@ def pca(xyz_points):    # pc del contorno mas cercano
 
 
 
-def object_pose(centroid, principal_component, second_component):  # vectores de entrada estan en frame base_link
+def object_pose(centroid, principal_component, second_component, size_x):  # vectores de entrada estan en frame base_link
     """
     Construction of the coordinate system of the object,the construction of the frame depends on the coordinate system of the robot gripper 
     Ademas se imponen restricciones para que la pose sea realizable por el gripper
@@ -93,11 +91,12 @@ def object_pose(centroid, principal_component, second_component):  # vectores de
         principal_component = -1 * principal_component
 
     # calculo de angulo de primera componente respecto de la superficie
-    eje_z = np.asarray([0, 0, 1], dtype=np.float64 )# vector normal al plano xy
+    eje_z = np.asarray([0, 0, 1], dtype=np.float64 )# coordenadas en 'base_link'
     angle_obj = np.abs(np.arcsin( np.dot(principal_component , eje_z ) / (np.linalg.norm(principal_component ) * 1) ))
-    print("angulo del objeto respecto de la superficie: ", np.rad2deg(angle_obj))
+    print("angulo del objeto respecto de la superficie: ", np.rad2deg(angle_obj), " grados")
 
-    if (angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150)):   
+    # ************************************************************************************************
+    if ((angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150))) and (size_x > 0.13):   
         # Realiza agarre superior
         obj_state = 'horizontal'
         print("Eje principal horizontal")
@@ -118,6 +117,7 @@ def object_pose(centroid, principal_component, second_component):  # vectores de
         eje_z_obj = eje_z
         eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
 
+    # **************************************************************************************************
     else: # Realiza agarre lateral
         obj_state = 'vertical'
         print("Eje principal vertical")
@@ -131,14 +131,23 @@ def object_pose(centroid, principal_component, second_component):  # vectores de
                 angle_2pc_x_bl =  math.atan2(second_component[1], second_component[0]) 
                 print("angulo de z_obj respecto de eje x base link despues", np.rad2deg(angle_2pc_x_bl))
 
-        # Asignacion de ejes del objeto
+   # Asignacion de ejes del objeto
         eje_z_obj = second_component 
         eje_x_obj = principal_component 
         eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
 
+    # **************************************************************************************************
+    # Si el objeto es pequenio se construye un frame que permita el agarre superior
+    if (size_x < 0.13):
+        print("Objeto menor a 13 centimetros")
+        eje_x_obj = np.asarray([1, 0, 0], dtype=np.float64)
+        eje_z_obj = eje_z
+        eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+        obj_state = 'horizontal'   
 
-    axis_x_obj = Point()
-    axis_x_obj.x, axis_x_obj.y, axis_x_obj.z = eje_x_obj[0], eje_x_obj[1], eje_x_obj[2]
+
+    axis_x_obj = Point(x = eje_x_obj[0], y = eje_x_obj[1], z = eje_x_obj[2])    # Vector x_obj
+    #axis_x_obj.x, axis_x_obj.y, axis_x_obj.z = eje_x_obj[0], eje_x_obj[1], eje_x_obj[2]
     # Se forma la matriz de rotacion (columnas) del objeto, a partir de ella se obtienen los cuaterniones necesarios para generar el frame del objeto
     RM = np.asarray([eje_x_obj, eje_y_obj , eje_z_obj])
     RM = RM.T
@@ -148,13 +157,15 @@ def object_pose(centroid, principal_component, second_component):  # vectores de
          [0, 0, 0, 1]]
 
     r,p,y = tft.euler_from_matrix(np.asarray(TM))
-    q_obj = tft.quaternion_from_euler(r, p, y)
+    quaternion_obj = tft.quaternion_from_euler(r, p, y)
     obj_pose = Pose()
     obj_pose.position.x, obj_pose.position.y, obj_pose.position.z = centroid[0], centroid[1], centroid[2]
-    obj_pose.orientation.x = q_obj[0]
-    obj_pose.orientation.y = q_obj[1]
-    obj_pose.orientation.z = q_obj[2]
-    obj_pose.orientation.w = q_obj[3]
+    obj_pose.orientation.x = quaternion_obj[0]
+    obj_pose.orientation.y = quaternion_obj[1]
+    obj_pose.orientation.z = quaternion_obj[2]
+    obj_pose.orientation.w = quaternion_obj[3]
+
+    # Retorna la pose del objeto en 'base_link'
     return obj_pose , axis_x_obj, obj_state
 
 
@@ -237,7 +248,6 @@ def object_category(fpc, spc, thpc):  # estima la forma geometrica del objeto. (
 
 def callback_PoseObject(req):  # Request is a PointCloud2
     cv_mats= get_cv_mats_from_cloud_message(req.point_cloud)
-    print(req.point_cloud.header)
     obj_xyz = get_object_xyz(cv_mats , req.obj_mask)
 
     centroid = np.mean(obj_xyz, axis=0)
@@ -245,10 +255,12 @@ def callback_PoseObject(req):  # Request is a PointCloud2
     pca_vectors, eig_val, size_obj = pca(obj_xyz)
     c_obj, graspable = object_category(size_obj.x, size_obj.z, size_obj.y)
 
-    obj_pose, axis_x_obj, obj_state = object_pose(centroid, pca_vectors[0], pca_vectors[1])
+    obj_pose, axis_x_obj, obj_state = object_pose(centroid, pca_vectors[0], pca_vectors[1], size_obj.x)
+    print("Despues de funcion object_pose........")
     publish_arow_marker(centroid, axis_x_obj, 'base_link', ns ="principal_component", id=22)
     broadcaster_frame_object("base_link", "object", obj_pose)
-    print("size object i frame object", size_obj)
+    print("size object object:____")
+    print(size_obj)
     print("object category", c_obj)
     print("object state", obj_state)
     

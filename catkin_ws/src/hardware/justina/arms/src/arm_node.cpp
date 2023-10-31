@@ -39,6 +39,7 @@ std::vector<int> servo_zeros;                       // = arm zeros  + gripper ze
 std::vector<int> servo_directions;                  // = arm directions +  gripper directions
 std::vector<int> goal_pose_arm_bits;
 std::vector<int> goal_pose_gripper_bits;
+std::vector<int> goal_torque_gripper_bits;
 std::vector<std::vector<int> >   goal_trajectory_bits;
 trajectory_msgs::JointTrajectory goal_trajectory;
 bool new_arm_pose       = false;
@@ -81,7 +82,10 @@ void callback_goal_gripper(const std_msgs::Float64::ConstPtr& msg)
 
 void callback_torque_gripper(const std_msgs::Float64::ConstPtr& msg)
 {
+    //It is assumed that torque is in [0,1] with 0, null torque and 1.0 the max possible torque (depending on the motor model)
     new_gripper_torque = true;
+    goal_torque_gripper_bits[0] = 1023*msg->data;
+    goal_torque_gripper_bits[1] = 1023*msg->data;
 }
 
 void callback_q_trajectory(const trajectory_msgs::JointTrajectory::ConstPtr& msg)
@@ -294,6 +298,7 @@ int main(int argc, char **argv)
     }
     goal_pose_arm_bits.resize(servo_arm_ids.size());
     goal_pose_gripper_bits.resize(servo_gripper_ids.size());
+    goal_torque_gripper_bits.resize(servo_gripper_ids.size());
     for(int i=0; i< servo_arm_ids.size(); i++) goal_pose_arm_bits[i] = current_position_bits[i];
     for(int i=0; i< servo_gripper_ids.size(); i++) goal_pose_gripper_bits[i] = current_position_bits[servo_arm_ids.size() + i];
     //If torque is enabled, send current position as servo goal position
