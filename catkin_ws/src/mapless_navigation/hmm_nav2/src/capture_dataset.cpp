@@ -5,13 +5,11 @@
 #include <laser_geometry/laser_geometry.h>
 #include <nav_msgs/Odometry.h>
 #include <cv_bridge/cv_bridge.h>
-
 // Sync messages
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/sync_policies/exact_time.h>
-
 // Pcl
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/filters/voxel_grid.h>
@@ -27,17 +25,19 @@ private:
     bool set_header;
     std::string header_odom_laser;
     std::string path_file;
+    bool stabilized = false;
+    int time_stamp_secs = 0;
     // RGBD
     ros::Subscriber sub_rgbd;
-    // --Synchronizer
+    // RGBD--Synchronizer
     message_filters::Subscriber<sensor_msgs::Image> sub_rgb;
     message_filters::Subscriber<sensor_msgs::Image> sub_depth;
-    typedef message_filters::sync_policies::ExactTime<sensor_msgs::Image, sensor_msgs::Image> SyncPolicyImgImg;
+    typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> SyncPolicyImgImg; // ExactTime Don't work on real robot
     typedef message_filters::Synchronizer<SyncPolicyImgImg> SyncImgImg;
     boost::shared_ptr<SyncImgImg> Syncr_img_img;
     // Laser_scan
     float max_laser_range;
-    // --Synchronizer
+    // Laser_scan--Synchronizer
     message_filters::Subscriber<sensor_msgs::LaserScan> sub_laser_scan;
     message_filters::Subscriber<nav_msgs::Odometry> sub_odom;
     typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::LaserScan, nav_msgs::Odometry> SyncPolicyLaOd;
@@ -61,7 +61,7 @@ public:
         {
             ROS_INFO("Save laser_odom enabled");
             file_stream.open(path_file + "laser_odom_data.csv", std::ios::out);
-            max_laser_range = 10.001;
+            max_laser_range = 10.0;
             set_header = true;
             sub_laser_scan.subscribe(nh, "/hsrb/base_scan", 1);
             sub_odom.subscribe(nh, "/hsrb/wheel_odom", 1);
@@ -72,8 +72,8 @@ public:
         if (save_rgbd)
         {
             ROS_INFO("Save RGBD enabled");
-            sub_rgb.subscribe(nh, "/hsrb/head_rgbd_sensor/rgb/image_raw", 1);            // set queue_size to 1 to synchronize with loop_rate
-            sub_depth.subscribe(nh, "/hsrb/head_rgbd_sensor/depth_registered/image", 1); // set queue_size to 1 to synchronize with loop_rate
+            sub_rgb.subscribe(nh, "/hsrb/head_rgbd_sensor/rgb/image_raw", 10);                // set queue_size to 1 to synchronize with loop_rate
+            sub_depth.subscribe(nh, "/hsrb/head_rgbd_sensor/depth_registered/image_raw", 10); // set queue_size to 1 to synchronize with loop_rate
             Syncr_img_img.reset(new SyncImgImg(SyncPolicyImgImg(5), sub_rgb, sub_depth));
             Syncr_img_img->registerCallback(boost::bind(&DataGenerator::saveRGBDCallback, this, _1, _2));
         }
@@ -82,6 +82,11 @@ public:
     {
         if (file_stream.is_open())
             file_stream.close();
+    }
+
+    void setStable()
+    {
+        stabilized = true;
     }
 
     void saveLaserOdomCallback(const sensor_msgs::LaserScan::ConstPtr &scan, const nav_msgs::Odometry::ConstPtr &odom)
@@ -101,8 +106,6 @@ public:
             {
                 header_odom_laser += "lect_" + std::to_string(i) + ",";
             }
-            // header_odom_laser.pop_back();
-            // file_stream << header_odom_laser << std::endl;
             file_stream << header_odom_laser << "time_stamp" << std::endl;
             set_header = false;
         }
@@ -114,7 +117,6 @@ public:
         // LASER SCAN
         std::vector<float> laser_lectures = scan->ranges;
         // Lectures: sim_takeshi = 721,  real_takeshi = 963
-        // index = 0; // TODO: remove?
         for (auto elem : laser_lectures)
         {
             if (elem > max_laser_range)
@@ -122,62 +124,60 @@ public:
             else
                 file_stream << elem;
 
-            // index++;
-            // if (index < ranges_size)
             file_stream << ",";
         }
-        // file_stream << std::endl; // END TODO
-        //  >> added
         std::string time_frame = std::to_string(scan->header.stamp.sec) + "-" + std::to_string(scan->header.stamp.nsec).substr(0, 3);
         file_stream << time_frame << std::endl;
-        // <<
         ROS_INFO_STREAM("Ranges saved: " << ranges_size);
     }
 
     void saveRGBDCallback(const sensor_msgs::Image::ConstPtr &rgb_msg, const sensor_msgs::Image::ConstPtr &depth_msg)
     {
-        // ROS_INFO("> rgbdCallback");
-        // ROS_INFO_STREAM("Encoding: " << rgb_msg->encoding);
-
         cv::Mat rgb_image = cv_bridge::toCvShare(rgb_msg)->image;
         cv::Mat depth_image = cv_bridge::toCvShare(depth_msg)->image;
         if (depth_msg->encoding == "32FC1")
         { // Depth channel
             depth_image.convertTo(depth_image, CV_8UC3, 32.0);
         }
-
+        if (depth_msg->encoding == "16UC1")
+        { // Depth channel
+            depth_image.convertTo(depth_image, CV_8UC3, 1/12.0); // 1/12.0 to 1/16.0 Note: use the .0
+        }
         if (rgb_msg->encoding == "rgb8")
         { // invert channels on real robot
-            ROS_INFO("rgb8");
             cv::cvtColor(rgb_image, rgb_image, cv::COLOR_RGB2BGR);
         }
 
-        std::string rgb_frame = std::to_string(rgb_msg->header.stamp.sec) + "-" + std::to_string(rgb_msg->header.stamp.nsec).substr(0, 3);
+
+        std::string rgb_frame = std::to_string(rgb_msg->header.stamp.sec) + "-" + std::to_string(rgb_msg->header.stamp.nsec).substr(0, 5);
         std::string rgb_img_name = rgb_msg->header.frame_id.substr(0, 16) + "_image_raw-frame--" + rgb_frame.c_str() + ".png"; // 17-25
         std::string rgb_img_path = path_file + "Images/" + rgb_img_name;
 
-        std::string depth_frame = std::to_string(depth_msg->header.stamp.sec) + "_" + std::to_string(depth_msg->header.stamp.nsec).substr(0, 3);
+        std::string depth_frame = std::to_string(depth_msg->header.stamp.sec) + "_" + std::to_string(depth_msg->header.stamp.nsec).substr(0, 5);
         std::string depth_img_name = depth_msg->header.frame_id.substr(0, 16) + "_depth_registered_image-frame--" + depth_frame.c_str() + ".png";
         std::string depth_img_path = path_file + "Images/" + depth_img_name;
 
-        int rgb_writed = cv::imwrite(rgb_img_path, rgb_image);
-        if (rgb_writed)
-            ROS_INFO_STREAM("image saved: " << rgb_img_name.c_str());
-        else
-            ROS_WARN("image not saved!");
+        bool same_time = rgb_msg->header.stamp.sec == depth_msg->header.stamp.sec;
+        if(stabilized && time_stamp_secs != rgb_msg->header.stamp.sec && same_time)
+        {
+            int rgb_writed = cv::imwrite(rgb_img_path, rgb_image);
+            if (rgb_writed)
+                ROS_INFO_STREAM("image saved: " << rgb_img_name.c_str());
+            else
+                ROS_WARN("image not saved!");
 
-        int depth_writed = cv::imwrite(depth_img_path, depth_image);
-        if (depth_writed)
-            ROS_INFO_STREAM("image saved: " << depth_img_name.c_str());
-        else
-            ROS_WARN("image not saved!");
+            int depth_writed = cv::imwrite(depth_img_path, depth_image);
+            if (depth_writed)
+                ROS_INFO_STREAM("image saved: " << depth_img_name.c_str());
+            else
+                ROS_WARN("image not saved!");
 
-        cv::imshow("image_viewer", rgb_image);
-        cv::imshow("depth_viewer", depth_image);
-        // ROS_INFO_STREAM("image_viewer time: " << rgb_msg->header.stamp);
-        // ROS_INFO_STREAM("depth_viewer time: " << depth_msg->header.stamp << std::endl);
+            cv::imshow("image_viewer", rgb_image);
+            cv::imshow("depth_viewer", depth_image);
+            cv::waitKey(1);
+        }
+        time_stamp_secs = rgb_msg->header.stamp.sec;
 
-        cv::waitKey(1);
     }
 };
 
@@ -198,9 +198,14 @@ int main(int argc, char *argv[])
         save_rgbd = true;
     DataGenerator data_obtainer(save_laser_odometry, save_rgbd);
 
+    int count = 0;
     ros::Rate loop_rate(1); // <<<<< TIME controller
     while (ros::ok())
     {
+        count ++;
+        if(count == 5){
+            data_obtainer.setStable();
+        }
         // Disable and sleep
         if (enable_laser_odometry)
             save_laser_odometry = false;
@@ -215,6 +220,6 @@ int main(int argc, char *argv[])
         if (enable_rgbd)
             save_rgbd = true;
     }
-    cv::destroyAllWindows();
+    //cv::destroyAllWindows();
     return 0;
 }
