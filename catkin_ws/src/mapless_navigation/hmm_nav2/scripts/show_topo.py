@@ -16,21 +16,15 @@ from sensor_msgs.msg import LaserScan
 import numpy as np
 
 
-rospack = rospkg.RosPack()
-file_path_ccvk = rospack.get_path(
-    'hmm_navigation') + '/scripts/hmm_nav/ccvk.npy'
-centroids = np.load(file_path_ccvk)
-file_path_ccxyth = rospack.get_path(
-    'hmm_navigation') + '/scripts/hmm_nav/ccxyth.npy'
-ccxyth = np.load(file_path_ccxyth)
-file_path_A = rospack.get_path('hmm_navigation') + '/scripts/hmm_nav/A.npy'
-matrix_A = np.load(file_path_A)
+file_path = rospkg.RosPack().get_path('hmm_nav2') + '/HMM/'
+centroids = np.load(file_path + 'ccvk.npy')
+ccxyth = np.load(file_path + 'ccxyth.npy')
+matrix_A = np.load(file_path + 'A.npy')
 
 
 def callback(laser):
     global ccxyth, centroids, matrix_A
 
-    print('viterbiing')
     marker_array = MarkerArray()
     ss = np.arange(len(matrix_A))
     start_point = Point()
@@ -49,7 +43,6 @@ def callback(laser):
     marker3.ns = 'edges'
     marker3.action = Marker.ADD
     marker3.scale.x = 0.015
-
     marker3.pose.orientation.x = 0.0
     marker3.pose.orientation.y = 0.0
     marker3.pose.orientation.z = 0.0
@@ -109,8 +102,8 @@ def callback(laser):
 
 
 if __name__ == '__main__':
-
     global pub_marker
+
     rospy.init_node('show_topo_path', anonymous=True)
     rospy.loginfo("node show_topo_path started")
     rospy.Subscriber("/hsrb/base_scan", LaserScan, callback, queue_size=2)

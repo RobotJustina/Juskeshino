@@ -1,5 +1,4 @@
 #include "general_utils/files_utils.h"
-// #include <ros/package.h>
 
 // Directory tools >>
 bool DirectoryUtils::existDir(std::string directory_path, bool verbose)
@@ -90,14 +89,11 @@ bool DirectoryUtils::replaceDir(std::string directory_path, bool verbose)
         return false;
     }
 
-    if (!deleted)
-    { // Directory was not deleted
-        if (verbose)
+    if (verbose)
+    {
+        if (!deleted) // Directory was not deleted
             ROS_INFO("Directory successful created");
-    }
-    else
-    { // Directory was deleted
-        if (verbose)
+        else // Directory was deleted
             ROS_INFO("Directory successful replaced");
     }
     return true;

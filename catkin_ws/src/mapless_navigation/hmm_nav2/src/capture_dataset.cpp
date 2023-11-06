@@ -45,26 +45,37 @@ private:
     boost::shared_ptr<SyncrLaOd> Syncr_la_od;
 
 public:
-    DataGenerator(bool save_laser_odom = false, bool save_rgbd = false)
+    DataGenerator(bool save_laser_odom = false, bool save_rgbd = false, bool incremental = false)
     {
         // Prepare directory
-        bool directory_created;
         path_file = ros::package::getPath("hmm_nav2") + "/Dataset/";
-        directory_created = DirectoryUtils::replaceDir(path_file + "Images", true); // Create the directory, replace if already exist
-        if (!directory_created)
-        {
-            ROS_ERROR_STREAM("Can't create directory: " << path_file);
-            this->~DataGenerator(); // End program if path error occurs
+        if(incremental && DirectoryUtils::existDir(path_file)){
+            file_stream.open(path_file + "laser_odom_data.csv", std::ios::app);
+            set_header = false;
         }
+        else{
+            bool directory_created; 
+            directory_created = DirectoryUtils::replaceDir(path_file + "Images", true); // Create the directory, replace if already exist
+            if (!directory_created)
+            {
+                ROS_ERROR_STREAM("Can't create directory: " << path_file);
+                this->~DataGenerator(); // End program if path error occurs
+            }
+            file_stream.open(path_file + "laser_odom_data.csv", std::ios::out);
+            set_header = true;
+        }
+
 
         if (save_laser_odom)
         {
             ROS_INFO("Save laser_odom enabled");
-            file_stream.open(path_file + "laser_odom_data.csv", std::ios::out);
             max_laser_range = 10.0;
-            set_header = true;
+            //Takeshi
             sub_laser_scan.subscribe(nh, "/hsrb/base_scan", 1);
             sub_odom.subscribe(nh, "/hsrb/wheel_odom", 1);
+            //Justina
+            //sub_laser_scan.subscribe(nh, "/hardware/scan", 1);
+            //sub_odom.subscribe(nh, "/amcl_pose", 1);
             Syncr_la_od.reset(new SyncrLaOd(SyncPolicyLaOd(5), sub_laser_scan, sub_odom));
             Syncr_la_od->registerCallback(boost::bind(&DataGenerator::saveLaserOdomCallback, this, _1, _2));
         }
@@ -72,8 +83,14 @@ public:
         if (save_rgbd)
         {
             ROS_INFO("Save RGBD enabled");
+            //Takeshi
             sub_rgb.subscribe(nh, "/hsrb/head_rgbd_sensor/rgb/image_raw", 10);                // set queue_size to 1 to synchronize with loop_rate
             sub_depth.subscribe(nh, "/hsrb/head_rgbd_sensor/depth_registered/image_raw", 10); // set queue_size to 1 to synchronize with loop_rate
+            //Justina
+            //sub_rgb.subscribe(nh, "/camera/rgb/image_raw", 10);                // set queue_size to 1 to synchronize with loop_rate
+            //sub_depth.subscribe(nh, "/camera/depth_registered/image_raw", 10); // set queue_size to 1 to synchronize with loop_rate
+            
+
             Syncr_img_img.reset(new SyncImgImg(SyncPolicyImgImg(5), sub_rgb, sub_depth));
             Syncr_img_img->registerCallback(boost::bind(&DataGenerator::saveRGBDCallback, this, _1, _2));
         }
@@ -101,18 +118,18 @@ public:
 
         if (set_header)
         {
-            header_odom_laser = "Px,Py,e-th,";
+            header_odom_laser = "time_stamp,";
             for (int i = 0; i < ranges_size; i++)
             {
                 header_odom_laser += "lect_" + std::to_string(i) + ",";
             }
-            file_stream << header_odom_laser << "time_stamp" << std::endl;
+            file_stream << header_odom_laser << "Px,Py,e-th" << std::endl;
             set_header = false;
         }
 
-        // ODOMETRY
-        file_stream << odom->pose.pose.position.x << "," << odom->pose.pose.position.y << "," << yaw << ",";
-        ROS_INFO_STREAM("save odom: (" << odom->pose.pose.position.x << ", " << odom->pose.pose.position.y << ", " << yaw << ")");
+        // TIME STAMP
+        std::string time_frame = std::to_string(scan->header.stamp.sec) + "-" + std::to_string(scan->header.stamp.nsec).substr(0, 3);
+        file_stream << time_frame << ",";
 
         // LASER SCAN
         std::vector<float> laser_lectures = scan->ranges;
@@ -126,9 +143,10 @@ public:
 
             file_stream << ",";
         }
-        std::string time_frame = std::to_string(scan->header.stamp.sec) + "-" + std::to_string(scan->header.stamp.nsec).substr(0, 3);
-        file_stream << time_frame << std::endl;
         ROS_INFO_STREAM("Ranges saved: " << ranges_size);
+        // ODOMETRY
+        file_stream << odom->pose.pose.position.x << "," << odom->pose.pose.position.y << "," << yaw << std::endl;
+        ROS_INFO_STREAM("save odom: (" << odom->pose.pose.position.x << ", " << odom->pose.pose.position.y << ", " << yaw << ")");
     }
 
     void saveRGBDCallback(const sensor_msgs::Image::ConstPtr &rgb_msg, const sensor_msgs::Image::ConstPtr &depth_msg)
@@ -196,7 +214,7 @@ int main(int argc, char *argv[])
         save_laser_odometry = true;
     if (enable_rgbd)
         save_rgbd = true;
-    DataGenerator data_obtainer(save_laser_odometry, save_rgbd);
+    DataGenerator data_obtainer(save_laser_odometry, save_rgbd, false);
 
     int count = 0;
     ros::Rate loop_rate(1); // <<<<< TIME controller
@@ -220,6 +238,5 @@ int main(int argc, char *argv[])
         if (enable_rgbd)
             save_rgbd = true;
     }
-    //cv::destroyAllWindows();
     return 0;
 }
