@@ -239,7 +239,7 @@ def main():
         
         if state == SM_INIT:
             print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
-            obj_target = "tea"
+            obj_target = "pringles"
             print("OBJECT TARGET:____", obj_target)
             x_p, y_p, a = get_robot_pose(listener)
             STARTING_PLACE = [x_p, y_p, a]
@@ -302,8 +302,8 @@ def main():
             reco_objs_req = RecognizeObjectsRequest()
             # LLenar msg
             
-            #reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
-            reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
+            reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+            #reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
             
             reco_objs_resp = clt_recognize_objects(reco_objs_req)
             recog_objects = reco_objs_resp.recog_objects    # Accede a la lista de VisionObjects
@@ -372,6 +372,8 @@ def main():
             if resp_best_grip.graspable:
                 move_left_gripper(GRIPPER_OPENING, pub_la_goal_grip)
                 print("publicando trayectoria en q para brazo izquierdo...................")
+                state = -1
+                """
                 pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
                 
                 goal_la_reached =  False
@@ -385,7 +387,8 @@ def main():
                     print("succesfull move arm...")
                     
                     print("goal_la_reached STATUS", goal_la_reached)
-                    state = SM_PICK_UP_OBJECT
+                    state = -1#SM_PICK_UP_OBJECT
+                """
             else:
                 print("No se encontraron poses posibles...................")
                 state = -1
