@@ -372,10 +372,7 @@ def main():
             if resp_best_grip.graspable:
                 move_left_gripper(GRIPPER_OPENING, pub_la_goal_grip)
                 print("publicando trayectoria en q para brazo izquierdo...................")
-                state = -1
-                """
                 pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
-                
                 goal_la_reached =  False
                 print("goal_la_reached STATUS", goal_la_reached)
                 while (not goal_la_reached) or not rospy.is_shutdown:
@@ -388,7 +385,7 @@ def main():
                     
                     print("goal_la_reached STATUS", goal_la_reached)
                     state = -1#SM_PICK_UP_OBJECT
-                """
+                
             else:
                 print("No se encontraron poses posibles...................")
                 state = -1

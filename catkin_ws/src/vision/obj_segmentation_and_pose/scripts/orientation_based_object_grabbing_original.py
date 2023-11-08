@@ -392,13 +392,6 @@ def convert_frame_of_candidates_poses(pose_list_q, o):
     new_pose_rpy_list = []      # Poses en RPY para el servicio de cinematica inversa
     for pos in pose_list_q: # para cada candidato de la lista de entrada
         new_pose = pose_actual_to_pose_target(pos, 'base_link' , 'shoulders_left_link')
-        if debug:
-            broadcaster_frame_object('shoulders_left_link', 'candidate_shoulder', new_pose)  # emite la pose en 'base_link'
-            print("Graficando en coordenadas HOMBRO")
-            rospy.sleep(1.0)
-            print("pose.............................")
-            print(new_pose)
-
         new_pose_q_list.append(new_pose)
         # Se extrae la informacion de la posicion del objeto respecto al frame de hombro izqu
         x , y, z = new_pose.position.x , new_pose.position.y , new_pose.position.z
@@ -415,6 +408,7 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
         Evalua la existencia de los candidatos de agarre en el espacio articular y regresa una trayectoria
         desde la posicion actual del grippe hasta el origen del primer frame candidato aprobado h
     """
+    global ik_srv
     print("The object grabbing service was called............")
     ik_msg = InverseKinematicsPose2TrajRequest()
     print("Evaluating the possibility of grip given the position of the object...")
@@ -442,11 +436,11 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
             resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
             print("Suitable pose found.....................")
             print("ULTIMO PUNTO DE LA TRAYECTORIA", resp_ik_srv.articular_trajectory.points[-1].positions)
-            print(resp_ik_srv.articular_trajectory)
+            
             if obj_state == 'horizontal':
                 # genera una segunda trayectoria en vertical
                 # el ultimo punto de la 1a trayectoria es el primero de la segunda
-                #print("ULTIMO PUNTO DE LA TRAYECTORIA", resp_ik_srv.articular_trajectory.points[-1].positions)
+                print("ULTIMO PUNTO DE LA TRAYECTORIA", resp_ik_srv.articular_trajectory.points[-1].positions)
                 guess = [resp_ik_srv.articular_trajectory.points[-1].positions[0],
                          resp_ik_srv.articular_trajectory.points[-1].positions[1],
                          resp_ik_srv.articular_trajectory.points[-1].positions[2],
@@ -455,6 +449,7 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
                          resp_ik_srv.articular_trajectory.points[-1].positions[5],
                          resp_ik_srv.articular_trajectory.points[-1].positions[6]]
                 
+                # Ultimo punto de la segunda trayectoria
                 ik_msg.x = pose1[0] 
                 ik_msg.y = pose1[1]
                 ik_msg.z = pose1[2] - 0.1
@@ -480,7 +475,7 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
 
 
 def callback(req):
-    global listener, ik_srv
+    global listener #, ik_srv
     resp = BestGraspTrajResponse()              
     obj_state = req.recog_object.object_state    
 
@@ -503,6 +498,7 @@ def callback(req):
     #***************************************************************************************************************
 
     if graspable:
+        print("Graficando en RViz pose adecuada para manipulacion de objetos....")
         broadcaster_frame_object('base_link', 'suitable_pose' , pose)
         rospy.sleep(1.0)
         resp.articular_trajectory = trajectory
@@ -518,7 +514,7 @@ def callback(req):
 
 def main():
     global listener , ik_srv, marker_pub, marker_array_pub, debug
-    debug = True
+    debug = False
     print("Node to grab objects based on their orientation..............ʕ•ᴥ•ʔ")
     rospy.init_node("gripper_orientation_for_grasping")
     rospy.Service("/vision/get_best_grasp_traj", BestGraspTraj, callback)
