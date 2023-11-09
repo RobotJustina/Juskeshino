@@ -239,7 +239,7 @@ def main():
         
         if state == SM_INIT:
             print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
-            obj_target = "pringles"
+            obj_target = "green_cup"
             print("OBJECT TARGET:____", obj_target)
             x_p, y_p, a = get_robot_pose(listener)
             STARTING_PLACE = [x_p, y_p, a]
@@ -302,8 +302,8 @@ def main():
             reco_objs_req = RecognizeObjectsRequest()
             # LLenar msg
             
-            reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
-            #reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
+            #reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
+            reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
             
             reco_objs_resp = clt_recognize_objects(reco_objs_req)
             recog_objects = reco_objs_resp.recog_objects    # Accede a la lista de VisionObjects
