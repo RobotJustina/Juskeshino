@@ -29,19 +29,9 @@ def callback_point(msg):
 
 def callback_cmd(msg):
 	global last_goal, grid, info
-	#cmd=[msg.linear.x, msg.angular.z]
-	if(msg.linear.x>0.2):
-		idx=[0]
-		temp=grid+last_goal+idx
-		info.append(temp)
-	elif(msg.angular.z>0.2):
-		idx=[1]
-		temp=grid+last_goal+idx
-		info.append(temp)
-	elif(msg.angular.z<-0.2):
-		idx=[2]
-		temp=grid+last_goal+idx
-		info.append(temp)
+	cmd=[msg.linear.x, msg.angular.z]
+	temp=grid+last_goal+cmd
+	info.append(temp)
 
 def main():
 	rospy.init_node("sync_msg")

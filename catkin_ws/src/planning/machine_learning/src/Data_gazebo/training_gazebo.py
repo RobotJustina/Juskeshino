@@ -77,7 +77,7 @@ def main():
 	#opt = AdamW(mired.parameters(), lr = 4e-5)
 
 	#hist = training_functions.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=19)
-	hist = training_functions.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=mired.epoch) #50
+	hist = training_functions.entrena(mired, ecm, training_functions.exactitud, opt, entdl, valdl, n_epocas=mired.epoch) #50
 
 	training_functions.graficar(hist, entdl, valdl,"Red1")
 

@@ -76,8 +76,9 @@ def main():
 	ecm = nn.MSELoss()
 	#ecm = nn.L1Loss()
 	opt = AdamW(mired.parameters(), lr = 3e-5) #4e-3
-	plt.figure()
-	hist = training_functions.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=4)
+	#plt.figure()
+	#hist = training_functions.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=4)
+	hist = training_functions.entrena(mired, ecm,training_functions.exactitud, opt, entdl, valdl, n_epocas=4)
 	#hist = training_functions.entrena(mired, ecm, nn.functional.l1_loss, opt, entdl, valdl, n_epocas=18)
 	training_functions.graficar(hist, entdl, valdl,"Red1")
 

@@ -19,10 +19,10 @@ def print_path():
 		plt.plot(temp[0:,0], temp[0:,1], label=file) ##Changed for the first files
 		print(temp.shape)
 		total_data+=len(temp)
-	plt.ylabel('Distancia')
-	plt.xlabel('Ángulo')
+	plt.ylabel('Ángulo')
+	plt.xlabel('Distancia')
 	plt.legend()
-
+#distancia, angulo, Vx, Va
 def print_speed():
 	global files
 	plt.figure()

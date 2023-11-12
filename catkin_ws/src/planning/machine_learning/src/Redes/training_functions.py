@@ -24,12 +24,18 @@ def class_one_hot(index, n_index, n_class):
 	return M_one
 
 def graficar(hist, entdl, valdl, opt): ##Función para graficar y ahorrar líneas de código
-	plt.plot(hist['perdida_ent'] / len(entdl), label='Entrenamiento '+opt)
-	plt.plot(hist['perdida_val'] / len(valdl), label='Validación '+opt)
-	plt.xlabel('Época')
-	plt.ylabel('Pérdida')
-	plt.legend()
-	#plt.show()
+	f,axs = plt.subplots(nrows=1, ncols=2, figsize=(10, 5))
+	axs[0].plot(hist['perdida_ent'] / len(entdl), label='Entrenamiento '+opt)
+	axs[0].plot(hist['perdida_val'] / len(valdl), label='Validación '+opt)
+	axs[0].set_xlabel('Época')
+	axs[0].set_ylabel('Pérdida')
+	axs[0].legend()
+
+	axs[1].plot(hist['metrica_ent']/ len(entdl), label='Entrenamiento '+opt)
+	axs[1].plot(hist['metrica_val']/ len(valdl), label='Validación '+opt)
+	axs[1].set_xlabel('Época')
+	axs[1].set_ylabel('Métrica')
+	axs[1].legend()
 
 def get_data(folder):
 	folder=folder+'/*.npz'
@@ -89,22 +95,27 @@ def dataloader_r2(prudl,modelo):
 
 def entrena(modelo, fp, metrica, opt, entdl, valdl, n_epocas = 100):
 	hist = {'perdida_ent': np.zeros(n_epocas, dtype = np.float32),
-			'perdida_val': np.zeros(n_epocas, dtype = np.float32)}
+			'perdida_val': np.zeros(n_epocas, dtype = np.float32),
+			'metrica_ent': np.zeros(n_epocas, dtype = np.float32),
+			'metrica_val': np.zeros(n_epocas, dtype = np.float32)}
 	for e in range(n_epocas):
 		# bucle de entrenamiento
 		modelo.train()
 		for lote, (Xlote, ylote) in enumerate(entdl):
-			hist['perdida_ent'][e] += paso_ent(modelo, fp, opt, Xlote, ylote)
+			perdida_paso, metrica_paso = paso_ent(modelo, fp, metrica, opt, Xlote, ylote)
+			hist['perdida_ent'][e] += perdida_paso
+			hist['metrica_ent'][e] += metrica_paso
 		# bucle de evaluación
 		modelo.eval()
 		for (Xlote, ylote) in valdl:
 			with th.no_grad():
-				y_pred = modelo(Xlote)
-				hist['perdida_val'][e] += metrica(y_pred, ylote).cpu().numpy()
+				y_hat = modelo(Xlote)
+				hist['perdida_val'][e] += fp(y_hat, ylote).cpu().numpy()
+				hist['metrica_val'][e] += metrica(y_hat, ylote).cpu().numpy()
 
 	return hist
 
-def paso_ent(modelo, fp, opt, X, y):
+def paso_ent(modelo, fp, metrica, opt, X, y):
 	opt.zero_grad() # se ponen los gradientes asociados a los parámetros
                   # a actualizaren en cero
 	y_hat = modelo(X) # se propagan las entradas para obtener las predicciones
@@ -116,7 +127,16 @@ def paso_ent(modelo, fp, opt, X, y):
 		perdida_paso = perdida.cpu().numpy() # convertimos la pérdida (instancia de
                                          # Tensor de orden 0) a NumPy, para
                                          # lo que es necesario moverla a CPU
-	return perdida_paso
+	#return perdida_paso
+	metricas_paso = metrica(y_hat, y)
+
+	return perdida_paso, metricas_paso
+
+def exactitud(y_hat, y):
+	cmp = y_hat.argmax(dim=-1) == y.argmax(dim=-1)
+	#cmp = y_hat.argmax(dim=-1) == y
+	aciertos = th.count_nonzero(cmp)
+	return aciertos / cmp.shape[0]
 
 def examples_per_class(n_index, M_one):
 	number=np.argmax(M_one, axis=1)

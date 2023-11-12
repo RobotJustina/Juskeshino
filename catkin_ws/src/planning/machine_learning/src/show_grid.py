@@ -5,12 +5,18 @@ import numpy as np
 import cv2
 from std_msgs.msg import Float32MultiArray
 
+a=True
+
 def callback_grid(msg):
+	global a
 	img=np.array(msg.data, dtype="uint8")
 	img=np.reshape(img,(80,80), order="F")
 	img[img==100]=255
 	resized_image = cv2.resize(img, (400, 400), interpolation = cv2.INTER_CUBIC)
 	cv2.imshow("Obstacle image", resized_image)
+	if(a):
+		a=False
+		cv2.imwrite("./img.jpg", resized_image) 
 	cv2.waitKey(1)
 
 def main():
