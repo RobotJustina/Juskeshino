@@ -9,7 +9,7 @@ def main():
     rospy.init_node("act_pln")
     rate = rospy.Rate(10)
 
-    JuskeshinoNavigation.setNodeHandle(None)
+    JuskeshinoNavigation.setNodeHandle()
     while not rospy.is_shutdown():
         rate.sleep()
 
