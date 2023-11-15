@@ -65,7 +65,7 @@ def pca(xyz_points):    # pc del contorno mas cercano
     pts_frame_PCA = np.transpose(np.dot(eig_vect, np.transpose(xyz_points)))
     #pt_frame_PCA = np.transpose(np.dot(eig_vect, np.transpose(centrid)))
     
-    print("EigVal...........", eig_val)
+    #print("EigVal...........", eig_val)
     H = np.max(pts_frame_PCA[:, 2]) - np.min(pts_frame_PCA[:, 2])
     L = np.max(pts_frame_PCA[:, 1]) - np.min(pts_frame_PCA[:, 1])
     W = np.max(pts_frame_PCA[:, 0]) - np.min(pts_frame_PCA[:, 0])
@@ -226,7 +226,7 @@ def object_category(fpc, spc, thpc):  # estima la forma geometrica del objeto. (
     print("1pca, 2pca, 3pca", fpc,spc,thpc)
     # coeficiente de similitud entre aristas de bounding box del objeto
     c21, c31, c32 =  spc * ( 100 / fpc),   thpc * ( 100 / fpc),    thpc * ( 100 / spc)
-    print("c21, c31, c32", c21, c31, c32)
+    #print("c21, c31, c32", c21, c31, c32)
     if spc > 0.15 and thpc > 0.15:
         print("Object no graspable......")
         return "0",False  
@@ -250,19 +250,23 @@ def callback_PoseObject(req):  # Request is a PointCloud2
     cv_mats= get_cv_mats_from_cloud_message(req.point_cloud)
     obj_xyz = get_object_xyz(cv_mats , req.obj_mask)
 
+    print("******************************")
+    print("**    OBJECT INFORMATION    **")
+    print("******************************")
+
     centroid = np.mean(obj_xyz, axis=0)
-    print("centroide", centroid)
     pca_vectors, eig_val, size_obj = pca(obj_xyz)
     c_obj, graspable = object_category(size_obj.x, size_obj.z, size_obj.y)
 
     obj_pose, axis_x_obj, obj_state = object_pose(centroid, pca_vectors[0], pca_vectors[1], size_obj.x)
-    print("Despues de funcion object_pose........")
+
+    print("CENTROID:____", centroid)
     publish_arow_marker(centroid, axis_x_obj, 'base_link', ns ="principal_component", id=22)
     broadcaster_frame_object("base_link", "object", obj_pose)
-    print("size object object:____")
+    print("SIZE:________", )
     print(size_obj)
-    print("object category", c_obj)
-    print("object state", obj_state)
+    print("BOUNDING BOX TYPE", c_obj)
+    print("STATE", obj_state)
     
     resp = get_obj_pose_response( obj_state, c_obj, size_obj, obj_pose, graspable)
     return resp
