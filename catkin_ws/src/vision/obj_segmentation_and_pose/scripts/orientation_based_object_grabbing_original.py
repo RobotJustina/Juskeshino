@@ -238,11 +238,13 @@ def prism(obj_pose, obj_state):
         print("Horizontal grip prism............")  # Agarre horizontal
         grip_point = [obj_pose.position.x , obj_pose.position.y, obj_pose.position.z] 
 
+        print("Candidatos 1")
         pose_list1 = generates_candidates(grip_point , obj_pose, "P", obj_state ,  'object', step = -10, num_candidates = 5)
         grip_point = [obj_pose.position.x , obj_pose.position.y, obj_pose.position.z]
         # Segunda lista de candidatos******************************************************************************
-        pose_list2 = generates_candidates(grip_point , obj_pose, "P", obj_state ,  'object', step = 10, num_candidates = 4)
-        """
+        print("Candidatos 2")
+        pose_list2 = generates_candidates(grip_point , obj_pose, "P", obj_state ,  'object', step = 10, num_candidates = 3)
+        # Tercera lista de candidatos.................................
         obj_pose_frame_object = pose_actual_to_pose_target(obj_pose , 'base_link', 'object') # Transforma pose en frame 'object' para generar candidatos
         
         R, P, Y = tft.euler_from_quaternion([obj_pose_frame_object.orientation.x ,  # pose expresada en RPY para realizar rotaciones
@@ -257,16 +259,22 @@ def prism(obj_pose, obj_state):
         obj_pose_frame_object.orientation.z = q_gripper[2]
         obj_pose_frame_object.orientation.w = q_gripper[3]
 
-        obj_pose_2 = pose_actual_to_pose_target(obj_pose_frame_object , 'object', 'base_link')
+        grip_point = [obj_pose.position.x , obj_pose.position.y, obj_pose.position.z]
+        obj_pose_3 = pose_actual_to_pose_target(obj_pose_frame_object , 'object', 'base_link')
 
         if debug:
-            broadcaster_frame_object('base_link', 'test_prism h2', obj_pose_2)  # emite la pose en 'base_link'
+            broadcaster_frame_object('base_link', 'test_prism h3', obj_pose_3)  # emite la pose en 'base_link'
             rospy.sleep(1.0)
         
-        grip_point = [obj_pose_2.position.x, obj_pose_2.position.y, obj_pose_2.position.z]
-        pose_list2 = generates_candidates(grip_point, obj_pose_2 , "P", obj_state , 'object', step = 0, num_candidates = 1)
-        """
-        return pose_list2 + pose_list1
+        #grip_point = [obj_pose_3.position.x, obj_pose_3.position.y, obj_pose_3.position.z]
+        print("Candidatos 3")
+        pose_list3 = generates_candidates(grip_point, obj_pose_3 , "P", obj_state , 'object', step = -14, num_candidates = 4)
+        grip_point = [obj_pose.position.x , obj_pose.position.y, obj_pose.position.z]
+        print("Candidatos 4")
+        pose_list4 = generates_candidates(grip_point, obj_pose_3 , "P", obj_state , 'object', step = 14, num_candidates = 4)
+
+        
+        return pose_list2 + pose_list1 + pose_list3 + pose_list4
 
     # VERTICAL ***************************************************************************************************    
     else:
@@ -420,27 +428,19 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
         ik_msg.roll = pose1[3]
         ik_msg.pitch = pose1[4]
         ik_msg.yaw = pose1[5]
-        ik_msg.duration = 5
+        ik_msg.duration = 4
         ik_msg.time_step = 0.02
-
-        print("Pose candidata en el espacio cartesiano: ")
-        print("x", ik_msg.x)
-        print("Y", ik_msg.y)
-        print("Z" ,ik_msg.z)
-        print("Roll", ik_msg.roll)
-        print("Pitch", ik_msg.pitch)
-        print("Yaw", ik_msg.yaw)
 
         try: 
             # Revisar como esta funcionando el servicio de cinemática inversa manana
             resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
             print("Suitable pose found.....................")
-            print("ULTIMO PUNTO DE LA TRAYECTORIA", resp_ik_srv.articular_trajectory.points[-1].positions)
+            #print("ULTIMO PUNTO DE LA TRAYECTORIA", resp_ik_srv.articular_trajectory.points[-1].positions)
             
             if obj_state == 'horizontal':
                 # genera una segunda trayectoria en vertical
                 # el ultimo punto de la 1a trayectoria es el primero de la segunda
-                print("ULTIMO PUNTO DE LA TRAYECTORIA", resp_ik_srv.articular_trajectory.points[-1].positions)
+                #print("ULTIMO PUNTO DE LA TRAYECTORIA", resp_ik_srv.articular_trajectory.points[-1].positions)
                 guess = [resp_ik_srv.articular_trajectory.points[-1].positions[0],
                          resp_ik_srv.articular_trajectory.points[-1].positions[1],
                          resp_ik_srv.articular_trajectory.points[-1].positions[2],
@@ -489,10 +489,6 @@ def callback(req):
     
     candidates_poses_rpy = convert_frame_of_candidates_poses( pose_list_quaternion , obj_state)
 
-    print("Lista de poses candidatas en RPY")
-    print(candidates_poses_rpy)
-
-    # Revisar manana
     #**************************************************************************************************************************
     trajectory, pose, rpy_pose, graspable = evaluating_possibility_grip(candidates_poses_rpy ,  pose_list_quaternion , obj_state)
     #***************************************************************************************************************
