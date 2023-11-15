@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   visualization_msgs
   message_generation
   sound_play
+  actionlib_msgs
 )
 catkin_python_setup()
 find_package(PCL 1.2 REQUIRED)
