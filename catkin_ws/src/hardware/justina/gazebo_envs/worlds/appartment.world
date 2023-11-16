@@ -12,8 +12,8 @@
       <background>0.7 0.7 0.7 1</background>
     </scene>
     <physics type="ode">
-      <real_time_update_rate>250.0</real_time_update_rate>
-      <max_step_size>0.004</max_step_size>
+      <real_time_update_rate>500.0</real_time_update_rate>
+      <max_step_size>0.002</max_step_size>
       <ode>
         <solver>
           <type>quick</type>

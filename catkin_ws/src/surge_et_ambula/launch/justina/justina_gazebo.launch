@@ -1,4 +1,5 @@
 <launch>
+  <arg name="debug" default="False"/>
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch"/>
   
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_gazebo.rviz"/>
@@ -7,7 +8,6 @@
     <param name="la_predefined" value="$(find config_files)/justina/manipulation/la_predefined.yaml"/>
     <param name="ra_predefined" value="$(find config_files)/justina/manipulation/ra_predefined.yaml"/>
     <param name="hd_predefined" value="$(find config_files)/justina/manipulation/hd_predefined.yaml"/>
-    <remap from="/camera/depth_registered/points" to="/hardware/realsense/points"/>
     <remap from="/vision/obj_reco/recognize_object" to="/vision/obj_segmentation/get_obj_pose"/>
   </node>
 
@@ -21,7 +21,7 @@
     <arg name="max_linear_speed" value="0.9"/>
     <arg name="max_angular_speed" value="1.2"/>
     <arg name="laser_scan_topic" value="/hardware/scan"/>
-    <arg name="point_cloud_topic" value="/hardware/realsense/points"/>
+    <arg name="point_cloud_topic" value="/camera/depth_registered/points"/>
     <arg name="use_lidar" value="True"/>
     <arg name="use_point_cloud" value="True"/>
     <arg name="use_pot_fields" value="True"/>
@@ -33,7 +33,10 @@
   </include>
 
   <include file="$(find surge_et_ambula)/launch/justina/justina_manipulation.launch"/>
-  <include file="$(find surge_et_ambula)/launch/justina/vision.launch"/>
+  <include file="$(find surge_et_ambula)/launch/justina/vision.launch">
+    <arg name="debug"         value="$(arg debug)"/>
+    <arg name="training_dir"  value="$(find obj_reco)/training_dir"/>
+  </include>
   <include file="$(find surge_et_ambula)/launch/justina/speech.launch"/>
 
 </launch>
