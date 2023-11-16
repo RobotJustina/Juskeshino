@@ -8,7 +8,6 @@
     <param name="la_predefined" value="$(find config_files)/justina/manipulation/la_predefined.yaml"/>
     <param name="ra_predefined" value="$(find config_files)/justina/manipulation/ra_predefined.yaml"/>
     <param name="hd_predefined" value="$(find config_files)/justina/manipulation/hd_predefined.yaml"/>
-    <remap from="/camera/depth_registered/points" to="/hardware/realsense/points"/>
     <remap from="/vision/obj_reco/recognize_object" to="/vision/obj_segmentation/get_obj_pose"/>
   </node>
 
@@ -22,7 +21,7 @@
     <arg name="max_linear_speed" value="0.9"/>
     <arg name="max_angular_speed" value="1.2"/>
     <arg name="laser_scan_topic" value="/hardware/scan"/>
-    <arg name="point_cloud_topic" value="/hardware/realsense/points"/>
+    <arg name="point_cloud_topic" value="/camera/depth_registered/points"/>
     <arg name="use_lidar" value="True"/>
     <arg name="use_point_cloud" value="True"/>
     <arg name="use_pot_fields" value="True"/>
