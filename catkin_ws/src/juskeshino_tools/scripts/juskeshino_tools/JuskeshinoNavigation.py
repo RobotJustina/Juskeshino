@@ -1,3 +1,4 @@
+import math
 import rospy
 import tf
 from std_msgs.msg import Empty, Float32, Float32MultiArray
@@ -126,7 +127,7 @@ class JuskeshinoNavigation:
 
 
     #These methods use the mvn_pln node.
-    def startGetClose(x, y, angle):
+    def startGetCloseXYA(x, y, angle):
         msg = PoseStamped()
         msg.header.frame_id = "map";
         msg.pose.position.x = x
@@ -144,15 +145,14 @@ class JuskeshinoNavigation:
     def startGetClose(location):
         return None
     
-    def getClose(x, y, angle, timeOut_ms):
-        JuskeshinoNavigation.startGetClose(x,y,angle)
+    def getCloseXYA(x, y, angle, timeOut_ms):
+        JuskeshinoNavigation.startGetCloseXYA(x,y,angle)
         return JuskeshinoNavigation.waitForGlobalGoalReached(timeOut_ms)
 
 
     def getClose(location, timeOut_ms):
         JuskeshinoNavigation.startGetClose(location)
         return JuskeshinoNavigation.waitForGlobalGoalReached(timeOut_ms)
-
 
     def stopNavigation():
         msg = Empty()
