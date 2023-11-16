@@ -133,6 +133,7 @@ int main(int argc, char** argv)
     local_map.info.height = (int)((max_y - min_y)/resolution);
     local_map.info.origin.position.x = min_x;
     local_map.info.origin.position.y = min_y;
+    local_map.info.origin.orientation.w = 1;
     local_map.data.resize(local_map.info.width*local_map.info.height);
     for(size_t i=0; i < local_map.data.size(); i++) local_map.data[i] = 0;
     std_msgs::Float32MultiArray local_map_array;

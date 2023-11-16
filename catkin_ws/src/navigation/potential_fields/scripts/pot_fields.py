@@ -179,7 +179,8 @@ def main():
     global listener, pub_cmd_vel, pub_markers
     print("Potential fields...")
     rospy.init_node("pot_fields")
-    rospy.Subscriber("/hardware/scan", LaserScan, callback_scan)
+    #rospy.Subscriber("/hardware/scan", LaserScan, callback_scan)
+    rospy.Subscriber("/laser_mod", LaserScan, callback_scan)
     rospy.Subscriber('/move_base_simple/goal', PoseStamped, callback_pot_fields_goal)
     pub_cmd_vel = rospy.Publisher('/cmd_vel', Twist,  queue_size=10)
     pub_markers = rospy.Publisher('/navigation/pot_field_markers', Marker, queue_size=10)
