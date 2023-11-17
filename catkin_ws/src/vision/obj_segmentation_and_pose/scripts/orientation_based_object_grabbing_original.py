@@ -445,9 +445,9 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
             ik_msg.x = pose1[0] 
             ik_msg.y = pose1[1]
             ik_msg.z = pose1[2]
-            ik_msg.roll = 0.57 #pose1[3]      # (0, -90,0)
-            ik_msg.pitch = -0.6#np.deg2rad(-70) #pose1[4]
-            ik_msg.yaw = -0.75#np.deg2rad(-45) #pose1[5]
+            ik_msg.roll = pose1[3]      # (0, -90,0)
+            ik_msg.pitch = pose1[4]
+            ik_msg.yaw = pose1[5]
             ik_msg.duration = 4
             ik_msg.time_step = 0.02
             try: 
@@ -456,12 +456,12 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
                 print("Suitable pose 1 for horizontal object found.....................")
                 #print("ultimo punto de la trayectoria")
                 #print(resp_ik_srv.articular_trajectory.points[-1])
-                return resp_ik_srv.articular_trajectory , pose_quaternion[i] , pose1, True
+                #return resp_ik_srv.articular_trajectory , pose_quaternion[i] , pose1, True
             except:
                 print("pose 1 no apta")
                 return None, None, None, False
                 break
-            """
+    
             try:
                 print("genera una segunda trayectoria para objeto horizontal")
                 # el ultimo punto de la 1a trayectoria es el primero de la segunda
@@ -493,7 +493,7 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
                 i = i + 1 
                 print("Pose no apta........")  
                 continue
-            """
+            
     return None, None, None, False
 
 
