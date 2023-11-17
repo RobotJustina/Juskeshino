@@ -6,6 +6,7 @@ from juskeshino_tools.JuskeshinoNavigation import JuskeshinoNavigation
 from juskeshino_tools.JuskeshinoVision import JuskeshinoVision
 from juskeshino_tools.JuskeshinoHardware import JuskeshinoHardware
 from juskeshino_tools.JuskeshinoSimpleTasks import JuskeshinoSimpleTasks
+from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
 
 def main():
     print("INITIALIZING QUALIFICATION 2024 TEST BY MARCOSOFT...")
@@ -16,8 +17,9 @@ def main():
     JuskeshinoVision.setNodeHandle()
     JuskeshinoHardware.setNodeHandle()
     JuskeshinoSimpleTasks.setNodeHandle()
+    JuskeshinoHRI.setNodeHandle()
 
-    if not JuskeshinoNavigation.getCloseXYA(5.5, 2.3, 1.57, 30000):
+    if not JuskeshinoNavigation.getCloseXYA(3.2, 5.6, -1.57, 30000):
         print("Cannot get close to goal position")
     if not JuskeshinoHardware.moveHead(0,-1, 5000):
         print("Cannot move head")
@@ -26,6 +28,8 @@ def main():
     print("Sending goal traj")
     JuskeshinoHardware.moveLeftArmWithTrajectory([-1.2, 0.2, 0, 1.6, 0, 1.1, 0], 10000)
     print("Goal traj reached")
+    [objs, img] = JuskeshinoVision.detectAndRecognizeObjects()
+    print(len(objs))
     while not rospy.is_shutdown():
         rate.sleep()
 
