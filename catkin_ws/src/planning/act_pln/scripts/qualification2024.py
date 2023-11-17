@@ -17,7 +17,7 @@ def main():
     JuskeshinoHardware.setNodeHandle()
     JuskeshinoSimpleTasks.setNodeHandle()
 
-    if not JuskeshinoNavigation.getCloseXYA(3.25, 8.94, -1.57, 30000):
+    if not JuskeshinoNavigation.getCloseXYA(5.5, 2.3, 1.57, 30000):
         print("Cannot get close to goal position")
     if not JuskeshinoHardware.moveHead(0,-1, 5000):
         print("Cannot move head")

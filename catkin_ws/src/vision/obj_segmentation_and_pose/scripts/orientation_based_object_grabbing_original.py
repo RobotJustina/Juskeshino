@@ -422,37 +422,62 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
     print("Evaluating the possibility of grip given the position of the object...")
     i = 0
     for pose1 in pose_rpy:  # rellena el mensaje para el servicio IK
-        ik_msg.x = pose1[0] 
-        ik_msg.y = pose1[1]
-        ik_msg.z = pose1[2]
-        ik_msg.roll = pose1[3]
-        ik_msg.pitch = pose1[4]
-        ik_msg.yaw = pose1[5]
-        ik_msg.duration = 4
-        ik_msg.time_step = 0.02
+        if obj_state == "vertical":
+            ik_msg.x = pose1[0] 
+            ik_msg.y = pose1[1]
+            ik_msg.z = pose1[2]
+            ik_msg.roll = pose1[3]
+            ik_msg.pitch = pose1[4]
+            ik_msg.yaw = pose1[5]
+            ik_msg.duration = 4
+            ik_msg.time_step = 0.02
+            try:
+                resp_ik_srv = ik_srv(ik_msg)
+                print("Suitable pose for vertical object found.....................")
+                return resp_ik_srv.articular_trajectory , pose_quaternion[i] , pose1, True
+            except:
+                i = i + 1 
+                print("Pose no apta........")  
+                continue
 
-        try: 
-            # Revisar como esta funcionando el servicio de cinemática inversa manana
-            resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
-            print("Suitable pose found.....................")
-            #print("ULTIMO PUNTO DE LA TRAYECTORIA", resp_ik_srv.articular_trajectory.points[-1].positions)
-            
-            if obj_state == 'horizontal':
-                # genera una segunda trayectoria en vertical
+
+        else:   # objeto con 1pca horizontal
+            ik_msg.x = pose1[0] 
+            ik_msg.y = pose1[1]
+            ik_msg.z = pose1[2]
+            ik_msg.roll = 0.57 #pose1[3]      # (0, -90,0)
+            ik_msg.pitch = -0.6#np.deg2rad(-70) #pose1[4]
+            ik_msg.yaw = -0.75#np.deg2rad(-45) #pose1[5]
+            ik_msg.duration = 4
+            ik_msg.time_step = 0.02
+            try: 
+                
+                resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
+                print("Suitable pose 1 for horizontal object found.....................")
+                #print("ultimo punto de la trayectoria")
+                #print(resp_ik_srv.articular_trajectory.points[-1])
+                return resp_ik_srv.articular_trajectory , pose_quaternion[i] , pose1, True
+            except:
+                print("pose 1 no apta")
+                return None, None, None, False
+                break
+            """
+            try:
+                print("genera una segunda trayectoria para objeto horizontal")
                 # el ultimo punto de la 1a trayectoria es el primero de la segunda
                 #print("ULTIMO PUNTO DE LA TRAYECTORIA", resp_ik_srv.articular_trajectory.points[-1].positions)
                 guess = [resp_ik_srv.articular_trajectory.points[-1].positions[0],
-                         resp_ik_srv.articular_trajectory.points[-1].positions[1],
-                         resp_ik_srv.articular_trajectory.points[-1].positions[2],
-                         resp_ik_srv.articular_trajectory.points[-1].positions[3],
-                         resp_ik_srv.articular_trajectory.points[-1].positions[4],
-                         resp_ik_srv.articular_trajectory.points[-1].positions[5],
-                         resp_ik_srv.articular_trajectory.points[-1].positions[6]]
-                
+                        resp_ik_srv.articular_trajectory.points[-1].positions[1],
+                        resp_ik_srv.articular_trajectory.points[-1].positions[2],
+                        resp_ik_srv.articular_trajectory.points[-1].positions[3],
+                        resp_ik_srv.articular_trajectory.points[-1].positions[4],
+                        resp_ik_srv.articular_trajectory.points[-1].positions[5],
+                        resp_ik_srv.articular_trajectory.points[-1].positions[6]]
+                    
                 # Ultimo punto de la segunda trayectoria
                 ik_msg.x = pose1[0] 
                 ik_msg.y = pose1[1]
-                ik_msg.z = pose1[2] - 0.1
+                ik_msg.z = pose1[2] - 0.07
                 ik_msg.roll = pose1[3]
                 ik_msg.pitch = pose1[4]
                 ik_msg.yaw = pose1[5]
@@ -464,12 +489,11 @@ def evaluating_possibility_grip(pose_rpy, pose_quaternion, obj_state):
                 print("Second trajectory found.....................")
                 resp_ik_srv.articular_trajectory.points = resp_ik_srv.articular_trajectory.points + resp_2_ik_srv.articular_trajectory.points
                 return resp_ik_srv.articular_trajectory , pose_quaternion[i] , pose1, True
-            return resp_ik_srv.articular_trajectory , pose_quaternion[i] , pose1, True
-
-        except:
-            i = i + 1 
-            print("Pose no apta........")  
-            continue
+            except:
+                i = i + 1 
+                print("Pose no apta........")  
+                continue
+            """
     return None, None, None, False
 
 
@@ -495,7 +519,7 @@ def callback(req):
 
     if graspable:
         print("Graficando en RViz pose adecuada para manipulacion de objetos....")
-        broadcaster_frame_object('base_link', 'suitable_pose' , pose)
+        #broadcaster_frame_object('base_link', 'suitable_pose' , pose)
         rospy.sleep(1.0)
         resp.articular_trajectory = trajectory
         resp.graspable = True
