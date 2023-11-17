@@ -16,7 +16,7 @@ from sensor_msgs.msg import LaserScan
 import numpy as np
 
 
-file_path = rospkg.RosPack().get_path('hmm_nav2') + '/HMM/'
+file_path = rospkg.RosPack().get_path('create_dataset') + '/HMM/'
 centroids = np.load(file_path + 'ccvk.npy')
 ccxyth = np.load(file_path + 'ccxyth.npy')
 matrix_A = np.load(file_path + 'A.npy')

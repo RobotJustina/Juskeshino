@@ -1,0 +1,21 @@
+<launch>
+        
+    <node pkg="create_dataset" type="take_dataset" name="capture_data_node" output="screen">
+        <remap 
+            from="/rgb/image_raw" 
+            to="/hardware/realsense/rgb/image_raw"
+        />
+
+        <remap 
+            from="depth/image_raw" 
+            to="/hardware/realsense/depth/image_raw"
+        />
+
+        <remap 
+            from="/scan" 
+            to="/hardware/scan"
+        />
+
+    </node>
+
+</launch>

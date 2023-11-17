@@ -8,7 +8,7 @@ from general_utils import files_utils
 
 if __name__ == '__main__':
     """Read the data"""
-    path = rospkg.RosPack().get_path('hmm_nav2')
+    path = rospkg.RosPack().get_path('create_dataset')
     print('Reading path:')
     print(path)
     print(path + '/Dataset/laser_odom_data.csv')
@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
     """Processing centroids"""
     K_corpus = 256  # Hyperparam: Number of symbols of observations
-    n_states = 20   # Hyperparam: Number of states
+    n_states = 50   # Hyperparam: Number of states
 
     print('Calculating ccvk ...')  # Symbols
     km_corpus = MiniBatchKMeans(init='k-means++', n_clusters=K_corpus, batch_size=1000,
