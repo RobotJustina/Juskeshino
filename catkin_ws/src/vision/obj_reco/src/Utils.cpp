@@ -295,6 +295,9 @@ visualization_msgs::MarkerArray Utils::get_objects_markers(std::vector<vision_ms
         markers[2*i+1].type = visualization_msgs::Marker::TEXT_VIEW_FACING;
         markers[2*i+1].pose.position.z += markers[2*i+1].scale.z/2;
         markers[2*i+1].scale.z = 0.06;
+	markers[2*i+1].color.r = 1.0;
+	markers[2*i+1].color.g = 1.0;
+	markers[2*i+1].color.b = 1.0;
         markers[2*i+1].color.a = 1.0;
         markers[2*i+1].text = objs[i].id;
     }           

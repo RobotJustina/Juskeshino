@@ -166,7 +166,7 @@ class JuskeshinoNavigation:
         JuskeshinoNavigation._stop = True
 
     def callbackNavigationStatus(msg):
-        JuskeshinoNavigation._simple_move_status = msg;
+        JuskeshinoNavigation._navigation_status = msg;
 
     def callbackSimpleMoveStatus(msg):
         JuskeshinoNavigation._simple_move_status = msg;
