@@ -5,6 +5,7 @@ from manip_msgs.srv import *
 
 class JuskeshinoManipulation:
     def setNodeHandle():
+        global clt_best_grip
     	# Se subcribe a los servicios necesarios para manipulacion de objetos
         rospy.wait_for_service("/vision/get_best_grasp_traj")
         clt_best_grip = rospy.ServiceProxy("/vision/get_best_grasp_traj", BestGraspTraj )
@@ -16,6 +17,12 @@ class JuskeshinoManipulation:
             loop.sleep()
         return True
     
+    def planBestGraspingConfiguration(vision_obj):
+        global clt_best_grip
+        req = BestGraspTrajRequest()
+        req.recog_object = vision_obj.recog_object
+        resp = clt_best_grip(req)
+        return resp
     
 
     
