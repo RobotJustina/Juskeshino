@@ -25,6 +25,8 @@
 
   <node name="get_goal_point" pkg="machine_learning" type="get_goal_point.py"/>
 
+  <node name="sim_laser" pkg="machine_learning" type="sim_laser"/>
+
   <node name="local_occ_grid" pkg="local_occ_grid" type="local_occ_grid">
     <param name="use_lidar" value="true"/>
     <param name="use_cloud" value="true"/>
