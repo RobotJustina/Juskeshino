@@ -38,10 +38,10 @@ class JuskeshinoNavigation:
     def isGlobalGoalReached():
         return JuskeshinoNavigation._navigation_status.status == GoalStatus.SUCCEEDED;
 
-    def waitForLocalGoalReached(timeOut_ms):
+    def waitForLocalGoalReached(timeout):
         JuskeshinoNavigation._stop = False;
         JuskeshinoNavigation._simple_move_status.status = GoalStatus.PENDING;
-        attempts = int(timeOut_ms/100);
+        attempts = int(timeout/0.1);
         loop = rospy.Rate(10)
         while (not rospy.is_shutdown() and JuskeshinoNavigation._simple_move_status.status == GoalStatus.PENDING and
                not JuskeshinoNavigation._stop and attempts >= 0):
@@ -56,10 +56,10 @@ class JuskeshinoNavigation:
         JuskeshinoNavigation._stop = False; #This flag is set True in the subscriber callback
         return JuskeshinoNavigation._simple_move_status.status == GoalStatus.SUCCEEDED
 
-    def waitForGlobalGoalReached(timeOut_ms):
+    def waitForGlobalGoalReached(timeout):
         JuskeshinoNavigation._stop = False
         JuskeshinoNavigation._navigation_status.status = GoalStatus.PENDING
-        attempts = int(timeOut_ms/100)
+        attempts = int(timeout/0.1)
         loop = rospy.Rate(10)
         while (not rospy.is_shutdown() and JuskeshinoNavigation._navigation_status.status == GoalStatus.PENDING and
                not JuskeshinoNavigation._stop and attempts >= 0):
@@ -111,19 +111,19 @@ class JuskeshinoNavigation:
         JuskeshinoNavigation.pubSimpleMoveLateral.publish(msg)
         rospy.sleep(0.1)
 
-    def moveDist(distance, timeOut_ms):
+    def moveDist(distance, timeout):
         JuskeshinoNavigation.startMoveDist(distance)
-        return JuskeshinoNavigation.waitForLocalGoalReached(timeOut_ms)
+        return JuskeshinoNavigation.waitForLocalGoalReached(timeout)
 
 
-    def moveDistAngle(distance, angle, timeOut_ms):
+    def moveDistAngle(distance, angle, timeout):
         JuskeshinoNavigation.startMoveDistAngle(distance, angle)
-        return JuskeshinoNavigation.waitForLocalGoalReached(timeOut_ms)
+        return JuskeshinoNavigation.waitForLocalGoalReached(timeout)
 
 
-    def moveLateral(distance, timeOut_ms):
+    def moveLateral(distance, timeout):
         JuskeshinoNavigation.startMoveLateral(distance)
-        return JuskeshinoNavigation.waitForLocalGoalReached(timeOut_ms)
+        return JuskeshinoNavigation.waitForLocalGoalReached(timeout)
 
 
     #These methods use the mvn_pln node.
@@ -145,14 +145,14 @@ class JuskeshinoNavigation:
     def startGetClose(location):
         return None
     
-    def getCloseXYA(x, y, angle, timeOut_ms):
+    def getCloseXYA(x, y, angle, timeout):
         JuskeshinoNavigation.startGetCloseXYA(x,y,angle)
-        return JuskeshinoNavigation.waitForGlobalGoalReached(timeOut_ms)
+        return JuskeshinoNavigation.waitForGlobalGoalReached(timeout)
 
 
-    def getClose(location, timeOut_ms):
+    def getClose(location, timeout):
         JuskeshinoNavigation.startGetClose(location)
-        return JuskeshinoNavigation.waitForGlobalGoalReached(timeOut_ms)
+        return JuskeshinoNavigation.waitForGlobalGoalReached(timeout)
 
     def stopNavigation():
         msg = Empty()

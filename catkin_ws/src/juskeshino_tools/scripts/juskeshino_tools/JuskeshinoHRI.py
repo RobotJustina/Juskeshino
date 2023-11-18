@@ -22,9 +22,24 @@ class JuskeshinoHRI:
     def getLastRecognizedSentence():
         if len(JuskeshinoHRI.recognizedSpeech.hypothesis) < 1:
             return None
-        return JuskeshinoHRI.recognizedSpeech.hypothesis[0]
+        rec = JuskeshinoHRI.recognizedSpeech.hypothesis[0]
+        JuskeshinoHRI.recognizedSpeech.hypothesis.clear()
+        JuskeshinoHRI.recognizedSpeech.confidences.clear()
+        return rec
 
-    def say(text, voice="voice_kal_diphone"):
+    def waitForNewSentence(timeout):
+        attempts = int(timeout/0.1)
+        loop = rospy.Rate(10)
+        JuskeshinoHRI.recognizedSpeech.hypothesis.clear()
+        JuskeshinoHRI.recognizedSpeech.confidences.clear()
+        while (not rospy.is_shutdown() and attempts > 0):
+            rec = JuskeshinoHRI.getLastRecognizedSentence()
+            if rec is not None:
+                return rec
+            loop.sleep()
+        return None
+
+    def say(text, voice="voice_cmu_us_slt_arctic_hts"):
         msg = SoundRequest()
         msg.sound   = -3
         msg.command = 1

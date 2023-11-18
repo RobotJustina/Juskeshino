@@ -1,5 +1,6 @@
 #include "ros/ros.h"
 #include "std_msgs/Bool.h"
+#include "std_srvs/Trigger.h"
 #include "sensor_msgs/Range.h"
 #include "sensor_msgs/LaserScan.h"
 #include "sensor_msgs/PointCloud2.h"
@@ -184,6 +185,22 @@ void callback_cmd_vel(const geometry_msgs::Twist::ConstPtr& msg)
     current_speed_angular = msg->angular.z;
 }
 
+bool callback_obstacle_in_front(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& resp)
+{
+    boost::shared_ptr<sensor_msgs::PointCloud2 const> ptr_cloud; 
+    boost::shared_ptr<sensor_msgs::LaserScan const>   ptr_lidar;
+    if(use_cloud) ptr_cloud = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(point_cloud_topic,ros::Duration(10.0));
+    if(use_lidar) ptr_lidar = ros::topic::waitForMessage<sensor_msgs::LaserScan>  (laser_scan_topic, ros::Duration(10.0));
+    double force_x, force_y;
+    resp.success = false;
+    bool debug_temp = debug;
+    debug = true;
+    //resp.success |= use_cloud && check_collision_risk_with_cloud(ptr_cloud, force_x, force_y);
+    //resp.success |= use_lidar && check_collision_risk_with_lidar(ptr_lidar, force_x, force_y);
+    debug = debug_temp;
+    return resp.success;
+}
+
 visualization_msgs::MarkerArray get_force_arrow_markers(geometry_msgs::Vector3& f1, geometry_msgs::Vector3& f2)
 {
     visualization_msgs::MarkerArray markers;
@@ -284,6 +301,7 @@ int main(int argc, char** argv)
     ros::Publisher  pub_collision_risk = n.advertise<std_msgs::Bool>("/navigation/obs_detector/collision_risk", 1);
     ros::Publisher  pub_pot_fields_mrk = n.advertise<visualization_msgs::MarkerArray>("/navigation/obs_detector/pot_field_markers", 1);
     ros::Publisher  pub_pot_fields_rej = n.advertise<geometry_msgs::Vector3>("/navigation/obs_detector/pf_rejection_force", 1);
+    ros::ServiceServer srvObsInFront   = n.advertiseService("/navigation/obs_detector/obstacle_in_front", callback_obstacle_in_front);
     std_msgs::Bool msg_collision_risk;
     geometry_msgs::Vector3 msg_rejection_force;
         

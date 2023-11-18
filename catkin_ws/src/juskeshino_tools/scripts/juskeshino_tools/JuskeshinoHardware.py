@@ -75,22 +75,22 @@ class JuskeshinoHardware:
         JuskeshinoHardware.raGoalPose = numpy.asarray(q)
         return
 
-    def moveHead(pan, tilt, timeOut_ms):
+    def moveHead(pan, tilt, timeout):
         JuskeshinoHardware.startMoveHead(pan, tilt)
-        return JuskeshinoHardware.waitForHdGoalReached(timeOut_ms)
+        return JuskeshinoHardware.waitForHdGoalReached(timeout)
 
-    def moveLeftArm(q, timeOut_ms):
+    def moveLeftArm(q, timeout):
         JuskeshinoHardware.startMoveLeftArm(q)
-        return JuskeshinoHardware.waitForLaGoalReached(timeOut_ms)
+        return JuskeshinoHardware.waitForLaGoalReached(timeout)
 
-    def moveLeftArmWithTrajectory(q, timeOut_ms):
+    def moveLeftArmWithTrajectory(q, timeout):
         JuskeshinoHardware.startMoveLeftArmWithTrajectory(q)
-        return JuskeshinoHardware.waitForLaGoalReached(timeOut_ms)
+        return JuskeshinoHardware.waitForLaGoalReached(timeout)
 
-    def waitForHdGoalReached(timeOut_ms):
+    def waitForHdGoalReached(timeout):
         current = numpy.asarray(rospy.wait_for_message("/hardware/head/current_pose", Float64MultiArray, timeout=1.0).data)
         e = numpy.linalg.norm(current - JuskeshinoHardware.hdGoalPose)
-        attempts = int(timeOut_ms/100)
+        attempts = int(timeout/0.1)
         loop = rospy.Rate(10)
         while (not rospy.is_shutdown() and e > HEAD_TOLERANCE and attempts > 0):
             loop.sleep()
@@ -99,10 +99,10 @@ class JuskeshinoHardware:
             attempts -= 1
         return e <= HEAD_TOLERANCE
 
-    def waitForLaGoalReached(timeOut_ms):
+    def waitForLaGoalReached(timeout):
         current = numpy.asarray(rospy.wait_for_message("/hardware/left_arm/current_pose", Float64MultiArray, timeout=1.0).data)
         e = numpy.linalg.norm(current - JuskeshinoHardware.laGoalPose)
-        attempts = int(timeOut_ms/100)
+        attempts = int(timeout/0.1)
         loop = rospy.Rate(10)
         while (not rospy.is_shutdown() and e > LEFT_ARM_TOLERANCE and attempts > 0):
             loop.sleep()
@@ -111,10 +111,10 @@ class JuskeshinoHardware:
             attempts -= 1
         return e <= LEFT_ARM_TOLERANCE
 
-    def waitForRaGoalReached(timeOut_ms):
+    def waitForRaGoalReached(timeout):
         current = numpy.asarray(rospy.wait_for_message("/hardware/right_arm/current_pose", Float64MultiArray, timeout=1.0).data)
         e = numpy.linalg.norm(current - JuskeshinoHardware.raGoalPose)
-        attempts = int(timeOut_ms/100)
+        attempts = int(timeout/0.1)
         loop = rospy.Rate(10)
         while (not rospy.is_shutdown() and e > RIGHT_ARM_TOLERANCE and attempts > 0):
             loop.sleep()
