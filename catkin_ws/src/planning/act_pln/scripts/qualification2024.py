@@ -19,14 +19,18 @@ def main():
     JuskeshinoSimpleTasks.setNodeHandle()
     JuskeshinoHRI.setNodeHandle()
 
-    if not JuskeshinoNavigation.getCloseXYA(3.2, 5.6, -1.57, 30000):
+    
+    if not JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(10):
+        print("Door never opened")
+        return 
+    if not JuskeshinoNavigation.getCloseXYA(3.2, 5.6, -1.57, 30):
         print("Cannot get close to goal position")
-    if not JuskeshinoHardware.moveHead(0,-1, 5000):
+    if not JuskeshinoHardware.moveHead(0,-1, 5):
         print("Cannot move head")
     if not JuskeshinoSimpleTasks.alignWithTable():
         print("Cannot align with table")
     print("Sending goal traj")
-    JuskeshinoHardware.moveLeftArmWithTrajectory([-1.2, 0.2, 0, 1.6, 0, 1.1, 0], 10000)
+    JuskeshinoHardware.moveLeftArmWithTrajectory([-1.2, 0.2, 0, 1.6, 0, 1.1, 0], 10)
     print("Goal traj reached")
     [objs, img] = JuskeshinoVision.detectAndRecognizeObjects()
     print(len(objs))

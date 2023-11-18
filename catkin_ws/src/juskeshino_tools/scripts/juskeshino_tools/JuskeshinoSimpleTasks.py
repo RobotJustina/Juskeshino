@@ -26,3 +26,13 @@ class JuskeshinoSimpleTasks:
         timeout = ((abs(error_a) + abs(error_d))/0.5 + 1)
         print("JuskeshinoSimpleTasks.->Moving to align with table d="+str(error_d) + " and theta="+str(error_a))
         return JuskeshinoNavigation.moveDistAngle(error_d, error_a, timeout)
+
+    def waitForTheDoorToBeOpen(timeout):
+        attempts = int(timeout/0.1)
+        loop = rospy.Rate(10)
+        door_closed = JuskeshinoNavigation.isThereObstacleInFront()
+        while(not rospy.is_shutdown() and (door_closed is None or door_closed) and attempts >= 0):
+            door_closed = JuskeshinoNavigation.isThereObstacleInFront()
+            loop.sleep()
+            attempts -=1
+        return (door_closed is not None and not door_closed)

@@ -187,18 +187,22 @@ void callback_cmd_vel(const geometry_msgs::Twist::ConstPtr& msg)
 
 bool callback_obstacle_in_front(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& resp)
 {
-    boost::shared_ptr<sensor_msgs::PointCloud2 const> ptr_cloud; 
-    boost::shared_ptr<sensor_msgs::LaserScan const>   ptr_lidar;
-    if(use_cloud) ptr_cloud = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(point_cloud_topic,ros::Duration(10.0));
-    if(use_lidar) ptr_lidar = ros::topic::waitForMessage<sensor_msgs::LaserScan>  (laser_scan_topic, ros::Duration(10.0));
+    boost::shared_ptr<sensor_msgs::PointCloud2 const> shared_ptr_cloud; 
+    boost::shared_ptr<sensor_msgs::LaserScan const>   shared_ptr_lidar;
+    sensor_msgs::PointCloud2::Ptr ptr_cloud(new sensor_msgs::PointCloud2());
+    sensor_msgs::LaserScan::Ptr   ptr_lidar(new sensor_msgs::LaserScan());
+    if(use_cloud) shared_ptr_cloud = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(point_cloud_topic,ros::Duration(10.0));
+    if(use_lidar) shared_ptr_lidar = ros::topic::waitForMessage<sensor_msgs::LaserScan>  (laser_scan_topic, ros::Duration(10.0));
+    if(use_cloud && shared_ptr_cloud) *ptr_cloud = *shared_ptr_cloud;
+    if(use_lidar && shared_ptr_lidar) *ptr_lidar = *shared_ptr_lidar;
     double force_x, force_y;
     resp.success = false;
     bool debug_temp = debug;
     debug = true;
-    //resp.success |= use_cloud && check_collision_risk_with_cloud(ptr_cloud, force_x, force_y);
-    //resp.success |= use_lidar && check_collision_risk_with_lidar(ptr_lidar, force_x, force_y);
+    resp.success |= use_cloud && check_collision_risk_with_cloud(ptr_cloud, force_x, force_y);
+    resp.success |= use_lidar && check_collision_risk_with_lidar(ptr_lidar, force_x, force_y);
     debug = debug_temp;
-    return resp.success;
+    return true; //This is the flag to indicate the service was executed succesfully, it does not indicate the obstacle
 }
 
 visualization_msgs::MarkerArray get_force_arrow_markers(geometry_msgs::Vector3& f1, geometry_msgs::Vector3& f2)

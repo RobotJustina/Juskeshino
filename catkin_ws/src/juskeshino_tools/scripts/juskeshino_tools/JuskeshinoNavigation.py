@@ -2,6 +2,7 @@ import math
 import rospy
 import tf
 from std_msgs.msg import Empty, Float32, Float32MultiArray
+from std_srvs.srv import Trigger, TriggerRequest
 from geometry_msgs.msg import PoseStamped
 from actionlib_msgs.msg import GoalStatus
 
@@ -153,6 +154,15 @@ class JuskeshinoNavigation:
     def getClose(location, timeout):
         JuskeshinoNavigation.startGetClose(location)
         return JuskeshinoNavigation.waitForGlobalGoalReached(timeout)
+
+    def isThereObstacleInFront():
+        clt = rospy.ServiceProxy("/navigation/obs_detector/obstacle_in_front", Trigger)
+        req = TriggerRequest()
+        try:
+            resp = clt(req)
+            return resp.success
+        except:
+            return None
 
     def stopNavigation():
         msg = Empty()
