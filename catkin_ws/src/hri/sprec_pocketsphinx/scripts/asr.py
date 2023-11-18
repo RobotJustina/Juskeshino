@@ -32,25 +32,18 @@ def main():
     rospack = rospkg.RosPack()
 
     in_speech_bf = False
-    l_model   = ""
-    hmm_folder= "/usr/local/lib/python3.8/dist-packages/pocketsphinx/model/en-us/"
-    dict_file = rospack.get_path("sprec_pocketsphinx") + "/vocab/gpsr.dic"
-    gram_file = rospack.get_path("sprec_pocketsphinx") + "/vocab/gpsr.gram"
-    gram_rule = "simple_command"
-    gram_name = "gpsr_gram"
-    if rospy.has_param("~hmm"):
-        rospy.get_param("~hmm", hmm_folder)
-    if rospy.has_param("~lm"):
-        rospy.get_param("~lm", l_model)
-    if rospy.has_param("~dict"):
-        rospy.get_param("~dict", dict_file)
-    if rospy.has_param("~gram"):
-        rospy.get_param("~gram", gram_file)
-    if rospy.has_param("~rule"):
-        rospy.get_param("~rule", gram_rule)
-    if rospy.has_param("~grammar"):
-        rospy.get_param("~grammar", gram_name)
+    hmm_folder = rospy.get_param("~hmm", "/usr/local/lib/python3.8/dist-packages/pocketsphinx/model/en-us")
+    l_model    = rospy.get_param("~lm", "")
+    dict_file  = rospy.get_param("~dict_file", "/usr/local/lib/python3.8/dist-packages/pocketsphinx/model/cmudict-en-us.dict")
+    gram_file  = rospy.get_param("~gram_file", "")
+    gram_rule  = rospy.get_param("~rule_name", "rule_name")
+    gram_name  = rospy.get_param("~grammar_name", "grammar_name")
 
+    print("SpRec.->HMM folder: " + hmm_folder)
+    print("SpRec.->Dictionary file: " + dict_file)
+    print("SpRec.->Grammar file: " + gram_file)
+    print("SpRec.->Grammar name: " + gram_name)
+    print("SpRec.->Rule name: " + gram_rule)
     print("SpRec.->Loading decoder with default config...")
     config = Decoder.default_config()
     config.set_string('-hmm', hmm_folder)
@@ -62,8 +55,8 @@ def main():
     print("SpRec.->Initializing jsgf grammar using rule: " + gram + '.' + gram_rule)
     rule = jsgf.get_rule(gram_name + '.' + gram_rule)
     fsg  = jsgf.build_fsg(rule, decoder.get_logmath(), 7.5)
-    print("SpRec.->Writing fsg to " + gram + '.fsg')
-    fsg.writefile(gram + '.fsg')
+    # print("SpRec.->Writing fsg to " + gram + '.fsg')
+    # fsg.writefile(gram + '.fsg')
     decoder.set_fsg(gram, fsg)
     decoder.set_search(gram)
     decoder.start_utt()
