@@ -204,7 +204,7 @@ def box(obj_pose, size, obj_state):     # obj_pose  esta referenciada a 'base_li
         # genera punto de agarre lateral
         grip_point_side = points_actual_to_points_target([-size.x/3, 0, 0], 'object', 'base_link') 
 
-        return 
+        return pose_list_1
 
     
     # VERTICAL GRASP *************************************************************************************************************************************************
