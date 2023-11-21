@@ -11,6 +11,7 @@ class JuskeshinoVision:
         JuskeshinoVision.cltTrainObject         = rospy.ServiceProxy("/vision/obj_reco/detect_and_train_object",        TrainObject         )
         JuskeshinoVision.cltDetectRecogObjects  = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_objects",   RecognizeObjects    )
         JuskeshinoVision.cltDetectRecogObject   = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_object",    RecognizeObject     )
+        JuskeshinoVision.cltGetObjectPose       = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose",           RecognizeObject     ) 
         JuskeshinoVision.cltGetPointsAbovePlane = rospy.ServiceProxy("/vision/get_points_above_plane",                  PreprocessPointCloud)
         
         loop = rospy.Rate(10)
@@ -42,11 +43,16 @@ class JuskeshinoVision:
 
     def detectAndRecognizeObject(name):
         req = RecognizeObjectRequest()
-        greq.point_cloud = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2, timeout=1.0)
+        req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2, timeout=1.0)
         req.name = name
         try:
             resp = JuskeshinoVision.cltDetectRecogObject(req)
-            return [resp.recog_objects, resp.image]
+            reqObjPose = RecognizeObjectRequest()
+            reqObjPose.point_cloud = resp.recog_object.point_cloud
+            reqObjPose.image       = resp.recog_object.image
+            reqObjPose.obj_mask    = resp.recog_object.obj_mask
+            respObjPose = JuskeshinoVision.cltGetObjectPose(reqObjPose)
+            return [respObjPose.recog_object, resp.image]
         except:
-            print("JuskeshinoVision.->Cannot detect recognize object '" + name + "'")
+            print("JuskeshinoVision.->Cannot detect and recognize object '" + name + "'")
             return [None, None]

@@ -1,6 +1,6 @@
 #JSGF V1.0;
 grammar gpsr;
-public <command> = (<deliver> | <fndppl> | <fndobj> | <follow> | <guide> | <complexman> | <findobj> | <followout> | <incomplete> | <partyhost>);
+public <command> = (JUSTINA YES | JUSTINA NO | <deliver> | <fndppl> | <fndobj> | <follow> | <guide> | <complexman> | <findobj> | <followout> | <incomplete> | <partyhost>);
 
 <deliver> = (<deliver1> | <deliver2> | <deliver3> | <deliver4> | <deliver5> | <deliver6> | <deliver7> | <deliver8> | <deliver9> | <deliver10> | <deliver11>);
 

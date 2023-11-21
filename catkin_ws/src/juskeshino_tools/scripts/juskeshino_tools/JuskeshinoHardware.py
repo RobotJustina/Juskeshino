@@ -61,18 +61,31 @@ class JuskeshinoHardware:
         JuskeshinoHardware.laGoalPose = numpy.asarray(q)
         return
 
-    def startMoveLeftArmWithTrajectory(q):
-        q1 = numpy.asarray(rospy.wait_for_message("/hardware/left_arm/current_pose", Float64MultiArray, timeout=1.0).data)
-        traj = JuskeshinoHardware.getPolynomialTrajectory(q1, q)
-        JuskeshinoHardware.pubLaGoalTraj.publish(traj)
-        JuskeshinoHardware.laGoalPose = numpy.asarray(traj.points[-1].positions)
-        return
-
     def startMoveRightArm(q):
         msg = Float64MultiArray()
         msg.data = q
         JuskeshinoHardware.pubRaGoalQ.publish(msg)
         JuskeshinoHardware.raGoalPose = numpy.asarray(q)
+        return
+
+    def startMoveLeftArmWithTrajectory(q):
+        if not isinstance(q, JointTrajectory):
+            q1 = numpy.asarray(rospy.wait_for_message("/hardware/left_arm/current_pose", Float64MultiArray, timeout=1.0).data)
+            traj = JuskeshinoHardware.getPolynomialTrajectory(q1, q)
+        else:
+            traj = q
+        JuskeshinoHardware.pubLaGoalTraj.publish(traj)
+        JuskeshinoHardware.laGoalPose = numpy.asarray(traj.points[-1].positions)
+        return
+
+    def startMoveRightArmWithTrajectory(q):
+        if not isinstance(q, JointTrajectory):
+            q1 = numpy.asarray(rospy.wait_for_message("/hardware/right_arm/current_pose", Float64MultiArray, timeout=1.0).data)
+            traj = JuskeshinoHardware.getPolynomialTrajectory(q1, q)
+        else:
+            traj = q
+        JuskeshinoHardware.pubRaGoalTraj.publish(traj)
+        JuskeshinoHardware.raGoalPose = numpy.asarray(traj.points[-1].positions)
         return
 
     def moveHead(pan, tilt, timeout):
@@ -83,9 +96,29 @@ class JuskeshinoHardware:
         JuskeshinoHardware.startMoveLeftArm(q)
         return JuskeshinoHardware.waitForLaGoalReached(timeout)
 
+    def moveRightArm(q, timeout):
+        JuskeshinoHardware.startMoveRightArm(q)
+        return JuskeshinoHardware.waitForLaGoalReached(timeout)
+
     def moveLeftArmWithTrajectory(q, timeout):
         JuskeshinoHardware.startMoveLeftArmWithTrajectory(q)
         return JuskeshinoHardware.waitForLaGoalReached(timeout)
+
+    def moveRightArmWithTrajectory(q, timeout):
+        JuskeshinoHardware.startMoveRightArmWithTrajectory(q)
+        return JuskeshinoHardware.waitForRaGoalReached(timeout)
+
+    def moveLeftGripper(q, timeout):
+        msg = Float64()
+        msg.data = q
+        JuskeshinoHardware.pubLaGoalGrip.publish(msg)
+        rospy.sleep(timeout)
+
+    def moveRightGripper(q, timeout):
+        msg = Float64()
+        msg.data = q
+        JuskeshinoHardware.pubRaGoalGrip.publish(msg)
+        rospy.sleep(timeout)
 
     def waitForHdGoalReached(timeout):
         current = numpy.asarray(rospy.wait_for_message("/hardware/head/current_pose", Float64MultiArray, timeout=1.0).data)

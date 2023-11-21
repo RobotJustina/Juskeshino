@@ -327,6 +327,9 @@ visualization_msgs::MarkerArray Utils::get_object_marker(vision_msgs::VisionObje
     markers[1].type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     markers[1].pose.position.z += markers[1].scale.z/2;
     markers[1].scale.z = 0.06;
+    markers[1].color.r = 1.0;
+    markers[1].color.g = 1.0;
+    markers[1].color.b = 1.0;
     markers[1].color.a = 1.0;
     markers[1].text = obj.id;
     

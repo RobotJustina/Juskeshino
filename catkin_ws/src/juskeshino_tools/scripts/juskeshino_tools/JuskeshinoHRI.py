@@ -23,15 +23,15 @@ class JuskeshinoHRI:
         if len(JuskeshinoHRI.recognizedSpeech.hypothesis) < 1:
             return None
         rec = JuskeshinoHRI.recognizedSpeech.hypothesis[0]
-        JuskeshinoHRI.recognizedSpeech.hypothesis.clear()
-        JuskeshinoHRI.recognizedSpeech.confidences.clear()
+        JuskeshinoHRI.recognizedSpeech.hypothesis = tuple([])
+        JuskeshinoHRI.recognizedSpeech.confidences = tuple([])
         return rec
 
     def waitForNewSentence(timeout):
         attempts = int(timeout/0.1)
         loop = rospy.Rate(10)
-        JuskeshinoHRI.recognizedSpeech.hypothesis.clear()
-        JuskeshinoHRI.recognizedSpeech.confidences.clear()
+        JuskeshinoHRI.recognizedSpeech.hypothesis = tuple([])
+        JuskeshinoHRI.recognizedSpeech.confidences = tuple([])
         while (not rospy.is_shutdown() and attempts > 0):
             rec = JuskeshinoHRI.getLastRecognizedSentence()
             if rec is not None:
@@ -47,3 +47,4 @@ class JuskeshinoHRI:
         msg.arg2    = voice
         msg.arg     = text
         JuskeshinoHRI.pubSoundRequest.publish(msg)
+        rospy.sleep(0.07*len(text))
