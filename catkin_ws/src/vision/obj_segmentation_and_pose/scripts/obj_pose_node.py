@@ -40,7 +40,6 @@ def get_object_xyz(cloud_xyz, mask):
     # Take xyz points only in mask and remove points with zero X
     obj_xyz = cloud_xyz[(mask == 255) & (cloud_xyz[:,:,0] > 0.1)].copy()
     
-    print("obj_xyz*********", obj_xyz.size )
     return obj_xyz
 
 
@@ -98,35 +97,36 @@ def object_pose(centroid, principal_component, second_component, size_x):  # vec
     print("angulo del objeto respecto de la superficie: ", np.rad2deg(angle_obj))
 
     # ************************************************************************************************
-    if ((angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150))) and (size_x > 0.13):   
-        # Realiza agarre superior
-        obj_state = 'horizontal'
-        print("Eje principal horizontal")
-        # Angulo respecto de x_base_link
-        angle_obj_x_bl =  math.atan2(principal_component[1], principal_component[0]) 
-        print("Angulo respecto de eje X de BASE_LINK:", np.rad2deg(angle_obj_x_bl))
+    if ((angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150))):  
+        if (size_x >= 0.13):
+            # Realiza agarre superior
+            obj_state = 'horizontal'
+            print("Eje principal horizontal")
+            # Angulo respecto de x_base_link
+            angle_obj_x_bl =  math.atan2(principal_component[1], principal_component[0]) 
+            print("Angulo respecto de eje X de BASE_LINK:", np.rad2deg(angle_obj_x_bl))
 
-        if angle_obj_x_bl > np.deg2rad(60) or angle_obj_x_bl < np.deg2rad(-130):
-            print("Angulo 1pc fuera de limites corregido...........")
-            principal_component[0] = -1*principal_component[0]
-            principal_component[1] = -1*principal_component[1]
-                                                    
-        if second_component[2] < 0: 
-            print("se corrigio sc")
-            second_component = -1 * second_component    # sc no puede ser un vector negativo
-        # Asignacion de ejes del objeto
-        eje_x_obj = principal_component 
-        eje_z_obj = eje_z
-        eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+            if angle_obj_x_bl > np.deg2rad(60) or angle_obj_x_bl < np.deg2rad(-130):
+                print("Angulo 1pc fuera de limites corregido...........")
+                principal_component[0] = -1*principal_component[0]
+                principal_component[1] = -1*principal_component[1]
+                                                        
+            if second_component[2] < 0: 
+                print("se corrigio sc")
+                second_component = -1 * second_component    # sc no puede ser un vector negativo
+            # Asignacion de ejes del objeto
+            eje_x_obj = principal_component 
+            eje_z_obj = eje_z
+            eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+        
+        else:
+            # Si el objeto es pequenio se construye un frame que permita el agarre superior
+            obj_state = 'horizontal'
+            eje_x_obj = np.asarray([1, 0, 0], dtype=np.float64)
+            eje_z_obj = eje_z
+            eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
 
-    # **************************************************************************************************
-    # Si el objeto es pequenio se construye un frame que permita el agarre superior
-    if (size_x < 0.13):
-        eje_x_obj = np.asarray([1, 0, 0], dtype=np.float64)
-        eje_z_obj = eje_z
-        eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
 
-    # ******************************************************
     # ********************************************
     else: # Realiza agarre lateral
         obj_state = 'vertical'
@@ -141,6 +141,7 @@ def object_pose(centroid, principal_component, second_component, size_x):  # vec
                 angle_2pc_x_bl =  math.atan2(second_component[1], second_component[0]) 
                 print("angulo de z_obj respecto de eje x base link despues", np.rad2deg(angle_2pc_x_bl))
 
+    # ******************************************************
    # Asignacion de ejes del objeto
         eje_z_obj = second_component 
         eje_x_obj = principal_component 
@@ -249,7 +250,6 @@ def object_category(fpc, spc, thpc):  # estima la forma geometrica del objeto. (
 
 def callback_PoseObject(req):  # Request is a PointCloud2
     cv_mats= get_cv_mats_from_cloud_message(req.point_cloud)
-    print(req.point_cloud.header)
     obj_xyz = get_object_xyz(cv_mats , req.obj_mask)
 
     print("******************************")
@@ -263,7 +263,7 @@ def callback_PoseObject(req):  # Request is a PointCloud2
     obj_pose, axis_x_obj, obj_state = object_pose(centroid, pca_vectors[0], pca_vectors[1], size_obj.x)
 
     print("CENTROID:____", centroid)
-    publish_arow_marker(centroid, axis_x_obj, 'base_link', ns ="principal_component", id=22)
+    #publish_arow_marker(centroid, axis_x_obj, 'base_link', ns ="principal_component", id=22)
     broadcaster_frame_object("base_link", "object", obj_pose)
     print("SIZE:________", )
     print(size_obj)
