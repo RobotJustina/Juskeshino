@@ -497,7 +497,7 @@ def callback(req):
 def main():
     global listener , ik_srv, marker_pub, marker_array_pub, debug
     debug = True
-    print("Node to grab objects based on their orientation..............ʕ•ᴥ•ʔ")
+    print("Node to grab objects based on their orientation by Iby..............ʕ•ᴥ•ʔ")
     rospy.init_node("gripper_orientation_for_grasping")
     rospy.Service("/vision/get_best_grasp_traj", BestGraspTraj, callback)
     listener = tf.TransformListener()
