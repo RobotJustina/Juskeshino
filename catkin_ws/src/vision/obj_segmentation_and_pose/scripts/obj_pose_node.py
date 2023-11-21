@@ -276,7 +276,7 @@ def callback_PoseObject(req):  # Request is a PointCloud2
 
 
 def main():
-    print("ObjPose.->Initializing Object Pose Node by Iby *******************(✿◠‿◠)7**")
+    print("Initializing Object Pose Node by Iby *******************(✿◠‿◠)7**")
     rospy.init_node("object_pose")
 
     global pub_point, marker_pub, debug
