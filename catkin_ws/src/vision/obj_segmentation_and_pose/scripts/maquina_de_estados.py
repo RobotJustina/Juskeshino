@@ -44,10 +44,10 @@ V_KITCHEN = [3.3, 5.56 , np.deg2rad(-90)]
 V_STARTING_PLACE= [5.6 , 4.5, 0]
 
 # left arm poses
-PREPARE_TOP_GRIP = [-0.9, 0.4, 0.0, 1.9, 0.01, 1, -0.01]  #funciona para pringles horizontal (prisma horizontal)
-PREPARE_LATERAL_GRIP =  [-1.2, 0.2, 0  , 1.6, 0   , 1,     0] #Prepare original:funciona bien para pringles vertical (prisma vertical) 
-TAKEN_OBJECT_VERTICAL = [0.98, 0.22, -1.47, 1.76, 0.15, 0.5, 0.5]  #[0.05, 0.95, -0.35, 1.87, -1, 0.3, -0.9]
-TAKEN_OBJECT_HORIZONTAL = []
+PREPARE_TOP_GRIP = [-0.68, 0.38, -0.01, 1.84, 0, 1.06, -0.01]#[-0.9, 0.4, 0.0, 1.9, 0.01, 1, -0.01]  #funciona para pringles horizontal (prisma horizontal)
+PREPARE_LATERAL_GRIP = [-0.69, 0.2, 0, 1.55, 0, 1.16,0] #[-1.2, 0.2, 0  , 1.6, 0   , 1,     0] #Prepare original:funciona bien para pringles vertical (prisma vertical) 
+TAKEN_OBJECT_VERTICAL = [0.46, 0.87, -0.4, 1.99, -0.99, 0.4, 1.6]
+TAKEN_OBJECT_HORIZONTAL = [0.46, 0.87, -0.4, 1.99, -0.99, 0.4, 0.41]#[1, -0.08, -0.029, 0.44, 0, 0.66, -1.39]
 HOME = [0,0,0,0,0,0]
 GRIPPER_OPENING = 0.9   # Apertura de gripper
 
@@ -102,7 +102,7 @@ def q2q_traj(p_final, clt_traj_planner, pub_traj):
     request = GetPolynomialTrajectoryRequest()
     request.p2 = p_final
     request.p1 = initial_pose
-    request.duration = 5
+    request.duration = 3
     request.time_step = 0.02
     resp_traj = clt_traj_planner(request)
     resp_traj.trajectory
@@ -239,7 +239,7 @@ def main():
         
         if state == SM_INIT:
             print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
-            obj_target = "tea"
+            obj_target = "pringles"
             print("OBJECT TARGET:____", obj_target)
             x_p, y_p, a = get_robot_pose(listener)
             STARTING_PLACE = [x_p, y_p, a]
@@ -302,7 +302,6 @@ def main():
             reco_objs_req = RecognizeObjectsRequest()
             # LLenar msg
             
-            #reco_objs_req.point_cloud = rospy.wait_for_message("/hardware/realsense/points" , PointCloud2, timeout=2)
             reco_objs_req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points" , PointCloud2, timeout=2)
             
             reco_objs_resp = clt_recognize_objects(reco_objs_req)
@@ -372,8 +371,8 @@ def main():
             if resp_best_grip.graspable:
                 move_left_gripper(GRIPPER_OPENING, pub_la_goal_grip)
                 print("publicando trayectoria en q para brazo izquierdo...................")
+            
                 pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
-                
                 goal_la_reached =  False
                 print("goal_la_reached STATUS", goal_la_reached)
                 while (not goal_la_reached) or not rospy.is_shutdown:
@@ -386,9 +385,12 @@ def main():
                     
                     print("goal_la_reached STATUS", goal_la_reached)
                     state = SM_PICK_UP_OBJECT
+                
             else:
                 print("No se encontraron poses posibles...................")
                 state = -1
+                
+            
             
             
             
@@ -397,12 +399,14 @@ def main():
             decrement = GRIPPER_OPENING 
             goal_la_reached =  False
             print("goal_la_reached STATUS", goal_la_reached)
-
+            move_left_gripper(-0.3 , pub_la_goal_grip)
+            """
             while (decrement > -0.3):
                 move_left_gripper(decrement , pub_la_goal_grip)
                 # time.sleep(0.001)
-                decrement = decrement - 0.25
+                decrement = decrement - 0.3
                 print("DECREMENT:_____", decrement)
+            """
             state = SM_LIFT_OBJECT
    
 
@@ -411,7 +415,13 @@ def main():
             print("Cambiando posicion de brazo ....")
             goal_la_reached =  False       
             print("goal_la_reached STATUS", goal_la_reached)
-            q2q_traj(TAKEN_OBJECT_VERTICAL , clt_traj_planner, pub_la_goal_traj)
+            if (resp_pose_obj.recog_object.size.x < 0.11) or resp_pose_obj.recog_object.object_state == "horizontal":
+                q2q_traj(TAKEN_OBJECT_HORIZONTAL , clt_traj_planner, pub_la_goal_traj)
+                print("TAKEN_OBJECT_HORIZONTAL..........................")
+            else:
+                q2q_traj(TAKEN_OBJECT_VERTICAL , clt_traj_planner, pub_la_goal_traj)
+                print("TAKEN_OBJECT_VERCTICAL..........................")
+
             while (not goal_la_reached) or not rospy.is_shutdown:
                 print("status: moving arm....")
                 time.sleep(1)
