@@ -8,11 +8,14 @@ from juskeshino_tools.JuskeshinoHardware import JuskeshinoHardware
 from juskeshino_tools.JuskeshinoSimpleTasks import JuskeshinoSimpleTasks
 from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
 from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
+from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 
 def main():
     print("INITIALIZING QUALIFICATION 2024 TEST BY MARCOSOFT...")
     rospy.init_node("act_pln")
     rate = rospy.Rate(10)
+
+    locations_file = rospy.get_param("~locations", "known_locations.yaml")
 
     JuskeshinoNavigation.setNodeHandle()
     JuskeshinoVision.setNodeHandle()
@@ -20,6 +23,9 @@ def main():
     JuskeshinoSimpleTasks.setNodeHandle()
     JuskeshinoHRI.setNodeHandle()
     JuskeshinoManipulation.setNodeHandle()
+    JuskeshinoKnowledge.setNodeHandle()
+    JuskeshinoKnowledge.loadLocations(locations_file)
+    
 
     JuskeshinoHRI.say("I'm waiting for the door to be open")
     if not JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(100):
@@ -34,9 +40,9 @@ def main():
     print("Waiting for command")
     cmd = JuskeshinoSimpleTasks.waitForSentenceUntilConfirmed(10)
     print("Command confirmed: " + cmd)
-    
-    if not JuskeshinoNavigation.getCloseXYA(3.2, 5.6, -1.57, 30):
-        print("Cannot get close to goal position")
+
+    if not JuskeshinoNavigation.getClose("desk", 30):
+        print("Cannot get close to goal position: desk")
     if not JuskeshinoHardware.moveHead(0,-1, 5):
         print("Cannot move head")
     if not JuskeshinoSimpleTasks.alignWithTable():

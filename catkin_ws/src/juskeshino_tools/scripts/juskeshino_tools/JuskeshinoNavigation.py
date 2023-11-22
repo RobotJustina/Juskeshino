@@ -5,6 +5,7 @@ from std_msgs.msg import Empty, Float32, Float32MultiArray
 from std_srvs.srv import Trigger, TriggerRequest
 from geometry_msgs.msg import PoseStamped
 from actionlib_msgs.msg import GoalStatus
+from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 
 class JuskeshinoNavigation:
     def setNodeHandle():
@@ -144,7 +145,10 @@ class JuskeshinoNavigation:
 
 
     def startGetClose(location):
-        return None
+        pose = JuskeshinoKnowledge.getKnownLocation(location)
+        if pose is None:
+            return None
+        JuskeshinoNavigation.startGetCloseXYA(pose[0], pose[1], pose[2])
     
     def getCloseXYA(x, y, angle, timeout):
         JuskeshinoNavigation.startGetCloseXYA(x,y,angle)
