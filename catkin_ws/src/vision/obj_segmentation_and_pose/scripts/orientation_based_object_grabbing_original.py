@@ -146,17 +146,16 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , object_fra
 
 def grip_rules(obj_pose, type_obj, obj_state, size):
     if (size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x >= 0.13):
-        print("size object < MAX LENGHT GRIP")
-        print("The object will be grabbed as Prism..................")
+        print("The object will be GRABBED AS PRISM..................")
         return prism(obj_pose, obj_state)
     else:
         if size.x < 0.13:
-            print("Object too small, superior grip will be made")
+            print("Object too SMALL, SUPERIOR GRIP will be made")
             return small_obj(obj_pose, obj_state )
             
         else:
             print("size object > MAX LENGHT GRIP")
-            print("The object will be grabbed as Box....................")
+            print("The object will be GRABBED as BOX....................")
             return box(obj_pose, size, obj_state )
 
 
@@ -468,8 +467,15 @@ def callback(req):
     resp = BestGraspTrajResponse()              
     obj_state = req.recog_object.object_state    
 
-    print("Position centroid Obj: ")
+    print("CENTROID:_____ ")
     print(req.recog_object.pose.position)
+    print("BB CATEGORY:_____ ")
+    print(req.recog_object.category)  
+    print("STATE:_____ ")
+    print(req.recog_object.object_state)
+    print("SIZE:_____ ")
+    print(req.recog_object.size)
+
 
     pose_list_quaternion = grip_rules(req.recog_object.pose, req.recog_object.category, obj_state, req.recog_object.size )
     if len( pose_list_quaternion) <= 0:
