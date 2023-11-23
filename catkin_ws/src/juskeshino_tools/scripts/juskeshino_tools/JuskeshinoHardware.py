@@ -39,7 +39,7 @@ class JuskeshinoHardware:
         for i in range(len(p1)):
             if abs(p1[i] - p2[i]) > max_delta:
                 max_delta = abs(p1[i] - p2[i])
-        req.duration = max_delta / 0.7 + 0.5;
+        req.duration = max_delta / 0.7 + 0.5
         try:
             resp = JuskeshinoHardware.cltPolyTraj(req)
             return resp.trajectory

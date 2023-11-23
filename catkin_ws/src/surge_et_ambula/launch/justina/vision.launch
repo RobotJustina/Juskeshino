@@ -27,7 +27,8 @@
     <param name="histogram_size"        value="18"/>
     <param name="min_points_per_object" value="1000"/>"
   </node>
-
+  
+  <!--  -->
   <node name="object_pose" pkg="obj_segmentation_and_pose" type="obj_pose_node.py" output="screen"/>
 
 </launch>

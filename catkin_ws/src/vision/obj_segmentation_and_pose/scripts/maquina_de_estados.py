@@ -239,7 +239,7 @@ def main():
         
         if state == SM_INIT:
             print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
-            obj_target = "instant_pudding"
+            obj_target = "cup"
             print("OBJECT TARGET:____", obj_target)
             x_p, y_p, a = get_robot_pose(listener)
             STARTING_PLACE = [x_p, y_p, a]
@@ -372,7 +372,7 @@ def main():
                 move_left_gripper(GRIPPER_OPENING, pub_la_goal_grip)
                 print("publicando trayectoria en q para brazo izquierdo...................")
             
-                """
+                
                 pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
                 goal_la_reached =  False
                 print("goal_la_reached STATUS", goal_la_reached)
@@ -386,8 +386,7 @@ def main():
                     
                     print("goal_la_reached STATUS", goal_la_reached)
                     state = SM_PICK_UP_OBJECT
-                """
-                state = -1
+
                 
             else:
                 print("No se encontraron poses posibles...................")

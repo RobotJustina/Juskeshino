@@ -47,4 +47,4 @@ class JuskeshinoHRI:
         msg.arg2    = voice
         msg.arg     = text
         JuskeshinoHRI.pubSoundRequest.publish(msg)
-        rospy.sleep(0.07*len(text))
+        rospy.sleep(0.09*len(text))
