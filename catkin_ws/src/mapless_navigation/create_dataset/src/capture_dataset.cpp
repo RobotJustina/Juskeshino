@@ -66,7 +66,7 @@ public:
             ROS_INFO("Save laser_odom enabled");
             max_laser_range = 10.0;
             /*
-                Use launch files to remap the topics
+                Use launch files to remap topics
 
                 Takeshi
                 "/hsrb/base_scan"
@@ -86,7 +86,7 @@ public:
         {
             ROS_INFO("Save RGBD enabled");
             /*
-                Use launch files to remap the topics
+                Use launch files to remap topics
 
                 Takeshi
                 /hsrb/head_rgbd_sensor/rgb/image_raw
