@@ -15,13 +15,13 @@ class JuskeshinoHardware:
         print("JuskeshinoHardware.->Setting ros node...")
         JuskeshinoHardware.pubCmdVel     = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
         JuskeshinoHardware.pubTorso      = rospy.Publisher("/torso_controller/command", Float64, queue_size=1)
-        JuskeshinoHardware.pubLaGoalQ    = rospy.Publisher("/hardware/left_arm/goal_pose", Float64MultiArray, queue_size=1)
-        JuskeshinoHardware.pubRaGoalQ    = rospy.Publisher("/hardware/right_arm/goal_pose", Float64MultiArray, queue_size=1)
-        JuskeshinoHardware.pubLaGoalTraj = rospy.Publisher("/manipulation/la_q_trajectory", JointTrajectory, queue_size=1)
-        JuskeshinoHardware.pubRaGoalTraj = rospy.Publisher("/manipulation/ra_q_trajectory", JointTrajectory, queue_size=1)
-        JuskeshinoHardware.pubHdGoalQ    = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=1)
-        JuskeshinoHardware.pubLaGoalGrip = rospy.Publisher("/hardware/left_arm/goal_gripper", Float64, queue_size=1)
-        JuskeshinoHardware.pubRaGoalGrip = rospy.Publisher("/hardware/right_arm/goal_gripper", Float64, queue_size=1)
+        JuskeshinoHardware.pubLaGoalQ    = rospy.Publisher("/hardware/left_arm/goal_pose", Float64MultiArray, queue_size=10)
+        JuskeshinoHardware.pubRaGoalQ    = rospy.Publisher("/hardware/right_arm/goal_pose", Float64MultiArray, queue_size=10)
+        JuskeshinoHardware.pubLaGoalTraj = rospy.Publisher("/manipulation/la_q_trajectory", JointTrajectory, queue_size=10)
+        JuskeshinoHardware.pubRaGoalTraj = rospy.Publisher("/manipulation/ra_q_trajectory", JointTrajectory, queue_size=10)
+        JuskeshinoHardware.pubHdGoalQ    = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=10)
+        JuskeshinoHardware.pubLaGoalGrip = rospy.Publisher("/hardware/left_arm/goal_gripper", Float64, queue_size=10)
+        JuskeshinoHardware.pubRaGoalGrip = rospy.Publisher("/hardware/right_arm/goal_gripper", Float64, queue_size=10)
         JuskeshinoHardware.cltPolyTraj   = rospy.ServiceProxy("/manipulation/polynomial_trajectory", GetPolynomialTrajectory)
         loop = rospy.Rate(10)
         counter = 3
@@ -112,11 +112,13 @@ class JuskeshinoHardware:
         msg = Float64()
         msg.data = q
         JuskeshinoHardware.pubLaGoalGrip.publish(msg)
+        JuskeshinoHardware.pubLaGoalGrip.publish(msg)
         rospy.sleep(timeout)
 
     def moveRightGripper(q, timeout):
         msg = Float64()
         msg.data = q
+        JuskeshinoHardware.pubRaGoalGrip.publish(msg)
         JuskeshinoHardware.pubRaGoalGrip.publish(msg)
         rospy.sleep(timeout)
 

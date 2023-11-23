@@ -1,4 +1,5 @@
 import rospy
+from std_msgs.msg import *
 from hri_msgs.msg import *
 from sound_play.msg import SoundRequest
 
@@ -6,8 +7,10 @@ class JuskeshinoHRI:
     def setNodeHandle():
         print("JuskeshinoHRI.->Setting ros node...")
         rospy.Subscriber("/hri/sp_rec/recognized", RecognizedSpeech, JuskeshinoHRI.callbackRecognizedSpeech)
-        JuskeshinoHRI.pubSoundRequest = rospy.Publisher("/hri/speech_generator", SoundRequest, queue_size=10)
-
+        JuskeshinoHRI.pubSoundRequest    = rospy.Publisher("/hri/speech_generator", SoundRequest, queue_size=10)
+        JuskeshinoHRI.pubLegFinderEnable = rospy.Publisher("/hri/leg_finder/enable", Bool, queue_size=10)
+        JuskeshinoHRI.pubHFollowEnable   = rospy.Publisher("/hri/human_following/enable", Bool, queue_size=10)
+        
         JuskeshinoHRI.recognizedSpeech = RecognizedSpeech()
         loop = rospy.Rate(10)
         counter = 3;
@@ -48,3 +51,9 @@ class JuskeshinoHRI:
         msg.arg     = text
         JuskeshinoHRI.pubSoundRequest.publish(msg)
         rospy.sleep(0.07*len(text))
+
+    def enableHumanFollowing(enable):
+        msg = Bool()
+        msg.data = enable
+        JuskeshinoHRI.pubLegFinderEnable.publish(msg)
+        JuskeshinoHRI.pubHFollowEnable.publish(msg)

@@ -30,7 +30,7 @@
 #include "vision_msgs/HumanCoordinatesArray.h"
 
 //static const std::string pcl_topic = "/hsrb/head_rgbd_sensor/depth_registered/rectified_points";
-static const std::string pcl_topic = "/camera/depth_registered/points";
+std::string pcl_topic = "/camera/depth_registered/points";
 
 const std::vector<std::string> kpt_names{"nose", "neck", 
 	"r_sho", "r_elb", "r_wri", "l_sho", "l_elb", "l_wri",
@@ -54,7 +54,7 @@ class HumanDetector{
 
 HumanDetector::HumanDetector(){
 
-  pub = nh.advertise<vision_msgs::HumanCoordinatesArray>("human_coordinates_array", 1);
+  pub = nh.advertise<vision_msgs::HumanCoordinatesArray>("/hri/human_skeleton_array", 1);
   sub = nh.subscribe(pcl_topic, 1, &HumanDetector::pclCallback, this);
 }
 
@@ -77,7 +77,7 @@ void HumanDetector::pclCallback(const sensor_msgs::PointCloud2ConstPtr& pcl_topi
   ptrack->track(poses);
 
   vision_msgs::HumanCoordinatesArray hca;
-  hca.header.frame_id = "head_rgbd_sensor_rgb_frame";
+  hca.header.frame_id = pcl_topic->header.frame_id;
   hca.header.stamp = ros::Time::now();
   hca.number_of_people = poses.size(); //how many people
 
