@@ -1,4 +1,5 @@
 import rospy
+from std_msgs.msg import *
 from sensor_msgs.msg import PointCloud2
 from vision_msgs.srv import *
 from vision_msgs.msg import *
@@ -13,6 +14,7 @@ class JuskeshinoVision:
         JuskeshinoVision.cltDetectRecogObject   = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_object",    RecognizeObject     )
         JuskeshinoVision.cltGetObjectPose       = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose",           RecognizeObject     ) 
         JuskeshinoVision.cltGetPointsAbovePlane = rospy.ServiceProxy("/vision/get_points_above_plane",                  PreprocessPointCloud)
+        JuskeshinoVision.pubHumanPoseEnable     = rospy.Publisher("/vision/human_pose/enable", Bool, queue_size=1)
         
         loop = rospy.Rate(10)
         counter = 3;
@@ -56,3 +58,8 @@ class JuskeshinoVision:
         except:
             print("JuskeshinoVision.->Cannot detect and recognize object '" + name + "'")
             return [None, None]
+
+    def enableHumanPoseDetection(enable):
+        msg = Bool()
+        msg.data = enable
+        JuskeshinoVision.pubHumanPoseEnable.publish(msg)

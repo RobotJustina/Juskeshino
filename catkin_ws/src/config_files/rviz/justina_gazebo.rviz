@@ -573,7 +573,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /hri/human_pose/human_pose_marker
+      Marker Topic: /vision/human_pose/human_pose_marker
       Name: HumanPoses
       Namespaces:
         human_pose: true
@@ -646,4 +646,4 @@ Window Geometry:
     collapsed: true
   Width: 1528
   X: 72
-  Y: 290
+  Y: 327

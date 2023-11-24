@@ -43,6 +43,6 @@
     <arg name="debug"         value="$(arg debug)"/>
     <arg name="training_dir"  value="$(find obj_reco)/training_simul"/>
   </include>
-  <include file="$(find surge_et_ambula)/launch/justina/speech.launch"/>
+  <include file="$(find surge_et_ambula)/launch/justina/hri.launch"/>
 
 </launch>

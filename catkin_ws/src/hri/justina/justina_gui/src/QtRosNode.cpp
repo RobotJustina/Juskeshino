@@ -69,6 +69,9 @@ void QtRosNode::run()
     cltRecogObjects        = n->serviceClient<vision_msgs::RecognizeObjects>    ("/vision/obj_reco/detect_and_recognize_objects");
     cltRecogObject         = n->serviceClient<vision_msgs::RecognizeObject >    ("/vision/obj_reco/detect_and_recognize_object");
     cltGetPointsAbovePlane = n->serviceClient<vision_msgs::PreprocessPointCloud>("/vision/get_points_above_plane");
+    pubHumanPoseEnable     = n->advertise<std_msgs::Bool>("/vision/human_pose/enable", 1);
+    pubLegFinderEnable     = n->advertise<std_msgs::Bool>("/hri/leg_finder/enable", 1);
+    pubFollowHumanEnable   = n->advertise<std_msgs::Bool>("/hri/human_following/enable", 1);
     
     int pub_zero_counter = 5;
     while(ros::ok() && !this->gui_closed)
@@ -447,4 +450,19 @@ bool QtRosNode::call_get_points_above_plane()
     }
     srv.request.input_cloud = *ptr;
     return cltGetPointsAbovePlane.call(srv);
+}
+
+void QtRosNode::publish_enable_human_pose_detection(bool enable)
+{
+    std_msgs::Bool msg;
+    msg.data = enable;
+    pubHumanPoseEnable.publish(msg);
+}
+
+void QtRosNode::publish_enable_human_following(bool enable)
+{
+    std_msgs::Bool msg;
+    msg.data = enable;
+    pubLegFinderEnable.publish(msg);
+    pubFollowHumanEnable.publish(msg);
 }

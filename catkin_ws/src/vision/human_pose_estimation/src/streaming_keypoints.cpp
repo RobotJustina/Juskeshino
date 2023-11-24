@@ -33,7 +33,6 @@
 #include "vision_msgs/HumanCoordinates.h"
 #include "vision_msgs/HumanCoordinatesArray.h"
 
-//static const std::string pcl_topic = "/hsrb/head_rgbd_sensor/depth_registered/rectified_points";
 std::string pcl_topic = "/points";
 
 const std::vector<std::string> kpt_names{"nose", "neck", 
@@ -62,9 +61,9 @@ class HumanDetector{
 
 HumanDetector::HumanDetector(){
 
-  pub = nh.advertise<vision_msgs::HumanCoordinatesArray>("/hri/human_pose/human_pose_array", 1);
-  pubMarker = nh.advertise<visualization_msgs::Marker>("/hri/human_pose/human_pose_marker", 1);
-  subEnable = nh.subscribe("/hri/human_pose/enable", 1, &HumanDetector::enableCallback, this);
+  pub = nh.advertise<vision_msgs::HumanCoordinatesArray>("/vision/human_pose/human_pose_array", 1);
+  pubMarker = nh.advertise<visualization_msgs::Marker>("/vision/human_pose/human_pose_marker", 1);
+  subEnable = nh.subscribe("/vision/human_pose/enable", 1, &HumanDetector::enableCallback, this);
 }
 
 void HumanDetector::pclCallback(const sensor_msgs::PointCloud2ConstPtr& pcl_topic){

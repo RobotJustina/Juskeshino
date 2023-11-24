@@ -1,5 +1,8 @@
 import math
 import rospy
+import tf
+from vision_msgs.msg import *
+from geometry_msgs.msg import *
 from juskeshino_tools.JuskeshinoHardware import JuskeshinoHardware
 from juskeshino_tools.JuskeshinoNavigation import JuskeshinoNavigation
 from juskeshino_tools.JuskeshinoVision import JuskeshinoVision
@@ -19,6 +22,16 @@ class JuskeshinoSimpleTasks:
             loop.sleep()
             attempts -=1
         return (door_closed is not None and not door_closed)
+
+    def waitForConfirmation(timeout):
+        answer = None
+        while not rospy.is_shutdown() and answer is None:
+            answer = JuskeshinoHRI.waitForNewSentence(timeout)
+            if answer is None:
+                JuskeshinoHRI.say("I cannot hear you. Please answer hoostina yes or hoostina no")
+            if answer.lower() != "justina yes" and answer.lower() != "justina no":
+                answer = None
+        return answer.lower() == "justina yes"
 
     def waitForSentenceAndConfirm(timeout):
         cmd = None
@@ -47,13 +60,16 @@ class JuskeshinoSimpleTasks:
         return cmd
             
     def alignWithTable():
-        if not JuskeshinoHardware.moveHead(0,-1,3000):
-            print("JuskeshinoSimpleTasks.->Cannot move head")
-            return False
+        if not JuskeshinoHardware.moveHead(0,-1,3):
+            if not JuskeshinoHardware.moveHead(0,-1,3):
+                print("JuskeshinoSimpleTasks.->Cannot move head")
+                return False
         edge = JuskeshinoVision.findTableEdge()
         if edge is None:
-            print("JuskeshinoSimpleTasks.->Cannot find table edge")
-            return False
+            edge = JuskeshinoVision.findTableEdge()
+            if edge is None:
+                print("JuskeshinoSimpleTasks.->Cannot find table edge")
+                return False
         A = edge[0].y - edge[1].y
         B = edge[1].x - edge[0].x
         error_a = math.pi/2 - math.atan2(A,B)%math.pi
@@ -64,4 +80,59 @@ class JuskeshinoSimpleTasks:
         print("JuskeshinoSimpleTasks.->Moving to align with table d="+str(error_d) + " and theta="+str(error_a))
         return JuskeshinoNavigation.moveDistAngle(error_d, error_a, timeout)
 
-    
+    def findHumanAndApproach(timeout):
+        head_poses = [[0.0, 0.0], [0.3, 0], [-0.3,0], [0.6, 0], [-0.6,0], [0.9,0], [-0.9, 0], [1.2,0], [-1.2,0], [1.5,0], [-1.5,0]]
+        JuskeshinoVision.enableHumanPoseDetection(True)
+
+        for [pan, tilt] in head_poses:
+            if not JuskeshinoHardware.moveHead(pan,tilt,2.0):
+                JuskeshinoHardware.moveHead(pan,tilt,2.0)
+            rospy.sleep(0.5)
+            human_poses = rospy.wait_for_message("/vision/human_pose/human_pose_array", HumanCoordinatesArray, timeout=1.0)
+            src_frame_id = human_poses.header.frame_id
+            human_poses = human_poses.coordinates_array
+            if len(human_poses) > 0:
+                break
+        if len(human_poses) < 1:
+            JuskeshinoVision.enableHumanPoseDetection(False)
+            return False
+        nearest_x, nearest_y, nearest_z = 0,0,0
+        nearest_dist = float("inf")
+        for p in human_poses:
+            x,y,z = 0,0,0
+            for k in p.keypoints_array:
+                x += k.keypoint_coordinates.position.x
+                y += k.keypoint_coordinates.position.y
+                z += k.keypoint_coordinates.position.z
+            x,y,z = x/len(p.keypoints_array), y/len(p.keypoints_array), z/len(p.keypoints_array)
+            [x, y, z] = JuskeshinoSimpleTasks.transformPoint(x, y, z, "base_link", src_frame_id)
+            dist = math.sqrt(x**2 + y**2)
+            if dist < nearest_dist:
+                nearest_x = x
+                nearest_y = y
+                nearest_z = z
+                nearest_dist = dist
+        JuskeshinoVision.enableHumanPoseDetection(False)
+        print("JuskeshinoSimpleTask.->Nearest human pose detected at: " + str([nearest_x, nearest_y, nearest_z]))
+        nearest_dist -= 1.0 #Robot will get close at 1 meter from human
+        nearest_theta = math.atan2(nearest_y, nearest_x)
+        nearest_x = nearest_dist*math.cos(nearest_theta)
+        nearest_y = nearest_dist*math.sin(nearest_theta)
+        [robot_x, robot_y, robot_a] = JuskeshinoNavigation.getRobotPoseWrtMap()
+        goal_x = robot_x + nearest_x*math.cos(robot_a) - nearest_y*math.sin(robot_a)
+        goal_y = robot_y + nearest_x*math.sin(robot_a) + nearest_y*math.cos(robot_a)
+        goal_a = (robot_a + nearest_theta + math.pi)%(2*math.pi) - math.pi
+        if not JuskeshinoNavigation.getCloseXYA(goal_x, goal_y, goal_a, 20):
+            if not JuskeshinoNavigation.getCloseXYA(goal_x, goal_y, goal_a, 20):
+                return False
+        return JuskeshinoHardware.moveHead(0,0,2.0)
+                
+    def transformPoint(x,y,z, target_frame, source_frame):
+        listener = tf.TransformListener()
+        listener.waitForTransform(target_frame, source_frame, rospy.Time(), rospy.Duration(4.0))
+        obj_p = PointStamped()
+        obj_p.header.frame_id = source_frame
+        obj_p.header.stamp = rospy.Time(0)
+        obj_p.point.x, obj_p.point.y, obj_p.point.z = x,y,z
+        obj_p = listener.transformPoint(target_frame, obj_p)
+        return [obj_p.point.x, obj_p.point.y, obj_p.point.z]

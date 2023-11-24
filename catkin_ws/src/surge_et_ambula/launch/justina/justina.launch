@@ -57,5 +57,5 @@
     <arg name="training_dir"  value="$(find obj_reco)/training_dir"/> 
   </include> 
   
-  <include file="$(find surge_et_ambula)/launch/justina/speech.launch"/>
+  <include file="$(find surge_et_ambula)/launch/justina/hri.launch"/>
 </launch>

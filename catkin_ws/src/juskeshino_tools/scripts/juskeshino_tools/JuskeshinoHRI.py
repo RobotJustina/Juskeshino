@@ -57,3 +57,5 @@ class JuskeshinoHRI:
         msg.data = enable
         JuskeshinoHRI.pubLegFinderEnable.publish(msg)
         JuskeshinoHRI.pubHFollowEnable.publish(msg)
+
+        

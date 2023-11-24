@@ -79,12 +79,16 @@ class JuskeshinoNavigation:
 
     #Methods for robot localization
     def getRobotPoseWrtMap():
+        listener = tf.TransformListener()
+        listener.waitForTransform('map', 'base_link', rospy.Time(0), rospy.Duration(1.0))
         ([x, y, z], rot) = listener.lookupTransform('map', 'base_link', rospy.Time(0))
         a = 2*math.atan2(rot[2], rot[3])
         a = a - 2*math.pi if a > math.pi else a
         return [x, y, a]
 
     def getRobotPoseWrtOdom():
+        listener = tf.TransformListener()
+        listener.waitForTransform('odom', 'base_link', rospy.Time(0), rospy.Duration(1.0))
         ([x, y, z], rot) = listener.lookupTransform('odom', 'base_link', rospy.Time(0))
         a = 2*math.atan2(rot[2], rot[3])
         a = a - 2*math.pi if a > math.pi else a

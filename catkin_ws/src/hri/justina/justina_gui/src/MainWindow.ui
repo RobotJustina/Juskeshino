@@ -1203,6 +1203,34 @@ QRadioButton::indicator{
 Above a Plane</string>
       </property>
      </widget>
+     <widget class="QPushButton" name="visBtnEnableHumanPose">
+      <property name="geometry">
+       <rect>
+        <x>500</x>
+        <y>10</y>
+        <width>121</width>
+        <height>51</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Enable
+Human Pose Det</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="hriBtnEnableFollowHuman">
+      <property name="geometry">
+       <rect>
+        <x>500</x>
+        <y>80</y>
+        <width>121</width>
+        <height>51</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Enable
+Follow Human</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tabSimpleTasks">
      <attribute name="title">

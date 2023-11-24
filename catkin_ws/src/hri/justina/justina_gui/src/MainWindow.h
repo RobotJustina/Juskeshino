@@ -104,6 +104,9 @@ public slots:
     void visRecognizeObjectReturnPressed();
     void visRecognizeObjectsClicked();
     void visGetPointsAbovePlaneClicked();
+    void visEnableHumanPoseClicked();
+
+    void hriEnableFollowHumanClicked();
 private:
     Ui::MainWindow *ui;
 };
