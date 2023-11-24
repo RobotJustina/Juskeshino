@@ -571,6 +571,14 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /hri/human_pose/human_pose_marker
+      Name: HumanPoses
+      Namespaces:
+        human_pose: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -607,9 +615,9 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 3.100290060043335
-        Y: 4.7067036628723145
-        Z: -0.9596875905990601
+        X: 3.1563422679901123
+        Y: 4.367926597595215
+        Z: -0.9679096937179565
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -638,4 +646,4 @@ Window Geometry:
     collapsed: true
   Width: 1528
   X: 72
-  Y: 327
+  Y: 290
