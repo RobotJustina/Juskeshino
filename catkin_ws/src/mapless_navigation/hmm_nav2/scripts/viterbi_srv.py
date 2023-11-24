@@ -16,21 +16,14 @@ class HMM():
 
 def viterbi_callback(request):
     n_obs = len(request.observations)
-    rospy.loginfo("request-> " + str(request))
+    rospy.loginfo("request -> " + '\n' + str(request))
     rospy.loginfo("obs count: %d", n_obs)
     
     # Viterbi algorithm
     delta = np.zeros((n_obs + 1, len(hmm.A)))
     phi = np.zeros((n_obs + 1, len(hmm.A))) + 666
-    # print("phi")
-    # print(phi)
-    # print(phi.shape)
     path_estimate = np.zeros(n_obs + 1)
-
     delta[0,:] = hmm.PI * hmm.B[:, request.observations[0]]
-    # print("delta")
-    # print(delta)
-    # print(delta.shape)
 
     for i in range(n_obs):
         for j in range(delta.shape[1]):
@@ -41,15 +34,13 @@ def viterbi_callback(request):
     for i in np.arange(n_obs-1, 0, -1):
         path_estimate[i] = phi[i+1, int(path_estimate[i+1])]
 
-
     list_states = []
     for state in path_estimate:
         list_states.append(int(state))
     
-    print(type(list_states))
+    print("estimated states")
     print(list_states)
-    
-    #return ViterbiObservationStateResponse([3, 2, 1])
+    print("---")
     return ViterbiObservationStateResponse(list_states)
 
 
