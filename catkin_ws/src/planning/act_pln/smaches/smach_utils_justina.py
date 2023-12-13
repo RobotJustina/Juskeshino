@@ -16,7 +16,8 @@ import actionlib
 from actionlib_msgs.msg import GoalStatus
 from hri_msgs.msg import RecognizedSpeech
 
-from ros_whisper_vosk.srv import GetSpeech
+from ros_whisper_vosk.srv import GetSpeech , SetGrammarVosk
+
 from face_recog.msg import *
 from face_recog.srv import *
 
