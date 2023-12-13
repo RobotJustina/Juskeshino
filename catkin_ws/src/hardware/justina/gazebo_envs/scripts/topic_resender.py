@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import rospy
 import numpy
 from std_msgs.msg import Float64MultiArray, Float64, Bool

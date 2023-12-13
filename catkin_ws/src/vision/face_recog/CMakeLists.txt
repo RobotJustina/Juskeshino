@@ -165,11 +165,24 @@ include_directories(
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
-# catkin_install_python(PROGRAMS
-#    src/image_tag.py
-#    src/face_recog_server.py
-#    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-#  )
+catkin_install_python(PROGRAMS
+   src/image_tag.py
+   src/face_recog_server.py
+   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+ )
+
+add_executable(analyze_face_backgnd_node
+  src/analyze_face_background.cpp)
+  
+target_link_libraries(analyze_face_backgnd_node
+  ${catkin_LIBRARIES}
+  ${roscpp_LIBRARIES}
+  )
+
+add_dependencies(analyze_face_backgnd_node 
+  face_recog_gencpp
+  )
+
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
