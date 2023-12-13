@@ -143,9 +143,9 @@ class Scan_face(smach.State):
         print (res)
 
         print('Checking for faces')
-        #voice.talk('When confirmation is needed, please say: robot yes or robot no')
+        print("voice.talk('When confirmation is needed, please say: robot yes or robot no')")
         rospy.sleep(0.3)
-        #voice.talk('Please only talk, when my leds are white')
+        print("voice.talk('Please only talk, when my leds are white')")
         rospy.sleep(0.3)
         if res != None:
             name = res.Ids.ids
@@ -153,27 +153,28 @@ class Scan_face(smach.State):
             print('RESPONSE', name)
             if name == 'NO_FACE':
                 print('No face Found, Keep scanning')
-                #voice.talk('I did not see you, I will try again')
+                print("voice.talk('I did not see you, I will try again')")
                 return 'failed'
 
             elif name == 'unknown':
                 print('A face was found.')
-                #voice.talk('I believe we have not met. ')
+                print("voice.talk('I believe we have not met. ')")
                 self.tries = 0
                 return 'unknown'
 
             else:
-                #voice.talk(f'I found you, I Think you are, {name}.')
-                #voice.talk('Is it correct?')
-                ##voice.talk('Robot yes or robot no')
+                print("voice.talk(f'I found you, I Think you are, {name}.')")
+                print("voice.talk('Is it correct?')")
+                print("voice.talk('Robot yes or robot no')")
                 rospy.sleep(2.5)
+                print('LEDS WHITE')
                 confirmation = get_keywords_speech(10)
                 print (confirmation)
 
                 if confirmation not in ['yes','jack','juice', 'takeshi yes','yeah']:
                     return 'unknown'
                 elif confirmation == "timeout":
-                    #voice.talk('I could not hear you, lets try again, please speak louder.')
+                    print("voice.talk('I could not hear you, lets try again, please speak louder.')")
                     return "failed"
                 else:
                     name_face = name
@@ -199,7 +200,7 @@ class New_face(smach.State):
         
         #If name is not recognized 3 times, guest may be registered as a "someone"
         if self.tries == 3:
-            #voice.talk ('I am having trouble understanding your name, lets keep going')
+            print("voice.talk ('I am having trouble understanding your name, lets keep going')")
             name = 'someone'
             name_face=name
             train_face(img_face, name)
@@ -207,10 +208,11 @@ class New_face(smach.State):
             return 'succ'
         
         #Asking for name
-        #voice.talk('Please, tell me your name')
+        print("voice.talk('Please, tell me your name')")
         rospy.sleep(1.0)
+        print('LEDS WHITE')
         speech=get_keywords_speech(10)
-        # in case thinks like I am , my name is . etc
+        # in case things like I am , my name is . etc
         if len(speech.split(' '))>1: name=(speech.split(' ')[-1])
         else: name = speech
         
@@ -218,33 +220,26 @@ class New_face(smach.State):
         print (name)
 
         if  name=='timeout':
-            #voice.talk('I could not hear you , lets try again, please speak louder.')
+            print("voice.talk('I could not hear you , lets try again, please speak louder.')")
             ##voice.talk ('lets try again')
             return 'failed'
 
-        #voice.talk(f'Is {name} your name?')
+        print("voice.talk(f'Is {name} your name?')")
         rospy.sleep(2.0)
+        print('LEDS WHITE')
         confirmation = get_keywords_speech(10)
         print (confirmation)
         
-        ''' if confirmation in['yes','jack','juice','yeah']:   ### YES AND MOST COMMON MISREADS
-            #voice.talk (f'Nice to Meet You {name}')
-            train_face(img_face, name)
-            self.tries=0
-            return 'succ'
-        else:
-            #voice.talk ('lets try again')
-            return 'failed' '''
 
         confirmation = confirmation.split(' ')
         confirm = match_speech(confirmation, ['yes','yeah','jack','juice'])
         if confirm:
-            #voice.talk (f'Nice to Meet You {name}')
+            print("voice.talk (f'Nice to Meet You {name}')")
             train_face(img_face, name)
             self.tries=0
             return 'succ'
         else:
-            #voice.talk ('lets try again')
+            print("voice.talk ('lets try again')")
             return 'failed'
 
 
@@ -264,26 +259,28 @@ class Get_drink(smach.State):
         rospy.loginfo('STATE : GET DRINK')
 
         if self.tries == 3:
-            #voice.talk ('I am having trouble understanding you, lets keep going')
+            print("voice.talk ('I am having trouble understanding you, lets keep going')")
             drink = 'something'
             self.tries=0
-            add_guest(name_face, drink)
-            analyze_face_background(img_face, name_face)
+            #add_guest(name_face, drink)                       #KNOWLEDGE UTILS RUBEN
+            #analyze_face_background(img_face, name_face)      #KNOWLEDGE UTILS RUBEN takeshi git atm 
             return 'succ'
         #Asking for drink
-        #voice.talk('What would you like to drink?')
+        print("voice.talk('What would you like to drink?')")
         rospy.sleep(2.0)
+        print('LEDS WHITE')
         drink=get_keywords_speech(10)
 
         if len(drink.split(' '))>1: drink=(drink.split(' ')[-1])
         print(drink)
         rospy.sleep(0.5)
         if drink=='timeout':
-            #voice.talk("sorry I could not hear you, lets try again, please speak louder.")
+            print("voice.talk('sorry I could not hear you, lets try again, please speak louder.')")
             return 'failed' 
-        #voice.talk(f'Did you say {drink}?')
+        print("voice.talk(f'Did you say {drink}?')")
 
         rospy.sleep(4.0)
+        print('LEDS WHITE')
         confirmation = get_keywords_speech(10)
         
         '''if len(confirmation.split(' ')) > 1: confirmation=
@@ -296,9 +293,9 @@ class Get_drink(smach.State):
         confirm = match_speech(confirmation, ['yes','yeah','jack','juice'])
         if not confirm: return 'failed' 
 
-        add_guest(name_face, drink)
-        analyze_face_background(img_face, name_face)
-        #voice.talk("Nice")
+        #add_guest(name_face, drink)                     ##  Knowledge utils takeshi   
+        #analyze_face_background(img_face, name_face)    ##
+        print("voice.talk('Nice')")
         self.tries = 0
         return 'succ'
 
@@ -317,9 +314,9 @@ class Lead_to_living_room(smach.State):
         self.tries += 1
         if self.tries == 3:
             return 'tries'
-        _,guest_name = get_waiting_guests()
-        #voice.talk(f'{guest_name}... I will lead you to the living room, please follow me')
-        # #voice.talk('Navigating to ,living room')
+        ##_,guest_name = get_waiting_guests()   #KNOWLEDGE UTILS TAKESHI
+        print("voice.talk(f'{guest_name}... I will lead you to the living room, please follow me')")
+        print("voice.talk('Navigating to ,living room')")
         res = omni_base.move_base(known_location='living_room')
         if res:
             self.tries = 0

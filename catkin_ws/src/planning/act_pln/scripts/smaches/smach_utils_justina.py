@@ -7,6 +7,7 @@ import tf as tf
 import tf2_ros as tf2
 from cv_bridge import CvBridge, CvBridgeError
 import rospy
+from rospy.exceptions import ROSException
 import numpy as np
 import ros_numpy
 from sensor_msgs.msg import Image as ImageMsg, PointCloud2 , LaserScan
@@ -103,6 +104,50 @@ class RGBD():
     def get_points(self):
         return self._points_data
 
+#########################################
+def get_keywords_speech(timeout=5):
+    """ Function to get key words from ros VOSK service
+        speech recognition (/speech_ recog)"""
+    pub = rospy.Publisher('/talk_now', String, queue_size=10)
+    rospy.sleep(0.8)
+    msg = String()
+    msg.data='start'
+    pub.publish(msg)
+    try:
+        msg = rospy.wait_for_message('/speech_recognition/final_result', String, timeout)
+        result = msg.data
+        pub.publish(String())
+        rospy.sleep(1.0)
+        return result
+            
+    except ROSException:
+        rospy.loginfo('timeout')
+        pub.publish(String())
+        return 'timeout'
+#------------------------------------------------------
+def match_speech(speech, to_match):
+    for element in to_match:
+        if element in speech:
+            return True
+    return False
+#------------------------------------------------------
+def train_face(image, name):
+    """writes request message and requests trainface service
+            /face_recog pkg"""
+    req=RecognizeFaceRequest()
+    strings=Strings()
+    string_msg= String()
+    string_msg.data=name
+    req.Ids.ids.append(string_msg)
+
+    img_msg=bridge.cv2_to_imgmsg(image)
+    req.in_.image_msgs.append(img_msg)
+    res=train_new_face(req)
+    
+    return res.Ids.ids[0].data.split(' ')[0] == 'trained'
+
+
+#########################################
 
 def wait_for_face(timeout=10 , name=''):
     """Wait for timeout seconds until a face is found.

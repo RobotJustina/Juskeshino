@@ -157,9 +157,20 @@
 
   
 
+
+
+<!-- ForDebugging in SIM Remove in real robot-->
+
+<include file="$(find usb_cam)/launch/usb_cam-test.launch"/>
+
+<!-- ForDebugging in SIM Remove in real robot -->
+
+
 <include file="$(find speech_recog)/launch/ros_vosk.launch"/>
 <node pkg="face_recog"  name="face_recog" type="face_recog_server.py"/>
 <node pkg="hmm_navigation"  name="pumas_nav_actionserver" type="pumas_nav_actionserver.py"/>
+<node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"/>
+
 
 
 
