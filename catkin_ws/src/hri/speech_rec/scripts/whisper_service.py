@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import io
 from pydub import AudioSegment
@@ -36,6 +36,7 @@ print("------------------------------------------------")
 model = args.model
 if args.model != "large" and args.english:
     model = args.model + ".en"
+print(model)
 audio_model = whisper.load_model(model)    
 
 #load the speech recognizer and set the initial energy threshold and pause threshold

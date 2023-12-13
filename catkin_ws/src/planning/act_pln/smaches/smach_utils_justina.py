@@ -14,7 +14,7 @@ from geometry_msgs.msg import Twist, PointStamped, PoseStamped, Quaternion, Poin
 from std_msgs.msg import String
 import actionlib
 from actionlib_msgs.msg import GoalStatus
-
+from hri_msgs.msg import RecognizedSpeech
 
 from ros_whisper_vosk.srv import GetSpeech
 from face_recog.msg import *
@@ -169,6 +169,6 @@ omni_base=OMNIBASE()
 
 
 speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)##############SPEECH VOSK RECOG FULL DICT
-#set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)                   ###### Get speech vosk keywords from grammar (function get_keywords)         
+set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)                   ###### Get speech vosk keywords from grammar (function get_keywords)         
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG

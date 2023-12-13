@@ -155,36 +155,13 @@
     
   </node>
 
-  <!--node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_gazebo.rviz"/>
-  
   
 
-  <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/>
-  <include file="$(find surge_et_ambula)/launch/justina/navigation.launch">
-    <arg name="static_map_file"  value="$(find config_files)/maps/appartment.yaml"/>
-    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/appartment.yaml"/>
-    <arg name="initial_pose_x" value="0.49"/>
-    <arg name="initial_pose_y" value="-0.19"/>
-    <arg name="initial_pose_a" value="0"/>
-    <arg name="max_linear_speed" value="0.9"/>
-    <arg name="max_angular_speed" value="1.2"/>
-    <arg name="laser_scan_topic" value="/hardware/scan"/>
-    <arg name="point_cloud_topic" value="/camera/depth_registered/points"/>
-    <arg name="use_lidar" value="True"/>
-    <arg name="use_point_cloud" value="True"/>
-    <arg name="use_pot_fields" value="True"/>
-    <arg name="pot_fields_k_rej" value="0.3"/>
-    <arg name="pot_fields_d0" default="1.0"/>
-    <arg name="cloud_downsampling" value="9"/>
-    <arg name="cloud_points_threshold" value="50"/>
-    <arg name="lidar_points_threshold" value="5"/>
-  </include-->
+<include file="$(find speech_recog)/launch/ros_vosk.launch"/>
+<node pkg="face_recog"  name="face_recog" type="face_recog_server.py"/>
+<node pkg="hmm_navigation"  name="pumas_nav_actionserver" type="pumas_nav_actionserver.py"/>
 
-  <!--include file="$(find surge_et_ambula)/launch/justina/justina_manipulation.launch"/>
-  <include file="$(find surge_et_ambula)/launch/justina/vision.launch">
-    <arg name="debug"         value="$(arg debug)"/>
-    <arg name="training_dir"  value="$(find obj_reco)/training_simul"/>
-  </include>
-  <include file="$(find surge_et_ambula)/launch/justina/hri.launch"/-->
+
+
 
 </launch>

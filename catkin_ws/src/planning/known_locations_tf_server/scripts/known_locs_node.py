@@ -144,7 +144,7 @@ def write_yaml_locs(trans,name, known_locations_file = '/known_locations.yaml'):
 
     con= read_yaml(known_locations_file=known_locations_file)
     data=deepcopy(con[list(con.keys())[-1]])
-    print (data,'data')
+    
     data[0]['x']=           math.trunc(trans[0]*1000)/1000
     data[1]['y']=           math.trunc(trans[1]  *1000)/1000
     data[2]['theta']=       math.trunc(tf.transformations.euler_from_quaternion(quat)[2]*1000)/1000
@@ -152,12 +152,12 @@ def write_yaml_locs(trans,name, known_locations_file = '/known_locations.yaml'):
     data[4]['qy']=          math.trunc(quat[1]*1000)/1000
     data[5]['qz']=          math.trunc(quat[2]*1000)/1000
     data[6]['qw']=          math.trunc(quat[3]*1000)/1000
-    print (data,'data, name',name.data)
+    
     con[name.data]=data 
-    print (con,'con')
+    
     
     file_path = rospack.get_path('config_files')  + known_locations_file
-    print (file_path)
+    
     
     with open(file_path, 'w') as file:
         documents = yaml.dump(con, file, default_flow_style=False)
@@ -203,19 +203,17 @@ def callback(req):
     
     try:
         trans = tfBuffer.lookup_transform('map', 'base_link', rospy.Time())#Takeshi
-        print (trans.child_frame_id,'trans')
+        
 
         trans.child_frame_id= req.location_name.data
-        print (trans.child_frame_id,'trans')
+        
         tf_static_broadcaster.sendTransform(trans)
-        print ('Still here')
+        
         
         
         #####################################
         
         succ=write_yaml_locs(trans,req.location_name,file_name)
-        print(succ)
-        print(req.location_name,'ÑPCATION NAME')
         
 
         ###################################################
@@ -226,6 +224,7 @@ def callback(req):
 
 
         resp.success.data= True
+        print (f'SUCESS {req.location_name.data}')
         return resp
 
 
@@ -276,6 +275,7 @@ def callback2(req):
 
 
         resp.success= succ
+        print ('SUCESS')
         return resp
 
 

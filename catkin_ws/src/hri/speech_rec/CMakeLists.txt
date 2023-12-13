@@ -11,8 +11,9 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   message_generation
-)
+  )
 
+catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -28,6 +29,7 @@ add_service_files(
    FILES
    GetSpeech.srv
    GetFakeSpeech.srv
+   SetGrammarVosk.srv
 )
 
 ## Generate added messages and services with any dependencies listed here
