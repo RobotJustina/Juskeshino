@@ -239,7 +239,7 @@ def main():
         
         if state == SM_INIT:
             print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
-            obj_target = "cup"
+            obj_target = "apple"
             print("OBJECT TARGET:____", obj_target)
             x_p, y_p, a = get_robot_pose(listener)
             STARTING_PLACE = [x_p, y_p, a]
@@ -366,6 +366,8 @@ def main():
             resp_best_grip = clt_best_grip(req_best_grip)
             goal_la_reached =  False       
             print("goal_la_reached STATUS", goal_la_reached)
+            state = -1
+            """
             move_left_gripper(0.9, pub_la_goal_grip)
             
             if resp_best_grip.graspable:
@@ -391,7 +393,7 @@ def main():
             else:
                 print("No se encontraron poses posibles...................")
                 state = -1
-                
+            """
             
             
             
