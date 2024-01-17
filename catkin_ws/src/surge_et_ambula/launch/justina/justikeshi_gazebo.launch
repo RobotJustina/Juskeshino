@@ -161,7 +161,7 @@
 
 <!-- ForDebugging in SIM Remove in real robot-->
 
-<include file="$(find usb_cam)/launch/usb_cam-test.launch"/>
+<!-- include file="$(find usb_cam)/launch/usb_cam-test.launch"/> -->
 
 <!-- ForDebugging in SIM Remove in real robot -->
 

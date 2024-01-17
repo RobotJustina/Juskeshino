@@ -9,7 +9,7 @@
     <param name="angularUpdate" value="0.2"/>
     <param name="xmin" value="-50"/>
     <param name="ymin" value="-20"/>
-    <param name="xmax" value="50"/>
+    <param name="xmax" value="100"/>
     <param name="ymax" value="20"/>
     <param name="maxRange" value="3.9"/>
     <param name="minimumScore" value="0.0"/>
