@@ -61,10 +61,11 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
     """
     grasp_candidates_quaternion = []
     j = 0
+    print("GRIP POINT:______", grip_point)
 
     if obj_state == "horizontal": 
         grip_point_bl = points_actual_to_points_target(grip_point, 'object', 'base_link')
-        grip_point_bl[2] = grip_point_bl[2] + 0.09#0.13  # 10 cm por encima del objeto (z_base_link)
+        grip_point_bl[2] = grip_point_bl[2] + 0.13  # 10 cm por encima del objeto (z_base_link)
         grip_point = points_actual_to_points_target(grip_point_bl, 'base_link', 'object')
         marker_array_publish(grip_point, 'object', 59, 56)
         
@@ -126,109 +127,21 @@ def grip_rules(obj_pose, type_obj, obj_state, size, grip_point):
 
 
 
-def top_grip(grip_point, obj_pose, ): 
-        global debug  
-        #obj_pose_frame_object = pose_actual_to_pose_target(obj_pose , 'base_link', 'object') # Transforma pose en frame 'object' para generar candidatos
-
-        obj_state = "horizontal"
-        # Primera lista de candidatos******************************************************************************
-        obj_pose_1 = Pose()
-        obj_pose_1.position.x, obj_pose_1.position.y, obj_pose_1.position.z = 0, 0, 0
-        obj_pose_1.orientation.x = 0.0
-        obj_pose_1.orientation.y = 0.0
-        obj_pose_1.orientation.z = 0.0
-        obj_pose_1.orientation.w = 1.0
-
-        pose_list1 = generates_candidates([0,0,0] , obj_pose_1, "P", obj_state ,  'c1', step = -12, num_candidates = 6)
-        
-
-        # Segunda lista de candidatos******************************************************************************
-        obj_pose_2 = Pose()
-        obj_pose_2.position.x, obj_pose_2.position.y, obj_pose_2.position.z = 0, 0, 0
-        obj_pose_2.orientation.x = 0.0
-        obj_pose_2.orientation.y = 0.0
-        obj_pose_2.orientation.z = 0.0
-        obj_pose_2.orientation.w = 1.0
-        
-        pose_list2 = generates_candidates([0,0,0] , obj_pose_2, "P", obj_state , 'C2', step = 10, num_candidates = 5)
-        
-        # Tercera lista de candidatos.................................
-        obj_pose_3 = Pose()
-        obj_pose_3.position.x, obj_pose_3.position.y, obj_pose_3.position.z = 0, 0, 0
-        obj_pose_3.orientation.x = 0.0
-        obj_pose_3.orientation.y = 0.0
-        obj_pose_3.orientation.z = 0.0
-        obj_pose_3.orientation.w = 1.0
-        
-        #print("obj pose 3", obj_pose_3)
-        
-        R, P, Y = tft.euler_from_quaternion([obj_pose_3.orientation.x ,  # pose expresada en RPY para realizar rotaciones
-                                                obj_pose_3.orientation.y ,
-                                                obj_pose_3.orientation.z, 
-                                                obj_pose_3.orientation.w])
-        Y = Y + np.deg2rad(180) # Realiza un yaw de 180 grados 
-        
-        
-        q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
-        obj_pose_3.orientation.x = q_gripper[0]
-        obj_pose_3.orientation.y = q_gripper[1]
-        obj_pose_3.orientation.z = q_gripper[2]
-        obj_pose_3.orientation.w = q_gripper[3]
-        obj_pose_3.position.x = 0
-        obj_pose_3.position.y = 0
-        obj_pose_3.position.z = 0
-        
-        pose_list3 = generates_candidates([0,0,0], obj_pose_3 , "P", obj_state , 'c3', step = -10, num_candidates = 4)
-
-        # Cuarta lista de candidatos.................................
-        obj_pose_4 = Pose()
-        obj_pose_4.position.x, obj_pose_4.position.y, obj_pose_4.position.z = 0, 0, 0
-        obj_pose_4.orientation.x = 0.0
-        obj_pose_4.orientation.y = 0.0
-        obj_pose_4.orientation.z = 0.0
-        obj_pose_4.orientation.w = 1.0
-        
-        #print("obj pose 3", obj_pose_3)
-        
-        R, P, Y = tft.euler_from_quaternion([obj_pose_4.orientation.x ,  # pose expresada en RPY para realizar rotaciones
-                                                obj_pose_4.orientation.y ,
-                                                obj_pose_4.orientation.z, 
-                                                obj_pose_4.orientation.w])
-        Y = Y + np.deg2rad(180) # Realiza un yaw de 180 grados 
-        
-        
-        q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
-        obj_pose_4.orientation.x = q_gripper[0]
-        obj_pose_4.orientation.y = q_gripper[1]
-        obj_pose_4.orientation.z = q_gripper[2]
-        obj_pose_4.orientation.w = q_gripper[3]
-        obj_pose_4.position.x = 0
-        obj_pose_4.position.y = 0
-        obj_pose_4.position.z = 0
-
-        pose_list4 = generates_candidates([0,0,0], obj_pose_4 , "P", obj_state , 'c4', step = 10, num_candidates = 4)
-
-        print("Num Candidates:____", len(pose_list2 + pose_list1 + pose_list3 + pose_list4))
-        
-        return pose_list2 + pose_list1 + pose_list3 + pose_list4
-
-
-
-
-def small_obj(obj_pose, obj_state, grip_point):
-    global debug
-
+def top_grip(grip_point): 
+    global debug  
     #obj_pose_frame_object = pose_actual_to_pose_target(obj_pose , 'base_link', 'object') # Transforma pose en frame 'object' para generar candidatos
+
     obj_state = "horizontal"
-    """
     # Primera lista de candidatos******************************************************************************
-    obj_pos_1 = Pose()
-    obj_pos_1.position.x, obj_pos_1.position.y, obj_pos_1.position.z = 0, 0, 0
-    obj_pos_1.orientation.x = 0.0
-    obj_pos_1.orientation.y = 0.0
-    obj_pos_1.orientation.z = 0.0
-    obj_pos_1.orientation.w = 1.0
-    pose_list1 = generates_candidates([0,0,0] , obj_pos_1, "P", obj_state ,  'c1', step = 12, num_candidates = 6)
+    obj_pose_1 = Pose()
+    obj_pose_1.position.x, obj_pose_1.position.y, obj_pose_1.position.z = 0, 0, 0
+    obj_pose_1.orientation.x = 0.0
+    obj_pose_1.orientation.y = 0.0
+    obj_pose_1.orientation.z = 0.0
+    obj_pose_1.orientation.w = 1.0
+
+    pose_list1 = generates_candidates(grip_point , obj_pose_1, "P", obj_state ,  'c1', step = -12, num_candidates = 6)
+        
 
     # Segunda lista de candidatos******************************************************************************
     obj_pose_2 = Pose()
@@ -238,9 +151,109 @@ def small_obj(obj_pose, obj_state, grip_point):
     obj_pose_2.orientation.z = 0.0
     obj_pose_2.orientation.w = 1.0
         
-    pose_list2 = generates_candidates([0,0,0] , obj_pose_2, "P", obj_state , 'C2', step = 12, num_candidates = 6)
+    pose_list2 = generates_candidates(grip_point , obj_pose_2, "P", obj_state , 'C2', step = 10, num_candidates = 5)
         
-    """
+    # Tercera lista de candidatos.................................
+    obj_pose_3 = Pose()
+    obj_pose_3.position.x, obj_pose_3.position.y, obj_pose_3.position.z = 0, 0, 0
+    obj_pose_3.orientation.x = 0.0
+    obj_pose_3.orientation.y = 0.0
+    obj_pose_3.orientation.z = 0.0
+    obj_pose_3.orientation.w = 1.0
+        
+    #print("obj pose 3", obj_pose_3)
+        
+    R, P, Y = tft.euler_from_quaternion([obj_pose_3.orientation.x ,  # pose expresada en RPY para realizar rotaciones
+                                            obj_pose_3.orientation.y ,
+                                            obj_pose_3.orientation.z, 
+                                            obj_pose_3.orientation.w])
+    Y = Y + np.deg2rad(180) # Realiza un yaw de 180 grados 
+        
+        
+    q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
+    obj_pose_3.orientation.x = q_gripper[0]
+    obj_pose_3.orientation.y = q_gripper[1]
+    obj_pose_3.orientation.z = q_gripper[2]
+    obj_pose_3.orientation.w = q_gripper[3]
+    obj_pose_3.position.x = 0
+    obj_pose_3.position.y = 0
+    obj_pose_3.position.z = 0
+        
+    pose_list3 = generates_candidates(grip_point, obj_pose_3 , "P", obj_state , 'c3', step = -10, num_candidates = 4)
+
+    # Cuarta lista de candidatos.................................
+    obj_pose_4 = Pose()
+    obj_pose_4.position.x, obj_pose_4.position.y, obj_pose_4.position.z = 0, 0, 0
+    obj_pose_4.orientation.x = 0.0
+    obj_pose_4.orientation.y = 0.0
+    obj_pose_4.orientation.z = 0.0
+    obj_pose_4.orientation.w = 1.0
+        
+    R, P, Y = tft.euler_from_quaternion([obj_pose_4.orientation.x ,  # pose expresada en RPY para realizar rotaciones
+                                            obj_pose_4.orientation.y ,
+                                            obj_pose_4.orientation.z, 
+                                            obj_pose_4.orientation.w])
+    Y = Y + np.deg2rad(180) # Realiza un yaw de 180 grados 
+            
+    q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
+    obj_pose_4.orientation.x = q_gripper[0]
+    obj_pose_4.orientation.y = q_gripper[1]
+    obj_pose_4.orientation.z = q_gripper[2]
+    obj_pose_4.orientation.w = q_gripper[3]
+    obj_pose_4.position.x = 0
+    obj_pose_4.position.y = 0
+    obj_pose_4.position.z = 0
+
+    pose_list4 = generates_candidates(grip_point , obj_pose_4 , "P", obj_state , 'c4', step = 10, num_candidates = 4)
+
+    print("Num Candidates:____", len(pose_list2 + pose_list1 + pose_list3 + pose_list4))
+        
+    return pose_list2 + pose_list1 + pose_list3 + pose_list4
+
+
+
+
+def small_obj(obj_pose, obj_state, grip_point):
+    global debug
+
+    obj_state = "horizontal"
+    
+    # Primera lista de candidatos******************************************************************************
+    obj_pos_1 = Pose()
+    obj_pos_1.position.x, obj_pos_1.position.y, obj_pos_1.position.z = 0, 0, 0
+    obj_pos_1.orientation.x = 0.0
+    obj_pos_1.orientation.y = 0.0
+    obj_pos_1.orientation.z = 0.0
+    obj_pos_1.orientation.w = 1.0
+    pose_list1 = generates_candidates([0,0,0] , obj_pos_1, "P", obj_state ,  'c1', step = -12, num_candidates = 7)
+    
+    # Segunda lista de candidatos******************************************************************************
+    obj_pose_2 = Pose()
+    obj_pose_2.position.x, obj_pose_2.position.y, obj_pose_2.position.z = 0, 0, 0
+    obj_pose_2.orientation.x = 0.0
+    obj_pose_2.orientation.y = 0.0
+    obj_pose_2.orientation.z = 0.0
+    obj_pose_2.orientation.w = 1.0
+
+    R, P, Y = tft.euler_from_quaternion([obj_pose_2.orientation.x ,  # pose expresada en RPY para realizar rotaciones
+                                                obj_pose_2.orientation.y ,
+                                                obj_pose_2.orientation.z, 
+                                                obj_pose_2.orientation.w])
+    Y = Y + np.deg2rad(45) # Realiza un yaw de 90 grados 
+        
+        
+    q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
+    obj_pose_2.orientation.x = q_gripper[0]
+    obj_pose_2.orientation.y = q_gripper[1]
+    obj_pose_2.orientation.z = q_gripper[2]
+    obj_pose_2.orientation.w = q_gripper[3]
+    obj_pose_2.position.x = 0
+    obj_pose_2.position.y = 0
+    obj_pose_2.position.z = 0
+        
+    pose_list2 = generates_candidates([0,0,0] , obj_pose_2, "P", obj_state , 'C2', step = -12, num_candidates = 7)
+        
+
     # Tercera lista de candidatos.................................
     obj_pose_3 = Pose()
     obj_pose_3.position.x, obj_pose_3.position.y, obj_pose_3.position.z = 0, 0, 0
@@ -253,7 +266,7 @@ def small_obj(obj_pose, obj_state, grip_point):
                                                 obj_pose_3.orientation.y ,
                                                 obj_pose_3.orientation.z, 
                                                 obj_pose_3.orientation.w])
-    Y = Y + np.deg2rad(0) # Realiza un yaw de 90 grados 
+    Y = Y + np.deg2rad(-90) # Realiza un yaw de 90 grados 
         
         
     q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
@@ -265,12 +278,10 @@ def small_obj(obj_pose, obj_state, grip_point):
     obj_pose_3.position.y = 0
     obj_pose_3.position.z = 0
         
-    pose_list3 = generates_candidates([0,0,0], obj_pose_3 , "P", obj_state , 'c3', step = 14, num_candidates = 7)
-    #pose_list4 = generates_candidates([0,0,0], obj_pose_3 , "P", obj_state , 'c4', step = -10, num_candidates = 4)
+    pose_list3 = generates_candidates([0,0,0], obj_pose_3 , "P", obj_state , 'c3', step = -14, num_candidates = 7)
+    print("Num Candidates:____", len(pose_list2 + pose_list1 + pose_list3 ))#+ pose_list4))        
     
-    #print("Num Candidates:____", len(pose_list2 + pose_list1 + pose_list3 ))#+ pose_list4))        
-    
-    return pose_list3#+ pose_list3# + pose_list3 #+ pose_list4
+    return pose_list1 + pose_list2 + pose_list3 #+ pose_list4
     
 
 
@@ -279,24 +290,70 @@ def small_obj(obj_pose, obj_state, grip_point):
 def box(obj_pose, size, obj_state):     # obj_pose  esta referenciada a 'base_link'
     global debug
 
-    # HORIZONTAL 1PCA *****************************************************************************************************************************************************************
+    # HORIZONTAL **************************************************************************************************************************************
     if obj_state == 'horizontal':  
         print("Horizontal box")
-        # genera punto de agarre superior
+        # genera punto de agarre superior ************************
+
+        # Primera lista de candidatos******************************************************************************
+        """
+        obj_pos_1 = Pose()
+        obj_pos_1.position.x, obj_pos_1.position.y, obj_pos_1.position.z = 0, 0, 0
+        obj_pos_1.orientation.x = 0.0
+        obj_pos_1.orientation.y = 0.0
+        obj_pos_1.orientation.z = 0.0
+        obj_pos_1.orientation.w = 1.0
+        """
         grip_point_top = [0, 0, size.z/3]
-        pose_list_1 = top_grip(grip_point_top, obj_pose) 
+
+        #pose_list1 = generates_candidates(grip_point_top , obj_pos_1, "P", obj_state ,  'c1', step = -12, num_candidates = 7)
+        candidates_h_list_1 = top_grip(grip_point_top) 
+
+        # Segunda lista de candidatos****VERTICAL GRIP**************************************************************************
+        obj_pose_2 = Pose()
+        obj_pose_2.position.x, obj_pose_2.position.y, obj_pose_2.position.z = 0, 0, 0
+        obj_pose_2.orientation.x = 0.0
+        obj_pose_2.orientation.y = 0.0
+        obj_pose_2.orientation.z = 0.0
+        obj_pose_2.orientation.w = 1.0
+
+        R, P, Y = tft.euler_from_quaternion([obj_pose_2.orientation.x ,  # pose expresada en RPY para realizar rotaciones
+                                                    obj_pose_2.orientation.y ,
+                                                    obj_pose_2.orientation.z, 
+                                                    obj_pose_2.orientation.w])
+        P = P + np.deg2rad(-90) 
+            
+            
+        q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
+        obj_pose_2.orientation.x = q_gripper[0]
+        obj_pose_2.orientation.y = q_gripper[1]
+        obj_pose_2.orientation.z = q_gripper[2]
+        obj_pose_2.orientation.w = q_gripper[3]
+        obj_pose_2.position.x = 0
+        obj_pose_2.position.y = 0
+        obj_pose_2.position.z = 0
         # genera punto de agarre lateral
         grip_point_side = [-size.x/3, 0, 0]
+            
+        candidates_h_list_2 = generates_candidates(grip_point_side , obj_pose_2, "P", 'vertical' , 'C2', step = -12, num_candidates = 4)
 
-        return pose_list_1
+        return candidates_h_list_1  + candidates_h_list_2
 
     
     # VERTICAL GRASP *************************************************************************************************************************************************
     else:  # VERTICAL object, lateral grip
-        grip_point1 = [0, 0, size.z/4]
-        poses_list1 = generates_candidates(grip_point1 , obj_pose, "R", obj_state ,'object', step = 10, num_candidates = 5)  
 
-        return poses_list1 # En frame base_link
+        # Primera lista de candidatos******************************************************************************
+        obj_pos_1 = Pose()
+        obj_pos_1.position.x, obj_pos_1.position.y, obj_pos_1.position.z = 0, 0, 0
+        obj_pos_1.orientation.x = 0.0
+        obj_pos_1.orientation.y = 0.0
+        obj_pos_1.orientation.z = 0.0
+        obj_pos_1.orientation.w = 1.0
+        grip_point_side = [0, 0, size.z/4]
+        candidates_v_list = generates_candidates(grip_point_side , obj_pose, "R", obj_state ,'object', step = 10, num_candidates = 5)  
+
+        return candidates_v_list # En frame 'object'
 
 
 
@@ -321,7 +378,7 @@ def prism(obj_pose, obj_state):   #pose del objeto en frame 'object'
     if obj_state == 'horizontal': 
         print("Horizontal grip prism............")  # Agarre horizontal
         grip_point = [0,0,0]#[obj_pose.position.x , obj_pose.position.y, obj_pose.position.z] #debe estar en el frame 'base_link'
-        return top_grip(grip_point, obj_pose)
+        return top_grip(grip_point)
 
     # VERTICAL ***************************************************************************************************    
     else:
@@ -394,6 +451,7 @@ def arow_marker(p_offset, p1, frame_id, ns, id, color):  # P1 y P2
 
 
 
+
 def marker_array_publish(pointxyz, target_frame, count, id):
     #print("point grip", pointxyz)
     global marker_array_pub
@@ -459,15 +517,9 @@ def convert_frame_of_candidates_poses(pose_list_q, o):
     return new_pose_rpy_list
 
 
-def pose_for_ik_service(pose_in_frame_object):
-    # Regresa un arreglo [x,y,z,R,P,Y]
-    
-    new_pose = pose_actual_to_pose_target(pose_in_frame_object, 'object' , 'shoulders_left_link')
-    
-    #if debug:
-        #broadcaster_frame_object('shoulders_left_link', 'candidate' , new_pose) 
-        #rospy.sleep(1.0)
-        
+def pose_for_ik_service(pose_in_frame_object):  # Regresa un arreglo [x,y,z,R,P,Y]
+
+    new_pose = pose_actual_to_pose_target(pose_in_frame_object, 'object' , 'shoulders_left_link')    
     
     # Se extrae la informacion de la posicion del objeto respecto al frame de hombro izqu
     x , y, z = new_pose.position.x , new_pose.position.y , new_pose.position.z
@@ -532,7 +584,7 @@ def evaluating_possibility_grip(candidate_quaternion_list, obj_state):
                 #print(resp_ik_srv.articular_trajectory.points[-1])
                 #return resp_ik_srv.articular_trajectory , pose_quaternion[i] , pose1, True
             except:
-                print("pose 1 no apta")
+                print("candidato no aprobado")
                 continue
     
             try:
@@ -577,10 +629,13 @@ def callback(req):
     obj_state = req.recog_object.object_state    
 
 
-    print("CENTROID:_____ ", req.recog_object.pose.position)
-    print("BB CATEGORY:_____ ", req.recog_object.category)  
+    print("CENTROID:_____ ")
+    print(req.recog_object.pose.position)
+    print("BB CATEGORY:_____ ")
+    print(req.recog_object.category)  
     print("STATE:_____ ", req.recog_object.object_state)
-    print("SIZE:_____ ", req.recog_object.size)
+    print("SIZE:_____ ") 
+    print(req.recog_object.size)
 
     grip_point = [req.recog_object.pose.position.x, req.recog_object.pose.position.y, req.recog_object.pose.position.z]
 
@@ -593,7 +648,7 @@ def callback(req):
     trajectory, pose, rpy_pose, graspable = evaluating_possibility_grip(pose_list_quaternion , obj_state)
    
     if graspable:
-        print("Graficando en RViz pose adecuada para manipulacion de objetossssssssss....")
+        print("Graphing in RViz suitable pose for object manipulation...")
         broadcaster_frame_object('object', 'suitable_pose' , pose)
         resp.articular_trajectory = trajectory
         resp.graspable = True
