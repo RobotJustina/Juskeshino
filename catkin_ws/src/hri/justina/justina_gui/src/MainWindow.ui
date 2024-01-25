@@ -45,7 +45,7 @@ QRadioButton::indicator{
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="tabGeneral">
      <attribute name="title">
@@ -1153,19 +1153,6 @@ QRadioButton::indicator{
        <string>Recognize Objects</string>
       </property>
      </widget>
-     <widget class="QLabel" name="label_13">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>150</y>
-        <width>131</width>
-        <height>17</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Recognize Object:</string>
-      </property>
-     </widget>
      <widget class="QLineEdit" name="visTxtRecognizeObject">
       <property name="geometry">
        <rect>
@@ -1229,6 +1216,44 @@ Human Pose Det</string>
       <property name="text">
        <string>Enable
 Follow Human</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="visTxtTakeObject">
+      <property name="geometry">
+       <rect>
+        <x>100</x>
+        <y>350</y>
+        <width>131</width>
+        <height>25</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_9">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>290</y>
+        <width>121</width>
+        <height>101</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>　　∧,,∧ 
+　 (,,・∀・) 
+～(_ｕ,ｕﾉ</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_10">
+      <property name="geometry">
+       <rect>
+        <x>100</x>
+        <y>320</y>
+        <width>101</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Take Object:</string>
       </property>
      </widget>
     </widget>

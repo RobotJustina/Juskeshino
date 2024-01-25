@@ -45,4 +45,8 @@
   </include>
   <include file="$(find surge_et_ambula)/launch/justina/hri.launch"/>
 
+
+  <node name="act_pln_grip" pkg="obj_segmentation_and_pose" type="act_pln_grip.py"/> 
+
+
 </launch>

@@ -101,6 +101,11 @@ public slots:
     void visFindLinesClicked();
     void visFindHoriPlanesClicked();
     void visTrainObjectReturnPressed();
+
+
+    void visTakeObjectReturnPressed();
+
+
     void visRecognizeObjectReturnPressed();
     void visRecognizeObjectsClicked();
     void visGetPointsAbovePlaneClicked();

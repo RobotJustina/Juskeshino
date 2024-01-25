@@ -15,6 +15,19 @@ import geometry_msgs.msg
 MAXIMUM_GRIP_LENGTH = 0.15
 
 
+def move_base_to_improve_grip(coord_object): #posición del objeto en el frame 'object'
+    """
+    if (coord_object[1] < 0.03): # Evalua la posición del objeto en y, si es menor a un valor
+        #mueve base a la derecha
+        while coord_object
+    """
+    print("lalalala")
+    
+
+
+
+
+
 def pose_actual_to_pose_target(pose, f_actual, f_target):
     global listener
     poseStamped_msg = PoseStamped()  

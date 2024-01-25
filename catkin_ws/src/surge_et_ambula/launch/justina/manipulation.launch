@@ -21,7 +21,7 @@
 
   <!--  -->
 
-  <node name="gripper_orientation_for_grasping" pkg="obj_segmentation_and_pose" type="orientation_based_object_grabbing_original.py" output="screen"/>
+  <node name="gripper_orientation_for_grasping" pkg="obj_segmentation_and_pose" type="orientation_based_object_grabbing_fast.py" output="screen"/>
   
 
 
