@@ -45,7 +45,7 @@ QRadioButton::indicator{
      </rect>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="tabGeneral">
      <attribute name="title">
@@ -1218,44 +1218,6 @@ Human Pose Det</string>
 Follow Human</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="visTxtTakeObject">
-      <property name="geometry">
-       <rect>
-        <x>100</x>
-        <y>350</y>
-        <width>131</width>
-        <height>25</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_9">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>290</y>
-        <width>121</width>
-        <height>101</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>　　∧,,∧ 
-　 (,,・∀・) 
-～(_ｕ,ｕﾉ</string>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_10">
-      <property name="geometry">
-       <rect>
-        <x>100</x>
-        <y>320</y>
-        <width>101</width>
-        <height>17</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Take Object:</string>
-      </property>
-     </widget>
     </widget>
     <widget class="QWidget" name="tabSimpleTasks">
      <attribute name="title">
@@ -1275,7 +1237,7 @@ Follow Human</string>
 Table</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="tksTxtTakeObject">
+     <widget class="QLineEdit" name="visTxtTakeObject">
       <property name="geometry">
        <rect>
         <x>20</x>
@@ -1323,6 +1285,21 @@ Table</string>
       <property name="text">
        <string>Memorize
 Person</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_9">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>300</y>
+        <width>121</width>
+        <height>101</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>　　∧,,∧ 
+　 (,,・∀・) 
+～(_ｕ,ｕﾉ</string>
       </property>
      </widget>
     </widget>
@@ -3629,7 +3606,7 @@ Person</string>
   <tabstop>visBtnRecogObjects</tabstop>
   <tabstop>visTxtRecognizeObject</tabstop>
   <tabstop>tksBtnApproachTable</tabstop>
-  <tabstop>tksTxtTakeObject</tabstop>
+  <tabstop>visTxtTakeObject</tabstop>
   <tabstop>tksBtnTakeObject</tabstop>
   <tabstop>tksBtnApproachTable_2</tabstop>
   <tabstop>laBtnXm</tabstop>

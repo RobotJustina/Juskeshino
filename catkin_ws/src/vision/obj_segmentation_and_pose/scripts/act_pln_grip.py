@@ -361,7 +361,7 @@ def main():
                     print("succesfull move arm...")
                     
                     print("goal_la_reached STATUS", goal_la_reached)
-                    state = SM_INIT#SM_PICK_UP_OBJECT
+                    state = SM_PICK_UP_OBJECT
 
                 
             else:
@@ -371,17 +371,17 @@ def main():
             
             
             
-            """
+            
         elif state == SM_PICK_UP_OBJECT:
             print("state == SM_PICK_UP_OBJECT")
             goal_la_reached =  False
             print("goal_la_reached STATUS", goal_la_reached)
             move_left_gripper(-0.3 , pub_la_goal_grip)
             resp = pub_status_msg_response(3, pub_object_status)  # SUCCEEDED
-            state = -1
+            state = SM_INIT
    
 
-
+        """
         elif state == SM_LIFT_OBJECT:
             print("Cambiando posicion de brazo a prepare....")
             goal_la_reached =  False       
