@@ -1237,7 +1237,7 @@ Follow Human</string>
 Table</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="visTxtTakeObject">
+     <widget class="QLineEdit" name="tksTxtTakeObject">
       <property name="geometry">
        <rect>
         <x>20</x>
@@ -1290,8 +1290,8 @@ Person</string>
      <widget class="QLabel" name="label_9">
       <property name="geometry">
        <rect>
-        <x>10</x>
-        <y>300</y>
+        <x>20</x>
+        <y>290</y>
         <width>121</width>
         <height>101</height>
        </rect>
@@ -3606,7 +3606,7 @@ Person</string>
   <tabstop>visBtnRecogObjects</tabstop>
   <tabstop>visTxtRecognizeObject</tabstop>
   <tabstop>tksBtnApproachTable</tabstop>
-  <tabstop>visTxtTakeObject</tabstop>
+  <tabstop>tksTxtTakeObject</tabstop>
   <tabstop>tksBtnTakeObject</tabstop>
   <tabstop>tksBtnApproachTable_2</tabstop>
   <tabstop>laBtnXm</tabstop>

@@ -34,6 +34,7 @@ SM_RETURN_LOCATION = 11
 SM_GRASP_OBJECT = 13
 SM_PICK_UP_OBJECT = 14
 SM_LIFT_OBJECT = 15
+SM_PREPARE = 111
 
 # ROBOT REAL LOCATION
 LEFT_TABLE_NEAR = [5.45, 2.45, np.deg2rad(90)]
@@ -51,6 +52,9 @@ PREPARE_LATERAL_GRIP = [-0.69, 0.2, 0, 1.55, 0, 1.16,0] #[-1.2, 0.2, 0  , 1.6, 0
 TAKEN_OBJECT_VERTICAL = [0.46, 0.87, -0.4, 1.99, -0.99, 0.4, 1.6]
 TAKEN_OBJECT_HORIZONTAL = [0.46, 0.87, -0.4, 1.99, -0.99, 0.4, 0.41]#[1, -0.08, -0.029, 0.44, 0, 0.66, -1.39]
 HOME = [0,0,0,0,0,0]
+LIFT_OBJECT = [0.11, 0.2, 0.0, 1.75, 0.0, 1.36, 0.0]
+PREPARE     = [-0.7, 0.2, 1.55, 0.0, 1.16, 0.0, 0.0]
+
 GRIPPER_OPENING = 0.9   # Apertura de gripper
 
 simulate = False
@@ -376,32 +380,43 @@ def main():
             print("state == SM_PICK_UP_OBJECT")
             goal_la_reached =  False
             print("goal_la_reached STATUS", goal_la_reached)
+            time.sleep(1)
             move_left_gripper(-0.3 , pub_la_goal_grip)
             resp = pub_status_msg_response(3, pub_object_status)  # SUCCEEDED
-            state = SM_INIT
+            state = SM_LIFT_OBJECT
    
 
-        """
+
         elif state == SM_LIFT_OBJECT:
             print("Cambiando posicion de brazo a prepare....")
             goal_la_reached =  False       
             print("goal_la_reached STATUS", goal_la_reached)
-            if (resp_pose_obj.recog_object.size.x < 0.11) or resp_pose_obj.recog_object.object_state == "horizontal":
-                q2q_traj(TAKEN_OBJECT_HORIZONTAL , clt_traj_planner, pub_la_goal_traj)
-                print("TAKEN_OBJECT_HORIZONTAL..........................")
-            else:
-                q2q_traj(TAKEN_OBJECT_VERTICAL , clt_traj_planner, pub_la_goal_traj)
-                print("TAKEN_OBJECT_VERCTICAL..........................")
+            q2q_traj(LIFT_OBJECT , clt_traj_planner, pub_la_goal_traj)
 
             while (not goal_la_reached) or not rospy.is_shutdown:
                 print("status: moving arm....")
                 time.sleep(1)
 
             goal_la_reached = False
-            state = -1
-            """
-
+            state = SM_INIT
             
+            # MOVER BASE HACIA ATRAS
+            
+
+        elif state == SM_PREPARE:
+            print("Cambiando posicion de brazo a prepare....")
+            goal_la_reached =  False       
+            print("goal_la_reached STATUS", goal_la_reached)
+            q2q_traj(PREPARE , clt_traj_planner, pub_la_goal_traj)
+
+            while (not goal_la_reached) or not rospy.is_shutdown:
+                print("status: moving arm....")
+                time.sleep(1)
+
+            goal_la_reached = False
+            state = SM_INIT
+
+
 
         else:
             break

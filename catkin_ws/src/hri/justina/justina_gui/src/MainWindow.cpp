@@ -100,7 +100,7 @@ MainWindow::MainWindow(QWidget *parent) :
     
     
 
-    QObject::connect(ui->visTxtTakeObject, SIGNAL(returnPressed()), this, SLOT(visTakeObjectReturnPressed()));
+    QObject::connect(ui->tksTxtTakeObject, SIGNAL(returnPressed()), this, SLOT(visTakeObjectReturnPressed()));
     
 
     
@@ -892,7 +892,7 @@ void MainWindow::visRecognizeObjectsClicked()
 
 void MainWindow::visTakeObjectReturnPressed()
 {
-    qtRosNode->call_take_object(ui->visTxtTakeObject->text().toStdString());
+    qtRosNode->call_take_object(ui->tksTxtTakeObject->text().toStdString());
 }
 
 
