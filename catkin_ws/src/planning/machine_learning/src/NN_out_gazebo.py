@@ -19,7 +19,7 @@ init_time=-1.0
 model_folder = rospack.get_path("machine_learning")
 #mired = arch.Red3_div(300, 300, 200, 200, 100)
 mired = architecture.Red_conv(3)
-mired.load_state_dict(th.load(model_folder+"/src/Data_gazebo/modelo_gazebo.pth"))
+mired.load_state_dict(th.load(model_folder+"/src/Data_gazebo/modelo_gazebo.pth",map_location=th.device('cpu')))
 disp = 'cuda' if th.cuda.is_available() else 'cpu'
 mired.to(disp)
 ##Get cmd_vel command from LBG algorithm
