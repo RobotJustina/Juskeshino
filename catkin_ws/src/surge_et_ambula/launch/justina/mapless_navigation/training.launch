@@ -1,7 +1,9 @@
 <launch>
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
-    <arg name="posy" value="3.9" />
-    <arg name="world" value="Three_rooms_v1"/>
+    <!--arg name="posy" value="3.9" /-->
+    <arg name="posy" value="3.6" />
+    <arg name="posx" value="2.6" />
+    <arg name="world" value="Three_rooms_v2"/>
   </include>
   
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_gazebo_mapless.rviz"/>
@@ -16,7 +18,7 @@
 
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/>
   <node name="map_server" pkg="map_server" type="map_server" output="screen"
-        args="$(find config_files)/maps/Three_rooms.yaml _frame_id:=odom">
+        args="$(find config_files)/maps/TR2.yaml _frame_id:=odom">
   </node>
 
   <include file="$(find surge_et_ambula)/launch/justina/justina_manipulation.launch"/>
@@ -24,6 +26,14 @@
   <include file="$(find surge_et_ambula)/launch/justina/speech.launch"/>
 
   <node name="get_goal_point" pkg="machine_learning" type="get_goal_point.py"/>
+
+   <node name="joy" pkg="joy" type="joy_node" output="screen">
+     <remap from="/joy"      to="/hardware/joy"/>
+   </node>
+ 
+   <node name="joystick_teleop" pkg="joystick_teleop" type="joystick_teleop_node.py" output="screen" >
+     <remap from="/hardware/mobile_base/cmd_vel"      to="/cmd_vel"/>
+   </node>
 
   <node name="sim_laser" pkg="machine_learning" type="sim_laser"/>
 

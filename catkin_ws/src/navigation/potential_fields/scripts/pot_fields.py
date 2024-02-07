@@ -12,6 +12,7 @@
 import rospy
 import tf
 import math
+import time
 from std_msgs.msg import Header
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PoseStamped
@@ -43,7 +44,7 @@ def calculate_control(robot_x, robot_y, robot_a, goal_x, goal_y):
     # Remember to keep error angle in the interval (-pi,pi]
     #
     
-    v_max = 0.8
+    v_max = 0.5
     w_max = 1.0
     alpha = 0.2
     beta  = 0.5
@@ -125,6 +126,8 @@ def callback_pot_fields_goal(msg):
     #     Recalculate distance to goal position
     #  Publish a zero speed (to stop robot after reaching goal point)
 
+    time_init=rospy.get_time()
+
     robot_x, robot_y, robot_a = get_robot_pose(listener)
     dist_to_goal = math.sqrt((goal_x - robot_x)**2 + (goal_y - robot_y)**2)
     tolerance = 0.1
@@ -143,8 +146,9 @@ def callback_pot_fields_goal(msg):
         robot_x, robot_y, robot_a = get_robot_pose(listener)
         dist_to_goal = math.sqrt((goal_x - robot_x)**2 + (goal_y - robot_y)**2)
     pub_cmd_vel.publish(Twist())
- 
-    print("Goal point reached")
+
+    time=rospy.get_time()-time_init
+    print(f"Goal point reached in {time} seconds")
 
 def get_robot_pose(listener):
     try:

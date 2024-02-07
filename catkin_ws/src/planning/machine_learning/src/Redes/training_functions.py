@@ -34,7 +34,7 @@ def graficar(hist, entdl, valdl, opt): ##Función para graficar y ahorrar línea
 	axs[1].plot(hist['metrica_ent']/ len(entdl), label='Entrenamiento '+opt)
 	axs[1].plot(hist['metrica_val']/ len(valdl), label='Validación '+opt)
 	axs[1].set_xlabel('Época')
-	axs[1].set_ylabel('Métrica')
+	axs[1].set_ylabel('Exactitud')
 	axs[1].legend()
 
 def get_data(folder):

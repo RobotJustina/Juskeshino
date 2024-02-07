@@ -16,6 +16,13 @@ bool map_catch=false;
 
 void callback_occ(const nav_msgs::OccupancyGrid::ConstPtr& msg){
     map = *msg; //std::cout<<"mapa"<<std::endl;
+    int arr[]={2801,2802,2881,2882,2883,2962,2963,3042,3043,3044,3123,3124,3203,3204,3282,3283,3362,3363,3441,3442,3443,3521,3522,2961};
+    for (int i = 0; i < 24; i++) {
+         map.data[arr[i]]=0;
+    }
+    //for (size_t i = 0; i < map.data.size(); ++i)
+    //    if(static_cast<int>(map.data[i])==100)
+    //        std::cout<<i<<std::endl;
     map_catch=true;
 }
 

@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 import rospy
 import numpy as np
+import time
 from Redes import architecture
 import torch as th
 from torch import nn
@@ -12,6 +13,7 @@ from geometry_msgs.msg import PointStamped
 ##temporary variables for saving data
 last_goal=[0,0]
 rospack = rospkg.RosPack()
+init_time=-1.0
 
 ##Get NN Model
 model_folder = rospack.get_path("machine_learning")
@@ -27,7 +29,7 @@ linx=0.0
 angz=0.0
 
 def callback_grid(msg):
-	global mired, last_goal, disp, linx, angz, C
+	global mired, last_goal, disp, linx, angz, C, init_time
 	grid=list(msg.data)
 	entrada=grid+last_goal
 	entrada = np.asarray(entrada)
@@ -42,6 +44,14 @@ def callback_grid(msg):
 		linx=C[index,0]
 		angz=C[index,1]
 	else:
+		#linx=0.0
+		#angz=0.0
+		if(init_time!=-1.0 and (linx+angz)>0):
+			tiempo=rospy.get_time()
+			print(f"inicio: {init_time}, {tiempo}")
+			tiempo=tiempo-init_time
+			print(f"Time: {tiempo}")
+			init_time=-1.0
 		linx=0.0
 		angz=0.0
 
@@ -50,18 +60,21 @@ def callback_goal(msg):
 	last_goal=list(msg.data)
 
 def callback_point(msg):
-	print("New goal")
+	global init_time
+	init_time=rospy.get_time()
+	#print(f"Init time: {init_time}")
+	print(f"New goal: {msg.point.x, msg.point.y}")
 
 def main():
 	global linx, angz
 	rospy.init_node("NN_out")
-	rospy.Subscriber("/local_occ_grid_array", Float32MultiArray, callback_grid)
 	rospy.Subscriber("/NN_goal", Float32MultiArray, callback_goal)
 	rospy.Subscriber("/clicked_point", PointStamped, callback_point)
+	rospy.Subscriber("/local_occ_grid_array", Float32MultiArray, callback_grid)
 	#pub_cmd = rospy.Publisher("/hardware/mobile_base/cmd_vel", Twist  , queue_size=10)
 	pub_cmd = rospy.Publisher("/cmd_vel", Twist  , queue_size=10)
 	print("NN_out has been started")
-	loop = rospy.Rate(50)
+	loop = rospy.Rate(20)
 	msg=Twist()
 	while not rospy.is_shutdown():
 		#pub_cmd.publish(msg)

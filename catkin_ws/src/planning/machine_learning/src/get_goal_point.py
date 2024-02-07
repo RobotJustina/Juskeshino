@@ -56,7 +56,7 @@ def main():
     pub_goal = rospy.Publisher("/NN_goal", Float32MultiArray  , queue_size=10)
 
     loop = rospy.Rate(10)
-    loop.sleep()
+    listener.waitForTransform("odom", "base_link", rospy.Time(), rospy.Duration(4.0))
     msg=Float32MultiArray()
     [goal_x, goal_y, temp] = get_robot_pose(listener,"odom") ##Wait for the current pose
     while not rospy.is_shutdown():
