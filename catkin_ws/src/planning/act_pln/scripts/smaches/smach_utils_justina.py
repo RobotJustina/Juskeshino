@@ -16,17 +16,22 @@ from std_msgs.msg import String
 import actionlib
 from actionlib_msgs.msg import GoalStatus
 from hri_msgs.msg import RecognizedSpeech
-
+import yaml
+#
 from ros_whisper_vosk.srv import GetSpeech , SetGrammarVosk
-
+#
+from segmentation.srv import *
+#
+from object_classification.srv import *
+#
 from face_recog.msg import *
 from face_recog.srv import *
-
-
-
-
-
+#
+from human_detector.srv import Human_detector ,Human_detectorResponse 
+from human_detector.srv import Point_detector ,Point_detectorResponse 
+#
 from hmm_navigation.msg import NavigateAction, NavigateActionGoal, NavigateActionFeedback, NavigateActionResult
+#
 
 class OMNIBASE():
     def __init__(self):
@@ -202,13 +207,13 @@ def wait_for_face(timeout=10 , name=''):
 
 
 
-global omni_base, rgb, rgbd , bridge
+global omni_base, rgb, rgbd , bridge , pointing_detect_server , classify_client , segmentation_server
 rospy.init_node('smach')
 
 
 bridge = CvBridge()
 rgbd=RGBD()
-rgb=RGB()
+rgb=RGB()  #WEB CAM DEBUG   
 omni_base=OMNIBASE()
 
 
@@ -218,3 +223,6 @@ speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,Get
 set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)                   ###### Get speech vosk keywords from grammar (function get_keywords)         
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
+pointing_detect_server = rospy.ServiceProxy('/detect_pointing' , Point_detector)
+classify_client = rospy.ServiceProxy('/classify', Classify)
+segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)

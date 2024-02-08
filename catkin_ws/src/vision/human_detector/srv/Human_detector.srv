@@ -1,0 +1,7 @@
+std_msgs/Empty  Empty
+---
+float64 x		#World coords w.r.t. map  
+float64 y
+float64 z
+
+
