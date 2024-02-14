@@ -54,15 +54,13 @@ add_message_files(
    Floats.msg
    Image.msg
    Strings.msg
-   
-   
  )
 
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
    Segmentation.srv
-#   Service2.srv
+   
 )
 
 ## Generate actions in the 'action' folder

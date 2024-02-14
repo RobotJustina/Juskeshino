@@ -11,23 +11,170 @@ from rospy.exceptions import ROSException
 import numpy as np
 import ros_numpy
 from sensor_msgs.msg import Image as ImageMsg, PointCloud2 , LaserScan
-from geometry_msgs.msg import Twist, PointStamped, PoseStamped, Quaternion, Point
+from geometry_msgs.msg import Twist, PointStamped, PoseStamped, Quaternion, Point , TransformStamped
+
 from std_msgs.msg import String
 import actionlib
 from actionlib_msgs.msg import GoalStatus
 from hri_msgs.msg import RecognizedSpeech
-
+import yaml
+#
 from ros_whisper_vosk.srv import GetSpeech , SetGrammarVosk
-
+#
+from segmentation.srv import *
+#
+from object_classification.srv import *
+#
 from face_recog.msg import *
 from face_recog.srv import *
-
-
-
-
-
+#
+from human_detector.srv import Human_detector ,Human_detectorResponse 
+from human_detector.srv import Point_detector ,Point_detectorResponse 
+#
 from hmm_navigation.msg import NavigateAction, NavigateActionGoal, NavigateActionFeedback, NavigateActionResult
+#
 
+
+######################################################
+def seg_res_tf(res):
+    
+    
+    #brazo.set_named_target('go')
+    if len(res.poses.data)==0:
+        print('no objs')
+        return False
+    else:
+        
+        poses=np.asarray(res.poses.data)
+        quats=np.asarray(res.quats.data)
+        poses=poses.reshape((int(len(poses)/3) ,3     )      )  
+        quats=quats.reshape((int(len(quats)/4) ,4     )      )  
+        num_objs=len(poses)
+        print(f'{num_objs} found')
+
+        for i,cent in enumerate(poses):
+            x,y,z=cent
+            axis=[0,0,1]
+            angle = tf.transformations.euler_from_quaternion(quats[i])[0]
+            rotation_quaternion = tf.transformations.quaternion_about_axis(angle, axis)
+            point_name=f'object_{i}'
+            print (f'{point_name} found at {cent}')
+            tf_man.pub_tf(pos=cent, rot =[0,0,0,1], point_name=point_name+'_norot', ref='map')## same rotation as map
+            succ=tf_man.pub_tf(pos=cent, rot =rotation_quaternion, point_name=point_name, ref='map')## PCA
+            #tf_man.pub_static_tf(pos=cent, rot =[0,0,0,1], point_name=point_name+'_norot', ref='map')##  static tf 
+            #tf_man.pub_static_tf(pos=cent, rot =rotation_quaternion, point_name=point_name, ref='map')## static tf 
+            
+    return succ
+#------------------------------------------------------
+######################################################3
+class TF_MANAGER():
+    def __init__(self):
+        self._tfbuff = tf2.Buffer()
+        self._lis = tf2.TransformListener(self._tfbuff)
+        self._tf_static_broad = tf2.StaticTransformBroadcaster()
+        self._broad = tf2.TransformBroadcaster()
+
+    def _fillMsg(self, pos=[0, 0, 0], rot=[0, 0, 0, 1], point_name='', ref="map"):
+        TS = TransformStamped()
+        TS.header.stamp = rospy.Time.now()
+        TS.header.frame_id = ref
+        TS.child_frame_id = point_name
+        TS.transform.translation = Point(*pos)
+        TS.transform.rotation = Quaternion(*rot)
+        return TS
+
+    def pub_tf(self, pos=[0, 0, 0], rot=[0, 0, 0, 1], point_name='', ref="map"):
+        dinamic_ts = self._fillMsg(pos, rot, point_name, ref)
+        self._broad.sendTransform(dinamic_ts)
+
+    def pub_static_tf(self, pos=[0, 0, 0], rot=[0, 0, 0, 1], point_name='', ref="map"):
+        static_ts = self._fillMsg(pos, rot, point_name, ref)
+        self._tf_static_broad.sendTransform(static_ts)
+
+    def change_ref_frame_tf(self, point_name='', rotational=[0, 0, 0, 1], new_frame='map'):
+        try:
+            traf = self._tfbuff.lookup_transform(
+                new_frame, point_name, rospy.Time(0))
+            translation, _ = self.tf2_obj_2_arr(traf)
+            self.pub_static_tf(pos=translation, rot=rotational,
+                               point_name=point_name, ref=new_frame)
+            return True
+        except:
+            return False
+
+    def getTF(self, target_frame='', ref_frame='map'):
+        try:
+            tf = self._tfbuff.lookup_transform(
+                ref_frame, target_frame, rospy.Time(0))
+            return self.tf2_obj_2_arr(tf)
+        except:
+            return [False, False]
+
+    def tf2_obj_2_arr(self, transf):
+        pos = []
+        pos.append(transf.transform.translation.x)
+        pos.append(transf.transform.translation.y)
+        pos.append(transf.transform.translation.z)
+
+        rot = []
+        rot.append(transf.transform.rotation.x)
+        rot.append(transf.transform.rotation.y)
+        rot.append(transf.transform.rotation.z)
+        rot.append(transf.transform.rotation.w)
+
+        return [pos, rot]
+
+
+class TF():
+    def __init__(self):
+        self._listener = tf.TransformListener()
+        self._br = tf.TransformBroadcaster()
+
+    def getTF(self, target="", reference="map", duration=2.0):
+        # True / False is a success flag
+        now = rospy.Time(0)
+        try:
+            self._listener.waitForTransform(reference, target, now, rospy.Duration(duration))
+            (trans, rot) = self._listener.lookupTransform(
+                reference, target, now)
+            return (True, trans, rot)
+        except :
+            return False, 0.0, 0.0
+
+    def pubTF(self, pos=[0, 0, 0], rot=[0, 0, 0, 1], TF_name="", reference="map"):
+        try:
+            self._br.sendTransform(
+                pos, rot, rospy.Time.now(), TF_name, reference)
+            return True
+        except:
+            return False
+
+        # Maybe could not be used
+    '''def pubStaticTF(self, pos = [0,0,0], rot = [0,0,0,1], TF_name ="", reference="map"):
+        static_ts = self._fillMsg(pos, rot, point_name, ref)
+        self._tf_static_broad.sendTransform(static_ts)'''
+
+    def changeRefFrameTF(self, TF_name='', rot=[0, 0, 0, 1], new_ref="map"):
+        try:
+            t, r = self._listener.lookupTransform(
+                new_ref, TF_name, rospy.Time(0))
+            self._br.sendTransform(t, r, rospy.Time.now(), TF_name, new_ref)
+            return True
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            return False
+
+    @staticmethod
+    def quat_to_eu(quat=[0, 0, 0, ]):
+        roll, pitch, yaw = tf.transformations.euler_from_quaternion(quat)
+        return [roll, pitch, yaw]
+
+    @staticmethod
+    def eu_to_quat(eu=[0, 0, 0]):
+        q1,q2,q3,q4 = tf.transformations.quaternion_from_euler(*eu)
+        return [q1,q2,q3,q4]
+
+
+###############################################3
 class OMNIBASE():
     def __init__(self):
         
@@ -202,14 +349,15 @@ def wait_for_face(timeout=10 , name=''):
 
 
 
-global omni_base, rgb, rgbd , bridge
-rospy.init_node('smach')
+global omni_base, rgb, rgbd , bridge , pointing_detect_server , classify_client , segmentation_server , tf_man
+rospy.init_node('smach_justina_tune_vision')
 
 
 bridge = CvBridge()
 rgbd=RGBD()
-rgb=RGB()
+rgb=RGB()  #WEB CAM DEBUG   
 omni_base=OMNIBASE()
+tf_man = TF_MANAGER()
 
 
 
@@ -218,3 +366,6 @@ speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,Get
 set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)                   ###### Get speech vosk keywords from grammar (function get_keywords)         
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
+pointing_detect_server = rospy.ServiceProxy('/detect_pointing' , Point_detector)
+classify_client = rospy.ServiceProxy('/classify', Classify)
+segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)
