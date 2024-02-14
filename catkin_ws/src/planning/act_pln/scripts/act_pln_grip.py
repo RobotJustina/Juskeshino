@@ -36,16 +36,6 @@ SM_PICK_UP_OBJECT = 14
 SM_LIFT_OBJECT = 15
 SM_PREPARE = 111
 
-# ROBOT REAL LOCATION
-LEFT_TABLE_NEAR = [5.45, 2.45, np.deg2rad(90)]
-LIVINGROOM = [5.2, 2.33, np.deg2rad(90)]
-KITCHEN = [5.35, 2.33, np.deg2rad(90)]
-STARTING_PLACE= [0,0,0]
-# ROBOT VIRTUAL LOCATION
-V_LIVINGROOM = [5.2, 2.33, np.deg2rad(90)]
-V_KITCHEN = [3.3, 5.56 , np.deg2rad(-90)]
-V_STARTING_PLACE= [5.6 , 4.5, 0]
-
 # left arm poses
 PREPARE_TOP_GRIP = [-0.68, 0.38, -0.01, 1.84, 0, 1.06, -0.01]#[-0.9, 0.4, 0.0, 1.9, 0.01, 1, -0.01]  #funciona para pringles horizontal (prisma horizontal)
 PREPARE_LATERAL_GRIP = [-0.69, 0.2, 0, 1.55, 0, 1.16,0] #[-1.2, 0.2, 0  , 1.6, 0   , 1,     0] #Prepare original:funciona bien para pringles vertical (prisma vertical) 
@@ -57,19 +47,12 @@ PREPARE     = [-0.7, 0.2, 1.55, 0.0, 1.16, 0.0, 0.0]
 
 GRIPPER_OPENING = 0.9   # Apertura de gripper
 
-simulate = False
-
 
 def callback_goal_reached(msg): #¿?
     global goal_reached
     print("STATUS", msg.status)
     if msg.status == 3: 
         goal_reached = 1
-
-
-def callback_hd_goal_reached(msg):  # head
-    global goal_hd_reached
-    goal_hd_reached = msg.data
 
 
 def callback_la_goal_reached(msg):  # left arm
@@ -152,12 +135,6 @@ def get_robot_pose(listener):
 
 
 
-def parse_command(cmd):
-    obj = "pringles" if "PRINGLES" in cmd else "drink"
-    location = V_KITCHEN if "KITCHEN" in cmd else LIVINGROOM  # Ubicacion de LIVINGROOM y kitchen
-    return location, obj
-
-
 def say(pub_say, text):
     msg = SoundRequest()
     msg.sound   = -3
@@ -167,14 +144,6 @@ def say(pub_say, text):
     msg.arg = text
     pub_say.publish(msg)
     time.sleep(1.5)
-
-
-def callback_recognized_speech(msg):
-    global recognized_speech, new_command, executing_command
-    print("msg______", msg)
-    if not executing_command:  
-        new_command = True
-        recognized_speech = msg.hypothesis[0]
 
 
 
@@ -204,20 +173,14 @@ def main():
     global goal_reached, goal_hd_reached, goal_la_reached, object_name
     global executing_command, new_command, recognized_speech
 
-    rospy.wait_for_service("/vision/obj_segmentation/get_obj_pose")
+    rospy.wait_for_service("/vision/obj_segmentation/get_obj_pose") # Servicio que da la pose del objeto a tomar
+    rospy.wait_for_service("/vision/obj_reco/detect_and_recognize_objects") # Servicio que reconoce el objeto
+    rospy.wait_for_service("/vision/get_best_grasp_traj")   # Servicio que da la mejor pose de agarre
+    rospy.wait_for_service( '/manipulation/polynomial_trajectory')  # Servicio para generar trayectorias para el brazo
+    
     clt_pose_obj = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose", RecognizeObject)
-    """
-    rospy.wait_for_service("/vision/obj_reco/recognize_object")
-    clt_recognize_object = rospy.ServiceProxy("/vision/obj_reco/recognize_object", RecognizeObjects)
-    """
-    rospy.wait_for_service("/vision/obj_reco/detect_and_recognize_objects")
     clt_recognize_objects = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_objects", RecognizeObjects)
-
-    rospy.wait_for_service("/vision/get_best_grasp_traj")
     clt_best_grip = rospy.ServiceProxy("/vision/get_best_grasp_traj", BestGraspTraj )
-    rospy.wait_for_service( '/manipulation/la_ik_trajectory' )
-    clt_ik = rospy.ServiceProxy( '/manipulation/la_ik_trajectory' , InverseKinematicsPose2Traj )
-    rospy.wait_for_service( '/manipulation/polynomial_trajectory')
     clt_traj_planner = rospy.ServiceProxy( '/manipulation/polynomial_trajectory' , GetPolynomialTrajectory )
 
     pub_la_goal_traj = rospy.Publisher("/manipulation/la_q_trajectory" , JointTrajectory, queue_size=10)
@@ -228,13 +191,10 @@ def main():
     pub_cmd_vel      = rospy.Publisher('/hardware/mobile_base/cmd_vel', Twist, queue_size=10)
     pub_say           = rospy.Publisher('/hri/speech_generator', SoundRequest, queue_size=10)
     pub_object_status = rospy.Publisher('/plannning/simple_task/object_status' , GoalStatus, queue_size=1 )
-    
-
 
     rospy.Subscriber('/navigation/status', GoalStatus ,callback_goal_reached)
     rospy.Subscriber('/manipulation/head/goal_reached',Bool ,callback_hd_goal_reached)
     rospy.Subscriber('/manipulation/left_arm/goal_reached',Bool , callback_la_goal_reached)
-    rospy.Subscriber('/hri/sp_rec/recognized', RecognizedSpeech, callback_recognized_speech)
     rospy.Subscriber('/plannning/simple_task/take_object' ,String ,callback_take_object )
     topic_grip = '/plannning/simple_task/take_object'
     # /plannning/simple_task/take_object, object_status
@@ -380,7 +340,7 @@ def main():
             print("state == SM_PICK_UP_OBJECT")
             goal_la_reached =  False
             print("goal_la_reached STATUS", goal_la_reached)
-            time.sleep(1)
+            time.sleep(1.5)
             move_left_gripper(-0.3 , pub_la_goal_grip)
             resp = pub_status_msg_response(3, pub_object_status)  # SUCCEEDED
             state = SM_LIFT_OBJECT

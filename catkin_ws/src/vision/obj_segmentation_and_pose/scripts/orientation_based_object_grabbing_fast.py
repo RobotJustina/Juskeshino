@@ -26,8 +26,6 @@ def move_base_to_improve_grip(coord_object): #posición del objeto en el frame '
 
 
 
-
-
 def pose_actual_to_pose_target(pose, f_actual, f_target):
     global listener
     poseStamped_msg = PoseStamped()  
@@ -35,6 +33,14 @@ def pose_actual_to_pose_target(pose, f_actual, f_target):
     poseStamped_msg.header.stamp = rospy.Time()  # la ultima transformacion
     poseStamped_msg.pose = pose
     new_poseStamped = listener.transformPose(f_target, poseStamped_msg)
+
+
+    while not rospy.is_shutdown():
+        try:
+            (trans,rot) = listener.lookupTransform('/turtle2', '/turtle1', rospy.Time(0))
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                continue
+    
     new_pose = new_poseStamped.pose
     return new_pose
 
@@ -78,7 +84,7 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
 
     if obj_state == "horizontal": 
         grip_point_bl = points_actual_to_points_target(grip_point, 'object', 'base_link')
-        grip_point_bl[2] = grip_point_bl[2] + 0.13  # 10 cm por encima del objeto (z_base_link)
+        grip_point_bl[2] = grip_point_bl[2] + 0.15  # 10 cm por encima del objeto (z_base_link)
         grip_point = points_actual_to_points_target(grip_point_bl, 'base_link', 'object')
         marker_array_publish(grip_point, 'object', 59, 56)
         
@@ -615,12 +621,12 @@ def evaluating_possibility_grip(candidate_quaternion_list, obj_state):
                 # Ultimo punto de la segunda trayectoria
                 ik_msg.x = pose1[0] 
                 ik_msg.y = pose1[1]
-                ik_msg.z = pose1[2] - 0.06
+                ik_msg.z = pose1[2] - 0.08
                 ik_msg.roll = pose1[3]
                 ik_msg.pitch = pose1[4]
                 ik_msg.yaw = pose1[5]
-                ik_msg.duration = 2
-                ik_msg.time_step = 0.02
+                ik_msg.duration = 1
+                ik_msg.time_step = 0.1
                 ik_msg.initial_guess = guess
 
                 resp_2_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
