@@ -157,6 +157,7 @@ class DQN_1(nn.Module):
 
         self.lr = 8.1e-3
         self.epoch = 14
+        self.steps=0
 
         self.extra = nn.Linear(2,expand)
         self.extra_norm = nn.LayerNorm(expand)
