@@ -5,7 +5,7 @@
     <arg name="posy"  value="0.4"/>
     <arg name="posz"  value="0.05"/>
     <arg name="yaw"   value="3.14"/>
-    <arg name="world" value="BioRobotics_lab"/>
+    <arg name="world" value="bio_robotics_lab"/>
   </include>
   
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_gazebo.rviz"/>
@@ -35,6 +35,7 @@
     <arg name="cloud_downsampling" value="9"/>
     <arg name="cloud_points_threshold" value="50"/>
     <arg name="lidar_points_threshold" value="5"/>
+    <arg name="inflation_radius" default="0.05"/>
   </include>
 
   <include file="$(find surge_et_ambula)/launch/justina/justina_manipulation.launch"/>

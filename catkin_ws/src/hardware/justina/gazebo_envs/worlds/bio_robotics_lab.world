@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <sdf version='1.7'>
   <world name='default'>
     <gravity>0 0 -9.8</gravity>
@@ -13,7 +14,6 @@
       <background>0.7 0.7 0.7 1</background>
       <shadows>1</shadows>
     </scene>
-    <wind/>
     <spherical_coordinates>
       <surface_model>EARTH_WGS84</surface_model>
       <latitude_deg>0</latitude_deg>
@@ -21,6 +21,58 @@
       <elevation>0</elevation>
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
+    <model name="gplane">
+      <pose>0 0 0 0 -0 0</pose>
+      <link name="body">
+        <pose>0 0 0 0 -0 0</pose>
+        <collision name="gplane_coll">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>10.075 13.18</size>
+            </plane>
+          </geometry>
+          <surface>
+            <contact>
+              <ode>
+                <kp>1e+06</kp>
+                <kd>1</kd>
+              </ode>
+            </contact>
+            <bounce/>
+            <friction>
+              <ode/>
+            </friction>
+          </surface>
+          <laser_retro>2000</laser_retro>
+          <max_contacts>10</max_contacts>
+        </collision>
+        <visual name="gplane_vis">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>10.075 13.18</size>
+            </plane>
+          </geometry>
+          <material>
+            <script>
+              <uri>model://base_materials/carpet/scripts</uri>
+              <uri>model://base_materials/carpet/textures</uri>
+              <name>carpet/carpet01</name>
+            </script>
+          </material>
+          <cast_shadows>0</cast_shadows>
+        </visual>
+        <velocity_decay>
+          <linear>0</linear>
+          <angular>0</angular>
+        </velocity_decay>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+        <gravity>1</gravity>
+      </link>
+      <static>1</static>
+    </model>
     <model name='Table_01'>
       <link name='link_0'>
         <inertial>
@@ -747,7 +799,7 @@
             <iyz>0</iyz>
             <izz>0.166667</izz>
           </inertia>
-          <pose>0 0 0 0 -0 0</pose>
+          <pose>0 0 0.5 0 -0 0</pose>
         </inertial>
         <pose>-0 0 0 0 -0 0</pose>
         <gravity>1</gravity>
@@ -1310,6 +1362,15 @@
       <real_time>0 0</real_time>
       <wall_time>1708034867 237269137</wall_time>
       <iterations>0</iterations>
+      <model name="gplane">
+        <pose>0 0 0 0 -0 0</pose>
+        <link name="body">
+          <pose>0 0 0 0 -0 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
+        </link>
+      </model>
       <model name='Desk_01'>
         <pose>4.60448 -0.497618 0 0 -0 1.57832</pose>
         <scale>1 1 1</scale>
@@ -1350,6 +1411,16 @@
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
+      <model name='Lab_Floor'>
+        <pose>0 0 0.005 0 -0 0</pose>
+        <scale>1 1 1</scale>
+        <link name='link_0'>
+          <pose>-0 0 0.005 0 -0 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
+        </link>
+      </model>
       <model name='Lab_Mesh'>
         <pose>-0.092622 0.025231 0 0 -0 0</pose>
         <scale>1 1 1</scale>
@@ -1371,10 +1442,10 @@
         </link>
       </model>
       <model name='Shelf_02'>
-        <pose>0.857254 2.4854 0 0 -0 3.1318</pose>
+        <pose>0.857254 2.45 0 0 -0 3.1318</pose>
         <scale>1 1 1</scale>
         <link name='link_0'>
-          <pose>0.857254 2.4854 0 0 -0 3.1318</pose>
+          <pose>0.857254 2.45 0 0 -0 3.1318</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -1463,16 +1534,16 @@
         <pose>2.5 -1.2 4 0 -0 0</pose>
       </light>
       <light name='inner_point_white5'>
-        <pose>4 -5.63051 4 0 -0 0</pose>
+        <pose>0 -10 4 0 -0 0</pose>
       </light>
       <light name='inner_point_white6'>
-        <pose>4 10 4 0 -0 0</pose>
+        <pose>0 10 4 0 -0 0</pose>
       </light>
       <light name='inner_point_white7'>
-        <pose>8 5 4 0 -0 0</pose>
+        <pose>10 0 4 0 -0 0</pose>
       </light>
       <light name='inner_point_white8'>
-        <pose>8 10 4 0 -0 0</pose>
+        <pose>-10 0 4 0 -0 0</pose>
       </light>
     </state>
     <model name='Shelf_02'>
@@ -1664,6 +1735,45 @@
       <static>1</static>
       <allow_auto_disable>1</allow_auto_disable>
       <pose>1.49956 0.009852 0 0 -0 0</pose>
+    </model>
+    <model name='Lab_Floor'>
+      <link name='link_0'>
+        <inertial>
+          <mass>1</mass>
+          <inertia>
+            <ixx>0.166667</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.166667</iyy>
+            <iyz>0</iyz>
+            <izz>0.166667</izz>
+          </inertia>
+          <pose>0 0 0 0 -0 0</pose>
+        </inertial>
+        <pose>0 0 0 0 -0 0</pose>
+        <gravity>1</gravity>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+        <enable_wind>0</enable_wind>
+        <visual name='visual'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://BioRoboticsLab/meshes/Lab_Floor.dae</uri>
+              <scale>1 1 1</scale>
+            </mesh>
+          </geometry>
+          <material>
+            <lighting>1</lighting>
+            <shader type='pixel'/>
+          </material>
+          <transparency>0</transparency>
+          <cast_shadows>1</cast_shadows>
+        </visual>
+      </link>
+      <static>1</static>
+      <allow_auto_disable>1</allow_auto_disable>
+      <pose>0.335619 -0.31913 0 0 -0 0</pose>
     </model>
     <gui fullscreen='0'>
       <camera name='user_camera'>
