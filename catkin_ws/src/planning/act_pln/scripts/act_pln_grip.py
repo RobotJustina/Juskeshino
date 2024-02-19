@@ -189,15 +189,12 @@ def main():
     pub_hd_goal_pose = rospy.Publisher("/hardware/head/goal_pose"     , Float64MultiArray, queue_size=10)
     pub_goal_pose    = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
     pub_cmd_vel      = rospy.Publisher('/hardware/mobile_base/cmd_vel', Twist, queue_size=10)
-    pub_say           = rospy.Publisher('/hri/speech_generator', SoundRequest, queue_size=10)
     pub_object_status = rospy.Publisher('/plannning/simple_task/object_status' , GoalStatus, queue_size=1 )
 
     rospy.Subscriber('/navigation/status', GoalStatus ,callback_goal_reached)
-    rospy.Subscriber('/manipulation/head/goal_reached',Bool ,callback_hd_goal_reached)
     rospy.Subscriber('/manipulation/left_arm/goal_reached',Bool , callback_la_goal_reached)
     rospy.Subscriber('/plannning/simple_task/take_object' ,String ,callback_take_object )
     topic_grip = '/plannning/simple_task/take_object'
-    # /plannning/simple_task/take_object, object_status
 
     
     listener = tf.TransformListener()
@@ -220,7 +217,7 @@ def main():
             print("OBJECT TARGET:____", obj_target)
             x_p, y_p, a = get_robot_pose(listener)
             STARTING_PLACE = [x_p, y_p, a]
-            state = SM_MOVE_HEAD #SM_WAITING_NEW_COMMAND
+            state = SM_MOVE_HEAD 
 
 
         elif state == SM_MOVE_HEAD:
@@ -255,7 +252,8 @@ def main():
                     state = SM_GET_OBJ_POSE
                     break
                 else:
-                    state = -1
+                    state = SM_INIT
+                    print("try to grab the object again")
                     resp = pub_status_msg_response(4, pub_object_status)  # ABORTED
 
                 
