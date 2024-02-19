@@ -39,6 +39,7 @@ std::vector<int> servo_zeros;                       // = arm zeros  + gripper ze
 std::vector<int> servo_directions;                  // = arm directions +  gripper directions
 std::vector<int> goal_pose_arm_bits;
 std::vector<int> goal_pose_gripper_bits;
+std::vector<int> goal_torque_gripper_bits;
 std::vector<std::vector<int> >   goal_trajectory_bits;
 trajectory_msgs::JointTrajectory goal_trajectory;
 bool new_arm_pose       = false;
@@ -81,7 +82,10 @@ void callback_goal_gripper(const std_msgs::Float64::ConstPtr& msg)
 
 void callback_torque_gripper(const std_msgs::Float64::ConstPtr& msg)
 {
+    //It is assumed that torque is in [0,1] with 0, null torque and 1.0 the max possible torque (depending on the motor model)
     new_gripper_torque = true;
+    goal_torque_gripper_bits[0] = 1023*msg->data;
+    goal_torque_gripper_bits[1] = 1023*msg->data;
 }
 
 void callback_q_trajectory(const trajectory_msgs::JointTrajectory::ConstPtr& msg)
@@ -294,6 +298,7 @@ int main(int argc, char **argv)
     }
     goal_pose_arm_bits.resize(servo_arm_ids.size());
     goal_pose_gripper_bits.resize(servo_gripper_ids.size());
+    goal_torque_gripper_bits.resize(servo_gripper_ids.size());
     for(int i=0; i< servo_arm_ids.size(); i++) goal_pose_arm_bits[i] = current_position_bits[i];
     for(int i=0; i< servo_gripper_ids.size(); i++) goal_pose_gripper_bits[i] = current_position_bits[servo_arm_ids.size() + i];
     //If torque is enabled, send current position as servo goal position
@@ -329,7 +334,7 @@ int main(int argc, char **argv)
     ros::Publisher pub_battery         = n.advertise<std_msgs::Float64>("/hardware/robot_state/arm_battery", 1);
     ros::Publisher pub_goal_reached    = n.advertise<std_msgs::Bool>("/manipulation/arm/goal_reached", 1);
     ros::Publisher pub_current_voltage = n.advertise<std_msgs::Float64>("/hardware/arm_voltage",1);
-    ros::Rate rate(40);
+    ros::Rate rate(20);
     sensor_msgs::JointState joint_states;
     std_msgs::Float64MultiArray msg_current_pose;
     std_msgs::Float64 msg_current_gripper;
@@ -413,8 +418,8 @@ int main(int argc, char **argv)
             joint_states.position = positions_bits_to_radians(current_position_bits, servo_zeros, servo_directions, servo_bits_per_radian);
         else
             std::cout<<prompt << "Cannot get arm current position..." << std::endl;
-        if(!get_current_voltage_bits(groupBulkReadVoltages, servo_ids, msg_voltage.data))
-            std::cout<<prompt<< "Cannot get arm current voltage"<< std::endl;
+        // if(!get_current_voltage_bits(groupBulkReadVoltages, servo_ids, msg_voltage.data))
+        //     std::cout<<prompt<< "Cannot get arm current voltage"<< std::endl;
         
         joint_states.header.stamp = ros::Time::now();
         for(int i=0; i<servo_arm_ids.size(); i++) msg_current_pose.data[i] = joint_states.position[i];

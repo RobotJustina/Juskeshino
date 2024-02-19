@@ -1,0 +1,20 @@
+#goal definition
+float32 x
+float32 y
+float32 yaw
+float32 timeout
+#std_msgs/String known_location
+string known_location
+---
+#result definition
+
+actionlib_msgs/GoalStatus success #actionlibmsg 
+---
+#feedback
+
+float32 x_robot
+float32 y_robot
+float32 yaw_robot
+float32 timeleft
+float32 euclD
+float32 anglD

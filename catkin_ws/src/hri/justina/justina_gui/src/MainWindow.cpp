@@ -97,9 +97,19 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(ui->visBtnFindLines, SIGNAL(clicked()), this, SLOT(visFindLinesClicked()));
     QObject::connect(ui->visBtnFindHoriPlanes, SIGNAL(clicked()), this, SLOT(visFindHoriPlanesClicked()));
     QObject::connect(ui->visTxtTrainObject, SIGNAL(returnPressed()), this, SLOT(visTrainObjectReturnPressed()));
+    
+    
+
+    QObject::connect(ui->tksTxtTakeObject, SIGNAL(returnPressed()), this, SLOT(visTakeObjectReturnPressed()));
+    
+
+    
     QObject::connect(ui->visBtnRecogObjects, SIGNAL(clicked()), this, SLOT(visRecognizeObjectsClicked()));
     QObject::connect(ui->visTxtRecognizeObject, SIGNAL(returnPressed()), this, SLOT(visRecognizeObjectReturnPressed()));
     QObject::connect(ui->visBtnPointsAbovePlane, SIGNAL(clicked()), this, SLOT(visGetPointsAbovePlaneClicked()));
+    QObject::connect(ui->visBtnEnableHumanPose, SIGNAL(clicked()), this, SLOT(visEnableHumanPoseClicked()));
+
+    QObject::connect(ui->hriBtnEnableFollowHuman, SIGNAL(clicked()), this, SLOT(hriEnableFollowHumanClicked()));
 }
 
 MainWindow::~MainWindow()
@@ -875,7 +885,47 @@ void MainWindow::visRecognizeObjectsClicked()
     qtRosNode->call_recognize_objects();
 }
 
+
+
+
+
+
+void MainWindow::visTakeObjectReturnPressed()
+{
+    qtRosNode->call_take_object(ui->tksTxtTakeObject->text().toStdString());
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void MainWindow::visGetPointsAbovePlaneClicked()
 {
     qtRosNode->call_get_points_above_plane();
+}
+
+void MainWindow::visEnableHumanPoseClicked()
+{
+    bool enable = ui->visBtnEnableHumanPose->text().toStdString().find("Enable") != std::string::npos;
+    if(enable) ui->visBtnEnableHumanPose->setText("Disable\nHuman Pose Det");
+    else ui->visBtnEnableHumanPose->setText("Enable\nHuman Pose Det");
+    qtRosNode->publish_enable_human_pose_detection(enable);
+}
+
+void MainWindow::hriEnableFollowHumanClicked()
+{
+    bool enable = ui->hriBtnEnableFollowHuman->text().toStdString().find("Enable") != std::string::npos;
+    if(enable) ui->hriBtnEnableFollowHuman->setText("Disable\nFollow Human");
+    else ui->hriBtnEnableFollowHuman->setText("Enable\nFollow Human");
+    qtRosNode->publish_enable_human_following(enable);
 }

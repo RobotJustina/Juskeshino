@@ -1,0 +1,37 @@
+<launch>
+  <arg name="debug" default="False"/>
+  <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
+    <arg name="posx"  value="-0.45"/>
+    <arg name="posy"  value="0.4"/>
+    <arg name="posz"  value="0.05"/>
+    <arg name="yaw"   value="3.14"/>
+    <arg name="world" value="BioRobotics_lab"/>
+  </include>
+  
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_mapping.rviz"/>
+
+  <node name="justina_gui" pkg="justina_gui" type="justina_gui_node" output="screen">
+    <param name="la_predefined" value="$(find config_files)/justina/manipulation/la_predefined.yaml"/>
+    <param name="ra_predefined" value="$(find config_files)/justina/manipulation/ra_predefined.yaml"/>
+    <param name="hd_predefined" value="$(find config_files)/justina/manipulation/hd_predefined.yaml"/>
+    <remap from="/camera/depth_registered/points" to="/hardware/realsense/points"/>
+  </node>
+
+  <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/>
+
+  <node name="gmapping" pkg="gmapping" type="slam_gmapping" args="scan:=/hardware/scan" output="screen">
+    <param name="map_update_interval" value="1.0" />
+    <param name="maxUrange" value="5.4"/>
+    <param name="linearUpdate" value="0.3"/>
+    <param name="angularUpdate" value="0.2"/>
+    <param name="xmin" value="-4.6"/>
+    <param name="ymin" value="-5.75"/>
+    <param name="xmax" value="20"/>
+    <param name="ymax" value="20"/>
+    <!--param name="delta" value=""/-->
+    <param name="maxRange" value="5.5"/>
+    <param name="minimumScore" value="0.0"/>
+  </node>
+
+
+</launch>

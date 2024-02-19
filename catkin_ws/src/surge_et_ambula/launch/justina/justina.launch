@@ -1,5 +1,5 @@
 <launch>
-  <arg name="obs_detector_debug" default="False"/>
+  <arg name="debug" default="False"/>
   
   <param name="base_link_name" value="base_link"/>
   <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
@@ -12,7 +12,7 @@
     <arg name="static_map_file"  value="$(find config_files)/maps/mapa_itzel.yaml"/>
     <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/mapa_itzel.yaml"/>
     <arg name="initial_pose_x" value="0.0"/>
-    <ag name="initial_pose_y" value="0.0"/>
+    <arg name="initial_pose_y" value="0.0"/>
     <arg name="initial_pose_a" value="0.0"/>
     <arg name="laser_scan_topic" value="/hardware/scan"/>
     <arg name="point_cloud_topic" value="/camera/depth_registered/points"/>
@@ -28,10 +28,10 @@
     <arg name="min_z" value="0.02"/>
     <arg name="max_z" value="1.30"/>
     <arg name="obs_detector_debug" value="False"/>
-    <arg name="move_head" value="False"/>
+    <arg name="move_head" value="True"/>
     <arg name="control_alpha" default="0.6"/>
     <arg name="control_beta" default="0.2"/>
-    <arg name="max_linear_speed" default="0.65"/>
+    <arg name="max_linear_speed" default="0.55"/>
     <arg name="min_linear_speed" default="0.15"/>
     <arg name="max_angular_speed" default="0.8"/>
     <arg name="linear_acceleration" default="0.25"/>
@@ -52,23 +52,15 @@
   </node>
 
   <include file="$(find surge_et_ambula)/launch/justina/manipulation.launch"/>
-  <include file="$(find surge_et_ambula)/launch/justina/vision.launch">
-    <arg name="debug"         value="False"/>
-    <arg name="training_dir"  value="$(find obj_reco)/training_dir"/>
-  </include>
-  
-  <node name="sound_play" pkg="sound_play" type="soundplay_node.py" output="screen"/>
-  <node name="speech_recog" pkg="sprec_pocketsphinx" type="asr.py">
-    <remap from="jsgf_audio" to="sphinx_audio" />
-    <param name="gram" value="$(find sprec_pocketsphinx)/vocab/gpsr"/>
-    <param name="dict" value="$(find sprec_pocketsphinx)/vocab/gpsr.dic"/>
-    <param name="grammar" value="gpsr_gram"/>
-    <param name="rule" value="simple_command"/>
-    <param name="lm" value=":default"/>
-    <param name="hmm" value=":default"/>
-  </node>
 
-  <node name="audio_control" pkg="sprec_pocketsphinx" type="send_audio.py" output="screen">
-    <param name="input" value=":default"/>
-  </node>
+  <node name="act_pln_grip" pkg="act_pln" type="act_pln_grip.py"/>
+
+
+
+  <include file="$(find surge_et_ambula)/launch/justina/vision.launch"> 
+    <arg name="debug"         value="$(arg debug)"/> 
+    <arg name="training_dir"  value="$(find obj_reco)/training_dir"/> 
+  </include> 
+  
+  <include file="$(find surge_et_ambula)/launch/justina/hri.launch"/>
 </launch>

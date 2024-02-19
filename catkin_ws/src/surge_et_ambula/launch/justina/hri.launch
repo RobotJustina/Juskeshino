@@ -1,0 +1,34 @@
+<launch>
+  <node name="sound_play" pkg="sound_play" type="soundplay_node.py" output="screen">
+    <remap from="/robotsound" to="/hri/speech_generator"/>
+  </node>
+
+  <node name="speech_recog" pkg="sprec_pocketsphinx" type="asr.py" output="screen">
+    <remap from="jsgf_audio" to="sphinx_audio" />
+    <param name="gram_file" value="$(find sprec_pocketsphinx)/vocab/gpsr.gram"/>
+    <param name="dict_file" value="$(find sprec_pocketsphinx)/vocab/gpsr.dic"/>
+    <param name="grammar_name" value="gpsr"/>
+    <param name="rule_name" value="command"/>
+  </node>
+  <node name="audio_control" pkg="sprec_pocketsphinx" type="send_audio.py" output="screen">
+    <param name="input" value=":default"/>
+  </node>
+
+  <node name="leg_finder" pkg="leg_finder" type="leg_finder_node" output="screen">
+    <param name="scan_downsampling" value="1"/>
+    <param name="laser_scan_frame" value="laser_link"/>
+    <param name="laser_scan_topic" value="/hardware/scan"/>
+    <param name="show_hypothesis" value="False"/>
+  </node>
+
+  <node name="human_follower" pkg="human_follower" type="human_follower_node" output="screen">
+    <param name="control_alpha" value="0.6548"/>
+    <param name="control_beta" value="0.3"/>
+    <param name="max_linear" value="0.7"/>
+    <param name="max_angular" value="0.7"/>
+    <param name="dist_to_human" value="0.9"/>
+    <param name="move_backwards" value="False"/>
+    <param name="legs_pose_topic" value="/hri/leg_finder/leg_pose"/>
+    <param name="cmd_vel_topic" value="/cmd_vel"/>
+  </node>
+</launch>

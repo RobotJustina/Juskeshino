@@ -16,4 +16,8 @@
     <remap from="/hardware/arm/current_pose"       to="/hardware/right_arm/current_pose"/>
   </node>
   <node name="trajectory_planner" pkg="trajectory_planner" type="trajectory_planner.py" output="screen"/>
+
+  <node name="gripper_orientation_for_grasping" pkg="object_manipulation" type="orientation_based_object_grabbing_fast.py" output="screen"/>
+  
+
 </launch>

@@ -1,0 +1,5 @@
+<launch>
+
+  <node name="whisper_engine" pkg="ros_whisper_vosk" type="whisper_service.py" args="--english" respawn="true" output="screen" />
+
+</launch>

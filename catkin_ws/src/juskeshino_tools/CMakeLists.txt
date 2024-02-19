@@ -20,10 +20,16 @@ find_package(catkin REQUIRED COMPONENTS
   visualization_msgs
   message_generation
   sound_play
+  actionlib_msgs
 )
-
+catkin_python_setup()
 find_package(PCL 1.2 REQUIRED)
 find_package(OpenCV REQUIRED)
+
+generate_messages(
+  DEPENDENCIES
+  geometry_msgs   sensor_msgs   std_msgs
+)
 
 catkin_package(
   INCLUDE_DIRS include

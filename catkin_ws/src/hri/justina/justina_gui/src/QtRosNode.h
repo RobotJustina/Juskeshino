@@ -6,6 +6,8 @@
 #include "std_msgs/Float64MultiArray.h"
 #include "std_msgs/Float64.h"
 #include "std_msgs/Float64.h"
+#include "std_msgs/String.h"
+#include "std_msgs/Bool.h"
 #include "geometry_msgs/Twist.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "nav_msgs/GetPlan.h"
@@ -44,11 +46,18 @@ public:
     ros::Publisher pubRaGoalGrip;
     ros::Publisher pubSpeechGen;
     ros::Publisher pubFakeSpeechRecog;
+    ros::Publisher pubHumanPoseEnable;
+    ros::Publisher pubLegFinderEnable;
+    ros::Publisher pubFollowHumanEnable;
+    ros::Publisher pubTakeObject;
+
     ros::Subscriber subLaCurrentQ;
     ros::Subscriber subLaVoltage;
     ros::Subscriber subRaCurrentQ;
     ros::Subscriber subRaVoltage;
     ros::Subscriber subRecogSpeech;
+    ros::Subscriber subObjectStatus;
+
     ros::ServiceClient cltLaIKPose2Pose;
     ros::ServiceClient cltRaIKPose2Pose;
     ros::ServiceClient cltLaIKPose2Traj;
@@ -112,7 +121,18 @@ public:
     bool call_train_object(std::string name);
     bool call_recognize_objects();
     bool call_recognize_object(std::string name);
+
+
+
+
+    void call_take_object(std::string name_object);
+
+
+
+
     bool call_get_points_above_plane();
+    void publish_enable_human_pose_detection(bool enable);
+    void publish_enable_human_following(bool enable);
 signals:
     void updateGraphics();
     void onRosNodeFinished();

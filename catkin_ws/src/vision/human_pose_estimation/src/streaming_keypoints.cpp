@@ -7,9 +7,13 @@
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <ros/topic.h>
+#include <std_msgs/Bool.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
+#include <geometry_msgs/Point.h>
+#include <visualization_msgs/MarkerArray.h>
+#include <visualization_msgs/Marker.h>
 
 #include <pcl/point_cloud.h>
 #include <pcl/io/pcd_io.h>
@@ -29,8 +33,7 @@
 #include "vision_msgs/HumanCoordinates.h"
 #include "vision_msgs/HumanCoordinatesArray.h"
 
-//static const std::string pcl_topic = "/hsrb/head_rgbd_sensor/depth_registered/rectified_points";
-static const std::string pcl_topic = "/camera/depth_registered/points";
+std::string pcl_topic = "/points";
 
 const std::vector<std::string> kpt_names{"nose", "neck", 
 	"r_sho", "r_elb", "r_wri", "l_sho", "l_elb", "l_wri",
@@ -46,16 +49,21 @@ class HumanDetector{
   private:
     ros::NodeHandle nh;
     ros::Publisher pub;
-    ros::Subscriber sub; 
+    ros::Publisher pubMarker;
+    ros::Subscriber subCloud;
+    ros::Subscriber subEnable;
   public:
     HumanDetector();
     void pclCallback(const sensor_msgs::PointCloud2ConstPtr& pcl_topic);
+    void enableCallback(const std_msgs::Bool::ConstPtr& msg);
+    visualization_msgs::Marker getHumanPoseMarkers(vision_msgs::HumanCoordinatesArray& msg);
 };
 
 HumanDetector::HumanDetector(){
 
-  pub = nh.advertise<vision_msgs::HumanCoordinatesArray>("human_coordinates_array", 1);
-  sub = nh.subscribe(pcl_topic, 1, &HumanDetector::pclCallback, this);
+  pub = nh.advertise<vision_msgs::HumanCoordinatesArray>("/vision/human_pose/human_pose_array", 1);
+  pubMarker = nh.advertise<visualization_msgs::Marker>("/vision/human_pose/human_pose_marker", 1);
+  subEnable = nh.subscribe("/vision/human_pose/enable", 1, &HumanDetector::enableCallback, this);
 }
 
 void HumanDetector::pclCallback(const sensor_msgs::PointCloud2ConstPtr& pcl_topic){
@@ -77,7 +85,7 @@ void HumanDetector::pclCallback(const sensor_msgs::PointCloud2ConstPtr& pcl_topi
   ptrack->track(poses);
 
   vision_msgs::HumanCoordinatesArray hca;
-  hca.header.frame_id = "head_rgbd_sensor_rgb_frame";
+  hca.header.frame_id = pcl_topic->header.frame_id;
   hca.header.stamp = ros::Time::now();
   hca.number_of_people = poses.size(); //how many people
 
@@ -134,25 +142,68 @@ void HumanDetector::pclCallback(const sensor_msgs::PointCloud2ConstPtr& pcl_topi
     }
     hca.coordinates_array.push_back(hc);
   }
-  pub.publish(hca); 
+  pub.publish(hca);
+  pubMarker.publish(getHumanPoseMarkers(hca));
   cv::imshow("HumanPoseEstimator",image);
   cv::waitKey(1);
 }
 
-
-int main(int argc,char **argv){
-  printf("main");
-  std::string package = "human_pose_estimation";
-  std::string path = ros::package::getPath(package);
-
-  std::stringstream ss;
-  ss << path << "/models/poseEstimationModel.onnx"; 
-  pe = new poseEstimation::poseEstimation(ss.str());
-  ptrack = new poseEstimation::poseTracker();
-
-  ros::init (argc, argv,"HumanDetection");
-  HumanDetector human_detector;
-  ros::spin();
-  return 0;
+void HumanDetector::enableCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+    if(msg->data)
+    {
+        std::cout << "HumanPoseEstimator.->Starting human pose detection"<<std::endl;
+        subCloud  = nh.subscribe(pcl_topic, 1, &HumanDetector::pclCallback, this);
+    }
+    else
+    {
+        std::cout << "HumanPoseEstimator.->Stopping human pose detection..." <<std::endl;
+        subCloud.shutdown();
+        cv::destroyAllWindows();
+    }
 }
 
+visualization_msgs::Marker HumanDetector::getHumanPoseMarkers(vision_msgs::HumanCoordinatesArray& msg)
+{
+    visualization_msgs::Marker mrk;
+    mrk.header.frame_id = msg.header.frame_id;
+    mrk.header.stamp = ros::Time::now();
+    mrk.ns = "human_pose";
+    mrk.id = 0;
+    mrk.type = visualization_msgs::Marker::SPHERE_LIST;
+    mrk.action = visualization_msgs::Marker::ADD;
+    mrk.pose.orientation.w = 1.0;
+    mrk.scale.x = 0.1;
+    mrk.scale.y = 0.1;
+    mrk.scale.z = 0.1;
+    mrk.color.a = 1.0; // Don't forget to set the alpha!
+    mrk.color.r = 1.0;
+    mrk.color.g = 0.5;
+    mrk.color.b = 0.0;
+    for(size_t i=0; i < msg.coordinates_array.size(); i++)
+        for(size_t j=0; j < msg.coordinates_array[i].keypoints_array.size(); j++)
+        {
+            geometry_msgs::Point p;
+            p.x = msg.coordinates_array[i].keypoints_array[j].keypoint_coordinates.position.x;
+            p.y = msg.coordinates_array[i].keypoints_array[j].keypoint_coordinates.position.y;
+            p.z = msg.coordinates_array[i].keypoints_array[j].keypoint_coordinates.position.z;
+            mrk.points.push_back(p);
+        }
+    return mrk;
+}
+
+int main(int argc,char **argv){
+    std::cout << "INITIALIZING HUMAN POSE ESTIMATOR BY RYOHEI" << std::endl;
+    std::string package = "human_pose_estimation";
+    std::string path = ros::package::getPath(package);
+    std::stringstream ss;
+    ss << path << "/models/poseEstimationModel.onnx"; 
+    pe = new poseEstimation::poseEstimation(ss.str());
+    ptrack = new poseEstimation::poseTracker();
+    
+    ros::init (argc, argv,"human_pose_detector");
+    ros::param::param<std::string>("~point_cloud_topic", pcl_topic, "/points");
+    HumanDetector human_detector;
+    ros::spin();
+    return 0;
+}

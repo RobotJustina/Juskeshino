@@ -1,3 +1,5 @@
-std_msgs/String location_name
+#std_msgs/String location_name
+string location_name
 ---
-std_msgs/Bool  success
+#std_msgs/Bool  success
+bool success

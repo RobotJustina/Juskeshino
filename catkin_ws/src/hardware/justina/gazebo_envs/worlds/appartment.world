@@ -12,8 +12,8 @@
       <background>0.7 0.7 0.7 1</background>
     </scene>
     <physics type="ode">
-      <real_time_update_rate>250.0</real_time_update_rate>
-      <max_step_size>0.004</max_step_size>
+      <real_time_update_rate>500.0</real_time_update_rate>
+      <max_step_size>0.002</max_step_size>
       <ode>
         <solver>
           <type>quick</type>
@@ -402,6 +402,13 @@
       <uri>model://lawn_garden</uri>
       <name>lawn_garden</name>
     </include>
+    <include>
+      <static>1</static>
+      <pose>7.5 12.5 0 0 0 1.5708</pose>
+      <uri>model://person_standing</uri>
+      <name>standing_person</name>
+    </include>
+    
     <!-- End of object model -->
     <state world_name="default">
       <sim_time>0</sim_time>
@@ -419,7 +426,7 @@
     </state>
     <gui fullscreen="0">
       <camera name="user_camera">
-        <pose>5.05 6.64 2.05 0 0.403 -0.34</pose>
+        <pose>4.66 6.41 15.45 0 1.44 -0.007</pose>
         <view_controller>orbit</view_controller>
       </camera>
     </gui>

@@ -1,0 +1,8 @@
+Image  in
+---
+Ints pt_min
+Ints pt_max
+std_msgs/String[]  names
+Floats confidence
+geometry_msgs/Pose[] poses  
+Image debug_image

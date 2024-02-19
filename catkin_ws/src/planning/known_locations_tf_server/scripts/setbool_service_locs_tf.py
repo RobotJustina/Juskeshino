@@ -11,8 +11,9 @@ from known_locations_tf_server.srv import *
 import pandas as pd
 from geometry_msgs.msg import TransformStamped
 from copy import deepcopy
+from utils.know_utils import *
 global path 
-path = '/home/takeshi/Codes/known_locations.txt'
+#path = '/home/takeshi/Codes/known_locations.txt'
 def write_tf(pose, q, child_frame , parent_frame='map'):
     t= TransformStamped()
     t.header.stamp = rospy.Time(0)
@@ -48,17 +49,12 @@ def read_tf(t):
     
     return pose, quat
 
-def read_yaml(known_locations_file = '/known_locations.yaml'):
-    
-    file_path = rospack.get_path('config_files')  + known_locations_file
 
-    with open(file_path, 'r') as file:
-        content = yaml.safe_load(file)
-    return content
-
-def write_yaml(trans,req, known_locations_file = '/known_locations.yaml'):
+def write_yaml_locs(trans,req, known_locations_file = '/known_locations.yaml'):
     trans,quat=read_tf(trans)
-    con= read_yaml()
+    
+
+    con= read_yaml(known_locations_file=known_locations_file)
     data=deepcopy(con[list(con.keys())[-1]])
     data[0]['x']=           math.trunc(trans[0]*1000)/1000
     data[1]['y']=           math.trunc(trans[1]  *1000)/1000
@@ -67,7 +63,7 @@ def write_yaml(trans,req, known_locations_file = '/known_locations.yaml'):
     data[4]['qy']=          math.trunc(quat[1]*1000)/1000
     data[5]['qz']=          math.trunc(quat[2]*1000)/1000
     data[6]['qw']=          math.trunc(quat[3]*1000)/1000
-    con[req.location_name.data]=data 
+    con[req.location_name]=data 
     
     file_path = rospack.get_path('config_files')  + known_locations_file
 
@@ -76,9 +72,16 @@ def write_yaml(trans,req, known_locations_file = '/known_locations.yaml'):
         documents = yaml.dump(con, file, default_flow_style=False)
     return True
 
+def read_yaml(known_locations_file = '/known_locations.yaml'):
+    
+    file_path = rospack.get_path('config_files')  + known_locations_file
+
+    with open(file_path, 'r') as file:
+        content = yaml.safe_load(file)
+    return content
 
 def yaml_to_df():
-    con = read_yaml()
+    con = read_yaml(known_locations_file =file_name)
     values=[]
     locations=[]
     for c in con:
@@ -94,8 +97,6 @@ def yaml_to_df():
     return df
 
 
-
-
 ###########################################################################################################################################################################
 def callback(req):
     ''' 
@@ -108,25 +109,25 @@ def callback(req):
     #print (resp)
     try:
         trans = tfBuffer.lookup_transform('map', 'base_link', rospy.Time())
-        trans.child_frame_id= req.location_name.data
+        trans.child_frame_id= req.location_name
         tf_static_broadcaster.sendTransform(trans)
         
         
         
         #####################################
         
-        succ=write_yaml(trans,req)
+        succ=write_yaml_locs(trans,req,file_name)
         print(succ)
         
 
         ###################################################
         #with  open(path , 'a') as out:
-        #    out.write (req.location_name.data+np_to_str(trans)+np_to_str(quat)  +'\n' )
+        #    out.write (req.location_name+np_to_str(trans)+np_to_str(quat)  +'\n' )
         #print (trans,quat)
         ####################### 
 
 
-        resp.success.data= succ
+        resp.success= succ
         return resp
 
 
@@ -134,13 +135,46 @@ def callback(req):
 
     except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
         print ( 'No TF FOUND')
-        resp.success.data= False
+        resp.success= False
         return resp
 
     
 
                  
+def callback2(req):
+    resp = Locations_serverResponse()
+    #print (resp)
+    try:
+        #trans = tfBuffer.lookup_transform('map', 'base_link', rospy.Time())
+        #trans.child_frame_id= req.location_name
+        #tf_static_broadcaster.sendTransform(trans)
+        
+        
+        
+        #####################################
+        
+        succ = add_place()
+        
+        print(succ)
+        
 
+        ###################################################
+        #with  open(path , 'a') as out:
+        #    out.write (req.location_name+np_to_str(trans)+np_to_str(quat)  +'\n' )
+        #print (trans,quat)
+        ####################### 
+
+
+        resp.success= succ
+        return resp
+
+
+
+
+    except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+        print ( 'No TF FOUND')
+        resp.success= False
+        return resp
     
 
 global tfBuffer,tf_static_broadcaster ,known_locs , rospack
@@ -155,21 +189,24 @@ rospack = rospkg.RosPack()
 #df=pd.read_csv('known_locations.txt')
 
 #df=pd.read_csv(path)##RELATIVIZE PATH?
+file_name    = rospy.get_param("file_name", "/known_locations.yaml")
+print (file_name)
 df= yaml_to_df()
-print (df)
+print (f'known locs server available using {file_name}')
 known_locs=df.values
 if len(df)!=0:
     for i in range(len(df)):
         trans=df[['x','y','th']].iloc[i].values
         quat=df[['qx','qy','qz','qw']].iloc[i].values
+        trans[-1]=0
         t=write_tf(trans,quat,df['child_id_frame'].iloc[i])
         print (t,i)
         tf_static_broadcaster.sendTransform(t)
         rospy.sleep(0.3)
 
 
-rospy.loginfo("known locations detection service available")                    # initialize a ROS node
-rospy.Service('/known_location_add', Locations_server, callback         # type, and callback
-)
+rospy.loginfo("known locations detection service available" )                    # initialize a ROS node
+rospy.Service('/known_location_add', Locations_server, callback)         # type, and callback
+rospy.Service('/knowledge_place_add', Locations_server, callback2)      #add to knowledge file
 
 rospy.spin()   

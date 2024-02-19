@@ -69,6 +69,11 @@ void QtRosNode::run()
     cltRecogObjects        = n->serviceClient<vision_msgs::RecognizeObjects>    ("/vision/obj_reco/detect_and_recognize_objects");
     cltRecogObject         = n->serviceClient<vision_msgs::RecognizeObject >    ("/vision/obj_reco/detect_and_recognize_object");
     cltGetPointsAbovePlane = n->serviceClient<vision_msgs::PreprocessPointCloud>("/vision/get_points_above_plane");
+    pubHumanPoseEnable     = n->advertise<std_msgs::Bool>("/vision/human_pose/enable", 1);
+    pubTakeObject          = n->advertise<std_msgs::String>("/plannning/simple_task/take_object", 1);
+
+    pubLegFinderEnable     = n->advertise<std_msgs::Bool>("/hri/leg_finder/enable", 1);
+    pubFollowHumanEnable   = n->advertise<std_msgs::Bool>("/hri/human_following/enable", 1);
     
     int pub_zero_counter = 5;
     while(ros::ok() && !this->gui_closed)
@@ -435,6 +440,51 @@ bool QtRosNode::call_recognize_object(std::string name)
     return cltRecogObject.call(srv);
 }
 
+
+
+
+
+void QtRosNode::call_take_object(std::string name)
+{
+    std_msgs::String msg;
+    msg.data = name;
+
+    std::cout << "Tomar objeto**************************************************" << std::endl;
+    
+    /*
+    vision_msgs::RecognizeObject srv;
+    boost::shared_ptr<sensor_msgs::PointCloud2 const> ptr;
+    ptr = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/camera/depth_registered/points", ros::Duration(1.0));
+    if(ptr==NULL)
+    {
+        std::cout << "JustinaGUI.->Cannot get point cloud before calling train object service..." << std::endl;
+        return false;
+    }
+    
+    srv.request.point_cloud = *ptr;
+    srv.request.name = name;
+    */
+    pubTakeObject.publish(msg);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 bool QtRosNode::call_get_points_above_plane()
 {
     vision_msgs::PreprocessPointCloud srv;
@@ -447,4 +497,19 @@ bool QtRosNode::call_get_points_above_plane()
     }
     srv.request.input_cloud = *ptr;
     return cltGetPointsAbovePlane.call(srv);
+}
+
+void QtRosNode::publish_enable_human_pose_detection(bool enable)
+{
+    std_msgs::Bool msg;
+    msg.data = enable;
+    pubHumanPoseEnable.publish(msg);
+}
+
+void QtRosNode::publish_enable_human_following(bool enable)
+{
+    std_msgs::Bool msg;
+    msg.data = enable;
+    pubLegFinderEnable.publish(msg);
+    pubFollowHumanEnable.publish(msg);
 }
