@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 import torch as th
+import math
 from torch import nn
 
 class Reg(nn.Module):
@@ -165,6 +166,57 @@ class DQN_1(nn.Module):
     def forward(self,x):
         pos=x[:, 6400:]
         pos= self.extra(pos)
+        pos = nn.functional.relu(self.extra_norm(pos))
+        x=x[:,0:6400]
+        x = x.view(x.size(0),1,80,80)
+
+        x = self.conv1(x)
+        x = nn.functional.relu(self.norm1(x))
+        x = nn.functional.avg_pool2d(x, kernel_size=2, stride=2)
+        x = self.dropout1(x)
+
+        x = th.flatten(x,1)
+        x = self.c1(x)
+        x = nn.functional.relu(self.norm3(x))
+        x = self.dropout3(x)
+
+        x = th.cat((x, pos), 1)
+        x = nn.functional.relu(self.c2(x))
+        x = self.c3(x)
+        return x
+
+class DQN_2(nn.Module):
+    def __init__(self, salida):
+        f1=32   ##Mejor configuración f1 =32, l1=64, lr=8.1e-3, epoch=14
+        l1=128
+        expand=32
+        l2=16
+
+        super(DQN_2, self).__init__()
+        self.conv1 = nn.Conv2d(1, f1, 3)
+        self.dropout1 = nn.Dropout2d(p=0.5)
+        self.norm1 = nn.GroupNorm(1, f1)
+
+        self.c1 = nn.Linear(int(39*39*f1), l1) #27380
+        self.norm3 = nn.LayerNorm(l1)
+        self.dropout3 = nn.Dropout(p=0.5)
+
+        self.c2 = nn.Linear(l1+expand, l2)
+        self.c3 = nn.Linear(l2,salida)
+
+        self.lr = 8.1e-3
+        self.epoch = 14
+        self.steps=0
+
+        self.extra = nn.Linear(200,expand)
+        self.extra_norm = nn.LayerNorm(expand)
+
+    def forward(self,x):
+        device = x.device
+        pos=x[:,6400:]
+        #print(pos.shape)
+        pos= self.extra(pos)
+        #print(pos.shape)
         pos = nn.functional.relu(self.extra_norm(pos))
         x=x[:,0:6400]
         x = x.view(x.size(0),1,80,80)
