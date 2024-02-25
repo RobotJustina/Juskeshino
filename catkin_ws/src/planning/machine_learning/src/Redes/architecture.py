@@ -204,7 +204,7 @@ class DQN_2(nn.Module):
         self.c2 = nn.Linear(l1+expand, l2)
         self.c3 = nn.Linear(l2,salida)
 
-        self.lr = 8.1e-3
+        self.lr = 1.1e-3
         self.epoch = 14
         self.steps=0
 
@@ -214,9 +214,7 @@ class DQN_2(nn.Module):
     def forward(self,x):
         device = x.device
         pos=x[:,6400:]
-        #print(pos.shape)
         pos= self.extra(pos)
-        #print(pos.shape)
         pos = nn.functional.relu(self.extra_norm(pos))
         x=x[:,0:6400]
         x = x.view(x.size(0),1,80,80)
@@ -236,6 +234,53 @@ class DQN_2(nn.Module):
         x = self.c3(x)
         return x
 
+class DQN_3(nn.Module):
+    def __init__(self, salida):
+        f1,f2,f3,f4=32,64,512,100   ##Mejor configuración f1 =32, l1=64, lr=8.1e-3, epoch=14
+        l1,expand,l2=128,32,16
+        pos_size=200
+        super(DQN_3, self).__init__()
+        self.conv_grid = nn.Sequential(
+            nn.Conv2d(1, f1, kernel_size=8, stride=4),
+            nn.ReLU(),
+            nn.Conv2d(f1, f2, kernel_size=4, stride=2),
+            nn.ReLU(),
+            nn.Conv2d(f2, f2, kernel_size=3, stride=1),
+            nn.ReLU()
+        )
+        self.fc_grid = nn.Sequential(
+            nn.Linear(f2 * 6 * 6, f3),
+            nn.ReLU(),
+            nn.Linear(f3, l1)
+        )
+
+        self.fc_position=nn.Sequential(
+            nn.Linear(pos_size, 64),
+            nn.ReLU(),
+            nn.Linear(64, expand)
+        )
+
+        self.fc_salida=nn.Sequential(
+            nn.Linear(l1+expand, l2),
+            nn.ReLU(),
+            nn.Linear(l2, salida)
+        )
+        self.lr = 1.1e-3
+
+    def forward(self,x):
+        device = x.device
+        pos = x[:,6400:]
+        pos = self.fc_position(pos)
+        x = x[:,0:6400]
+        x = x.view(x.size(0),1,80,80)
+
+        x = self.conv_grid(x)
+        x = th.flatten(x,1)
+        x = self.fc_grid(x)
+
+        x = th.cat((x, pos), 1)
+        x = self.fc_salida(x)
+        return x
 
 class Red_conv2(nn.Module):
 	def __init__(self):

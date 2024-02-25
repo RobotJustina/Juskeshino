@@ -20,7 +20,7 @@ import torch.nn as nn
 rospack = rospkg.RosPack()
 data_folder = rospack.get_path("machine_learning") + "/src/DRL_files"
 r_laser, r_obstacle, r_goal=0.0,0.0,0.0
-deque_len=10000
+deque_len=5000
 replay_buffer = deque(maxlen=deque_len)
 dist=0.0
 linx=0.0
@@ -30,14 +30,15 @@ first=True
 steps=0
 #Seed
 np.random.seed(42)
+random.seed(42)
 th.manual_seed(42)
 th.cuda.manual_seed(42)
 th.backends.cudnn.deterministic = True
 
 #mired = architecture.Red_conv(3)
 #mired.load_state_dict(th.load(model_folder+"/src/Data_gazebo/modelo_gazebo.pth"))
-policy_net = architecture.DQN_2(3)
-target_net = architecture.DQN_2(3)
+policy_net = architecture.DQN_3(3)
+target_net = architecture.DQN_3(3)
 if os.path.exists(data_folder+"/DRL_gazebo_policy.pth"):
 	policy_net.load_state_dict(th.load(data_folder+"/DRL_gazebo_policy.pth",map_location=th.device('cpu')))
 	target_net.load_state_dict(th.load(data_folder+"/DRL_gazebo_target.pth",map_location=th.device('cpu')))
@@ -93,8 +94,8 @@ def callback_goal(msg):
 	global r_laser, r_goal, last_goal,done, last_distance
 	dist=msg.data[0]
 	if(dist<0.22):
-		r_goal=100
-		if(dist<0.15):
+		r_goal=20
+		if(dist<0.19):
 			done=True
 		else:
 			done=False
@@ -103,26 +104,25 @@ def callback_goal(msg):
 		done=False
 	if(last_distance!=None):
 		r_laser=last_goal[0]-last_distance
-		print(last_goal[0], last_distance)
+		#print(last_goal[0], last_distance)
 	last_goal=list(msg.data)
 
 def train(replay_buffer):
 	global policy_net,target_net, disp, optimizer
 	gamma=0.9
-	batch_size=128
+	batch_size=256
 	batch = random.sample(replay_buffer, batch_size)
 	buffer_content = list(batch)
+
 	state = th.Tensor(np.array([transition[0] for transition in buffer_content]))
 	reward= th.Tensor(np.array([transition[1] for transition in buffer_content]))
 	actions = th.Tensor(np.array([transition[2] for transition in buffer_content]))
 	next_state = th.Tensor(np.array([transition[3] for transition in buffer_content]))
-	actions = actions.to(th.device(disp))
-	actions = actions.long()
-	actions = actions.unsqueeze(1)
+
+	actions = actions.to(th.device(disp)).long()
 	state=state.to(th.device(disp), th.float32)
-	state_action_values = policy_net(state).gather(1, actions)
+	state_action_values = policy_net(state).gather(1, actions.unsqueeze(1))
 	next_state=next_state.to(th.device(disp), th.float32)
-	target_net.to(disp)
 	reward=reward.to(disp)
 	gamma = th.tensor(gamma)
 	gamma = gamma.to(disp)
@@ -131,36 +131,42 @@ def train(replay_buffer):
 	expected_state_action_values = (next_state_values * gamma)+reward
 	criterion = nn.SmoothL1Loss()
 	loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
+	#print(f'Perdida {loss}')
 	# Optimize the model
 	optimizer.zero_grad()
 	loss.backward()
 	# In-place gradient clipping
 	th.nn.utils.clip_grad_value_(policy_net.parameters(), 100)
 	optimizer.step()
+	TAU = 0.1
+	target_net_state_dict = target_net.state_dict()
+	policy_net_state_dict = policy_net.state_dict()
+	for key in policy_net_state_dict:
+		target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
+	target_net.load_state_dict(target_net_state_dict)
+
 
 
 def select_action(target_net,steps, grid_act, disp):
-	EPS_START = 0.9
+	EPS_START = 0.95
 	EPS_END = 0.05
-	EPS_DECAY = 2000
+	EPS_DECAY = 20000
 	epsilon= EPS_END + (EPS_START - EPS_END) *math.exp(-1. * steps / EPS_DECAY)
 	random_number = np.random.rand()
 	#print(steps)
 	if(random_number>=epsilon):
-		entrada = np.asarray(grid_act)
-		entrada = np.expand_dims(entrada, axis=0)
-		x_ent=th.tensor(entrada)
-		x_ent=x_ent.to(th.device(disp), th.float32)
+		entrada = np.expand_dims(np.asarray(grid_act), axis=0)
+		x_ent = th.tensor(entrada).to(th.device(disp), th.float32)
         ##print(x_ent.shape)
 		with th.no_grad():
 			y_pred = target_net(x_ent)
 		y_pred =y_pred.cpu().numpy()
-		#print(y_pred)
-		##print(y_pred, steps, len(replay_buffer))
 		index=int(np.argmax(y_pred))
+		print(f'Acción {index} con {y_pred}, 0:ir de frente')
 	else:
 		index_values = [0, 1, 2]
 		index=np.random.choice(index_values)
+		#print(f'Acción {index}, 0:ir de frente')
 	return index
 
 
@@ -183,10 +189,16 @@ def callback_grid(msg):
 	grid_act=list(msg.data)+l0+l1
 	#last_distance=last_goal[0]
 	#random_number = np.random.rand()
-	if (not done and steps<1000 and (not stop)):
-		r=r_obstacle+r_laser+r_goal
+	if (not done and steps<1000 and (not stop) and last_distance is not None):
+		#r_dist=-last_goal[0]+last_distance
+		#print(r_dist)
+		#r=r_obstacle+100*r_dist+r_goal
+		#print(r)
 		#print(r_laser)
-		if(grid_bef is not None):
+		if(grid_bef is not None and last_distance is not None):
+			r_dist=-last_goal[0]+last_distance
+			r=r_obstacle+100*r_dist+r_goal
+			#print(r)
 			replay_buffer.append((np.asarray(grid_bef),r, action_bef, np.asarray(grid_act)))
 		#first=False
 		action_bef=select_action(target_net, total_steps, grid_act, disp)
@@ -196,16 +208,14 @@ def callback_grid(msg):
 		total_steps+=1
 		#print(steps)
 		r_total+=r
-		if(len(replay_buffer)>250):
+		if(len(replay_buffer)>260):
 			#steps+=1
 			#r_total+=r
 			##Los pesos de policy_net pasan a target_net después de 100 pasos
 			if(steps%50==0):
 				train(replay_buffer)
-				#print(r_total, steps)
+				print('entrenando')
 				#r_total=0
-			if(steps%200==0):
-				target_net.load_state_dict(policy_net.state_dict())
 		th.cuda.empty_cache()
 	elif((done and steps>2) or steps==1000 or (stop and steps>2)):
 		grid_bef=None
@@ -237,7 +247,7 @@ def saving_function():
 	pub_cmd.publish(msg)
 
 def main():
-	global r_laser, r_obstacle, r_goal, grid_act, linx, angz, replay_buffer
+	global linx, angz
 	rospy.init_node("DRL_train")
 	rospy.on_shutdown(saving_function)
 	rospy.Subscriber("/laser_mod", LaserScan, callback_scan)
