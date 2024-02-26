@@ -35,6 +35,7 @@ SM_GRASP_OBJECT = 13
 SM_PICK_UP_OBJECT = 14
 SM_LIFT_OBJECT = 15
 SM_PREPARE = 111
+SM_CLEAN_VARIABLES = 2
 
 # ROBOT REAL LOCATION
 LEFT_TABLE_NEAR = [5.45, 2.45, np.deg2rad(90)]
@@ -205,31 +206,25 @@ def main():
     global executing_command, new_command, recognized_speech
 
     rospy.wait_for_service("/vision/obj_segmentation/get_obj_pose")
-    clt_pose_obj = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose", RecognizeObject)
-    """
-    rospy.wait_for_service("/vision/obj_reco/recognize_object")
-    clt_recognize_object = rospy.ServiceProxy("/vision/obj_reco/recognize_object", RecognizeObjects)
-    """
     rospy.wait_for_service("/vision/obj_reco/detect_and_recognize_objects")
-    clt_recognize_objects = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_objects", RecognizeObjects)
-
     rospy.wait_for_service("/vision/get_best_grasp_traj")
-    clt_best_grip = rospy.ServiceProxy("/vision/get_best_grasp_traj", BestGraspTraj )
-    rospy.wait_for_service( '/manipulation/la_ik_trajectory' )
-    clt_ik = rospy.ServiceProxy( '/manipulation/la_ik_trajectory' , InverseKinematicsPose2Traj )
-    rospy.wait_for_service( '/manipulation/polynomial_trajectory')
-    clt_traj_planner = rospy.ServiceProxy( '/manipulation/polynomial_trajectory' , GetPolynomialTrajectory )
+    #rospy.wait_for_service("/manipulation/la_ik_trajectory")
+    rospy.wait_for_service("/manipulation/polynomial_trajectory")
 
-    pub_la_goal_traj = rospy.Publisher("/manipulation/la_q_trajectory" , JointTrajectory, queue_size=10)
-    pub_la_goal_grip = rospy.Publisher("/hardware/left_arm/goal_gripper" , Float64, queue_size=10)
-    pub_la_goal_q    = rospy.Publisher("/hardware/left_arm/goal_pose" , Float64MultiArray, queue_size=10)
-    pub_hd_goal_pose = rospy.Publisher("/hardware/head/goal_pose"     , Float64MultiArray, queue_size=10)
-    pub_goal_pose    = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
-    pub_cmd_vel      = rospy.Publisher('/hardware/mobile_base/cmd_vel', Twist, queue_size=10)
-    pub_say           = rospy.Publisher('/hri/speech_generator', SoundRequest, queue_size=10)
-    pub_object_status = rospy.Publisher('/plannning/simple_task/object_status' , GoalStatus, queue_size=1 )
+    clt_pose_obj          = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose", RecognizeObject)
+    clt_recognize_objects = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_objects", RecognizeObjects)
+    clt_best_grip         = rospy.ServiceProxy("/vision/get_best_grasp_traj", BestGraspTraj )
+    clt_traj_planner      = rospy.ServiceProxy( '/manipulation/polynomial_trajectory' , GetPolynomialTrajectory )
+
+    pub_la_goal_traj      = rospy.Publisher("/manipulation/la_q_trajectory" , JointTrajectory, queue_size=10)
+    pub_la_goal_grip      = rospy.Publisher("/hardware/left_arm/goal_gripper" , Float64, queue_size=10)
+    pub_la_goal_q         = rospy.Publisher("/hardware/left_arm/goal_pose" , Float64MultiArray, queue_size=10)
+    pub_hd_goal_pose      = rospy.Publisher("/hardware/head/goal_pose"     , Float64MultiArray, queue_size=10)
+    pub_goal_pose         = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
+    pub_cmd_vel           = rospy.Publisher('/hardware/mobile_base/cmd_vel', Twist, queue_size=10)
+    pub_say               = rospy.Publisher('/hri/speech_generator', SoundRequest, queue_size=10)
+    pub_object_status     = rospy.Publisher('/plannning/simple_task/object_status' , GoalStatus, queue_size=1 )
     
-
 
     rospy.Subscriber('/navigation/status', GoalStatus ,callback_goal_reached)
     rospy.Subscriber('/manipulation/head/goal_reached',Bool ,callback_hd_goal_reached)
@@ -237,11 +232,9 @@ def main():
     rospy.Subscriber('/hri/sp_rec/recognized', RecognizedSpeech, callback_recognized_speech)
     rospy.Subscriber('/plannning/simple_task/take_object' ,String ,callback_take_object )
     topic_grip = '/plannning/simple_task/take_object'
-    # /plannning/simple_task/take_object, object_status
 
     
     listener = tf.TransformListener()
-
     new_command = False
     executing_command = False
     recognized_speech = ""
@@ -319,23 +312,20 @@ def main():
         elif state == SM_PREPARE_ARM:
             print("state == SM_PREPARE_ARM")
             if (resp_pose_obj.recog_object.size.x < 0.11) or resp_pose_obj.recog_object.object_state == "horizontal":
-                p_final = PREPARE_TOP_GRIP
-                print("PREPARE_TOP_GRIP..........................")
+                q2q_traj(PREPARE_TOP_GRIP , clt_traj_planner, pub_la_goal_traj)
             else:
-                p_final = PREPARE_LATERAL_GRIP
-                print("PREPARE_LATERAL_GRIP..........................")
+                q2q_traj(PREPARE_LATERAL_GRIP , clt_traj_planner, pub_la_goal_traj)
 
-
-            q2q_traj(p_final, clt_traj_planner, pub_la_goal_traj)
+            
             while (not goal_la_reached) or not rospy.is_shutdown:
                 print("status: moving arm....", goal_la_reached)                
                 time.sleep(1)
             
             goal_la_reached =  False       
-            print("goal_la_reached STATUS", goal_la_reached)
-            
-            
+            print("goal_la_reached STATUS", goal_la_reached)            
             state = SM_GRASP_OBJECT
+
+
             
         elif state == SM_GRASP_OBJECT:
             print("state == SM_GRASP_OBJECT")
@@ -415,6 +405,16 @@ def main():
 
             goal_la_reached = False
             state = SM_INIT
+
+            """
+        elif state == SM_CLEAN_VARIABLES:
+            new_command = False
+            executing_command = False
+            recognized_speech = ""
+            goal_reached = False
+            goal_la_reached = False
+            state = SM_INIT
+            """
 
 
 

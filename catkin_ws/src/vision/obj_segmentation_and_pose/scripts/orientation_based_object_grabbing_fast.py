@@ -587,7 +587,7 @@ def evaluating_possibility_grip(candidate_quaternion_list, obj_state):
             ik_msg.roll = pose1[3]      # (0, -90,0)
             ik_msg.pitch = pose1[4]
             ik_msg.yaw = pose1[5]
-            ik_msg.duration = 4
+            ik_msg.duration = 7
             ik_msg.time_step = 0.09
             try:    # intenta la primera trayectoria
                 
