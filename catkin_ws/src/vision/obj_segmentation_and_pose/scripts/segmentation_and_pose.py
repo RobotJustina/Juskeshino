@@ -112,11 +112,9 @@ def segment_by_contour(img_bgr, pointCloud_array, original_cloud):
 
 
 
-
 def get_object_bgr_and_xyz(img_bgr, img_xyz, mask):
     obj_bgr = img_bgr.copy()
     obj_bgr[mask == 0] = 0
-    # Take xyz points only in mask and remove points with zero X
     obj_xyz = img_xyz[(mask == 255) & (img_xyz[:,:,0] > 0.1)].copy()
     return obj_bgr, obj_xyz
 
@@ -128,7 +126,6 @@ def pca(xyz_points,centrid):    # pc del contorno mas cercano
     eig_val  = eig_val[idx]
     eig_vect = np.transpose(np.transpose(eig_vect)[idx])
     pts_frame_PCA = np.transpose(np.dot(eig_vect, np.transpose(xyz_points)))
-    #pt_frame_PCA = np.transpose(np.dot(eig_vect, np.transpose(centrid)))
     
     print("EigVal...........", eig_val)
     H = np.max(pts_frame_PCA[:, 2]) - np.min(pts_frame_PCA[:, 2])
@@ -349,7 +346,7 @@ def callback_RecognizeObject(req):  # Request is a PointCloud2
 
 
 def main():
-    print("Node to segment objects in a image from camera by Iby..ʕ•ᴥ•ʔ")
+    print("Obj_segmentation_and_pose-->segmentation by Iby..ʕ•ᴥ•ʔ")
     rospy.init_node("object_pose")
 
     global pub_point, marker_pub, clt_get_points

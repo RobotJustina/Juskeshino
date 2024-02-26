@@ -69,7 +69,7 @@ def callback(req):
                         res.poses.append(pose)
                         
                         #t=write_tf(    cc , (0,0,0,1), model.names[int(cls.cpu().tolist())], "head_rgbd_sensor_rgb_frame"   ) #Takeshi
-                        t=write_tf(    cc , (0,0,0,1), model.names[int(cls.cpu().tolist())], "camera_link"   ) #Justina
+                        t=write_tf(    cc , (0,0,0,1), model.names[int(cls.cpu().tolist())], "realsense_link"   ) #Justina
                         
                         broadcaster.sendTransform(t)
                     debug_img=cv2.rectangle(debug_img ,pt_min,pt_max,  (0, 255, 0), 2   )

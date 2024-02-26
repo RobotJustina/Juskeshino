@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <asset>
+    <contributor>
+      <author>Blender User</author>
+      <authoring_tool>Blender 3.6.5 commit date:2023-10-16, commit time:14:30, hash:cf1e1ed46b7e</authoring_tool>
+    </contributor>
+    <created>2024-02-16T13:33:23</created>
+    <modified>2024-02-16T13:33:23</modified>
+    <unit name="meter" meter="1"/>
+    <up_axis>Z_UP</up_axis>
+  </asset>
+  <library_effects>
+    <effect id="Plane_Floor-effect">
+      <profile_COMMON>
+        <newparam sid="Floor_color_png-surface">
+          <surface type="2D">
+            <init_from>Floor_color_png</init_from>
+          </surface>
+        </newparam>
+        <newparam sid="Floor_color_png-sampler">
+          <sampler2D>
+            <source>Floor_color_png-surface</source>
+          </sampler2D>
+        </newparam>
+        <technique sid="common">
+          <lambert>
+            <emission>
+              <color sid="emission">0 0 0 1</color>
+            </emission>
+            <diffuse>
+              <texture texture="Floor_color_png-sampler" texcoord="UVMap"/>
+            </diffuse>
+            <index_of_refraction>
+              <float sid="ior">1.45</float>
+            </index_of_refraction>
+          </lambert>
+        </technique>
+      </profile_COMMON>
+    </effect>
+    <effect id="White-effect">
+      <profile_COMMON>
+        <technique sid="common">
+          <lambert>
+            <emission>
+              <color sid="emission">0 0 0 1</color>
+            </emission>
+            <diffuse>
+              <color sid="diffuse">0.8 0.8 0.8 1</color>
+            </diffuse>
+            <index_of_refraction>
+              <float sid="ior">1.45</float>
+            </index_of_refraction>
+          </lambert>
+        </technique>
+      </profile_COMMON>
+    </effect>
+    <effect id="Metal_Aluminium-effect">
+      <profile_COMMON>
+        <newparam sid="Metal_Aluminium_albedo_jpg-surface">
+          <surface type="2D">
+            <init_from>Metal_Aluminium_albedo_jpg</init_from>
+          </surface>
+        </newparam>
+        <newparam sid="Metal_Aluminium_albedo_jpg-sampler">
+          <sampler2D>
+            <source>Metal_Aluminium_albedo_jpg-surface</source>
+          </sampler2D>
+        </newparam>
+        <technique sid="common">
+          <lambert>
+            <emission>
+              <color sid="emission">0 0 0 1</color>
+            </emission>
+            <diffuse>
+              <texture texture="Metal_Aluminium_albedo_jpg-sampler" texcoord="UVMap"/>
+            </diffuse>
+            <index_of_refraction>
+              <float sid="ior">1.45</float>
+            </index_of_refraction>
+          </lambert>
+        </technique>
+      </profile_COMMON>
+    </effect>
+  </library_effects>
+  <library_images>
+    <image id="Floor_color_png" name="Floor_color_png">
+      <init_from>Floor_color.png</init_from>
+    </image>
+    <image id="Metal_Aluminium_albedo_jpg" name="Metal_Aluminium_albedo_jpg">
+      <init_from>Metal_Aluminium_albedo.jpg</init_from>
+    </image>
+  </library_images>
+  <library_materials>
+    <material id="Plane_Floor-material" name="Plane_Floor">
+      <instance_effect url="#Plane_Floor-effect"/>
+    </material>
+    <material id="White-material" name="White">
+      <instance_effect url="#White-effect"/>
+    </material>
+    <material id="Metal_Aluminium-material" name="Metal_Aluminium">
+      <instance_effect url="#Metal_Aluminium-effect"/>
+    </material>
+  </library_materials>
+  <library_geometries>
+    <geometry id="Lab_Floor-mesh" name="Lab_Floor">
+      <mesh>
+        <source id="Lab_Floor-mesh-positions">
+          <float_array id="Lab_Floor-mesh-positions-array" count="12">-5.072551 -2.687495 0 -5.072551 2.702446 0 5.039995 -2.687495 0 5.039995 2.702446 0</float_array>
+          <technique_common>
+            <accessor source="#Lab_Floor-mesh-positions-array" count="4" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Lab_Floor-mesh-normals">
+          <float_array id="Lab_Floor-mesh-normals-array" count="3">0 0 1</float_array>
+          <technique_common>
+            <accessor source="#Lab_Floor-mesh-normals-array" count="1" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Lab_Floor-mesh-map-0">
+          <float_array id="Lab_Floor-mesh-map-0-array" count="12">0.002079963 0.9933266 0.9979199 0.006673455 0.99792 0.9933261 0.002079963 0.9933266 0.002079963 0.006673812 0.9979199 0.006673455</float_array>
+          <technique_common>
+            <accessor source="#Lab_Floor-mesh-map-0-array" count="6" stride="2">
+              <param name="S" type="float"/>
+              <param name="T" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="Lab_Floor-mesh-vertices">
+          <input semantic="POSITION" source="#Lab_Floor-mesh-positions"/>
+        </vertices>
+        <triangles material="Plane_Floor-material" count="2">
+          <input semantic="VERTEX" source="#Lab_Floor-mesh-vertices" offset="0"/>
+          <input semantic="NORMAL" source="#Lab_Floor-mesh-normals" offset="1"/>
+          <input semantic="TEXCOORD" source="#Lab_Floor-mesh-map-0" offset="2" set="0"/>
+          <p>1 0 0 2 0 1 3 0 2 1 0 3 0 0 4 2 0 5</p>
+        </triangles>
+      </mesh>
+    </geometry>
+  </library_geometries>
+  <library_visual_scenes>
+    <visual_scene id="Scene" name="Scene">
+      <node id="Lab_Floor" name="Lab_Floor" type="NODE">
+        <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        <instance_geometry url="#Lab_Floor-mesh" name="Lab_Floor">
+          <bind_material>
+            <technique_common>
+              <instance_material symbol="Plane_Floor-material" target="#Plane_Floor-material">
+                <bind_vertex_input semantic="UVMap" input_semantic="TEXCOORD" input_set="0"/>
+              </instance_material>
+              <instance_material symbol="White-material" target="#White-material">
+                <bind_vertex_input semantic="UVMap" input_semantic="TEXCOORD" input_set="0"/>
+              </instance_material>
+              <instance_material symbol="Metal_Aluminium-material" target="#Metal_Aluminium-material">
+                <bind_vertex_input semantic="UVMap" input_semantic="TEXCOORD" input_set="0"/>
+              </instance_material>
+            </technique_common>
+          </bind_material>
+        </instance_geometry>
+      </node>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#Scene"/>
+  </scene>
+</COLLADA>
