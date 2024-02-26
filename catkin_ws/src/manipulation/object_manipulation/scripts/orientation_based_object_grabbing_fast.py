@@ -11,7 +11,7 @@ from manip_msgs.srv import *
 from visualization_msgs.msg import Marker, MarkerArray
 import geometry_msgs.msg
 
-MAXIMUM_GRIP_LENGTH = 0.15
+MAXIMUM_GRIP_LENGTH = 0.14
     
 
 
@@ -73,7 +73,8 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
         grip_point_bl = points_actual_to_points_target(grip_point, 'object', 'base_link')
         grip_point_bl[2] = grip_point_bl[2] + 0.15  
         grip_point = points_actual_to_points_target(grip_point_bl, 'base_link', 'object')
-        marker_array_publish(grip_point, 'object', 59, 56)
+        if debug:
+            marker_array_publish(grip_point, 'object', 59, 56)
         
 
     obj_pose_frame_object = obj_pose 
@@ -103,6 +104,7 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
         obj_pose_frame_object.position.z = grip_point[2]
 
         if debug:
+            print("emitiendo pose........." + name_frame+str(j)+obj_state , grip_point)
             broadcaster_frame_object('object', name_frame+str(j)+obj_state , obj_pose_frame_object )
 
         grasp_candidates_quaternion.append(obj_pose_frame_object )     # guarda el candidato en frame bl
@@ -114,18 +116,21 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
 
 def grip_rules(obj_pose, type_obj, obj_state, size, grip_point):
 
-    if (size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x >= 0.13):
+    if (size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x >= 0.12):
         print("The object will be GRABBED AS PRISM..................")
         return prism(obj_pose, obj_state)
     else:
-        if size.x < 0.13:
+        if(size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x < 0.12):
             print("Object too SMALL, SUPERIOR GRIP will be made")
-            return small_obj(obj_pose, obj_state , grip_point)
+            return cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj)
             
         else:
-            print("size object > MAX LENGHT GRIP")
-            print("The object will be GRABBED as BOX....................")
-            return box(obj_pose, size, obj_state )
+            if(type_obj == "BOWL"):
+                return cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj)
+            else:
+                print("size object > MAX LENGHT GRIP")
+                print("The object will be GRABBED as BOX....................")
+                return box(obj_pose, size, obj_state )
 
 
 
@@ -216,7 +221,7 @@ def top_grip(grip_point):
 
 
 
-def small_obj(obj_pose, obj_state, grip_point):
+def cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj):
     """
     Construye los candidatos de agarre para un objeto pequenio
     """
@@ -226,16 +231,30 @@ def small_obj(obj_pose, obj_state, grip_point):
     
     # Primera lista de candidatos******************************************************************************
     obj_pos_1 = Pose()
-    obj_pos_1.position.x, obj_pos_1.position.y, obj_pos_1.position.z = 0, 0, 0
+    if (type_obj == "BOX"):
+        print("BOX")
+        obj_pos_1.position.x, obj_pos_1.position.y, obj_pos_1.position.z = 0, 0, 0
+    else:
+        print("BOWL")
+        obj_pos_1.position.x, obj_pos_1.position.y, obj_pos_1.position.z = 0, size.z/2 , 0
+        print("GRIP POINT BOWL: ", obj_pos_1)
+
     obj_pos_1.orientation.x = 0.0
     obj_pos_1.orientation.y = 0.0
     obj_pos_1.orientation.z = 0.0
     obj_pos_1.orientation.w = 1.0
-    pose_list1 = generates_candidates([0,0,0] , obj_pos_1, "P", obj_state ,  'c1', step = -12, num_candidates = 7)
+    pose_list1 = generates_candidates([obj_pos_1.position.x , obj_pos_1.position.y ,obj_pos_1.position.z] , obj_pos_1, "P", obj_state ,  'c1', step = -12, num_candidates = 6)
     
     # Segunda lista de candidatos******************************************************************************
     obj_pose_2 = Pose()
-    obj_pose_2.position.x, obj_pose_2.position.y, obj_pose_2.position.z = 0, 0, 0
+    if (type_obj == "BOX"):
+        print("BOX")
+        obj_pose_2.position.x, obj_pose_2.position.y, obj_pose_2.position.z = 0 , 0, 0
+    else:
+        print("BOWL")
+        obj_pose_2.position.x, obj_pose_2.position.y, obj_pose_2.position.z = -size.x/2 , 0, 0
+        print("GRIP POINT BOWL: ", obj_pose_2.position)
+
     obj_pose_2.orientation.x = 0.0
     obj_pose_2.orientation.y = 0.0
     obj_pose_2.orientation.z = 0.0
@@ -245,7 +264,7 @@ def small_obj(obj_pose, obj_state, grip_point):
                                                 obj_pose_2.orientation.y ,
                                                 obj_pose_2.orientation.z, 
                                                 obj_pose_2.orientation.w])
-    Y = Y + np.deg2rad(45) # Realiza un yaw de 90 grados 
+    Y = Y + np.deg2rad(-90) # Realiza un yaw de 90 grados 
         
         
     q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
@@ -253,12 +272,12 @@ def small_obj(obj_pose, obj_state, grip_point):
     obj_pose_2.orientation.y = q_gripper[1]
     obj_pose_2.orientation.z = q_gripper[2]
     obj_pose_2.orientation.w = q_gripper[3]
-    obj_pose_2.position.x = 0
-    obj_pose_2.position.y = 0
-    obj_pose_2.position.z = 0
+    # obj_pose_2.position.x = 0
+    # obj_pose_2.position.y = 0
+    # obj_pose_2.position.z = 0
         
-    pose_list2 = generates_candidates([0,0,0] , obj_pose_2, "P", obj_state , 'C2', step = -12, num_candidates = 7)
-        
+    pose_list2 = generates_candidates([obj_pose_2.position.x , obj_pose_2.position.y , obj_pose_2.position.z] , obj_pose_2, "P", obj_state , 'C2', step = -12, num_candidates = 6)
+    """
 
     # Tercera lista de candidatos.................................
     obj_pose_3 = Pose()
@@ -285,9 +304,10 @@ def small_obj(obj_pose, obj_state, grip_point):
     obj_pose_3.position.z = 0
         
     pose_list3 = generates_candidates([0,0,0], obj_pose_3 , "P", obj_state , 'c3', step = -14, num_candidates = 7)
-    print("Num Candidates:____", len(pose_list2 + pose_list1 + pose_list3 ))#+ pose_list4))        
+    """
+    print("Num Candidates:____", len(pose_list2 + pose_list1 ))
     
-    return pose_list1 + pose_list2 + pose_list3 #+ pose_list4
+    return pose_list1 + pose_list2
     
 
 
@@ -365,6 +385,7 @@ def box(obj_pose, size, obj_state):
 
 
 
+
 def prism(obj_pose, obj_state):
     """
     Construye los candidatos de agarre para un objeto prismatico
@@ -398,6 +419,7 @@ def prism(obj_pose, obj_state):
             point = np.asarray([ 0, epsilon*np.sin(theta), epsilon*np.cos(theta)  ])
             #point = points_actual_to_points_target(point, 'object', 'base_link')
             points.append(point)
+
             marker_array_publish(point, 'object', count, id)
             count += 1
             id += 1
@@ -434,33 +456,6 @@ def prism(obj_pose, obj_state):
             j += 1
         print("number of candidates vertical grip prism", len(grasp_candidates_quaternion))
         return grasp_candidates_quaternion
-        
-
-
-"""
-def arow_marker(p_offset, p1, frame_id, ns, id, color):  # P1 y P2
-    point0 = Point()
-    point0.x = p_offset[0] 
-    point0.y = p_offset[1] 
-    point0.z = p_offset[2] 
-    marker1 = Marker()
-    marker1.header.frame_id = frame_id
-    marker1.type = Marker.ARROW
-    marker1.ns = ns
-    marker1.header.stamp = rospy.Time.now()
-    marker1.action = marker1.ADD
-    marker1.id = id
-    # body radius, Head radius, hight head
-    marker1.scale.x, marker1.scale.y, marker1.scale.z = 0.009, 0.05, 0.02 
-    marker1.color.r , marker1.color.g , marker1.color.b, marker1.color.a = color, 0.0, 100.0, 1.0
-    point1 = Point()
-    point1.x = p_offset[0] + p1[0]
-    point1.y = p_offset[1] + p1[1]
-    point1.z = p_offset[2] + p1[2]
-    marker1.points = [point0, point1]
-    marker_pub.publish(marker1)
-"""
-
 
 
 
@@ -660,10 +655,10 @@ def callback(req):
 
 def main():
     global listener , ik_srv, marker_pub, marker_array_pub, debug
-    debug = False
+    debug = True
     print("Node to grab objects based on their orientation by Iby..............ʕ•ᴥ•ʔ")
     rospy.init_node("gripper_orientation_for_grasping")
-    rospy.Service("/vision/get_best_grasp_traj", BestGraspTraj, callback)
+    rospy.Service("/manipulation/get_best_grasp_traj", BestGraspTraj, callback)
 
     listener = tf.TransformListener()
     # se suscribe al servicio /manipulation/ik_trajectory
