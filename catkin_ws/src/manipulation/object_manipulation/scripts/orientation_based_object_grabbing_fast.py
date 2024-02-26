@@ -46,12 +46,6 @@ def points_actual_to_points_target(point_in, f_actual, f_target):
     return [ new_point.x , new_point.y , new_point.z ]
 
 
-def flat_objects_grip(obj_pose, size_obj):
-    grip_point = []     # se define el punto de agarre
-    # Si 1pca < 0.1 m : small_obj()
-    # si no:            top_grip()
-    return 
-
 
 
 def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame, step, num_candidates):    # Cambiar nombre por generates_candidates
@@ -115,6 +109,9 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
 
 
 def grip_rules(obj_pose, type_obj, obj_state, size, grip_point):
+
+    if(size.y <= 0.03) and (obj_state == 'horizontal'):
+        return spoon_grip()
 
     if (size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x >= 0.12):
         print("The object will be GRABBED AS PRISM..................")
@@ -272,9 +269,6 @@ def cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj):
     obj_pose_2.orientation.y = q_gripper[1]
     obj_pose_2.orientation.z = q_gripper[2]
     obj_pose_2.orientation.w = q_gripper[3]
-    # obj_pose_2.position.x = 0
-    # obj_pose_2.position.y = 0
-    # obj_pose_2.position.z = 0
         
     pose_list2 = generates_candidates([obj_pose_2.position.x , obj_pose_2.position.y , obj_pose_2.position.z] , obj_pose_2, "P", obj_state , 'C2', step = -12, num_candidates = 6)
     """
@@ -456,6 +450,17 @@ def prism(obj_pose, obj_state):
             j += 1
         print("number of candidates vertical grip prism", len(grasp_candidates_quaternion))
         return grasp_candidates_quaternion
+
+
+
+def spoon_grip():
+    gripper_length = 0.1
+    grip_point = [0, gripper_length, 0]     # se define el punto de agarre
+    if debug:
+        marker_array_publish(grip_point, 'object', 55, 56)
+    
+    top_grip(grip_point)
+    return 
 
 
 
