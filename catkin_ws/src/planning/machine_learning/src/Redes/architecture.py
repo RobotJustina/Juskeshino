@@ -246,34 +246,45 @@ class DQN_3(nn.Module):
             nn.Conv2d(f1, f2, kernel_size=4, stride=2),
             nn.ReLU(),
             nn.Conv2d(f2, f2, kernel_size=3, stride=1),
-            nn.ReLU()
+            nn.ReLU(),
+            nn.GroupNorm(1, f2)
+            #nn.BatchNorm2d(f2)
         )
         self.fc_grid = nn.Sequential(
             nn.Linear(f2 * 6 * 6, f3),
             nn.ReLU(),
-            nn.Linear(f3, l1)
+            nn.Linear(f3, l1),
+            nn.ReLU(),
+            nn.LayerNorm(l1),
+            nn.Dropout(0.5)
         )
 
         self.fc_position=nn.Sequential(
             nn.Linear(pos_size, 64),
             nn.ReLU(),
-            nn.Linear(64, expand)
+            nn.Linear(64, expand),
+            nn.ReLU(),
+            nn.LayerNorm(expand),  # Normalización por lotes
+            nn.Dropout(0.5)
         )
 
         self.fc_salida=nn.Sequential(
             nn.Linear(l1+expand, l2),
             nn.ReLU(),
+            nn.LayerNorm(l2),  # Normalización por lotes
+            nn.Dropout(0.5),
             nn.Linear(l2, salida)
         )
-        self.lr = 1.1e-3
+        self.lr = 0.5e-3
 
     def forward(self,x):
         device = x.device
         pos = x[:,6400:]
         pos = self.fc_position(pos)
+        #print(pos.shape)
         x = x[:,0:6400]
         x = x.view(x.size(0),1,80,80)
-
+        #print(pos.shape)
         x = self.conv_grid(x)
         x = th.flatten(x,1)
         x = self.fc_grid(x)

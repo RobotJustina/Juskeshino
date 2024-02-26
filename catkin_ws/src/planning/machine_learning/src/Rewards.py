@@ -129,7 +129,7 @@ def train(replay_buffer):
 	with th.no_grad():
 		next_state_values = target_net(next_state).max(1).values
 	expected_state_action_values = (next_state_values * gamma)+reward
-	criterion = nn.SmoothL1Loss()
+	criterion = nn.MSELoss()
 	loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
 	#print(f'Perdida {loss}')
 	# Optimize the model
@@ -138,7 +138,7 @@ def train(replay_buffer):
 	# In-place gradient clipping
 	th.nn.utils.clip_grad_value_(policy_net.parameters(), 100)
 	optimizer.step()
-	TAU = 0.1
+	TAU = 0.005
 	target_net_state_dict = target_net.state_dict()
 	policy_net_state_dict = policy_net.state_dict()
 	for key in policy_net_state_dict:
@@ -146,11 +146,10 @@ def train(replay_buffer):
 	target_net.load_state_dict(target_net_state_dict)
 
 
-
 def select_action(target_net,steps, grid_act, disp):
 	EPS_START = 0.95
 	EPS_END = 0.05
-	EPS_DECAY = 20000
+	EPS_DECAY = 8000
 	epsilon= EPS_END + (EPS_START - EPS_END) *math.exp(-1. * steps / EPS_DECAY)
 	random_number = np.random.rand()
 	#print(steps)
@@ -159,7 +158,7 @@ def select_action(target_net,steps, grid_act, disp):
 		x_ent = th.tensor(entrada).to(th.device(disp), th.float32)
         ##print(x_ent.shape)
 		with th.no_grad():
-			y_pred = target_net(x_ent)
+			y_pred = policy_net(x_ent)
 		y_pred =y_pred.cpu().numpy()
 		index=int(np.argmax(y_pred))
 		print(f'Acción {index} con {y_pred}, 0:ir de frente')
