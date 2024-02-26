@@ -110,7 +110,7 @@ def callback_goal(msg):
 def train(replay_buffer):
 	global policy_net,target_net, disp, optimizer
 	gamma=0.9
-	batch_size=256
+	batch_size=128
 	batch = random.sample(replay_buffer, batch_size)
 	buffer_content = list(batch)
 
@@ -129,7 +129,7 @@ def train(replay_buffer):
 	with th.no_grad():
 		next_state_values = target_net(next_state).max(1).values
 	expected_state_action_values = (next_state_values * gamma)+reward
-	criterion = nn.MSELoss()
+	criterion = nn.SmoothL1Loss()
 	loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
 	#print(f'Perdida {loss}')
 	# Optimize the model
@@ -149,7 +149,7 @@ def train(replay_buffer):
 def select_action(target_net,steps, grid_act, disp):
 	EPS_START = 0.95
 	EPS_END = 0.05
-	EPS_DECAY = 8000
+	EPS_DECAY = 10000
 	epsilon= EPS_END + (EPS_START - EPS_END) *math.exp(-1. * steps / EPS_DECAY)
 	random_number = np.random.rand()
 	#print(steps)
@@ -215,7 +215,7 @@ def callback_grid(msg):
 				train(replay_buffer)
 				print('entrenando')
 				#r_total=0
-		th.cuda.empty_cache()
+				th.cuda.empty_cache()
 	elif((done and steps>2) or steps==1000 or (stop and steps>2)):
 		grid_bef=None
 		done=False
