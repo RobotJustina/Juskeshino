@@ -459,8 +459,7 @@ def spoon_grip():
     if debug:
         marker_array_publish(grip_point, 'object', 55, 56)
     
-    top_grip(grip_point)
-    return 
+    return top_grip(grip_point)
 
 
 
