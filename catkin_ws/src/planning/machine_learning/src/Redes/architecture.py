@@ -267,16 +267,16 @@ class DQN_3(nn.Module):
         )
 
         self.fc_salida=nn.Sequential(
-            nn.Linear(l1+expand, l2),
+            nn.Linear(l1+200, l2),
             nn.ReLU(),
             nn.Linear(l2, salida)
         )
-        self.lr = 0.5e-3
+        self.lr = 1e-3
 
     def forward(self,x):
         device = x.device
         pos = x[:,6400:]
-        pos = self.fc_position(pos)
+        #pos = self.fc_position(pos)
 
         x = x[:,0:6400]
         x = x.view(x.size(0),1,80,80)

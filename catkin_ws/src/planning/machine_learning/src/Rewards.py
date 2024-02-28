@@ -198,7 +198,8 @@ def callback_grid(msg):
 			r_dist=-last_goal[0]+last_distance
 			r=r_obstacle+100*r_dist+r_goal
 			#print(r)
-			replay_buffer.append((np.asarray(grid_bef),r, action_bef, np.asarray(grid_act)))
+			if(r!=0):
+				replay_buffer.append((np.asarray(grid_bef),r, action_bef, np.asarray(grid_act)))
 		#first=False
 		action_bef=select_action(target_net, total_steps, grid_act, disp)
 		linx=C[action_bef,0]
