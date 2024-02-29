@@ -15,8 +15,8 @@ import ros_numpy
 from gazebo_ros import gazebo_interface
 from sklearn.decomposition import PCA
 import math as m
-import moveit_commander
-import moveit_msgs.msg
+#import moveit_commander
+#import moveit_msgs.msg
 from cv_bridge import CvBridge, CvBridgeError
 import rospkg
 

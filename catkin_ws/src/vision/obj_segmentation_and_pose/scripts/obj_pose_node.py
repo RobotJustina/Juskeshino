@@ -13,7 +13,7 @@ import geometry_msgs.msg
 from cv_bridge import CvBridge
 
 
-MAXIMUM_GRIP_LENGTH = 0.14
+MAXIMUM_GRIP_LENGTH = 0.16
 
 
 def get_cv_mats_from_cloud_message(cloud_msg):
@@ -82,7 +82,7 @@ def pca(xyz_points):    # pc del contorno mas cercano
 
 
 
-def object_pose(centroid, principal_component, second_component, size_x):  # vectores de entrada estan en frame base_link
+def object_pose(centroid, principal_component, second_component, size_obj):  # vectores de entrada estan en frame base_link
     """
     Construction of the coordinate system of the object,the construction of the frame depends on the coordinate system of the robot gripper 
     Ademas se imponen restricciones para que la pose sea realizable por el gripper
@@ -98,13 +98,14 @@ def object_pose(centroid, principal_component, second_component, size_x):  # vec
 
     # ************************************************************************************************
     if ((angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150))):  
-        if (size_x >= 0.13):
+        if (size_obj.x >= 0.13):
             # Realiza agarre superior
             obj_state = 'horizontal'
             print("Eje principal horizontal")
             # Angulo respecto de x_base_link
             angle_obj_x_bl =  math.atan2(principal_component[1], principal_component[0]) 
             print("Angulo respecto de eje X de BASE_LINK:", np.rad2deg(angle_obj_x_bl))
+
 
             if angle_obj_x_bl > np.deg2rad(60) or angle_obj_x_bl < np.deg2rad(-130):
                 print("Angulo 1pc fuera de limites corregido...........")
@@ -114,13 +115,25 @@ def object_pose(centroid, principal_component, second_component, size_x):  # vec
             if second_component[2] < 0: 
                 print("se corrigio sc")
                 second_component = -1 * second_component    # sc no puede ser un vector negativo
-            # Asignacion de ejes del objeto
-            eje_x_obj = principal_component 
-            eje_z_obj = eje_z
-            eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+
+            
+            if ((size_obj.x /size_obj.z) > 1.333):    # Objeto prismatico
+                print("cylinder..........")
+                # Asignacion de ejes del objeto
+                eje_x_obj = principal_component 
+                eje_z_obj = eje_z
+                eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+
+            else:
+                print("BOWL.................")
+                eje_x_obj = np.asarray([1, 0, 0], dtype=np.float64 )# coordenadas en 'base_link'
+                eje_z_obj = eje_z
+                eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+            
         
         else:
             # Si el objeto es pequenio se construye un frame que permita el agarre superior
+            print("se construye un frame que permita el agarre superior")
             obj_state = 'horizontal'
             eje_x_obj = np.asarray([1, 0, 0], dtype=np.float64)
             eje_z_obj = eje_z
@@ -149,7 +162,6 @@ def object_pose(centroid, principal_component, second_component, size_x):  # vec
 
     # **************************************************************************************************
     axis_x_obj = Point(x = eje_x_obj[0], y = eje_x_obj[1], z = eje_x_obj[2])    # Vector x_obj
-    #axis_x_obj.x, axis_x_obj.y, axis_x_obj.z = eje_x_obj[0], eje_x_obj[1], eje_x_obj[2]
     # Se forma la matriz de rotacion (columnas) del objeto, a partir de ella se obtienen los cuaterniones necesarios para generar el frame del objeto
     RM = np.asarray([eje_x_obj, eje_y_obj , eje_z_obj])
     RM = RM.T
@@ -224,27 +236,28 @@ def get_obj_pose_response(obj_state, c_obj, size_obj, obj_pose, graspable):
 
 
 
-def object_category(fpc, spc, thpc):  # estima la forma geometrica del objeto. (x,z,y)
-    print("1pca, 2pca, 3pca", fpc,spc,thpc)
-    # coeficiente de similitud entre aristas de bounding box del objeto
-    c21, c31, c32 =  spc * ( 100 / fpc),   thpc * ( 100 / fpc),    thpc * ( 100 / spc)
-    #print("c21, c31, c32", c21, c31, c32)
-    if spc > 0.15 and thpc > 0.15:
-        print("Object no graspable......")
-        return "0",False  
-    if fpc < 0.1:   # Objeto pequeño
-        print("objeto pequeño.........")
-        print("box......")
-        return "box", True
-    else:
-        if c32 > 60 and (spc < 0.15) :    # Means 2PC and 3PC are similar
 
-            if c21 < 60:
-                print("prism.......")
-                return "prism", True
-        
-        print("box.........") 
-        return "box", True
+def object_category(size_obj, obj_state):  # estima la forma geometrica del objeto. (x,z,y)
+
+    if (size_obj.z <= MAXIMUM_GRIP_LENGTH) and (size_obj.y <= MAXIMUM_GRIP_LENGTH) and (size_obj.x >= 0.13):
+        print("The object will be GRABBED AS PRISM..................")
+        return "PRISM", True
+    else:
+        if(size_obj.z <= MAXIMUM_GRIP_LENGTH) and (size_obj.y <= MAXIMUM_GRIP_LENGTH) and (size_obj.x < 0.13) and (size_obj.x > 0.07):
+            print("Object spheric or cubic SMALL, SUPERIOR GRIP will be made")
+            return "CUBIC", True
+            
+        else:
+            if((size_obj.x /size_obj.z) < 1.4) and (obj_state == 'horizontal'):
+                print("The object is a bowl")
+                return "BOWL", True
+            else:
+                if (size_obj.z >= MAXIMUM_GRIP_LENGTH) and (size_obj.y >= MAXIMUM_GRIP_LENGTH) and (size_obj.x >= MAXIMUM_GRIP_LENGTH):
+                    return "BIG", False
+                
+                print("size object > MAX LENGHT GRIP")
+                print("The object will be GRABBED as BOX....................")
+                return "BOX", True
     
 
 
@@ -258,16 +271,15 @@ def callback_PoseObject(req):  # Request is a PointCloud2
 
     centroid = np.mean(obj_xyz, axis=0)
     pca_vectors, eig_val, size_obj = pca(obj_xyz)
-    c_obj, graspable = object_category(size_obj.x, size_obj.z, size_obj.y)
-
-    obj_pose, axis_x_obj, obj_state = object_pose(centroid, pca_vectors[0], pca_vectors[1], size_obj.x)
+    obj_pose, axis_x_obj, obj_state = object_pose(centroid, pca_vectors[0], pca_vectors[1], size_obj )
+    c_obj, graspable = object_category(size_obj, obj_state)
 
     print("CENTROID:____", centroid)
     #publish_arow_marker(centroid, axis_x_obj, 'base_link', ns ="principal_component", id=22)
     broadcaster_frame_object("base_link", "object", obj_pose)
     print("SIZE:________", )
     print(size_obj)
-    print("BOUNDING BOX TYPE", c_obj)
+    print("OBJECT TYPE", c_obj)
     print("STATE", obj_state)
     
     resp = get_obj_pose_response( obj_state, c_obj, size_obj, obj_pose, graspable)
@@ -276,11 +288,11 @@ def callback_PoseObject(req):  # Request is a PointCloud2
 
 
 def main():
-    print("Initializing Object Pose Node by Iby *******************(✿◠‿◠)7**")
+    print("Obj_segmentation_and_pose --> obj_pose by Iby *******************(✿◠‿◠)7**")
     rospy.init_node("object_pose")
 
     global pub_point, marker_pub, debug
-    debug = False
+    debug = True
     rospy.Service("/vision/obj_segmentation/get_obj_pose", RecognizeObject, callback_PoseObject) 
     pub_point = rospy.Publisher('/vision/detected_object', PointStamped, queue_size=10)
     marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10) 

@@ -37,9 +37,9 @@ class Initial(smach.State):
         elif self.tries == 3:
             return 'tries'
 
-        
+        print(drinks)
 
-        rospy.sleep(0.8)
+        #rospy.sleep(0.8)
         return 'succ'
 
 # --------------------------------------------------
