@@ -26,7 +26,6 @@ dist=0.0
 linx=0.0
 angz=0.0
 last_goal=[0,0]
-first=True
 steps=0
 #Seed
 np.random.seed(42)
@@ -85,7 +84,8 @@ def callback_scan(msg):
 		print("obstaculo cerca")
 
 def callback_goal(msg):
-	global r_goal, last_goal,done, last_distance
+	global r_goal, last_goal,done
+	dist=msg.data[0]
 	if(dist<0.22):
 		r_goal=20
 		if(dist<0.19):
@@ -100,7 +100,7 @@ def callback_goal(msg):
 def train(replay_buffer):
 	global policy_net,target_net, disp, optimizer
 	gamma=0.9
-	batch_size=64
+	batch_size=40
 	batch = random.sample(replay_buffer, batch_size)
 	buffer_content = list(batch)
 
@@ -110,21 +110,30 @@ def train(replay_buffer):
 	next_state = th.Tensor(np.array([transition[3] for transition in buffer_content]))
 
 	target_net.to(disp)
+	#next_state.to(disp)
+	next_state=next_state.to(th.device(disp), th.float32)
+	#next_state_values = target_net(next_state).max(1).values
 	with th.no_grad():
-		next_state=next_state.to(th.device(disp), th.float32)
 		next_state_values = target_net(next_state).max(1).values
 	next_state.to('cpu')
 	target_net.to('cpu')
 
 	actions = actions.to(th.device(disp)).long()
 	state=state.to(th.device(disp), th.float32)
+
 	policy_net.to(disp)
 	state_action_values = policy_net(state).gather(1, actions.unsqueeze(1))
+	state.to('cpu')
+	actions.to('cpu')
 
 	reward=reward.to(disp)
 	gamma = th.tensor(gamma).to(disp)
 
 	expected_state_action_values = (next_state_values * gamma)+reward
+	reward.to('cpu')
+	gamma.to('cpu')
+	next_state_values.to('cpu')
+
 	criterion = nn.SmoothL1Loss()
 	loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
 	#print(f'Perdida {loss}')
@@ -142,15 +151,9 @@ def train(replay_buffer):
 		target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
 	target_net.load_state_dict(target_net_state_dict)
 	#cuda.empty_cache()
-	actions.to('cpu')
-	state.to('cpu')
 	state_action_values.to('cpu')
-	reward.to('cpu')
-	next_state_values.to('cpu')
-	gamma.to('cpu')
 	expected_state_action_values.to('cpu')
 	th.cuda.empty_cache()
-
 
 def select_action(target_net,steps, grid_act, disp):
 	EPS_START = 0.95
@@ -164,6 +167,7 @@ def select_action(target_net,steps, grid_act, disp):
 		policy_net.to(disp)
 		with th.no_grad():
 			y_pred = policy_net(x_ent)
+		x_ent.to('cpu')
 		policy_net.to('cpu')
 		y_pred =y_pred.cpu().numpy()
 		index=int(np.argmax(y_pred))
@@ -177,29 +181,32 @@ def select_action(target_net,steps, grid_act, disp):
 
 def polar2vec(last_goal):
 	p0=(last_goal[0]/10)*99
-    p1=((last_goal[1]/(math.pi))+1)/2 * 99
-    l0=[0 for i in range(100)]
-    if(round(p1)>=99):
-        l0[99]=1
-    else:
-        l0[round(p1)]=1
-    l1=[0 for i in range(100)]
-    if(round(p0)>=99):
-        l1[99]=1
-    else:
-        l1[round(p0)]=1
+	p1=((last_goal[1]/(math.pi))+1)/2 * 99
+	l0=[0 for i in range(100)]
+	if(round(p1)>=99):
+		l0[99]=1
+	else:
+		l0[round(p1)]=1
+	l1=[0 for i in range(100)]
+	if(round(p0)>=99):
+		l1[99]=1
+	else:
+		l1[round(p0)]=1
+	l=l0+l1
 	return l
 
 def callback_grid(msg):
-	global grid_bef,grid_act,last_goal,first,linx,angz,r_obstacle,r_laser,r_goal, replay_buffer, policy_net, target_net, steps, done, r_total, action_bef, r_list, disp,stop, last_distance, total_steps
+	global grid_bef,grid_act,last_goal,linx,angz,r_obstacle,r_goal, replay_buffer, policy_net, target_net, steps, done, r_total, action_bef, r_list, disp,stop, last_distance, total_steps
+	th.cuda.empty_cache()
 	grid_bef=grid_act
+	#print('Hola')
 	l=polar2vec(last_goal)
 	grid_act=list(msg.data)+l
+	#print(done, stop, steps, last_distance)
 	if (not done and steps<1000 and (not stop) and last_distance is not None):
 		if(grid_bef is not None and last_distance is not None and action_bef is not None):
 			r_dist=-last_goal[0]+last_distance
 			r=r_obstacle+100*r_dist+r_goal
-			#print(r)
 			#if(r!=0):
 			replay_buffer.append((np.asarray(grid_bef),r, action_bef, np.asarray(grid_act)))
 		else:
@@ -212,19 +219,12 @@ def callback_grid(msg):
 		total_steps+=1
 		#print(steps)
 		r_total+=r
-		if(len(replay_buffer)>260):
-			#steps+=1
-			#r_total+=r
-			##Los pesos de policy_net pasan a target_net después de 100 pasos
-			if(steps%50==0):
-				train(replay_buffer)
-				print('entrenando')
-				#r_total=0
-				#th.cuda.empty_cache()
+		if(len(replay_buffer)>290 and steps%50==0):
+			train(replay_buffer)
+			print('entrenando')
 	elif((done and steps>2) or steps==1000 or (stop and steps>2)):
 		grid_bef=None
 		done=False
-		#print(steps)
 		if(stop):
 			print("Cerrar launch")
 		r_list.append(r_total/steps)
