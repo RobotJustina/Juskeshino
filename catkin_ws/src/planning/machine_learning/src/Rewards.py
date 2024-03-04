@@ -22,7 +22,6 @@ data_folder = rospack.get_path("machine_learning") + "/src/DRL_files"
 r_laser, r_obstacle, r_goal=0.0,0.0,0.0
 deque_len=5000
 replay_buffer = deque(maxlen=deque_len)
-dist=0.0
 linx=0.0
 angz=0.0
 last_goal=[0,0]
@@ -34,9 +33,8 @@ th.manual_seed(42)
 th.cuda.manual_seed(42)
 th.backends.cudnn.deterministic = True
 
-disp = 'cuda' if th.cuda.is_available() else 'cpu'
-policy_net = architecture.DQN_4(3)
-target_net = architecture.DQN_4(3)
+policy_net = architecture.DQN_3(3)
+target_net = architecture.DQN_3(3)
 if os.path.exists(data_folder+"/DRL_gazebo_policy.pth"):
 	policy_net.load_state_dict(th.load(data_folder+"/DRL_gazebo_policy.pth",map_location=th.device('cpu')))
 	target_net.load_state_dict(th.load(data_folder+"/DRL_gazebo_target.pth",map_location=th.device('cpu')))
@@ -59,13 +57,8 @@ else:
 
 print(r_list)
 
-#disp = 'cuda' if th.cuda.is_available() else 'cpu'
-#policy_net.to(disp)
-#target_net.to(disp)
 grid_bef, grid_act, action_bef=None,None,None
 C=np.asarray([[0.3, 0.0], [0.0, 0.5],[0.0, -0.5]])
-LR = policy_net.lr
-optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
 r_total=0
 done=True
 stop=False
@@ -98,9 +91,12 @@ def callback_goal(msg):
 	last_goal=list(msg.data)
 
 def train(replay_buffer):
-	global policy_net,target_net, disp, optimizer
+	global policy_net,target_net
+	LR = policy_net.lr
+	optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
+	disp = 'cuda' if th.cuda.is_available() else 'cpu'
 	gamma=0.9
-	batch_size=40
+	batch_size=64
 	batch = random.sample(replay_buffer, batch_size)
 	buffer_content = list(batch)
 
@@ -110,12 +106,10 @@ def train(replay_buffer):
 	next_state = th.Tensor(np.array([transition[3] for transition in buffer_content]))
 
 	target_net.to(disp)
-	#next_state.to(disp)
 	next_state=next_state.to(th.device(disp), th.float32)
-	#next_state_values = target_net(next_state).max(1).values
 	with th.no_grad():
 		next_state_values = target_net(next_state).max(1).values
-	next_state.to('cpu')
+	next_state=next_state.to('cpu')
 	target_net.to('cpu')
 
 	actions = actions.to(th.device(disp)).long()
@@ -123,16 +117,16 @@ def train(replay_buffer):
 
 	policy_net.to(disp)
 	state_action_values = policy_net(state).gather(1, actions.unsqueeze(1))
-	state.to('cpu')
-	actions.to('cpu')
+	state=state.to('cpu')
+	actions=actions.to('cpu')
 
 	reward=reward.to(disp)
 	gamma = th.tensor(gamma).to(disp)
 
 	expected_state_action_values = (next_state_values * gamma)+reward
-	reward.to('cpu')
-	gamma.to('cpu')
-	next_state_values.to('cpu')
+	reward=reward.to('cpu')
+	gamma=gamma.to('cpu')
+	next_state_values=next_state_values.to('cpu')
 
 	criterion = nn.SmoothL1Loss()
 	loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
@@ -151,14 +145,15 @@ def train(replay_buffer):
 		target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
 	target_net.load_state_dict(target_net_state_dict)
 	#cuda.empty_cache()
-	state_action_values.to('cpu')
-	expected_state_action_values.to('cpu')
+	state_action_values=state_action_values.to('cpu')
+	expected_state_action_values=expected_state_action_values.to('cpu')
 	th.cuda.empty_cache()
 
-def select_action(target_net,steps, grid_act, disp):
+def select_action(policy_net,steps, grid_act):
 	EPS_START = 0.95
 	EPS_END = 0.05
 	EPS_DECAY = 10000
+	disp = 'cuda' if th.cuda.is_available() else 'cpu'
 	epsilon= EPS_END + (EPS_START - EPS_END) *math.exp(-1. * steps / EPS_DECAY)
 	random_number = np.random.rand()
 	if(random_number>=epsilon):
@@ -167,7 +162,7 @@ def select_action(target_net,steps, grid_act, disp):
 		policy_net.to(disp)
 		with th.no_grad():
 			y_pred = policy_net(x_ent)
-		x_ent.to('cpu')
+		x_ent=x_ent.to('cpu')
 		policy_net.to('cpu')
 		y_pred =y_pred.cpu().numpy()
 		index=int(np.argmax(y_pred))
@@ -196,7 +191,8 @@ def polar2vec(last_goal):
 	return l
 
 def callback_grid(msg):
-	global grid_bef,grid_act,last_goal,linx,angz,r_obstacle,r_goal, replay_buffer, policy_net, target_net, steps, done, r_total, action_bef, r_list, disp,stop, last_distance, total_steps
+	global grid_bef,grid_act,last_goal,linx,angz,r_obstacle,r_goal, replay_buffer, policy_net, target_net, steps, done, r_total, action_bef, r_list, stop, last_distance, total_steps
+	disp = 'cuda' if th.cuda.is_available() else 'cpu'
 	th.cuda.empty_cache()
 	grid_bef=grid_act
 	#print('Hola')
@@ -207,12 +203,11 @@ def callback_grid(msg):
 		if(grid_bef is not None and last_distance is not None and action_bef is not None):
 			r_dist=-last_goal[0]+last_distance
 			r=r_obstacle+100*r_dist+r_goal
-			#if(r!=0):
 			replay_buffer.append((np.asarray(grid_bef),r, action_bef, np.asarray(grid_act)))
 		else:
 			r=0
 		#first=False
-		action_bef=select_action(target_net, total_steps, grid_act, disp)
+		action_bef=select_action(policy_net, total_steps, grid_act)
 		linx=C[action_bef,0]
 		angz=C[action_bef,1]
 		steps+=1

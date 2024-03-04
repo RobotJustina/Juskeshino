@@ -246,8 +246,7 @@ class DQN_3(nn.Module):
             nn.BatchNorm2d(f1),
             nn.ReLU(),
             nn.Conv2d(f1, f2, 3, padding = 'same'),
-            nn.BatchNorm2d(f2),
-            nn.ReLU()
+            nn.BatchNorm2d(f2) #,nn.ReLU()
         )
         self.con1x1_1 = nn.Conv2d(f0, f2, 1)
         self.fc_grid = nn.Sequential(
@@ -289,31 +288,32 @@ class DQN_3(nn.Module):
 class DQN_4(nn.Module):
     def __init__(self, salida):
         f0,f1,f2,f3,f4=16,32,64,512,1024   ##Mejor configuración f1 =32, l1=64, lr=8.1e-3, epoch=14
-        l1,l2=16384,1000
+        l1,l2=1024,1000
         pos_size=200
         super(DQN_4, self).__init__()
         self.conv_grid = nn.Sequential(
-            nn.Conv2d(1, f2, 3),
-            nn.BatchNorm2d(f2),
+            nn.Conv2d(1, f1, 3),
+            nn.BatchNorm2d(f1),
             nn.ReLU()
         )
         self.m = nn.MaxPool2d(2, stride=2)
         self.conv_grid_2 = nn.Sequential(
-            nn.Conv2d(f2, f1, 3, padding = 'same'),
-            nn.BatchNorm2d(f1),
-            nn.ReLU(),
             nn.Conv2d(f1, f2, 3, padding = 'same'),
+            nn.BatchNorm2d(f2),
+            nn.ReLU(),
+            nn.Conv2d(f2, f2, 3, padding = 'same'),
             nn.BatchNorm2d(f2)
         )
-        self.con1x1_2 = nn.Conv2d(f2, f4, 1)
+        self.con1x1 = nn.Conv2d(f1, f2, 1)
         self.conv_grid_4 = nn.Sequential(
-            nn.Conv2d(f2, f3, 3, padding = 'same'),
-            nn.BatchNorm2d(f3),
+            nn.Conv2d(f2, f2, 3, padding = 'same'),
+            nn.BatchNorm2d(f2),
             nn.ReLU(),
-            nn.Conv2d(f3, f4, 3, padding = 'same'),
-            nn.BatchNorm2d(f4)
+            nn.Conv2d(f2, f2, 3, padding = 'same'),
+            nn.BatchNorm2d(f2)
         )
         self.gap = nn.AvgPool2d(8, stride=8)
+        #self.gap=nn.AdaptiveAvgPool2d((1, 1))
 
         self.fc_salida=nn.Sequential(
             nn.Linear(l1+200, l2),
@@ -327,15 +327,14 @@ class DQN_4(nn.Module):
         x = x[:,0:6400]
         x = x.view(x.size(0),1,80,80)
 
-        #y = self.con1x1_1(x)
         x = self.conv_grid(x)
         #x = nn.functional.relu(x+y)
         x = self.m(x)
-        y = x
+        y = self.con1x1(x)
         x = self.conv_grid_2(x)
         x = nn.functional.relu(x+y)
 
-        y = self.con1x1_2(x)
+        y = x
         x = self.conv_grid_4(x)
         x = nn.functional.relu(x+y)
 
