@@ -26,9 +26,16 @@ linx=0.0
 angz=0.0
 last_goal=[0,0]
 steps=0
+grid_bef, grid_act, action_bef=None,None,None
+C=np.asarray([[0.3, 0.0], [0.0, 0.5],[0.0, -0.5]])
+r_total=0
+done=True
+stop=False
+last_distance=None
+
 #Seed
-np.random.seed(42)
-random.seed(42)
+#np.random.seed(42)
+#random.seed(42)
 th.manual_seed(42)
 th.cuda.manual_seed(42)
 th.backends.cudnn.deterministic = True
@@ -54,15 +61,7 @@ if os.path.exists( data_folder+'/r_episode.npy'):
 	r_list= list(np.load(data_folder+'/r_episode.npy'))
 else:
 	r_list=[]
-
 print(r_list)
-
-grid_bef, grid_act, action_bef=None,None,None
-C=np.asarray([[0.3, 0.0], [0.0, 0.5],[0.0, -0.5]])
-r_total=0
-done=True
-stop=False
-last_distance=None
 
 def callback_scan(msg):
 	global r_obstacle, stop
@@ -93,10 +92,10 @@ def callback_goal(msg):
 def train(replay_buffer):
 	global policy_net,target_net
 	LR = policy_net.lr
-	optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
+	optimizer = optim.Adam(policy_net.parameters(), lr=LR)
 	disp = 'cuda' if th.cuda.is_available() else 'cpu'
 	gamma=0.9
-	batch_size=64
+	batch_size=128
 	batch = random.sample(replay_buffer, batch_size)
 	buffer_content = list(batch)
 
@@ -129,8 +128,9 @@ def train(replay_buffer):
 	next_state_values=next_state_values.to('cpu')
 
 	criterion = nn.SmoothL1Loss()
+	#print(state_action_values.shape, (expected_state_action_values.unsqueeze(1)).shape)
 	loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
-	#print(f'Perdida {loss}')
+	print(f'Perdida {loss}')
 	# Optimize the model
 	optimizer.zero_grad()
 	loss.backward()
@@ -144,7 +144,6 @@ def train(replay_buffer):
 	for key in policy_net_state_dict:
 		target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
 	target_net.load_state_dict(target_net_state_dict)
-	#cuda.empty_cache()
 	state_action_values=state_action_values.to('cpu')
 	expected_state_action_values=expected_state_action_values.to('cpu')
 	th.cuda.empty_cache()
@@ -152,7 +151,7 @@ def train(replay_buffer):
 def select_action(policy_net,steps, grid_act):
 	EPS_START = 0.95
 	EPS_END = 0.05
-	EPS_DECAY = 10000
+	EPS_DECAY = 5000
 	disp = 'cuda' if th.cuda.is_available() else 'cpu'
 	epsilon= EPS_END + (EPS_START - EPS_END) *math.exp(-1. * steps / EPS_DECAY)
 	random_number = np.random.rand()
@@ -166,12 +165,13 @@ def select_action(policy_net,steps, grid_act):
 		policy_net.to('cpu')
 		y_pred =y_pred.cpu().numpy()
 		index=int(np.argmax(y_pred))
-		print(f'Acción {index} con {y_pred}, 0:ir de frente')
+		print(f'Red {index} con {y_pred}, 0:ir de frente')
 	else:
 		index_values = [0, 1, 2]
 		index=np.random.choice(index_values)
+		#th.cuda.empty_cache()
+		#print(f'Aleatorio {index}')
 	th.cuda.empty_cache()
-		#print(f'Acción {index}, 0:ir de frente')
 	return index
 
 def polar2vec(last_goal):
@@ -195,13 +195,12 @@ def callback_grid(msg):
 	disp = 'cuda' if th.cuda.is_available() else 'cpu'
 	th.cuda.empty_cache()
 	grid_bef=grid_act
-	#print('Hola')
 	l=polar2vec(last_goal)
 	grid_act=list(msg.data)+l
 	#print(done, stop, steps, last_distance)
 	if (not done and steps<1000 and (not stop) and last_distance is not None):
 		if(grid_bef is not None and last_distance is not None and action_bef is not None):
-			r_dist=-last_goal[0]+last_distance
+			r_dist=last_distance-last_goal[0]
 			r=r_obstacle+100*r_dist+r_goal
 			replay_buffer.append((np.asarray(grid_bef),r, action_bef, np.asarray(grid_act)))
 		else:

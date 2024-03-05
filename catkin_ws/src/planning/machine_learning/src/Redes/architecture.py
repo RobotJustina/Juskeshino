@@ -236,11 +236,16 @@ class DQN_2(nn.Module):
 
 class DQN_3(nn.Module):
     def __init__(self, salida):
-        f0,f1,f2,f3,f4=16,32,64,512,100   ##Mejor configuración f1 =32, l1=64, lr=8.1e-3, epoch=14
-        l1,expand,l2=128,32,16
+        f0,f1,f2,f3,f4=16,32,64,2048,100   ##Mejor configuración f1 =32, l1=64, lr=8.1e-3, epoch=14
+        l1,expand,l2,l3=512,32,128,64
         pos_size=200
         super(DQN_3, self).__init__()
-        self.conv = nn.Conv2d(in_channels=1, out_channels=f0, kernel_size=3, stride=2, padding=1)
+        self.conv = nn.Sequential(
+            nn.Conv2d(1, f0, 3, padding = 'same'),
+            nn.BatchNorm2d(f0),
+            nn.ReLU()
+        )
+        self.max=nn.MaxPool2d(2, stride=2)
         self.conv_grid = nn.Sequential(
             nn.Conv2d(f0, f1, 3, padding = 'same'),
             nn.BatchNorm2d(f1),
@@ -249,25 +254,20 @@ class DQN_3(nn.Module):
             nn.BatchNorm2d(f2) #,nn.ReLU()
         )
         self.con1x1_1 = nn.Conv2d(f0, f2, 1)
+        self.avg = nn.AvgPool2d(2, stride=2)
         self.fc_grid = nn.Sequential(
-            nn.Linear(f2* 40 * 40, f3),
+            nn.Linear(f2* 20 * 20, f3),
             nn.ReLU(),
             nn.Linear(f3, l1),
-            nn.ReLU(),
-            nn.Dropout(0.6)
-        )
-        self.fc_position=nn.Sequential(
-            nn.Linear(pos_size, 64),
-            nn.ReLU(),
-            nn.Linear(64, expand),
-            nn.ReLU()
+            nn.ReLU() #,nn.Dropout(0.6)
         )
         self.fc_salida=nn.Sequential(
             nn.Linear(l1+200, l2),
             nn.ReLU(),
-            nn.Linear(l2, salida)
+            nn.Linear(l2, l3),
+			nn.Linear(l3, salida)
         )
-        self.lr = 1e-3
+        self.lr = 1e-4
 
     def forward(self,x):
         device = x.device
@@ -275,9 +275,11 @@ class DQN_3(nn.Module):
         x = x[:,0:6400]
         x = x.view(x.size(0),1,80,80)
         x = self.conv(x)
+        x = self.max(x)
 
         y = self.con1x1_1(x)
         x = nn.functional.relu(self.conv_grid(x)+y)
+        x = self.avg(x)
 
         x = th.flatten(x,1)
         x = self.fc_grid(x)
