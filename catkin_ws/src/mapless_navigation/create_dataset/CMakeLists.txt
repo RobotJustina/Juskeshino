@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   roslib
   sensor_msgs
   tf
+  image_transport
 )
 
 ## System dependencies are found with CMake's conventions
@@ -110,7 +111,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES create_dataset
-   CATKIN_DEPENDS cv_bridge general_utils laser_geometry roscpp roslib sensor_msgs tf
+   CATKIN_DEPENDS cv_bridge general_utils laser_geometry roscpp roslib sensor_msgs tf image_transport
 #  DEPENDS system_lib
 )
 
@@ -143,6 +144,10 @@ add_executable(take_dataset
  src/capture_dataset.cpp
 )
 
+add_executable(save_images
+ src/save_imgage_node.cpp
+)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -154,6 +159,7 @@ add_executable(take_dataset
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(take_dataset ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_dependencies(save_images ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
@@ -161,7 +167,7 @@ add_dependencies(take_dataset ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPOR
 # )
 target_link_libraries(take_dataset ${catkin_LIBRARIES})
 
-
+target_link_libraries(save_images ${catkin_LIBRARIES})
 #############
 ## Install ##
 #############
