@@ -35,6 +35,7 @@ SM_GRASP_OBJECT = 13
 SM_PICK_UP_OBJECT = 14
 SM_LIFT_OBJECT = 15
 SM_PREPARE = 111
+SM_CLEAN_VARIABLES = 2
 
 # left arm poses
 PREPARE_TOP_GRIP = [-0.68, 0.38, -0.01, 1.84, 0, 1.06, -0.01]#[-0.9, 0.4, 0.0, 1.9, 0.01, 1, -0.01]  #funciona para pringles horizontal (prisma horizontal)
@@ -198,7 +199,6 @@ def main():
 
     
     listener = tf.TransformListener()
-
     new_command = False
     executing_command = False
     recognized_speech = ""
@@ -277,23 +277,20 @@ def main():
         elif state == SM_PREPARE_ARM:
             print("state == SM_PREPARE_ARM")
             if (resp_pose_obj.recog_object.size.x < 0.11) or resp_pose_obj.recog_object.object_state == "horizontal":
-                p_final = PREPARE_TOP_GRIP
-                print("PREPARE_TOP_GRIP..........................")
+                q2q_traj(PREPARE_TOP_GRIP , clt_traj_planner, pub_la_goal_traj)
             else:
-                p_final = PREPARE_LATERAL_GRIP
-                print("PREPARE_LATERAL_GRIP..........................")
+                q2q_traj(PREPARE_LATERAL_GRIP , clt_traj_planner, pub_la_goal_traj)
 
-
-            q2q_traj(p_final, clt_traj_planner, pub_la_goal_traj)
+            
             while (not goal_la_reached) or not rospy.is_shutdown:
                 print("status: moving arm....", goal_la_reached)                
                 time.sleep(1)
             
             goal_la_reached =  False       
-            print("goal_la_reached STATUS", goal_la_reached)
-            
-            
+            print("goal_la_reached STATUS", goal_la_reached)            
             state = SM_GRASP_OBJECT
+
+
             
         elif state == SM_GRASP_OBJECT:
             print("state == SM_GRASP_OBJECT")
@@ -373,6 +370,16 @@ def main():
 
             goal_la_reached = False
             state = SM_INIT
+
+            """
+        elif state == SM_CLEAN_VARIABLES:
+            new_command = False
+            executing_command = False
+            recognized_speech = ""
+            goal_reached = False
+            goal_la_reached = False
+            state = SM_INIT
+            """
 
 
 

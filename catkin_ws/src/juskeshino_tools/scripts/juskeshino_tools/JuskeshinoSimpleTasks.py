@@ -10,7 +10,7 @@ from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
 
 class JuskeshinoSimpleTasks:
     def setNodeHandle():
-        print("JuskeshinoSimpleTasks.->Setting ros node...")
+        print("JuskeshinoSimpleTasks.->Setting ROS node...")
         return True
 
     def waitForTheDoorToBeOpen(timeout):
@@ -136,3 +136,8 @@ class JuskeshinoSimpleTasks:
         obj_p.point.x, obj_p.point.y, obj_p.point.z = x,y,z
         obj_p = listener.transformPoint(target_frame, obj_p)
         return [obj_p.point.x, obj_p.point.y, obj_p.point.z]
+    
+    def move_to_right_of_object(y_obj, timeout):
+        print("move to the right of the object")
+        JuskeshinoNavigation.moveLateral(-y_obj, timeout)
+

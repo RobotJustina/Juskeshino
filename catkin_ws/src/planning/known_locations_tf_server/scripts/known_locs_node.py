@@ -153,7 +153,7 @@ def write_yaml_locs(trans,name, known_locations_file = '/known_locations.yaml'):
     data[5]['qz']=          math.trunc(quat[2]*1000)/1000
     data[6]['qw']=          math.trunc(quat[3]*1000)/1000
     
-    con[name.data]=data 
+    con[name]=data 
     
     
     file_path = rospack.get_path('config_files')  + known_locations_file
@@ -205,7 +205,7 @@ def callback(req):
         trans = tfBuffer.lookup_transform('map', 'base_link', rospy.Time())#Takeshi
         
 
-        trans.child_frame_id= req.location_name.data
+        trans.child_frame_id= req.location_name
         
         tf_static_broadcaster.sendTransform(trans)
         
@@ -223,8 +223,8 @@ def callback(req):
         ####################### 
 
 
-        resp.success.data= True
-        print (f'SUCESS {req.location_name.data}')
+        resp.success= True
+        print (f'SUCESS {req.location_name}')
         return resp
 
 
