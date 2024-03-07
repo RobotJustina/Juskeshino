@@ -176,20 +176,20 @@ def main():
 
     rospy.wait_for_service("/vision/obj_segmentation/get_obj_pose") # Servicio que da la pose del objeto a tomar
     rospy.wait_for_service("/vision/obj_reco/detect_and_recognize_objects") # Servicio que reconoce el objeto
-    rospy.wait_for_service("/vision/get_best_grasp_traj")   # Servicio que da la mejor pose de agarre
+    rospy.wait_for_service("/manipulation/get_best_grasp_traj")   # Servicio que da la mejor pose de agarre
     rospy.wait_for_service( '/manipulation/polynomial_trajectory')  # Servicio para generar trayectorias para el brazo
     
-    clt_pose_obj = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose", RecognizeObject)
+    clt_pose_obj          = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose", RecognizeObject)
     clt_recognize_objects = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_objects", RecognizeObjects)
-    clt_best_grip = rospy.ServiceProxy("/vision/get_best_grasp_traj", BestGraspTraj )
-    clt_traj_planner = rospy.ServiceProxy( '/manipulation/polynomial_trajectory' , GetPolynomialTrajectory )
+    clt_best_grip         = rospy.ServiceProxy("/manipulation/get_best_grasp_traj" , BestGraspTraj )
+    clt_traj_planner      = rospy.ServiceProxy( '/manipulation/polynomial_trajectory' , GetPolynomialTrajectory )
 
-    pub_la_goal_traj = rospy.Publisher("/manipulation/la_q_trajectory" , JointTrajectory, queue_size=10)
-    pub_la_goal_grip = rospy.Publisher("/hardware/left_arm/goal_gripper" , Float64, queue_size=10)
-    pub_la_goal_q    = rospy.Publisher("/hardware/left_arm/goal_pose" , Float64MultiArray, queue_size=10)
-    pub_hd_goal_pose = rospy.Publisher("/hardware/head/goal_pose"     , Float64MultiArray, queue_size=10)
-    pub_goal_pose    = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
-    pub_cmd_vel      = rospy.Publisher('/hardware/mobile_base/cmd_vel', Twist, queue_size=10)
+    pub_la_goal_traj  = rospy.Publisher("/manipulation/la_q_trajectory" , JointTrajectory, queue_size=10)
+    pub_la_goal_grip  = rospy.Publisher("/hardware/left_arm/goal_gripper" , Float64, queue_size=10)
+    pub_la_goal_q     = rospy.Publisher("/hardware/left_arm/goal_pose" , Float64MultiArray, queue_size=10)
+    pub_hd_goal_pose  = rospy.Publisher("/hardware/head/goal_pose"     , Float64MultiArray, queue_size=10)
+    pub_goal_pose     = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
+    pub_cmd_vel       = rospy.Publisher('/hardware/mobile_base/cmd_vel', Twist, queue_size=10)
     pub_object_status = rospy.Publisher('/plannning/simple_task/object_status' , GoalStatus, queue_size=1 )
 
     rospy.Subscriber('/navigation/status', GoalStatus ,callback_goal_reached)
