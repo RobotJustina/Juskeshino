@@ -4,3 +4,4 @@ sudo pip3 install swig
 sudo pip3 install pocketsphinx==0.1.15
 sudo pip3 install urdf-parser-py
 sudo pip3 install face-recognition
+sudo apt install festvox-us-slt-hts
