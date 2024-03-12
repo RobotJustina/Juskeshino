@@ -31,6 +31,7 @@ def read_delta_encoders(last_readings, rc_frontal, rc_lateral):
     last_right = enc_right[1]
     last_front = enc_front[1]
     last_rear  = enc_rear[1]
+    #print([delta_left, delta_right, -delta_front, -delta_rear, [last_left, last_right, last_front, last_rear]])
     return [delta_left, delta_right, -delta_front, -delta_rear, [last_left, last_right, last_front, last_rear]]
 
 def calculate_odometry(robot_x, robot_y, robot_a, delta_left, delta_right, delta_front, delta_rear):
