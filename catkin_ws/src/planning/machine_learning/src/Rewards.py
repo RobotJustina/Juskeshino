@@ -22,9 +22,8 @@ data_folder = rospack.get_path("machine_learning") + "/src/DRL_files"
 r_laser, r_obstacle, r_goal=0.0,0.0,0.0
 deque_len=5000
 replay_buffer = deque(maxlen=deque_len)
-linx=0.0
-angz=0.0
-last_goal=[0,0]
+#linx=0.0#angz=0.0
+last_goal=[0.0,0.0]
 steps=0
 grid_bef, grid_act, action_bef=None,None,None
 C=np.asarray([[0.3, 0.0], [0.0, 0.5],[0.0, -0.5]])
@@ -40,8 +39,8 @@ th.manual_seed(42)
 th.cuda.manual_seed(42)
 th.backends.cudnn.deterministic = True
 
-policy_net = architecture.DQN_3(3)
-target_net = architecture.DQN_3(3)
+policy_net = architecture.DQN_4(3)
+target_net = architecture.DQN_4(3)
 if os.path.exists(data_folder+"/DRL_gazebo_policy.pth"):
 	policy_net.load_state_dict(th.load(data_folder+"/DRL_gazebo_policy.pth",map_location=th.device('cpu')))
 	target_net.load_state_dict(th.load(data_folder+"/DRL_gazebo_target.pth",map_location=th.device('cpu')))
@@ -64,14 +63,14 @@ else:
 print(r_list)
 
 def callback_scan(msg):
-	global r_obstacle, stop
+	global r_obstacle, stop, steps
 	d_min=min(msg.ranges)
 	stop=False
 	if(d_min < 0.21):
 		r_obstacle=-20-(0.20-d_min)*100
 	else:
 		r_obstacle=0
-	if(d_min<0.15):
+	if(d_min<0.15 or (stop and steps>3)):
 		stop=True
 		print("obstaculo cerca")
 
@@ -127,7 +126,8 @@ def train(replay_buffer):
 	gamma=gamma.to('cpu')
 	next_state_values=next_state_values.to('cpu')
 
-	criterion = nn.SmoothL1Loss()
+	#criterion = nn.SmoothL1Loss()
+	criterion = nn.MSELoss()
 	#print(state_action_values.shape, (expected_state_action_values.unsqueeze(1)).shape)
 	loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
 	print(f'Perdida {loss}')
@@ -165,7 +165,7 @@ def select_action(policy_net,steps, grid_act):
 		policy_net.to('cpu')
 		y_pred =y_pred.cpu().numpy()
 		index=int(np.argmax(y_pred))
-		print(f'Red {index} con {y_pred}, 0:ir de frente')
+		#print(f'Red {index} con {y_pred}, 0:ir de frente')
 	else:
 		index_values = [0, 1, 2]
 		index=np.random.choice(index_values)
@@ -191,24 +191,31 @@ def polar2vec(last_goal):
 	return l
 
 def callback_grid(msg):
-	global grid_bef,grid_act,last_goal,linx,angz,r_obstacle,r_goal, replay_buffer, policy_net, target_net, steps, done, r_total, action_bef, r_list, stop, last_distance, total_steps
+	global grid_bef,grid_act,last_goal,pub_cmd,r_obstacle,r_goal, replay_buffer, policy_net, target_net, steps, done, r_total, action_bef, r_list, stop, last_distance, total_steps
 	disp = 'cuda' if th.cuda.is_available() else 'cpu'
 	th.cuda.empty_cache()
 	grid_bef=grid_act
-	l=polar2vec(last_goal)
-	grid_act=list(msg.data)+l
-	#print(done, stop, steps, last_distance)
-	if (not done and steps<1000 and (not stop) and last_distance is not None):
-		if(grid_bef is not None and last_distance is not None and action_bef is not None):
-			r_dist=last_distance-last_goal[0]
+	if(last_goal[0]>10):
+		last_goal[0]=10
+	#l=polar2vec(last_goal)
+	grid_act=list(msg.data)+last_goal
+	linx=0.0
+	angz=0.0
+	if (not done and steps<1000 and (not stop)):
+		if(grid_bef is not None and action_bef is not None):
+			r_dist=grid_bef[6400]-last_goal[0]
 			r=r_obstacle+100*r_dist+r_goal
+			print('Recompensa: ',r, " Accion: ",action_bef, " distancia anterior: ",grid_bef[6400], "distancia_actual: ",last_goal[0], "seguir de frente es 0")
 			replay_buffer.append((np.asarray(grid_bef),r, action_bef, np.asarray(grid_act)))
 		else:
 			r=0
-		#first=False
 		action_bef=select_action(policy_net, total_steps, grid_act)
 		linx=C[action_bef,0]
 		angz=C[action_bef,1]
+		msg = Twist()
+		msg.linear.x=linx
+		msg.angular.z=angz
+		pub_cmd.publish(msg)
 		steps+=1
 		total_steps+=1
 		#print(steps)
@@ -224,11 +231,11 @@ def callback_grid(msg):
 		r_list.append(r_total/steps)
 		steps=0
 		r_total=0
-		last_distance=None
 		print("Episodio terminado")
-		linx=0.0
-		angz=0.0
-	last_distance=last_goal[0]
+		msg = Twist()
+		pub_cmd.publish(msg)
+	#print(, last_goal[0])
+
 
 def saving_function():
 	global target_net, policy_net, data_folder, replay_buffer, steps, r_list,total_steps
@@ -247,7 +254,7 @@ def saving_function():
 	pub_cmd.publish(msg)
 
 def main():
-	global linx, angz
+	global pub_cmd
 	rospy.init_node("DRL_train")
 	rospy.on_shutdown(saving_function)
 	rospy.Subscriber("/laser_mod", LaserScan, callback_scan)
@@ -256,11 +263,11 @@ def main():
 	pub_cmd = rospy.Publisher("/cmd_vel", Twist  , queue_size=10)
 	print("REWARDS")
 	loop = rospy.Rate(10)
-	msg = Twist()
+	#msg = Twist()
 	while not rospy.is_shutdown():
-		msg.linear.x=linx
-		msg.angular.z=angz
-		pub_cmd.publish(msg)
+		#msg.linear.x=linx
+		#msg.angular.z=angz
+		#pub_cmd.publish(msg)
 		loop.sleep()
 
 if __name__ == '__main__':
