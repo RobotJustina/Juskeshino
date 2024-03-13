@@ -53,8 +53,9 @@
 
   <include file="$(find surge_et_ambula)/launch/justina/manipulation.launch"/>
 
+  
   <node name="act_pln_grip" pkg="act_pln" type="act_pln_grip.py"/>
-
+  
 
 
   <include file="$(find surge_et_ambula)/launch/justina/vision.launch"> 

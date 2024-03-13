@@ -292,7 +292,7 @@ def main():
     rospy.init_node("object_pose")
 
     global pub_point, marker_pub, debug
-    debug = True
+    debug = False
     rospy.Service("/vision/obj_segmentation/get_obj_pose", RecognizeObject, callback_PoseObject) 
     pub_point = rospy.Publisher('/vision/detected_object', PointStamped, queue_size=10)
     marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10) 

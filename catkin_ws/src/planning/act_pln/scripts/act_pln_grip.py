@@ -175,11 +175,11 @@ def main():
     global executing_command, new_command, recognized_speech
 
     rospy.wait_for_service("/vision/obj_segmentation/get_obj_pose") # Servicio que da la pose del objeto a tomar
+    clt_pose_obj          = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose", RecognizeObject)
     rospy.wait_for_service("/vision/obj_reco/detect_and_recognize_objects") # Servicio que reconoce el objeto
     rospy.wait_for_service("/manipulation/get_best_grasp_traj")   # Servicio que da la mejor pose de agarre
     rospy.wait_for_service( '/manipulation/polynomial_trajectory')  # Servicio para generar trayectorias para el brazo
     
-    clt_pose_obj          = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose", RecognizeObject)
     clt_recognize_objects = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_objects", RecognizeObjects)
     clt_best_grip         = rospy.ServiceProxy("/manipulation/get_best_grasp_traj" , BestGraspTraj )
     clt_traj_planner      = rospy.ServiceProxy( '/manipulation/polynomial_trajectory' , GetPolynomialTrajectory )
@@ -195,7 +195,6 @@ def main():
     rospy.Subscriber('/navigation/status', GoalStatus ,callback_goal_reached)
     rospy.Subscriber('/manipulation/left_arm/goal_reached',Bool , callback_la_goal_reached)
     rospy.Subscriber('/plannning/simple_task/take_object' ,String ,callback_take_object )
-    topic_grip = '/plannning/simple_task/take_object'
 
     
     listener = tf.TransformListener()
@@ -212,7 +211,7 @@ def main():
         if state == SM_INIT:
             #print("Starting State Machine by Iby.................ʕ•ᴥ•ʔ")
             print("waiting for an object to be requested.............................ʕ•ᴥ•ʔ")
-            object_name_msg = rospy.wait_for_message(topic_grip , String)
+            object_name_msg = rospy.wait_for_message('/plannning/simple_task/take_object' , String)
             obj_target = object_name_msg.data
             print("OBJECT TARGET:____", obj_target)
             x_p, y_p, a = get_robot_pose(listener)
@@ -306,6 +305,7 @@ def main():
             if resp_best_grip.graspable:
                 move_left_gripper(GRIPPER_OPENING, pub_la_goal_grip)
                 print("publicando trayectoria en q para brazo izquierdo...................")
+                #state = SM_INIT
             
                 
                 pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
@@ -320,7 +320,8 @@ def main():
                     print("succesfull move arm...")
                     
                     print("goal_la_reached STATUS", goal_la_reached)
-                    state = SM_PICK_UP_OBJECT
+                    state =  SM_INIT#SM_PICK_UP_OBJECT
+                
 
                 
             else:
