@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 import rospy
 import os
-
+import sys
+from pathlib import Path
+import rospkg
+import cv2
 
 # Directory tools >>
 class DirectoryUtils:
@@ -73,6 +76,19 @@ class DirectoryUtils:
             else:
                 print("Directory successful replaced")
         return True
+    
+    def getRelativePath(absolute_path):
+        #Locally can use: Path(__file__).resolve()
+        FILE = Path(absolute_path).resolve()
+        ROOT = FILE.parents[0] 
+        if str(ROOT) not in sys.path:
+            sys.path.append(str(ROOT))  # add ROOT to PATH
+        ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
+        return ROOT
+    
+    def getRosPkgPath(pkg_name="general_utils"):
+        return rospkg.RosPack().get_path(pkg_name)
+
 # Directory tools <<
 
 # File tools >>
@@ -83,6 +99,37 @@ class FileUtils:
     @staticmethod
     def showImage(self, verbose=False):
         pass
+
+    @staticmethod
+    def resizeImage(img, height=480, keep_prop=True, verbose=False):
+        if verbose: print("image shape: ", img.shape)
+
+        if keep_prop:
+            aspect_ratio = round(float(img.shape[0]) / float(img.shape[1]), 4)
+            if verbose: print("aspect ratio:", aspect_ratio)
+            width = int(height/aspect_ratio)
+        else:
+            width = height
+        
+        if verbose: print("new dimensions: ",width, height)
+        new_img = cv2.resize(img, (width, height), interpolation=cv2.INTER_LINEAR)
+        return new_img
+    
+    def loadImage(image_path="image_path"):
+        try:
+            image = cv2.imread(image_path)
+        except:
+            print("Can not find ", image_path)
+            return None
+        return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    
+    def saveImage(img, name=""):
+        if name == "":
+            print("Error! no image name specified")
+            return None
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        cv2.imwrite(name, img)
+    
 # File tools <<
 
 def testFunction():
