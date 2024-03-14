@@ -322,6 +322,7 @@ def main():
                     print("goal_la_reached STATUS", goal_la_reached)
                     state =  SM_INIT#SM_PICK_UP_OBJECT
                 
+                
 
                 
             else:

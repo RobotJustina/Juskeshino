@@ -65,7 +65,7 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
 
     if obj_state == "horizontal":   # 10 cm por encima del objeto (z_base_link)
         grip_point_bl = points_actual_to_points_target(grip_point, 'object', 'base_link')
-        grip_point_bl[2] = grip_point_bl[2] + 0.15  
+        grip_point_bl[2] = grip_point_bl[2] + 0.13 
         grip_point = points_actual_to_points_target(grip_point_bl, 'base_link', 'object')
         if debug:
             marker_array_publish(grip_point, 'object', 59, 56)
@@ -110,14 +110,14 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
 
 def grip_rules(obj_pose, type_obj, obj_state, size, grip_point):
 
-    if(size.y <= 0.03) and (obj_state == 'horizontal'):
-        return spoon_grip()
+    #if(size.y <= 0.03) and (obj_state == 'horizontal'):
+     #   return spoon_grip()
 
-    if (size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x >= 0.12):
+    if (size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x >= 0.135):
         print("The object will be GRABBED AS PRISM..................")
         return prism(obj_pose, obj_state)
     else:
-        if(size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x < 0.12):
+        if(size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x < 0.13):
             print("Object too SMALL, SUPERIOR GRIP will be made")
             return cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj)
             
