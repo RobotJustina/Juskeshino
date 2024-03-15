@@ -1,2 +1,85 @@
-some text
-...
+pat: ../datasets/YCB_virtual
+train: images/train
+val: images/val
+test:
+
+names:
+  0: 000_cereal_box_UO
+  1: 001_chips_can
+  2: 002_master_chef_can
+  3: 003_cracker_box
+  4: 004_sugar_box
+  5: 005_tomato_soup_can
+  6: 006_mustard_bottle
+  7: 007_tuna_fish_can
+  8: 008_pudding_box
+  9: 009_gelatin_box
+  10: 010_potted_meat_can
+  11: 011_banana
+  12: 012_strawberry
+  13: 013_apple
+  14: 014_lemon
+  15: 015_peach
+  16: 016_pear
+  17: 017_orange
+  18: 018_plum
+  19: 019_pitcher_base
+  20: 021_bleach_cleanser
+  21: 024_bowl
+  22: 025_mug
+  23: 026_sponge
+  24: 027_skillet
+  25: 029_plate
+  26: 030_fork
+  27: 031_spoon
+  28: 032_knife
+  29: 033_spatula
+  30: 035_power_drill
+  31: 036_wood_block
+  32: 037_scissors
+  33: 038_padlock
+  34: 040_large_marker
+  35: 042_adjustable_wrench
+  36: 043_phillips_screwdriver
+  37: 044_flat_screwdriver
+  38: 048_hammer
+  39: 050_medium_clamp
+  40: 051_large_clamp
+  41: 052_extra_large_clamp
+  42: 053_mini_soccer_ball
+  43: 054_softball
+  44: 055_baseball
+  45: 056_tennis_ball
+  46: 057_racquetball
+  47: 058_golf_ball
+  48: 059_chain
+  49: 061_foam_brick
+  50: 062_dice
+  51: 063-a_marbles
+  52: 063-b_marbles
+  53: 065-a_cups
+  54: 065-b_cups
+  55: 065-c_cups
+  56: 065-d_cups
+  57: 065-e_cups
+  58: 065-f_cups
+  59: 065-g_cups
+  60: 065-h_cups
+  61: 065-i_cups
+  62: 065-j_cups
+  63: 070-a_colored_wood_blocks
+  64: 070-b_colored_wood_blocks
+  65: 071_nine_hole_peg_test
+  66: 072-a_toy_airplane
+  67: 072-b_toy_airplane
+  68: 072-c_toy_airplane
+  69: 072-d_toy_airplane
+  70: 072-e_toy_airplane
+  71: 073-a_lego_duplo
+  72: 073-b_lego_duplo
+  73: 073-c_lego_duplo
+  74: 073-d_lego_duplo
+  75: 073-e_lego_duplo
+  76: 073-f_lego_duplo
+  77: 073-g_lego_duplo
+  78: 077_rubiks_cube

@@ -47,7 +47,7 @@ class DirectoryUtils:
     @staticmethod
     def createDir(directory_path="", verbose=False):
         if verbose:
-            print("makedirs: ", directory_path)
+            print("make dirs: ", directory_path)
         if DirectoryUtils.existDir(directory_path, verbose):
             if verbose:
                 print("Directory already exist!")
