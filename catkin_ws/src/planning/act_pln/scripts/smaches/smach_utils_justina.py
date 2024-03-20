@@ -33,6 +33,19 @@ from human_detector.srv import Point_detector ,Point_detectorResponse
 #
 from hmm_navigation.msg import NavigateAction, NavigateActionGoal, NavigateActionFeedback, NavigateActionResult
 #
+from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
+import time
+
+class Talker():
+    def __init__(self) -> None:
+        JuskeshinoHRI.setNodeHandle()
+    
+    def talk(self, sentence, timeout=0):
+        st_time = time.time()
+        now = time.time()
+        JuskeshinoHRI.say(sentence)
+        # while st_time - now < timeout:  # Uncomment if time out is needed
+        #     now = time.time()
 
 
 ######################################################
@@ -358,7 +371,7 @@ rgbd=RGBD()
 rgb=RGB()  #WEB CAM DEBUG   
 omni_base=OMNIBASE()
 tf_man = TF_MANAGER()
-
+voice = Talker()
 
 
 
