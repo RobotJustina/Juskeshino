@@ -11,13 +11,28 @@ from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
 from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
 from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 
+def handling_location(position_obj ):
+    left_threshold_manipulation = 0.26
+
+    if position_obj.y > 0.26:
+        dist_move = position_obj.y - left_threshold_manipulation
+        print("dist move izq", dist_move)
+        JuskeshinoNavigation.moveLateral(dist_move, 7)
+
+    if position_obj.y < 0.05:
+        dist_move = position_obj.y - 0.05
+        print("dist move der", dist_move)
+        JuskeshinoNavigation.moveLateral(dist_move, 7)
+
+
+
 def main():
     print("INITIALIZING SERVE BREAKFAST 2024 TEST BY IBY..............ヾ(๑╹◡╹)ﾉ")
     rospy.init_node("serve_breakfast_test")
     rate = rospy.Rate(10)
 
     rospack = rospkg.RosPack()
-    locations_default = rospack.get_path("config_files") + "/known_locations.yaml"
+    locations_default = rospack.get_path("config_files") + "/known_locations_objects.yaml"
     #locations_default = rospack.get_path("config_files") + "/known_locations_simul.yaml"
     locations_file = rospy.get_param("~locations", locations_default)
 
@@ -31,6 +46,7 @@ def main():
     JuskeshinoKnowledge.setNodeHandle()
     JuskeshinoKnowledge.loadLocations(locations_file)
 
+    """
     # Esperar a que se abra la puerta
     JuskeshinoHRI.say("I'm waiting for the door to be open")
     if not JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(300):
@@ -44,15 +60,25 @@ def main():
         print("ACT-PLN.->Cannot get close to start position")
 
     JuskeshinoHRI.say("I arrived to the entrance")
+    
 
     # Llenar pila con objetos: cereal, leche, tazon, cuchara
     pila = ["bowl", "cereal", "milk"]
     print("pila: ", pila)
+    
+    
 
     while len(pila) > 0: # Revisa pila
-
-        # Ir a locacion de primer objeto en la pila
-        JuskeshinoHRI.say("I'm going to the" + pila[-1] + "position.")
+    
+        i = len(pila)
+        
+        print("len pila while 1", i)
+        indx_obj = i-1
+        actual_obj = pila[indx_obj]
+    
+        print("actual_obj: ", actual_obj)
+        # Ir a locacion de ultimo objeto en la pila
+        JuskeshinoHRI.say("I'm going to the" + actual_obj + "position.")
 
         if not JuskeshinoNavigation.getClose("kitchen", 100):
             print("ACT-PLN.->Cannot get close to the desk position")
@@ -64,18 +90,36 @@ def main():
             print("ACT-PLN.->Cannot align with table")
 
         # Busqueda y reconocimiento del objeto
+        while indx_obj >= 0:
+            print("ACT-PLN.->Trying to detect object: ", actual_obj)
+            JuskeshinoHRI.say("I'm trying to detect the " + actual_obj)
+            
+            [obj, img] = JuskeshinoVision.detectAndRecognizeObject(actual_obj)
+            if obj != None: # si reconocio el objeto
+                print("ACT-PLN.->Detected object: " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))
+                position_obj = obj.pose.position
+                handling_location(position_obj )
+                print("ACT-PLN.->Trying to detect object 2: ", actual_obj)
+                [obj, img] = JuskeshinoVision.detectAndRecognizeObject(actual_obj)
+                print("ACT-PLN.->Detected object 2: " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))
+                
+                print("ACT-PLN.->Planning best gripper configuration")
+                JuskeshinoHRI.say("I found the " + pila[-1] + ", I'm going to try to grasp them")
+                pila.pop(indx_obj)
+                print("pila actualizada: ", pila)
+                break
+            else:
+                indx_obj = indx_obj -1
+                actual_obj = pila[indx_obj]
+                print("ELSE actual obj: ", actual_obj, "indx obj: ", indx_obj)
+
+        # Tomar objeto
+
         print("ACT-PLN.->Sending goal traj to prepare")
         JuskeshinoHardware.moveLeftArmWithTrajectory([-0.66, 0.36, -0.04, 1.79, 0, 1.02, 0], 10)
         print("ACT-PLN.->Open gripper")
         JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
-        print("ACT-PLN.->Trying to detect object")
-        JuskeshinoHRI.say("I'm trying to detect the " + pila[-1])
 
-        # Tomar objeto
-        [obj, img] = JuskeshinoVision.detectAndRecognizeObject(pila[-1])
-        print("ACT-PLN.->Detected object: " + str([obj.id, obj.category, obj.object_state]))
-        print("ACT-PLN.->Planning best gripper configuration")
-        JuskeshinoHRI.say("I found the " + pila[-1] + ", I'm going to try to grasp them")
         resp = JuskeshinoManipulation.planBestGraspingConfiguration(obj)
         print("ACT-PLN.->Sending best gripper configuration")
         JuskeshinoHardware.moveLeftArmWithTrajectory(resp.articular_trajectory,10)
@@ -90,18 +134,23 @@ def main():
         JuskeshinoHardware.moveLeftArmWithTrajectory([0.46, 0.87, -0.4, 1.99, -0.99, 0.4,  1.6], 10)   # Objeto recogido
         print("ACT-PLN.->Mofing arm to prepare")
         JuskeshinoHardware.moveLeftArmWithTrajectory([-0.69, 0.2, 0, 1.55, 0, 1.16, 0], 10)  # prepare
-
-        # Ir a la mesa  
+ 
         print("ACT-PLN.->Moving base backwards")
         JuskeshinoHRI.say("I'have grasped the" + pila[-1])
-
         JuskeshinoNavigation.moveDist(-0.3, 10)
-        print("ACT-PLN.->Getting close to table")
-        JuskeshinoHRI.say("I'm going to the table")
-        JuskeshinoNavigation.getClose("cupboard", 30)
+        """
     
+    # Ir a la mesa
+    print("ACT-PLN.->Getting close to breakfast table")
+    JuskeshinoHRI.say("I'm going to the table")
+    JuskeshinoNavigation.getClose("breakfast_table", 40)
+    
+    """
         print("ACT-PLN.->Aligning with table")
         JuskeshinoSimpleTasks.alignWithTable()
+
+        # Conocer la altura de la mesa
+        edge = JuskeshinoVision.findTableEdge()
 
         # Depositar objeto delicadamente
         print("ACT-PLN.->Moving left arm to deliver position")
@@ -144,7 +193,7 @@ def main():
     # El desayuno esta servido 
 
     
-    """
+    
     print("ACT-PLN.->Going back to entrance")
     JuskeshinoHRI.say("I'm going back to the entrance")
     JuskeshinoNavigation.getClose("entrance", 60)

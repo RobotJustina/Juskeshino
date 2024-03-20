@@ -7,6 +7,8 @@ from juskeshino_tools.JuskeshinoHardware import JuskeshinoHardware
 from juskeshino_tools.JuskeshinoNavigation import JuskeshinoNavigation
 from juskeshino_tools.JuskeshinoVision import JuskeshinoVision
 from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
+from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
+
 
 class JuskeshinoSimpleTasks:
     def setNodeHandle():
@@ -137,7 +139,25 @@ class JuskeshinoSimpleTasks:
         obj_p = listener.transformPoint(target_frame, obj_p)
         return [obj_p.point.x, obj_p.point.y, obj_p.point.z]
     
-    def move_to_right_of_object(y_obj, timeout):
-        print("move to the right of the object")
-        JuskeshinoNavigation.moveLateral(-y_obj, timeout)
+    
+    def placing_object_on_table():  # It is used after aligning the robot with the table
+        array_points = JuskeshinoVision.findTableEdge()
+        if array_points is None:
+            array_points = JuskeshinoVision.findTableEdge()
+            if array_points is None:
+                print("JuskeshinoSimpleTasks.->Cannot find table edge")
+                return False
+        
+        desired_pose_gripper = [0.25, 0.25, array_points[0].z, math.radians(0), math.radians(-90), math.radians(0)]
+        print("desired pose gripper: ", desired_pose_gripper)
+
+        q_pose =  JuskeshinoManipulation.cartesian_to_articular_pose(desired_pose_gripper)
+        print("Juskeshino.SimpleTask.->Going to leave the object")
+        JuskeshinoHardware.moveLeftArmWithTrajectory(q_pose, 10)
+
+
+
+
+
+        
 

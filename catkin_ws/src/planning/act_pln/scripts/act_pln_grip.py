@@ -266,13 +266,12 @@ def main():
             shape_obj = resp_pose_obj.recog_object.size
             print("SHAPE OBJ:___", shape_obj)
             if not resp_pose_obj.recog_object.graspable:
-                print("request an object again............")
-                state = SM_WAITING_NEW_COMMAND
+                print("Request an object again............")
 
             print("position object ", x,y,z)    
-            state = SM_PREPARE_ARM
+            state = SM_INIT#SM_PREPARE_ARM
             
-            
+            """
         elif state == SM_PREPARE_ARM:
             print("state == SM_PREPARE_ARM")
             if (resp_pose_obj.recog_object.size.x < 0.11) or resp_pose_obj.recog_object.object_state == "horizontal":
@@ -373,7 +372,7 @@ def main():
             goal_la_reached = False
             state = SM_INIT
 
-            """
+            
         elif state == SM_CLEAN_VARIABLES:
             new_command = False
             executing_command = False

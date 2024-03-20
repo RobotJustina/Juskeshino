@@ -13,7 +13,7 @@ class JuskeshinoHRI:
         
         JuskeshinoHRI.recognizedSpeech = RecognizedSpeech()
         loop = rospy.Rate(10)
-        counter = 3;
+        counter = 3
         while not rospy.is_shutdown() and counter > 0:
             counter-=1
             loop.sleep()
