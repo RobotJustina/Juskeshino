@@ -271,7 +271,7 @@ def main():
             print("position object ", x,y,z)    
             state = SM_INIT#SM_PREPARE_ARM
             
-            """
+            
         elif state == SM_PREPARE_ARM:
             print("state == SM_PREPARE_ARM")
             if (resp_pose_obj.recog_object.size.x < 0.11) or resp_pose_obj.recog_object.object_state == "horizontal":
@@ -319,7 +319,7 @@ def main():
                     print("succesfull move arm...")
                     
                     print("goal_la_reached STATUS", goal_la_reached)
-                    state =  SM_INIT#SM_PICK_UP_OBJECT
+                    state =  SM_PICK_UP_OBJECT
                 
                 
 
@@ -339,7 +339,7 @@ def main():
             time.sleep(1.5)
             move_left_gripper(-0.3 , pub_la_goal_grip)
             resp = pub_status_msg_response(3, pub_object_status)  # SUCCEEDED
-            state = SM_LIFT_OBJECT
+            state = SM_INIT#SM_LIFT_OBJECT
    
 
 

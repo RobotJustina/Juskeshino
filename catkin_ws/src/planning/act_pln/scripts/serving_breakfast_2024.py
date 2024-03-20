@@ -142,16 +142,17 @@ def main():
     
     # Ir a la mesa
     print("ACT-PLN.->Getting close to breakfast table")
-    JuskeshinoHRI.say("I'm going to the table")
+    JuskeshinoHRI.say("I'm going to the breakfast table")
     JuskeshinoNavigation.getClose("breakfast_table", 40)
     
+    
+    print("ACT-PLN.->Aligning with table")
+    JuskeshinoSimpleTasks.alignWithTable()
+    
+    # Colocar el objeto sobre la mesa
+    JuskeshinoSimpleTasks.placing_object_on_table()
+
     """
-        print("ACT-PLN.->Aligning with table")
-        JuskeshinoSimpleTasks.alignWithTable()
-
-        # Conocer la altura de la mesa
-        edge = JuskeshinoVision.findTableEdge()
-
         # Depositar objeto delicadamente
         print("ACT-PLN.->Moving left arm to deliver position")
         JuskeshinoHRI.say("I'm going to leave the pringles")
