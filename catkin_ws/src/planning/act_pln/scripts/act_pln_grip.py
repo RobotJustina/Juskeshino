@@ -269,7 +269,7 @@ def main():
                 print("Request an object again............")
 
             print("position object ", x,y,z)    
-            state = SM_INIT#SM_PREPARE_ARM
+            state = SM_PREPARE_ARM
             
             
         elif state == SM_PREPARE_ARM:
@@ -297,7 +297,7 @@ def main():
             resp_best_grip = clt_best_grip(req_best_grip)
             goal_la_reached =  False       
             print("goal_la_reached STATUS", goal_la_reached)
-            state = SM_INIT
+            #state = SM_INIT
             
             move_left_gripper(0.9, pub_la_goal_grip)
             
@@ -320,9 +320,6 @@ def main():
                     
                     print("goal_la_reached STATUS", goal_la_reached)
                     state =  SM_PICK_UP_OBJECT
-                
-                
-
                 
             else:
                 print("No se encontraron poses posibles...................")
@@ -380,7 +377,7 @@ def main():
             goal_reached = False
             goal_la_reached = False
             state = SM_INIT
-            """
+            s
 
 
 

@@ -8,10 +8,9 @@ class JuskeshinoManipulation:
     	# Se subcribe a los servicios necesarios para manipulacion de objetos
         rospy.wait_for_service("/manipulation/get_best_grasp_traj")
         JuskeshinoManipulation.cltBestGrip = rospy.ServiceProxy("/manipulation/get_best_grasp_traj", BestGraspTraj )
+        rospy.wait_for_service("/manipulation/la_ik_trajectory")
+        JuskeshinoManipulation.cltIkPose = rospy.ServiceProxy("/manipulation/la_ik_trajectory", InverseKinematicsPose2Traj )
 
-        rospy.wait_for_service("/manipulation/ik_pose")
-        JuskeshinoManipulation.cltIkPose = rospy.ServiceProxy("/manipulation/ik_pose", InverseKinematicsPose2Traj )
-                                                                
         loop = rospy.Rate(10)
         counter = 3
         while not rospy.is_shutdown() and counter > 0:
@@ -25,7 +24,7 @@ class JuskeshinoManipulation:
         resp = JuskeshinoManipulation.cltBestGrip(req)      # Pasa la peticion al servicio de manipulacion y retorna la respuesta
         return resp
     
-
+    
     def cartesian_to_articular_pose(cartesian_pose):
         req = InverseKinematicsPose2TrajRequest()
         req.x = cartesian_pose[0]
@@ -38,6 +37,7 @@ class JuskeshinoManipulation:
         req.time_step = 0.2
         resp = JuskeshinoManipulation.cltIkPose(req)      # Pasa la peticion al servicio de manipulacion y retorna la respuesta
         return resp.points[-1]
+    
 
     
 

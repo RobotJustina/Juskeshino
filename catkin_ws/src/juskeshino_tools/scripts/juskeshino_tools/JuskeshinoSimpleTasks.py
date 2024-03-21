@@ -1,6 +1,7 @@
 import math
 import rospy
 import tf
+import time
 from vision_msgs.msg import *
 from geometry_msgs.msg import *
 from juskeshino_tools.JuskeshinoHardware import JuskeshinoHardware
@@ -139,7 +140,7 @@ class JuskeshinoSimpleTasks:
         obj_p = listener.transformPoint(target_frame, obj_p)
         return [obj_p.point.x, obj_p.point.y, obj_p.point.z]
     
-    
+    """
     def placing_object_on_table():  # It is used after aligning the robot with the table
         array_points = JuskeshinoVision.findTableEdge()
         if array_points is None:
@@ -148,12 +149,39 @@ class JuskeshinoSimpleTasks:
                 print("JuskeshinoSimpleTasks.->Cannot find table edge")
                 return False
         
-        desired_pose_gripper = [0.25, 0.25, array_points[0].z, math.radians(0), math.radians(-90), math.radians(0)]
+        desired_pose_gripper = [0.25, 0.25, array_points[0].z, 2.72, -1.0, -2.88]
         print("desired pose gripper: ", desired_pose_gripper)
 
         q_pose =  JuskeshinoManipulation.cartesian_to_articular_pose(desired_pose_gripper)
         print("Juskeshino.SimpleTask.->Going to leave the object")
         JuskeshinoHardware.moveLeftArmWithTrajectory(q_pose, 10)
+    """
+
+    def object_search(name_obj):
+        JuskeshinoHardware.moveHead(0,-1, 5)
+        [obj, img] = JuskeshinoVision.detectAndRecognizeObject(name_obj)
+
+        if obj == None: # si no reconocio el objeto
+            JuskeshinoHardware.moveHead(-0.5,-1, 5) #move head to the right 
+            time.sleep(2)
+            [obj, img] = JuskeshinoVision.detectAndRecognizeObject(name_obj)
+            print("Primer intento")
+
+            if obj == None: # si no reconocio el objeto
+                JuskeshinoHardware.moveHead(0.5,-1, 5) #move head to the left
+                time.sleep(2)
+                [obj, img] = JuskeshinoVision.detectAndRecognizeObject(name_obj)
+                print("Segundo intento")
+
+                if obj == None: # si no reconocio el objeto
+                    print("NO se encontro el objeto")
+                    return None
+                
+            return [obj, img]
+
+        else:
+            print("Objeto detectado ")
+            return [obj, img]
 
 
 
