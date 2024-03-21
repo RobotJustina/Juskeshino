@@ -40,8 +40,8 @@ def main():
     rate = rospy.Rate(10)
 
     rospack = rospkg.RosPack()
-    #locations_default = rospack.get_path("config_files") + "/known_locations_objects.yaml"
-    locations_default = rospack.get_path("config_files") + "/known_locations_simul.yaml"
+    locations_default = rospack.get_path("config_files") + "/known_locations_objects.yaml"
+    #locations_default = rospack.get_path("config_files") + "/known_locations_simul.yaml"
     locations_file = rospy.get_param("~locations", locations_default)
 
     # Se subcribe a los servicios necesarios para manipulacion, navegacion,vision, etc...
@@ -71,8 +71,8 @@ def main():
     
 
     # Llenar pila con objetos: cereal, leche, tazon, cuchara
-    pila = ["bowl", "cereal", "milk"]
-    pila = ["soda", "apple", "pringles"]
+    pila = ["bowl", "cereal", "cereal"]
+    #pila = ["soda", "apple", "pringles"]
     print("pila: ", pila)
     
     
@@ -89,8 +89,8 @@ def main():
         # Ir a locacion de ultimo objeto en la pila
         JuskeshinoHRI.say("I'm going to the" + actual_obj + "position.")
 
-        if not JuskeshinoNavigation.getClose("desk", 100):
-            print("ACT-PLN.->Cannot get close to the desk position")
+        if not JuskeshinoNavigation.getClose("kitchen", 100):
+            print("ACT-PLN.->Cannot get close to the kitchen position")
 
         # Alinearse con mueble
         if not JuskeshinoHardware.moveHead(0,-1, 5):
