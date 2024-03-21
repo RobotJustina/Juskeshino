@@ -12,6 +12,8 @@ from visualization_msgs.msg import Marker, MarkerArray
 import geometry_msgs.msg
 
 MAXIMUM_GRIP_LENGTH = 0.14
+MINIMUM_HEIGHT_PRISM = 0.13
+MAXIMUM_CUBE_SIZE = 0.13
     
 
 
@@ -110,24 +112,21 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
 
 def grip_rules(obj_pose, type_obj, obj_state, size, grip_point):
 
-    #if(size.y <= 0.03) and (obj_state == 'horizontal'):
-     #   return spoon_grip()
+    if(type_obj == "BOWL"):
+        return cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj)
 
-    if (size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x >= 0.135):
+    if (size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x >= MINIMUM_HEIGHT_PRISM):
         print("The object will be GRABBED AS PRISM..................")
         return prism(obj_pose, obj_state)
     else:
-        if(size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x < 0.13):
-            print("Object too SMALL, SUPERIOR GRIP will be made")
+        if(size.z <= MAXIMUM_CUBE_SIZE) and (size.y <= MAXIMUM_CUBE_SIZE) and (size.x < MAXIMUM_CUBE_SIZE):
+            print("Object SMALL, SUPERIOR GRIP will be made")
             return cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj)
             
         else:
-            if(type_obj == "BOWL"):
-                return cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj)
-            else:
-                print("size object > MAX LENGHT GRIP")
-                print("The object will be GRABBED as BOX....................")
-                return box(obj_pose, size, obj_state )
+            print("size object > MAX LENGHT GRIP")
+            print("The object will be GRABBED as BOX....................")
+            return box(obj_pose, size, obj_state )
 
 
 
