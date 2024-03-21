@@ -34,10 +34,11 @@ from human_detector.srv import Point_detector ,Point_detectorResponse
 from hmm_navigation.msg import NavigateAction, NavigateActionGoal, NavigateActionFeedback, NavigateActionResult
 #
 from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
+from juskeshino_tools.JuskeshinoHardware import JuskeshinoHardware
 import time
 
 class Talker():
-    def __init__(self) -> None:
+    def __init__(self):
         JuskeshinoHRI.setNodeHandle()
     
     def talk(self, sentence, timeout=0):
@@ -46,6 +47,41 @@ class Talker():
         JuskeshinoHRI.say(sentence)
         # while st_time - now < timeout:  # Uncomment if time out is needed
         #     now = time.time()
+
+
+class Head:  # known as Gaze on Takeshi grasp_utils.py
+    def __init__(self):
+        # pan, tilt are in rads
+        JuskeshinoHardware.setNodeHandle()
+        self.pan_min_limit = -1.5708
+        self.pan_max_limit = 1.5708
+        self.tilt_min_limit = -1.5
+        self.tilt_max_limit = 0.3
+
+    def to_tf(tf):
+        pass
+
+    def set_named_target(self, pose_name='neutral'):
+        if pose_name == 'neutral':
+            self.set_joint_values(head_pose=[0.0, 0.0])
+        if pose_name == 'down':
+            self.set_joint_values(head_pose=[0.0, self.tilt_min_limit])
+        if pose_name == 'face_to_face':
+            self.set_joint_values(head_pose=[0.0, -0.1])
+
+    def set_joint_values(self, head_pose=[0.0, 0.0]):
+        if head_pose[0] < self.pan_min_limit or head_pose[0] > self.pan_max_limit:
+            print("Error! pan value exceeds limits")
+            print("limits are: [", self.pan_min_limit, ',', self.pan_max_limit, ']')
+        elif head_pose[1] < self.pan_min_limit or head_pose[1] > self.pan_max_limit:
+            print("Error! tilt value exceeds limits")
+            print("limits are: [", self.tilt_min_limit, ',', self.tilt_max_limit, ']')
+        else:  # in range
+            JuskeshinoHardware.moveHead(head_pose[0], head_pose[1], 2)
+            
+    def turn_base_gaze(tf, to_gaze):  # Tuns head and base to find target
+        pass
+
 
 
 ######################################################
@@ -372,6 +408,7 @@ rgb=RGB()  #WEB CAM DEBUG
 omni_base=OMNIBASE()
 tf_man = TF_MANAGER()
 voice = Talker()
+head = Head()
 
 
 
