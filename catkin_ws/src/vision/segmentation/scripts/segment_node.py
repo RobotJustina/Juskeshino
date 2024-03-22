@@ -10,8 +10,7 @@ def trigger_response(request):
     Trigger service ( a null request performs segmentation)
     '''
     print (f'Segmenting at {request.height.data: .2f} ')
-    #points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)  # TAKESHI
-    points_msg=rospy.wait_for_message("/camera/depth_registered/points",PointCloud2,timeout=5)
+    points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
     df=read_yaml('/segmentation_params.yaml')
     higher_v=df['higher']  #Higher area limit 
     lower_v=df['lower']    #Lower Area Limit
@@ -28,9 +27,7 @@ def trigger_response(request):
     #CORRECT POINTS###################
     ################
     try:
-            #trans = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
-            trans = tfBuffer.lookup_transform('map', 'camera_rgb_optical_frame', rospy.Time())
-
+            trans = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
                         
             trans,rot=read_tf(trans)
             #print ("############head",trans,rot)
@@ -44,6 +41,7 @@ def trigger_response(request):
     mask= np.zeros(corrected['z'].shape)#mask    
     ###################################3
     pose, quats=Floats(),Floats()
+    heights_res, widths_res=Floats(),Floats()
     pose_c= Floats()
     heights, widths =Floats(),Floats()
     res= SegmentationResponse()
@@ -53,14 +51,18 @@ def trigger_response(request):
         counts, bins =(np.histogram(zs_no_nans, bins=100))
         inds=np.where(counts>5000)
         low_planes_height=bins[np.add(inds, 1)].flatten()
-        print (f'Number of planes found {len(inds[0])} at z=[{bins[ np.add(inds, 1)]}]')
+        print (f'Number of planes found {len(inds[0])} at z=[{bins[ np.add(inds, 1)]}]#############3')
+
         if (low_planes_height[0] > -0.05) and (low_planes_height[0] < 0.05): low_planes_height=low_planes_height[1:]
     else:
         low_plane = (corrected['z'] > request.height.data)      # HEIGHT REQUESTED OR OBTAINED FROM HISTOGRAM
         low_planes_height=[]
-        low_planes_height.append(request.height.data)
+        if request.height.data==0:low_planes_height.append(request.height.data - 0.075)
+        else:low_planes_height.append(request.height.data)
     cents=[]
     quats_pca=[]
+    heights=[]
+    widths=[]
     for low_planes_h in low_planes_height:
         print(f'segmenting at {low_planes_h} ')        
         low_plane = (corrected['z'] > low_planes_h)      # HEIGHT REQUESTED OR OBTAINED FROM HISTOGRAM
@@ -91,6 +93,12 @@ def trigger_response(request):
                     cents.append(cent)        
                     ################################PCA
                     points_c=np.asarray((corrected['x'][np.where(individual_mask==1)],corrected['y'][np.where(individual_mask==1)],corrected['z'][np.where(individual_mask==1)]))
+
+                    heights.append(max(corrected['z'][np.where(individual_mask==1)]) - min(corrected['z'][np.where(individual_mask==1)]))
+                    widths.append (max(corrected['y'][np.where(individual_mask==1)]) - min(corrected['y'][np.where(individual_mask==1)]))
+                    print ('Estimated Height #######################',max(corrected['z'][np.where(individual_mask==1)]) - min(corrected['z'][np.where(individual_mask==1)]))                              
+                    print ('Estimated Width  #######################',max(corrected['y'][np.where(individual_mask==1)]) - min(corrected['y'][np.where(individual_mask==1)]))
+                    print ('Estimated Depth  #######################',max(corrected['x'][np.where(individual_mask==1)]) - min(corrected['x'][np.where(individual_mask==1)]))
                     E_R=points_to_PCA(points_c.transpose())
                     e_ER=tf.transformations.euler_from_matrix(E_R)
                     quat= tf. transformations.quaternion_from_euler(e_ER[0],e_ER[1],e_ER[2])
@@ -102,10 +110,7 @@ def trigger_response(request):
                 else: print(f'Centroid_y out of range {cY} ,{reg_ly_v},{reg_hy_v}')
             else: print(f'Area of contour outside of range {area} ,{lower_v},{higher_v}')
         
-    if len(cents)==0:
-        img_msg=bridge.cv2_to_imgmsg(rgb_image)
-        res.im_out.image_msgs.append(img_msg)
-        return res
+     
     img_msg=bridge.cv2_to_imgmsg(image_with_contours)
     #plt.imshow(img)
     #plt.imshow (image_with_contours)
@@ -114,6 +119,11 @@ def trigger_response(request):
     quats.data=np.asarray(quats_pca).ravel()
     res.poses=pose
     res.quats=quats    
+    quats.data=np.asarray(quats_pca).ravel()
+    widths_res=np.asarray(widths).ravel()
+    res.widths=widths_res
+    heights_res=np.asarray(heights).ravel()
+    res.heights=heights_res
     return res        
 
 rospy.loginfo("segmentation service available")                    # initialize a ROS node
