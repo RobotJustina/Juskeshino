@@ -34,21 +34,40 @@ def read_delta_encoders(last_readings, rc_frontal, rc_lateral):
     #print([delta_left, delta_right, -delta_front, -delta_rear, [last_left, last_right, last_front, last_rear]])
     return [delta_left, delta_right, -delta_front, -delta_rear, [last_left, last_right, last_front, last_rear]]
 
+# def calculate_odometry(robot_x, robot_y, robot_a, delta_left, delta_right, delta_front, delta_rear):
+#     dist_left  = delta_left  / TICKS_PER_METER
+#     dist_right = delta_right / TICKS_PER_METER
+#     dist_front = delta_front / TICKS_PER_METER
+#     dist_rear  = delta_rear  / TICKS_PER_METER
+
+#     delta_theta = (dist_right - dist_left + dist_front - dist_rear)/BASE_WIDTH / 2.0
+#     if abs(delta_theta) >= 0.00001:
+#         rg_x = (dist_right + dist_left)  / (2.0 * delta_theta)
+#         rg_y = (dist_rear  + dist_front) / (2.0 * delta_theta)
+#         delta_x = rg_x * math.sin(delta_theta)       + rg_y * (1 - math.cos(delta_theta))
+#         delta_y = rg_x * (1 - math.cos(delta_theta)) + rg_y * math.sin(delta_theta)
+#     else: 
+#         delta_x = (dist_left + dist_right) / 2
+#         delta_y = (dist_front + dist_rear) / 2
+
+#     robot_x += delta_x * math.cos(robot_a) - delta_y * math.sin(robot_a)
+#     robot_y += delta_x * math.sin(robot_a) + delta_y * math.cos(robot_a) 
+#     robot_a  = ((robot_a + delta_theta) + math.pi) % (2*math.pi) - math.pi
+
+#     return [robot_x, robot_y, robot_a]
+
+# Temp
 def calculate_odometry(robot_x, robot_y, robot_a, delta_left, delta_right, delta_front, delta_rear):
     dist_left  = delta_left  / TICKS_PER_METER
     dist_right = delta_right / TICKS_PER_METER
-    dist_front = delta_front / TICKS_PER_METER
-    dist_rear  = delta_rear  / TICKS_PER_METER
 
-    delta_theta = (dist_right - dist_left + dist_front - dist_rear)/BASE_WIDTH / 2.0
+    delta_theta = (dist_right - dist_left)/BASE_WIDTH
     if abs(delta_theta) >= 0.00001:
         rg_x = (dist_right + dist_left)  / (2.0 * delta_theta)
-        rg_y = (dist_rear  + dist_front) / (2.0 * delta_theta)
-        delta_x = rg_x * math.sin(delta_theta)       + rg_y * (1 - math.cos(delta_theta))
-        delta_y = rg_x * (1 - math.cos(delta_theta)) + rg_y * math.sin(delta_theta)
+        delta_x = rg_x * math.sin(delta_theta)
+        delta_y = rg_x * (1 - math.cos(delta_theta))
     else: 
         delta_x = (dist_left + dist_right) / 2
-        delta_y = (dist_front + dist_rear) / 2
 
     robot_x += delta_x * math.cos(robot_a) - delta_y * math.sin(robot_a)
     robot_y += delta_x * math.sin(robot_a) + delta_y * math.cos(robot_a) 
