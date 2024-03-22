@@ -81,7 +81,7 @@ class RGBD():
         self._br = tf.TransformBroadcaster()
         # ポイントクラウドのサブスクライバのコールバックに_cloud_cbメソッドを登録
         self._cloud_sub = rospy.Subscriber(
-            "/hsrb/head_rgbd_sensor/depth_registered/rectified_points",
+            "/camera/depth_registered/points",
             PointCloud2, self._cloud_cb)
         self._points_data = None
         self._image_data = None
