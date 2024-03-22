@@ -1,0 +1,48 @@
+
+
+<launch>
+<param name="file_name" value="/known_locations.yaml"/>
+
+
+<include file="$(find speech_recog)/launch/ros_vosk.launch"/>
+<node pkg="face_recog"  name="face_recog" type="face_recog_server.py"/>
+<node pkg="hmm_navigation"  name="pumas_nav_actionserver" type="pumas_nav_actionserver.py"/>
+<!-- node pkg="hmm_navigation"  name="pumas_nav" type="pumas_nav.py" output="screen" /-->
+<node pkg="known_locations_tf_server"  name="known_locs" type="known_locs_node.py" output="screen" />
+
+<node pkg="object_classification"  name="objs_reco" type="classification_server.py"  /> 
+<node pkg="segmentation"  name="segmentation" type="segment_node.py"  />  
+
+<includenode pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"/>
+<node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py"/>
+<node pkg="leg_finder"  name="leg_finder_node" type="leg_finder_node"/>  
+<node pkg="human_follower"  name="human_follower_node" type="human_follower_node"/>  
+
+</launch>
+
+
+
+
+<!--
+  <include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch"> -x
+  <arg name="use_gui" value="true"/> 
+  </include>
+
+
+  <param name="file_name" value="/known_locations.yaml"/> _/
+  <node pkg="hmm_navigation"  name="pumas_nav" type="pumas_nav.py" output="screen" /> _/
+  <node pkg="known_locations_tf_server"  name="known_locs" type="known_locs_node.py" output="screen" /> _/
+
+  <node pkg="object_classification"  name="objs_reco" type="classification_server.py"  />  _/
+  <node pkg="segmentation"  name="segmentation" type="segment_node.py"  />  _/
+
+  <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"  />  _/
+ 
+  <node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py"/>  -x
+  <node pkg="leg_finder"  name="leg_finder_node" type="leg_finder_node"/>  _/
+  <node pkg="human_follower"  name="human_follower_node" type="human_follower_node"/>  
+  <node pkg="action_server"  name="action_server" type="ACT_SRVR_Follow.py"/>   -x
+ 
+ 
+  <include file="$(find speech_recog)/launch/ros_vosk.launch"/>
+  -->

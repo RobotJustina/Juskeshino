@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-from smach_utils2 import *
+#from smach_utils2 import *  # TODO: Delete
+from smach_utils_justina import *
 from smach_ros import SimpleActionState
 
 #########################################################################################################
@@ -19,17 +20,18 @@ class Initial(smach.State):
             return 'tries'
         
         #READ YAML ROOMS XYS
-        
-        global arm ,  hand_rgb
-        hand_rgb = HAND_RGB()
+        # TODO: delete---->       
+        # global arm ,  hand_rgb
+        # hand_rgb = HAND_RGB()
 
-        arm = moveit_commander.MoveGroupCommander('arm')
-        head.set_named_target('neutral')
+        # arm = moveit_commander.MoveGroupCommander('arm')
+        # head.set_named_target('neutral')
 
-        rospy.sleep(0.8)
-        arm.set_named_target('go')
-        arm.go()
-        rospy.sleep(0.3)
+        # rospy.sleep(0.8)
+        # arm.set_named_target('go')
+        # arm.go()
+        # rospy.sleep(0.3)
+        # <---
 
         #gripper.open()
         #rospy.sleep(0.3)
@@ -55,7 +57,7 @@ class Wait_push_hand(smach.State):
         print(f'Try {self.tries} of 4 attempts')
         if self.tries == 4:
             return 'tries'
-        talk('Gently... push my hand to begin')
+        voice.talk('Gently... push my hand to begin')
         
         
         succ = wait_for_push_hand(100) # NOT GAZEBABLE
@@ -78,13 +80,13 @@ class Goto_living_room(smach.State):
         self.tries += 1
         if self.tries == 3:
             return 'tries'
-        if self.tries == 1: talk('Navigating to, living room')
+        if self.tries == 1: voice.talk('Navigating to, living room')
         res = omni_base.move_base(known_location='living_room', time_out=200)
         print(res)
         if res:
             return 'succ'
         else:
-            talk('Navigation Failed, retrying')
+            voice.talk('Navigation Failed, retrying')
             return 'failed'
 
 #########################################################################################################
@@ -96,7 +98,7 @@ class Find_human(smach.State):
 
     def execute(self, userdata):
         rospy.loginfo('State : Find_human')
-        talk('Scanning the room for humans')
+        voice.talk('Scanning the room for humans')
         self.tries += 1
         if self.tries >= 4:
             self.tries = 0
@@ -109,18 +111,18 @@ class Find_human(smach.State):
         if humanpose== False:
             print ('no human ')
             return 'failed'
-        talk('Please start pointing at the bag. In three')
+        voice.talk('Please start pointing at the bag. In three')
         rospy.sleep(1.0)
-        talk('Two')
+        voice.talk('Two')
         rospy.sleep(1.0)
-        talk('One')
+        voice.talk('One')
         rospy.sleep(1.5)
         res=pointing_detect_server.call()
         if (res.x_r+res.y_r)==0 and  (res.x_l+res.y_l)==0  :
-            talk('I did not find a pointing arm, I will try again')
+            voice.talk('I did not find a pointing arm, I will try again')
             print ('no pointing ')
             return 'failed'
-        talk('Ok')
+        voice.talk('Ok')
         rospy.sleep(0.8)
         if res.x_r ==-1: tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_')
         else: tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_')
@@ -154,7 +156,7 @@ class Scan_floor(smach.State):
         request.height.data=0.00
         res=segmentation_server.call(request)
         img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
-        save_image(img)
+        save_image(img)  # TODO: Delete?
         print (res.poses.data)
         #res=segmentation_server.call()
         origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
@@ -207,7 +209,7 @@ class Scan_table(smach.State):
         self.target= '003_cracker_box'
     def execute(self, userdata):
         rospy.loginfo('State : Scanning_table')
-        talk('Scanning table')
+        voice.talk('Scanning table')
         self.tries += 1
         if self.tries >= 4:self.tries = 0
         if self.tries==1:head.set_joint_values([ 0.0, -0.7])
@@ -244,12 +246,12 @@ class Pre_pickup(smach.State):
         
     def execute(self, userdata):
         rospy.loginfo(f'State : Pre PICKUP  {self.target} ')
-        talk(f'Picking up {self.target}, please stay where you are')
+        voice.talk(f'Picking up {self.target}, please stay where you are')
         rospy.sleep(0.7)
         global target_object, pca_angle
         head.set_named_target('neutral')
         rospy.sleep(0.5)
-        clear_octo_client()
+        clear_octo_client()  # TODO: ???
         res = omni_base.move_d_to(0.55,self.target)
 
         gripper.open()
@@ -307,7 +309,7 @@ class Pickup(smach.State):
         self.target='object_0'
     def execute(self, userdata):
         rospy.loginfo('State :  PICKUP ')
-        clear_octo_client()
+        clear_octo_client()  # TODO: ???
         self.tries += 1
         target_object=self.target
 
@@ -432,7 +434,7 @@ class Pickup_two(smach.State):
         if succ:
             brazo.set_named_target('neutral')         
             return 'succ'
-        talk (' I think I missed the object, I will retry ')
+        voice.talk (' I think I missed the object, I will retry ')
         return 'failed'
         
 
@@ -472,7 +474,7 @@ class Pickup_cereal(smach.State):
         self.tries = 0
     def execute(self, userdata):
         rospy.loginfo('State :  PICKUP ')
-        clear_octo_client()
+        clear_octo_client()  # TODO: Delete is TAKE
         self.tries += 1
 
 
@@ -602,14 +604,14 @@ class Goto_table(smach.State):
         self.tries += 1
         if self.tries == 3:
             return 'tries'
-        if self.tries == 1: talk('Navigating to, pickup')
+        if self.tries == 1: voice.talk('Navigating to, pickup')
         res = omni_base.move_base(known_location='table', time_out=200)
         print(res)
 
         if res:
             return 'succ'
         else:
-            talk('Navigation Failed, retrying')
+            voice.talk('Navigation Failed, retrying')
             return 'failed'
 
 #########################################################################################################
@@ -662,18 +664,18 @@ class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
         
         
         if self.tries   <= 1: 
-                    talk('Navigating to bed room')
+                    voice.talk('Navigating to bed room')
                     next_room='bedroom'
             
         elif self.tries == 2: 
-                    talk('Navigating to kitchen')
+                    voice.talk('Navigating to kitchen')
                     next_room='kitchen'
         elif self.tries == 3: 
-                    talk('Navigating to  living room')
+                    voice.talk('Navigating to  living room')
                     next_room='living_room'
             
         elif self.tries == 4: 
-                    talk('Navigating to dining room')
+                    voice.talk('Navigating to dining room')
                     next_room='dining_room'
                     self.tries=0
        
@@ -687,7 +689,7 @@ class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
             return 'succ'
 
         else:
-            talk('Navigation Failed, retrying')
+            voice.talk('Navigation Failed, retrying')
             self.tries +=-1
             return 'failed'
 
@@ -718,15 +720,15 @@ class Lead_to_living_room(smach.State):
         res = omni_base.move_d_to(1.0,'human')
 
 
-        talk(f'{guest_name}... I will lead you to the {closest_room}, please follow me')
+        voice.talk(f'{guest_name}... I will lead you to the {closest_room}, please follow me')
         # talk('Navigating to ,living room')
         res = omni_base.move_base(known_location=closest_room)
         if res:
             self.tries=0
-            talk( ' You can remain here, thank you')
+            voice.talk( ' You can remain here, thank you')
             return 'succ'
         else:
-            talk('Navigation Failed, retrying')
+            voice.talk('Navigation Failed, retrying')
             return 'failed'
 
 ###########################################################################################################
@@ -747,7 +749,7 @@ class Analyze_human(smach.State):
         #head.absolute(human_pos[0],human_pos[1],0.1)
         ##### SHOES NO SHOES DETECTOR
         
-        talk( 'Please be sure to be standing in front of me')
+        voice.talk( 'Please be sure to be standing in front of me')
         probss=[]
         head.absolute(human_pos[0],human_pos[1],-0.1)
         rospy.sleep(1.9)
@@ -776,10 +778,10 @@ class Analyze_human(smach.State):
 
         if (keys[np.argmax(probs)] in ['sandals','feet','socks', 'sock' ]   ) or ( probs[0][1]  < 0.4  ) :  
 
-            talk ('Thanks for not wearing shoes.... Rule 1 is followed')
+            voice.talk ('Thanks for not wearing shoes.... Rule 1 is followed')
             print ('Not wearing shoes')
         else: 
-            talk('Rule number 1 Broken... no shoes please... Would you mind taking them off?.... thank you ')
+            voice.talk('Rule number 1 Broken... no shoes please... Would you mind taking them off?.... thank you ')
             ##
         return 'succ'
 
@@ -817,7 +819,7 @@ class Analyze_area(smach.State):
         origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
 
         if len(res.poses.data)==0:
-            talk('no Trash  in area next to human....')
+            voice.talk('no Trash  in area next to human....')
             return 'failed'
 
         else:
@@ -848,10 +850,10 @@ class Analyze_area(smach.State):
             head.set_joint_values([0,1.3])
 
             rospy.sleep(0.5)
-            talk ('Rule number 2 Broken. Garbage detected, would you mind picking it up?')
+            voice.talk ('Rule number 2 Broken. Garbage detected, would you mind picking it up?')
             self.tries=0
             return 'succ'
-        talk('Rule no littering Observed... There is no Trash in area next to human....')
+        voice.talk('Rule no littering Observed... There is no Trash in area next to human....')
         return 'failed'
  
 ###########################################################################################################
@@ -894,7 +896,7 @@ class Detect_drink(smach.State):
         # ----------------ATENTO EN DONDE ESTARIAN LAS BEBIDAS------------
         place_drinks='drinks_p'
         #-----------------------------------------------------------------
-        talk('Detecting drinking')
+        voice.talk('Detecting drinking')
         rospy.sleep(0.8)
         reqAct.visual=0
         # reqAct.in_ --> 4  para detectar Drinking
@@ -904,7 +906,7 @@ class Detect_drink(smach.State):
         # 1 -> detecta una persona con drink y pasa a acercarce a la tf correspondiente para ofrecer bebida(?)
         if resAct.i_out==1:
             print(resAct.d_xyz)
-            talk('Rule broken, I detect a person without a drink.')
+            voice.talk('Rule broken, I detect a person without a drink.')
             rospy.sleep(0.8)
             print("Aproaching")
             res = omni_base.move_d_to(1.0,'head_xyz')
@@ -912,9 +914,9 @@ class Detect_drink(smach.State):
             head.to_tf('head_xyz')
             rospy.sleep(1.0)
 
-            talk('I detect that you may not have a drink. I will guide you for a drink, please follow me') 
+            voice.talk('I detect that you may not have a drink. I will guide you for a drink, please follow me') 
             rospy.sleep(0.8)
-            talk(f'Navigating...')
+            voice.talk(f'Navigating...')
             rospy.sleep(0.8)
             res = omni_base.move_base(known_location=place_drinks,timeout=115)
             #print(res)
@@ -922,7 +924,7 @@ class Detect_drink(smach.State):
                 rospy.sleep(0.5)
                 brazo.set_named_target('neutral')        
                 rospy.sleep(1.0)
-                talk('Arrived, you can grab a drink here and then come back to the other room, please.')# AGREGAR POINTING A LA TF DONDE ESTAN LAS BEBIDAS (?)
+                voice.talk('Arrived, you can grab a drink here and then come back to the other room, please.')# AGREGAR POINTING A LA TF DONDE ESTAN LAS BEBIDAS (?)
                 rospy.sleep(0.8)
                 #_ = omni_base.move_base(trans[0],trans[1],tf.transformations.euler_from_quaternion(quat)[2])
                 #rospy.sleep(0.8)
@@ -942,18 +944,18 @@ class Detect_drink(smach.State):
             return 'tries'
         # 2 -> todos tienen bebida
         elif resAct.i_out==2:
-            talk('Ok, someone with a drink.')
+            voice.talk('Ok, someone with a drink.')
             rospy.sleep(0.8)
             #cv2.destroyAllWindows()
             self.tries = 0
             return 'succ'
         # 1 -> La tf salió con NaN, vuelve a calcular y obtener tf de la persona sin drink
         elif resAct.i_out==3:
-            talk('No person detected')
+            voice.talk('No person detected')
             rospy.sleep(0.8)
             return 'tries'
         else:
-            talk('Scanning...')
+            voice.talk('Scanning...')
             return 'tries'
     
 
