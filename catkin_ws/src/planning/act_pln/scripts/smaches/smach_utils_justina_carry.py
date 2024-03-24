@@ -22,14 +22,18 @@ import yaml
 from ros_whisper_vosk.srv import GetSpeech, SetGrammarVosk
 #
 from segmentation.srv import *
+
+from human_detector.srv import Human_detector ,Human_detectorResponse 
+from human_detector.srv import Point_detector ,Point_detectorResponse 
 #
 from object_classification.srv import *
 #
 from face_recog.msg import *
 from face_recog.srv import *
-#
-from human_detector.srv import Human_detector, Human_detectorResponse
-from human_detector.srv import Point_detector, Point_detectorResponse
+
+from human_detector.srv import Human_detector ,Human_detectorResponse 
+from human_detector.srv import Point_detector ,Point_detectorResponse 
+
 #
 from hmm_navigation.msg import NavigateAction, NavigateActionGoal, NavigateActionFeedback, NavigateActionResult
 #
@@ -383,32 +387,54 @@ def wait_for_face(timeout=10, name=''):
         # AT LEAST ONE FACE FOUND
         else:
             print('at least one face found')
-            ds_to_faces = []
-            for i, idface in enumerate(res.Ids.ids):
-                print(i, idface.data)
-                ds_to_faces.append(res.Ds.data[i])
-                if (idface.data) == name:
-                    new_res = RecognizeFaceResponse()
-                    new_res.Ds.data = res.Ds.data[i]
-                    new_res.Angs.data = res.Angs.data[i:i+4]
-                    new_res.Ids.ids = res.Ids.ids[i].data
-                    print('return res,img', new_res)
-                    print('hit', idface.data, 'at', res.Ds.data[i], 'meters')
-                    ds_to_faces = []
-                    return new_res, img
-
-            if len(ds_to_faces) != 0:
-                i = np.argmin(ds_to_faces)
-                new_res = RecognizeFaceResponse()
-                new_res.Ds.data = res.Ds.data[i]
-                new_res.Angs.data = res.Angs.data[i:i+4]
-                new_res.Ids.ids = res.Ids.ids[i].data
-                print('return res,img', new_res)
-                ds_to_faces = []
-                return new_res, img
 
 
-global omni_base, rgb, rgbd, bridge, pointing_detect_server, classify_client, segmentation_server, tf_man
+
+            ds_to_faces=[]
+            for i , idface in enumerate(res.Ids.ids):
+                print (i,idface.data)
+                ds_to_faces.append(res.Ds.data[i])    ##
+                if (idface.data)==name :
+                    new_res= RecognizeFaceResponse()
+                    new_res.Ds.data= res.Ds.data[i]
+                    new_res.Angs.data= res.Angs.data[i:i+4]
+                    new_res.Ids.ids=res.Ids.ids[i].data
+                    print('return res,img',new_res)
+                    print ('hit',idface.data, 'at' , res.Ds.data[i]  , 'meters')
+                    ds_to_faces=[]
+                    return new_res , img
+
+            if len (ds_to_faces)!=0:
+                i=np.argmin(ds_to_faces)
+                new_res= RecognizeFaceResponse()
+                new_res.Ds.data= res.Ds.data[i]
+                new_res.Angs.data= res.Angs.data[i:i+4]
+                new_res.Ids.ids=res.Ids.ids[i].data
+                print('return res,img',new_res)
+                ds_to_faces=[]
+                return new_res , img
+########################################
+def detect_human_to_tf():
+    humanpose=human_detect_server.call()
+    print (humanpose)
+    if (np.asarray((humanpose.x,humanpose.y,humanpose.z)).all()== np.zeros(3).all()):
+        print (np.asarray((humanpose.x,humanpose.y,humanpose.z)))
+        return False
+    else:
+        tf_man.pub_static_tf(np.asarray((humanpose.x,humanpose.x,humanpose.z)),point_name='human', ref='head_rgbd_sensor_link')
+        succ=tf_man.change_ref_frame_tf('human')
+        return succ
+#############################        
+
+
+
+
+
+
+global omni_base, rgb, rgbd , bridge , pointing_detect_server , classify_client , segmentation_server , tf_man
+global human_detect_server ,pointing_detect_server
+
+
 rospy.init_node('smach_justina_tune_vision')
 
 
@@ -421,13 +447,14 @@ voice = Talker()
 head = Head()
 
 
-speech_recog_server = rospy.ServiceProxy(
-    '/speech_recognition/vosk_service', GetSpeech)  # SPEECH VOSK RECOG FULL DICT
+speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service', GetSpeech)  # SPEECH VOSK RECOG FULL DICT
 # Get speech vosk keywords from grammar (function get_keywords)
 set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)
-recognize_face = rospy.ServiceProxy(
-    'recognize_face', RecognizeFace)  # FACE RECOG
+recognize_face = rospy.ServiceProxy(    'recognize_face', RecognizeFace)  # FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)  # FACE RECOG
 pointing_detect_server = rospy.ServiceProxy('/detect_pointing', Point_detector)
 classify_client = rospy.ServiceProxy('/classify', Classify)
 segmentation_server = rospy.ServiceProxy('/segment', Segmentation)
+human_detect_server    = rospy.ServiceProxy('/detect_human' , Human_detector)  ####HUMAN FINDER OPPOSEBASED
+pointing_detect_server = rospy.ServiceProxy('/detect_pointing' , Point_detector)  ####HUMAN FINDER OPPOSEBASED
+
