@@ -37,6 +37,7 @@ class JuskeshinoHRI:
         JuskeshinoHRI.recognizedSpeech.confidences = tuple([])
         while (not rospy.is_shutdown() and attempts > 0):
             rec = JuskeshinoHRI.getLastRecognizedSentence()
+            print("************************************", rec)
             if rec is not None:
                 return rec
             loop.sleep()

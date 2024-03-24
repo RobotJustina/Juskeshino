@@ -12,6 +12,7 @@ from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 
 
 
+
 def main():
     print("INITIALIZING CARRY MY LUGGAGE 2024 TEST NODE BY ITZEL..............ヾ(๑╹◡╹)ﾉ")
     rospy.init_node("carry_my_luggage_test")
@@ -25,15 +26,19 @@ def main():
     JuskeshinoHRI.setNodeHandle()
     JuskeshinoManipulation.setNodeHandle()
     JuskeshinoKnowledge.setNodeHandle()
-    JuskeshinoKnowledge.loadLocations(locations_file)
+    #JuskeshinoKnowledge.loadLocations(locations_file)
 
 
     JuskeshinoHRI.say("I am ready for the carry my luggage test")
     JuskeshinoHRI.say("Please point at the bag that you want me to carry.")
-    # Find bag
-    JuskeshinoHRI.say("Tell me, robot yes, when you are pointing at the bag")
-    # Enable speech recognition
-    JuskeshinoHRI.getLastRecognizedSentence()
+    
+    JuskeshinoHRI.say("Tell me, Justina yes, when you are pointing at the bag")
+    time.sleep(1)
+    voice = JuskeshinoHRI.waitForNewSentence(10)
+    if "YES" in voice:
+        print("ACT-PLN.->Pointing hand")
+        print("lalalal")
+       
     
 
 
