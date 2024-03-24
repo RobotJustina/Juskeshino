@@ -43,6 +43,7 @@ th.backends.cudnn.deterministic = True
 
 policy_net = architecture.DQN_4(3)
 target_net = architecture.DQN_4(3)
+target_net.eval()
 if os.path.exists(data_folder+"/DRL_gazebo_policy.pth"):
 	policy_net.load_state_dict(th.load(data_folder+"/DRL_gazebo_policy.pth",map_location=th.device('cpu')))
 	target_net.load_state_dict(th.load(data_folder+"/DRL_gazebo_target.pth",map_location=th.device('cpu')))
@@ -67,24 +68,25 @@ print(r_list)
 def callback_scan(msg):
 	global r_obstacle, stop, steps
 	d_min=min(msg.ranges)
-	stop=False
-	if(d_min < 0.21):
-		r_obstacle=-20-(0.20-d_min)*100
-	else:
-		r_obstacle=0
-	if(d_min<0.15 or (stop and steps>3)):
+	#stop=False
+	if(d_min < 0.18 or stop):
+		r_obstacle=-200
 		stop=True
+		#r_obstacle=-20-(0.20-d_min)*100
 		print("obstaculo cerca")
+	else:
+		stop=False
+		r_obstacle=0
+	#if(d_min<0.15 or (stop and steps>3)):
+	#	stop=True
+	#print("obstaculo cerca")
 
 def callback_goal(msg):
 	global r_goal, last_goal,done
 	dist=msg.data[0]
 	if(dist<0.22):
-		r_goal=20
-		if(dist<0.19):
-			done=True
-		else:
-			done=False
+		r_goal=200
+		done=True
 	else:
 		r_goal=0
 		done=False
@@ -94,7 +96,6 @@ def train(replay_buffer):
 	global policy_net,target_net
 	LR = 2.5e-4
 	optimizer = optim.RMSprop(policy_net.parameters(), lr=LR)
-	#optimizer = optim.Adam(policy_net.parameters(), lr=LR)
 	disp = 'cuda' if th.cuda.is_available() else 'cpu'
 	gamma=0.9
 	batch_size=128
@@ -105,6 +106,7 @@ def train(replay_buffer):
 	reward= th.Tensor(np.array([transition[1] for transition in buffer_content]))
 	actions = th.Tensor(np.array([float(transition[2]) for transition in buffer_content]))
 	next_state = th.Tensor(np.array([transition[3] for transition in buffer_content]))
+	goal = th.Tensor(np.array([transition[4] for transition in buffer_content]))
 
 	target_net.to(disp)
 	next_state=next_state.to(th.device(disp), th.float32)
@@ -123,10 +125,13 @@ def train(replay_buffer):
 
 	reward=reward.to(disp)
 	gamma = th.tensor(gamma).to(disp)
+	goal=goal.to(disp)
 
-	expected_state_action_values = (next_state_values * gamma)+reward
+	print(reward.shape)
+	expected_state_action_values = ( th.dot(next_state_values, goal) * gamma)+reward
 	reward=reward.to('cpu')
 	gamma=gamma.to('cpu')
+	goal=goal.to('cpu')
 	next_state_values=next_state_values.to('cpu')
 
 	#criterion = nn.SmoothL1Loss()
@@ -201,57 +206,9 @@ def polar2vec(last_goal):
 
 def callback_grid(msg):
 	global grid, last_goal
-	if(last_goal[0]>10):
-		last_goal[0]=10
+	#if(last_goal[0]>10):
+	#	last_goal[0]=10
 	grid=list(msg.data)+last_goal
-
-def callback_grid2(msg):
-	global grid_bef,grid_act,last_goal,pub_cmd,r_obstacle,r_goal, replay_buffer, policy_net, target_net, steps, done, r_total, action_bef, r_list, stop, last_distance, total_steps
-	disp = 'cuda' if th.cuda.is_available() else 'cpu'
-	th.cuda.empty_cache()
-	grid_bef=grid_act
-	if(last_goal[0]>10):
-		last_goal[0]=10
-	#l=polar2vec(last_goal)
-	grid_act=list(msg.data)+last_goal
-	linx=0.0
-	angz=0.0
-	if (not done and steps<1000 and (not stop)):
-		if(grid_bef is not None and action_bef is not None):
-			r_dist=grid_bef[6400]-last_goal[0]
-			r=r_obstacle+100*r_dist+r_goal
-			#print('Recompensa: ',r, " Accion: ",action_bef, " distancia anterior: ",grid_bef[6400], "distancia_actual: ",last_goal[0], "seguir de frente es 0")
-			replay_buffer.append((np.asarray(grid_bef),r, action_bef, np.asarray(grid_act)))
-		else:
-			r=0
-		action_bef=select_action(policy_net, total_steps, grid_act)
-		linx=C[action_bef,0]
-		angz=C[action_bef,1]
-		msg = Twist()
-		msg.linear.x=linx
-		msg.angular.z=angz
-		pub_cmd.publish(msg)
-		#loop.sleep() ###ejecutar en el main y solo guardar el grid_actual #ejecutar a lo mucho 10HZ en el grid
-		steps+=1
-		total_steps+=1
-		#print(steps)
-		r_total+=r
-		if(len(replay_buffer)>290 and steps%50==0):
-			train(replay_buffer)
-			print('entrenando')
-	elif((done and steps>2) or steps==1000 or (stop and steps>2)):
-		grid_bef=None
-		done=False
-		if(stop):
-			print("Cerrar launch")
-		r_list.append(r_total/steps)
-		steps=0
-		r_total=0
-		print("Episodio terminado")
-		msg = Twist()
-		pub_cmd.publish(msg)
-	#print(, last_goal[0])
-
 
 def saving_function():
 	global target_net, policy_net, data_folder, replay_buffer, steps, r_list,total_steps,done
@@ -270,7 +227,7 @@ def saving_function():
 	pub_cmd.publish(msg)
 
 def main():
-	global loop, grid, grid_act, grid_bef, policy_net,C, total_steps, action_bef, stop, replay_buffer, done
+	global loop, grid, grid_act, grid_bef, policy_net,C, total_steps, action_bef, stop, replay_buffer, done, r_obstacle, r_dist, r_goal
 	pub_cmd = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
 	rospy.init_node("DRL_train")
 	rospy.on_shutdown(saving_function)
@@ -283,6 +240,7 @@ def main():
 	count=0
 	steps=0
 	r_total=0
+	end=False
 	next_train=False
 	while not rospy.is_shutdown():
 		#total_steps+=1
@@ -290,29 +248,46 @@ def main():
 		grid_bef=grid_act
 		grid_act=grid
 		msg = Twist()
-		if(grid_bef is not None and count%2==0 and not stop and not done and not next_train):
-			if(action_bef is not None):
+		if(grid_bef is not None and count%2==0  and not end and not next_train):
+			if(action_bef is not None and not done and not stop):
 				r_dist=grid_bef[6400]-grid_act[6400]
 				r=r_obstacle+100*r_dist+r_goal
+				if(grid_bef[6400]>10):
+					grif_bef[6400]=10
+				if(grid_act[6400]>10):
+					grid_act[6400]=10
 				r_total+=r
 				print('Recompensa: ',r, " Accion: ",action_bef, " distancia anterior: ",grid_bef[6400], "distancia_actual: ",grid_act[6400], "seguir de frente es 0")
 				total_steps+=1
 				steps+=1
-				replay_buffer.append((np.asarray(grid_bef),r, action_bef, np.asarray(grid_act)))
+				replay_buffer.append((np.asarray(grid_bef),r, action_bef, np.asarray(grid_act),	1.0))
+			elif(action_bef is not None and ((done and steps>2) or (stop and steps>2))):
+				if(stop):
+					r=r_obstacle
+				else:
+					r=r_goal
+				print('Recompensa: ',r, " Accion: ",action_bef, "seguir de frente es 0")
+				r_total+=r
+				total_steps+=1
+				steps+=1
+				replay_buffer.append((np.asarray(grid_bef),r, action_bef, np.asarray(grid_act), 0.0))
+				end=True
 			if((total_steps+1)%10==0 and len(replay_buffer)>290):
 				next_train=True
-			action_bef=select_action(policy_net, total_steps, grid_act)
-			print(action_bef)
-			msg.linear.x=C[action_bef,0]
-			msg.angular.z=C[action_bef,1]
-		elif(next_train and count%2==0):
+			if not done and not stop:
+				action_bef=select_action(policy_net, total_steps, grid_act)
+				#print(action_bef)
+				msg.linear.x=C[action_bef,0]
+				msg.angular.z=C[action_bef,1]
+		elif(next_train and count%2==0 and not end):
 			train(replay_buffer)
 			next_train=False
 			print('entrenando')
-		elif((done and steps>2) or steps==1000 or (stop and steps>2)):
+		elif(end or steps==1000):
 			grid_bef=None
-			done=False
+			end=False
 			if(stop):
+				#end=True
 				print("Cerrar launch")
 			r_list.append(r_total/steps)
 			steps=0
