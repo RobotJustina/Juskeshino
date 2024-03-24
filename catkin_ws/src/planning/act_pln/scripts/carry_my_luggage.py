@@ -17,11 +17,6 @@ def main():
     rospy.init_node("carry_my_luggage_test")
     rate = rospy.Rate(10)
 
-    rospack = rospkg.RosPack()
-    #locations_default = rospack.get_path("config_files") + "/known_locations_objects.yaml"
-    locations_default = rospack.get_path("config_files") + "/known_locations_simul.yaml"
-    locations_file = rospy.get_param("~locations", locations_default)
-
     # Se subcribe a los servicios necesarios para manipulacion, navegacion,vision, etc...
     JuskeshinoNavigation.setNodeHandle()
     JuskeshinoVision.setNodeHandle()

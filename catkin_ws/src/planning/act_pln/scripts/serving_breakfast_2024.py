@@ -35,7 +35,7 @@ def handling_location(vision_obj ):
 
 
 def main():
-    print("INITIALIZING SERVE BREAKFAST 2024 TEST BY IBY..............ヾ(๑╹◡╹)ﾉ")
+    print("INITIALIZING SERVE BREAKFAST 2024 TEST BY ITZEL..............ヾ(๑╹◡╹)ﾉ")
     rospy.init_node("serve_breakfast_test")
     rate = rospy.Rate(10)
 
