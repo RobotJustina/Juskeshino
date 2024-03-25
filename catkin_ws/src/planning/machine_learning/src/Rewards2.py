@@ -93,7 +93,7 @@ def callback_goal(msg):
 	last_goal=list(msg.data)
 
 def train(replay_buffer):
-	global policy_net,target_net
+	global policy_net,target_net,total_steps
 	LR = 2.5e-4
 	optimizer = optim.RMSprop(policy_net.parameters(), lr=LR)
 	disp = 'cuda' if th.cuda.is_available() else 'cpu'
@@ -105,14 +105,17 @@ def train(replay_buffer):
 	state = th.Tensor(np.array([transition[0] for transition in buffer_content]))
 	reward= th.Tensor(np.array([transition[1] for transition in buffer_content]))
 	actions = th.Tensor(np.array([float(transition[2]) for transition in buffer_content]))
-	next_state = th.Tensor(np.array([transition[3] for transition in buffer_content]))
-	goal = th.Tensor(np.array([transition[4] for transition in buffer_content]))
+	next_state = th.Tensor(np.array([transition[3] for transition in buffer_content if transition[4]]))
+	non_final_mask = th.Tensor(np.array([transition[4] for transition in buffer_content]))
 
 	target_net.to(disp)
+	non_final_mask=non_final_mask.to(th.device(disp), th.bool)
 	next_state=next_state.to(th.device(disp), th.float32)
+	next_state_values = th.zeros(batch_size, device=disp)
 	with th.no_grad():
-		next_state_values = target_net(next_state).max(1).values
+		next_state_values[non_final_mask] = target_net(next_state).max(1).values
 	next_state=next_state.to('cpu')
+	non_final_mask=non_final_mask.to('cpu')
 	target_net.to('cpu')
 
 	actions = actions.to(th.device(disp)).long()
@@ -125,13 +128,11 @@ def train(replay_buffer):
 
 	reward=reward.to(disp)
 	gamma = th.tensor(gamma).to(disp)
-	goal=goal.to(disp)
 
 	print(reward.shape)
-	expected_state_action_values = ( th.dot(next_state_values, goal) * gamma)+reward
+	expected_state_action_values = (next_state_values * gamma)+reward
 	reward=reward.to('cpu')
 	gamma=gamma.to('cpu')
-	goal=goal.to('cpu')
 	next_state_values=next_state_values.to('cpu')
 
 	#criterion = nn.SmoothL1Loss()
@@ -147,11 +148,12 @@ def train(replay_buffer):
 	optimizer.step()
 	policy_net.to('cpu')
 	TAU = 0.005
-	target_net_state_dict = target_net.state_dict()
-	policy_net_state_dict = policy_net.state_dict()
-	for key in policy_net_state_dict:
-		target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
-	target_net.load_state_dict(target_net_state_dict)
+	if(total_steps%1000==0):
+		target_net_state_dict = target_net.state_dict()
+		policy_net_state_dict = policy_net.state_dict()
+		for key in policy_net_state_dict:
+			target_net_state_dict[key] = policy_net_state_dict[key]
+		target_net.load_state_dict(target_net_state_dict)
 	state_action_values=state_action_values.to('cpu')
 	expected_state_action_values=expected_state_action_values.to('cpu')
 	th.cuda.empty_cache()
@@ -260,7 +262,7 @@ def main():
 				print('Recompensa: ',r, " Accion: ",action_bef, " distancia anterior: ",grid_bef[6400], "distancia_actual: ",grid_act[6400], "seguir de frente es 0")
 				total_steps+=1
 				steps+=1
-				replay_buffer.append((np.asarray(grid_bef),r, action_bef, np.asarray(grid_act),	1.0))
+				replay_buffer.append((np.asarray(grid_bef),r, action_bef, np.asarray(grid_act),	True))
 			elif(action_bef is not None and ((done and steps>2) or (stop and steps>2))):
 				if(stop):
 					r=r_obstacle
@@ -270,7 +272,7 @@ def main():
 				r_total+=r
 				total_steps+=1
 				steps+=1
-				replay_buffer.append((np.asarray(grid_bef),r, action_bef, np.asarray(grid_act), 0.0))
+				replay_buffer.append((np.asarray(grid_bef),r, action_bef, np.asarray(grid_act), False))
 				end=True
 			if((total_steps+1)%10==0 and len(replay_buffer)>290):
 				next_train=True
