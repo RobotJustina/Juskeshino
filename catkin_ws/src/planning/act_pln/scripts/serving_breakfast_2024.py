@@ -74,6 +74,7 @@ def main():
 
     # Llenar pila con objetos: cereal, leche, tazon, cuchara
     # pila = ["bowl", "cereal", "cereal"]
+    """
     
     count = 0
     while count < 3: # Revisa pila
@@ -182,7 +183,7 @@ def main():
     print("ACT-PLN.->Moving left arm to prepare")
     JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE , 10)
     
-    """
+    
     # Ir a la mesa
     print("ACT-PLN.->Getting close to breakfast table")
     JuskeshinoHRI.say("I'm going to the breakfast table")
