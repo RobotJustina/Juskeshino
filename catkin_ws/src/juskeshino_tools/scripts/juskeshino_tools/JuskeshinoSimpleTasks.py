@@ -1,6 +1,7 @@
 import math
 import rospy
 import tf
+import numpy as np
 import time
 from vision_msgs.msg import *
 from geometry_msgs.msg import *
@@ -99,6 +100,7 @@ class JuskeshinoSimpleTasks:
         if len(human_poses) < 1:
             JuskeshinoVision.enableHumanPoseDetection(False)
             return False
+        
         nearest_x, nearest_y, nearest_z = 0,0,0
         nearest_dist = float("inf")
         for p in human_poses:
@@ -140,22 +142,25 @@ class JuskeshinoSimpleTasks:
         obj_p = listener.transformPoint(target_frame, obj_p)
         return [obj_p.point.x, obj_p.point.y, obj_p.point.z]
     
-    """
-    def placing_object_on_table():  # It is used after aligning the robot with the table
-        array_points = JuskeshinoVision.findTableEdge()
-        if array_points is None:
-            array_points = JuskeshinoVision.findTableEdge()
-            if array_points is None:
-                print("JuskeshinoSimpleTasks.->Cannot find table edge")
-                return False
-        
-        desired_pose_gripper = [0.25, 0.25, array_points[0].z, 2.72, -1.0, -2.88]
-        print("desired pose gripper: ", desired_pose_gripper)
 
-        q_pose =  JuskeshinoManipulation.cartesian_to_articular_pose(desired_pose_gripper)
-        print("Juskeshino.SimpleTask.->Going to leave the object")
-        JuskeshinoHardware.moveLeftArmWithTrajectory(q_pose, 10)
-    """
+    def handling_location(vision_obj ):
+        position_obj = vision_obj.pose.position
+        left_threshold_manipulation = 0.26
+
+        if position_obj.y > 0.26:
+            dist_move = position_obj.y - left_threshold_manipulation
+            print("dist move izq", dist_move)
+            JuskeshinoNavigation.moveDistAngle(0, np.radians(90) , 5)
+            JuskeshinoNavigation.moveDistAngle(dist_move, 0 , 5)
+            JuskeshinoNavigation.moveDistAngle(0, np.radians(-90) , 5)
+
+        if position_obj.y < 0.05:
+            dist_move = abs(position_obj.y - 0.05)
+            print("dist move der", dist_move)
+            JuskeshinoNavigation.moveDistAngle(0, np.radians(-90) , 5)
+            JuskeshinoNavigation.moveDistAngle(dist_move, 0 , 5)
+            JuskeshinoNavigation.moveDistAngle(0, np.radians(90) , 5)
+
 
     def object_search(name_obj):
         JuskeshinoHardware.moveHead(0,-1, 5)

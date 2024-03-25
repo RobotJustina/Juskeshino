@@ -62,6 +62,7 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
 
         Retorna una lista de poses candidatas expresadas en cuaterniones (msg Pose)
     """
+    global debug 
     grasp_candidates_quaternion = []
     j = 0
 
@@ -89,11 +90,11 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
         
         if rotacion == "P": 
             P = P + np.deg2rad(step) #horizontal grip
-            #print("Rotacion en Pitch")
+            print("Rotacion en Pitch")
 
         else:
             if rotacion == "R": R = R + np.deg2rad(step)  #vertical grip
-            #print("Rotacion en Roll")
+            print("Rotacion en Roll")
         
         obj_pose_frame_object.position.x = grip_point[0]
         obj_pose_frame_object.position.y = grip_point[1]
@@ -317,14 +318,6 @@ def box(obj_pose, size, obj_state):
         # genera punto de agarre superior ************************
 
         # Primera lista de candidatos******************************************************************************
-        """
-        obj_pos_1 = Pose()
-        obj_pos_1.position.x, obj_pos_1.position.y, obj_pos_1.position.z = 0, 0, 0
-        obj_pos_1.orientation.x = 0.0
-        obj_pos_1.orientation.y = 0.0
-        obj_pos_1.orientation.z = 0.0
-        obj_pos_1.orientation.w = 1.0
-        """
         grip_point_top = [0, 0, size.z/3]
 
         #pose_list1 = generates_candidates(grip_point_top , obj_pos_1, "P", obj_state ,  'c1', step = -12, num_candidates = 7)
@@ -355,6 +348,7 @@ def box(obj_pose, size, obj_state):
         obj_pose_2.position.z = 0
         # genera punto de agarre lateral
         grip_point_side = [-size.x/3, 0, 0]
+        marker_array_publish(grip_point_side , 'object', 59, 56)
             
         candidates_h_list_2 = generates_candidates(grip_point_side , obj_pose_2, "P", 'vertical' , 'C2', step = -12, num_candidates = 4)
 
@@ -371,10 +365,21 @@ def box(obj_pose, size, obj_state):
         obj_pos_1.orientation.y = 0.0
         obj_pos_1.orientation.z = 0.0
         obj_pos_1.orientation.w = 1.0
-        grip_point_side = [0, 0, size.z/4]
-        candidates_v_list = generates_candidates(grip_point_side , obj_pose, "R", obj_state ,'object', step = 10, num_candidates = 5)  
+        grip_point_side = [0, 0, size.z/2]
+        candidates_v_list = generates_candidates(grip_point_side , obj_pos_1, "R", obj_state ,'object', step = 10, num_candidates = 5)  
 
-        return candidates_v_list # En frame 'object'
+        # Segunda lista de candidatos******************************************************************************
+        obj_pos_22 = Pose()
+        obj_pos_22.position.x, obj_pos_1.position.y, obj_pos_1.position.z = 0, 0, 0
+        obj_pos_22.orientation.x = 0.0
+        obj_pos_22.orientation.y = 0.0
+        obj_pos_22.orientation.z = 0.0
+        obj_pos_22.orientation.w = 1.0
+        grip_point_side_2 = [0, 0, size.z/2]
+        candidates_v_list_2 = generates_candidates(grip_point_side_2 , obj_pos_22, "R", obj_state ,'object', step = -10, num_candidates = 5)  
+
+
+        return candidates_v_list + candidates_v_list_2 # En frame 'object'
 
 
 

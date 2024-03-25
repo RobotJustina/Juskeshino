@@ -11,26 +11,26 @@ from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
 from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
 from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 
-PREPARE = [-0.69, 0.2, 0.0, 1.55, 0.0, 1.16, 0.0]
-LEAVE = [0.39, 0.18, -0.03, 1.45, 0, 0, 0]
 
-def handling_location(vision_obj ):
-    position_obj = vision_obj.pose.position
-    left_threshold_manipulation = 0.26
+PREPARE           = [-0.69, 0.2, 0.0, 1.55, 0.0, 1.16, 0.0]
+LEAVE_CEREAL      = [0.2, 0.18, -0.03, 1.45, 0, 0, 0]
+LEAVE_MILK        = [0.2, -0.12, -0.03, 1.45, 0, 0, 0]
+LEAVE_BOWL        = [0.2, -0.6, -0.03, 1.45, 0, 0, 0]
+LEAVE_NEAR_CEREAL = [0.39, 0.18, -0.03, 1.45, 0, 0, 0]
+EMPTYING_POSE     = [0.37, 0.57, -0.11, 1.68, -0.73, 0.76, -0.90]
+LEAVE_NEAR_MILK   = [0.39, 0.18, -0.01, 1.42, 0, 0.37, 0]
 
-    if position_obj.y > 0.26:
-        dist_move = position_obj.y - left_threshold_manipulation
-        print("dist move izq", dist_move)
-        JuskeshinoNavigation.moveDistAngle(0, np.radians(90) , 5)
-        JuskeshinoNavigation.moveDistAngle(dist_move, 0 , 5)
-        JuskeshinoNavigation.moveDistAngle(0, np.radians(-90) , 5)
 
-    if position_obj.y < 0.05:
-        dist_move = abs(position_obj.y - 0.05)
-        print("dist move der", dist_move)
-        JuskeshinoNavigation.moveDistAngle(0, np.radians(-90) , 5)
-        JuskeshinoNavigation.moveDistAngle(dist_move, 0 , 5)
-        JuskeshinoNavigation.moveDistAngle(0, np.radians(90) , 5)
+def search_bb_obj(objects, bb_target):
+    i = 0
+    for obj in objects:   # Para cada objeto de la lista de VisionObjects
+        print("********************" + obj.category)
+        if bb_target == obj.category:
+            print("Se encontró el objeto pedido.................")
+            return i
+        i = i + 1
+    return None
+
 
 
 
@@ -56,7 +56,9 @@ def main():
 
 
     # Esperar a que se abra la puerta
+    """
     JuskeshinoHRI.say("I'm waiting for the door to be open")
+    
     if not JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(300):
         print("ACT-PLN.->Door never opened")
         return
@@ -71,23 +73,13 @@ def main():
     
 
     # Llenar pila con objetos: cereal, leche, tazon, cuchara
-    pila = ["bowl", "cereal", "cereal"]
-    #pila = ["soda", "apple", "pringles"]
-    print("pila: ", pila)
+    # pila = ["bowl", "cereal", "cereal"]
     
-    
+    count = 0
+    while count < 3: # Revisa pila
 
-    while len(pila) > 0: # Revisa pila
-    
-        i = len(pila)
-        
-        print("len pila while 1", i)
-        indx_obj = i-1
-        actual_obj = pila[indx_obj]
-    
-        print("actual_obj: ", actual_obj)
         # Ir a locacion de ultimo objeto en la pila
-        JuskeshinoHRI.say("I'm going to the" + actual_obj + "position.")
+        JuskeshinoHRI.say("I'm going to the kitchen position.")
 
         if not JuskeshinoNavigation.getClose("kitchen", 100):
             print("ACT-PLN.->Cannot get close to the kitchen position")
@@ -99,37 +91,22 @@ def main():
             print("ACT-PLN.->Cannot align with table")
 
         # Busqueda y reconocimiento del objeto
-        while indx_obj >= 0:
-            print("ACT-PLN.->Trying to detect object: ", actual_obj)
-            JuskeshinoHRI.say("I'm trying to detect the " + actual_obj)
+        print("ACT-PLN.->Trying to detect object: ")
+        JuskeshinoHRI.say("I'm trying to detect the object")
             
-            [obj, img] = JuskeshinoSimpleTasks.object_search(actual_obj)
-            if obj == None: 
-                print("...........")
-                """
-                print("ACT-PLN.->Detected object: " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))
-                position_obj = obj.pose.position
-                handling_location(position_obj )
-                print("ACT-PLN.->Trying to detect object 2: ", actual_obj)
-                [obj, img] = JuskeshinoVision.detectAndRecognizeObject(actual_obj)
-                print("ACT-PLN.->Detected object 2: " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))
-                
-                print("ACT-PLN.->Planning best gripper configuration")
-                
-                pila.pop(indx_obj)
-                print("pila actualizada: ", pila)
-                break
-                """
-            else:
-                print("ACT-PLN.->Detected object 2: " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))
-                JuskeshinoHRI.say("I found the " + actual_obj + ", I'm going to try to grasp them")
+        [obj, img] = JuskeshinoSimpleTasks.object_search("milk")
+        if obj == None: 
+            print("Object not found...........")
 
-                # Colocandose en posicion de agarre
-                handling_location(obj)
-                time.sleep(2)
-                [obj, img] = JuskeshinoSimpleTasks.object_search(actual_obj)
-                print("POSITION OBJECT......................", obj.pose.position)
-
+        else:
+            print("ACT-PLN.->Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))
+            JuskeshinoHRI.say("I found the object, I'm going to try to grasp them")
+            # Colocandose en posicion de agarre
+            JuskeshinoSimpleTasks.handling_location(obj)
+            time.sleep(2)
+            [obj, img] = JuskeshinoSimpleTasks.object_search("milk")
+            print("POSITION OBJECT......................", obj.pose.position)
+        
             # Tomar objeto
             print("ACT-PLN.->Sending goal traj to prepare")
             JuskeshinoHardware.moveLeftArmWithTrajectory([-0.66, 0.36, -0.04, 1.79, 0, 1.02, 0], 10)
@@ -137,117 +114,127 @@ def main():
             JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
 
             resp = JuskeshinoManipulation.planBestGraspingConfiguration(obj)
+            print("object position", obj.pose.position)
             print("ACT-PLN.->Sending best gripper configuration")
             JuskeshinoHardware.moveLeftArmWithTrajectory(resp.articular_trajectory,10)
 
             print("ACT-PLN.->Closing gripper first attempt")
-            JuskeshinoHardware.moveLeftGripper(-0.3, 2.0)
+            JuskeshinoHardware.moveLeftGripper(-0.5, 2.0)
             print("ACT-PLN.->Closing gripper second attempt")
-            JuskeshinoHardware.moveLeftGripper(-0.3, 2.0)
-            print("ACT-PLN.->Closing gripper third attempt")
-            JuskeshinoHardware.moveLeftGripper(-0.3, 2.0)
+            JuskeshinoHardware.moveLeftGripper(-0.5, 2.0)
+            print("ACT-PLN.->Closing gripper third attempt")               
+            JuskeshinoHardware.moveLeftGripper(-0.5, 2.0)                  
+    
+            #print("ACT-PLN.->Moving arm to post grasping position")
+            #JuskeshinoHardware.moveLeftArmWithTrajectory([0.46, 0.87, -0.4, 1.99, -0.99, 0.4,  1.6], 10)   # Objeto recogido
+    
+            print("ACT-PLN.->Moving base backwards")
+            JuskeshinoHRI.say("I'have grasped the object")
+            JuskeshinoNavigation.moveDist(-0.3, 10)
 
-
-
-                
+            print("ACT-PLN.->Moving arm to prepare")
+            JuskeshinoHardware.moveLeftArmWithTrajectory([-0.69, 0.2, 0, 1.55, 0, 1.16, 0], 10)  # prepare
 
         """
-
-
-        print("ACT-PLN.->Moving arm to post grasping position")
-        JuskeshinoHardware.moveLeftArmWithTrajectory([0.46, 0.87, -0.4, 1.99, -0.99, 0.4,  1.6], 10)   # Objeto recogido
-        print("ACT-PLN.->Mofing arm to prepare")
-        JuskeshinoHardware.moveLeftArmWithTrajectory([-0.69, 0.2, 0, 1.55, 0, 1.16, 0], 10)  # prepare
- 
-        print("ACT-PLN.->Moving base backwards")
-        JuskeshinoHRI.say("I'have grasped the" + pila[-1])
-        JuskeshinoNavigation.moveDist(-0.3, 10)
-        
     
-        # Ir a la mesa
-        print("ACT-PLN.->Getting close to breakfast table")
-        JuskeshinoHRI.say("I'm going to the breakfast table")
-        #JuskeshinoNavigation.getClose("breakfast_table", 40)
-        if not JuskeshinoNavigation.getClose("desk", 100):
-            print("ACT-PLN.->Cannot get close to desk position")
+    # Ir a la mesa
+    actual_obj = "BOX" 
+
+    print("ACT-PLN.->Getting close to breakfast table")
+    JuskeshinoHRI.say("I'm going to the breakfast table")
+
+    if not JuskeshinoNavigation.getClose("breakfast_table", 100):
+        print("ACT-PLN.->Cannot get close to desk position")
     
-        if not JuskeshinoHardware.moveHead(0,-1, 5):
-            print("ACT-PLN.->Cannot move head")
-        print("ACT-PLN.->Aligning with table")
-        JuskeshinoSimpleTasks.alignWithTable()
+    if not JuskeshinoHardware.moveHead(0,-1, 5):
+        print("ACT-PLN.->Cannot move head")
+
+    print("ACT-PLN.->Aligning with table")
+    JuskeshinoSimpleTasks.alignWithTable()
     
-        # Colocar el objeto sobre la mesa
-        print("ACT-PLN.->Moving left arm to deliver position")
-        JuskeshinoHRI.say("I'm going to leave the pringles")
-        #JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE , 10)
-        JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE , 10)
-        print("ACT-PLN.->Open gripper")
-        # Moverse para atras
-        print("ACT-PLN.->Moving base backwards")
-        JuskeshinoNavigation.moveDist(-0.3, 10)
-        JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
-        time.sleep(1)
-        print("ACT-PLN.->Moving left arm to prepare")
-        JuskeshinoHardware.moveLeftArmWithTrajectory([-0.69, 0.2, 0, 1.55, 0, 1.16, 0], 10)  # prepare
-        JuskeshinoHardware.moveLeftArmWithTrajectory([ 0.00, 0.0, 0, 0.00, 0, 0.00, 0], 10)  # prepare
+    # Colocar el objeto sobre la mesa
+    print("ACT-PLN.->Moving base backwards")
+    JuskeshinoHRI.say("I'have grasped the object")
+    JuskeshinoNavigation.moveDist(-0.3, 10)
 
+    print("ACT-PLN.->Moving left arm to deliver position")
+    JuskeshinoHRI.say("I'm going to leave the object")
+    if actual_obj == "BOX":
+        JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_CEREAL , 10)
 
-        # Actualiza pila
-        #print(pila.pop())
-        #print("pila: ", pila)
-        
+    if actual_obj == "PRISM":
+        JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_MILK , 10)  
 
+    if actual_obj == "BOWL":
+        JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_BOWL , 10) 
 
+    print("ACT-PLN.->Open gripper")
+    JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
+
+    print("ACT-PLN.->Moving base backwards")
+    JuskeshinoHRI.say("I'have grasped the object")
+    JuskeshinoNavigation.moveDist(0.3, 7)
+
+    # Moverse para atras
+    print("ACT-PLN.->Moving base backwards")
+    JuskeshinoNavigation.moveDist(-0.3, 7)
+    time.sleep(1)
+    print("ACT-PLN.->Moving left arm to prepare")
+    JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE , 10)
     
+    """
+    # Ir a la mesa
+    print("ACT-PLN.->Getting close to breakfast table")
+    JuskeshinoHRI.say("I'm going to the breakfast table")
 
-    # Cuando la pila esta vacia ir a la locacion de preparacion del desayuno
-    print("Pila vacia")
+    if not JuskeshinoNavigation.getClose("breakfast_table", 100):
+        print("ACT-PLN.->Cannot get close to desk position")
+    
+    if not JuskeshinoHardware.moveHead(0,-1, 5):
+        print("ACT-PLN.->Cannot move head")
+    print("ACT-PLN.->Aligning with table")
+    JuskeshinoSimpleTasks.alignWithTable()
 
-    # Busqueda y reconocimiento de cereal
+    # Busqueda y reconocimiento de cereal********************************
+    [objects, image] = JuskeshinoVision.detectAndRecognizeObjects()
+    index_objs = search_bb_obj(objects, "BOX")
+    print("INDICE DESEADO", index_objs)
 
-    # Tomar y llevar a la pose de vaciado por 5 s (0.08 m por encima del tazon)
+    # Tomar objeto
+    resp = JuskeshinoManipulation.planBestGraspingConfiguration(objects[index_objs])
+    print("ACT-PLN.->Sending best gripper configuration")
+    JuskeshinoHardware.moveLeftArmWithTrajectory(resp.articular_trajectory,10)
+    
+    # Llevar a la pose de vaciado por 5 s (0.08 m por encima del tazon)
+    JuskeshinoHardware.moveLeftArmWithTrajectory(EMPTYING_POSE, 10)
 
     # Colocar de nuevo en la mesa cuidadosamente (a la derecha del tazon)
+    print("ACT-PLN.->Moving left arm to deliver position")
+    JuskeshinoHRI.say("I'm going to leave the object")
+    JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_NEAR_CEREAL , 10)
 
-    # Busqueda y reconocimiento de leche
+    # Busqueda y reconocimiento de leche*********************************
+    [objects, image] = JuskeshinoVision.detectAndRecognizeObjects()
+    index_objs = search_bb_obj(objects, "PRISM")
+    print("INDICE DESEADO", index_objs)
 
-    # Tomar y llevar a la pose de vaciado por 5 s (0.08 m por encima del tazon)
+    # Tomar objeto
+    resp = JuskeshinoManipulation.planBestGraspingConfiguration(objects[index_objs])
+    print("ACT-PLN.->Sending best gripper configuration")
+    JuskeshinoHardware.moveLeftArmWithTrajectory(resp.articular_trajectory,10)
+    
+    # Llevar a la pose de vaciado por 5 s (0.08 m por encima del tazon)
+    JuskeshinoHardware.moveLeftArmWithTrajectory(EMPTYING_POSE, 10)
 
-    # Colocar de nuevo en la mesa cuidadosamente (a la izquierda del tazon)
+    # Colocar de nuevo en la mesa cuidadosamente (a la derecha del tazon)
+    print("ACT-PLN.->Moving left arm to deliver position")
+    JuskeshinoHRI.say("I'm going to leave the object")
+    JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_NEAR_MILK , 10)
 
     # El desayuno esta servido 
-
-    
-    
-    print("ACT-PLN.->Going back to entrance")
-    JuskeshinoHRI.say("I'm going back to the entrance")
-    JuskeshinoNavigation.getClose("entrance", 60)
-    JuskeshinoHRI.say("I'm ready for a new command")
-
-    
-    
-    print("ACT-PLN.->Waiting for command")
-    cmd = JuskeshinoSimpleTasks.waitForSentenceUntilConfirmed(10)
-    print("ACT-PLN.->Trying to find a human and approach to him")
-    JuskeshinoHRI.say("I'm trying to find william")
-    JuskeshinoSimpleTasks.findHumanAndApproach(20)
-    print("ACT-PLN.->Meeting william")
-    JuskeshinoHRI.say("Are you William? Please answer hoostina yes or hoostina no")
-    print("ACT-PLN.->Waiting for confirmation")
-    JuskeshinoSimpleTasks.waitForConfirmation(10)
-    print("ACT-PLN.->Starting following")
-    JuskeshinoHRI.say("Ok. Hello william, I am going to follow you. Please stand in front of me")
-    JuskeshinoHRI.enableHumanFollowing(True)
-    JuskeshinoHRI.say("Please say stop following me, to stop following you")
-    rospy.sleep(10)
-    JuskeshinoHRI.enableHumanFollowing(False)
-    print("ACT-PLN.->Stopping following")
-    JuskeshinoHRI.say("Ok. I'm going to stop following you")
-    print("ACT-PLN.->Going back to entrance")
-    JuskeshinoHRI.say("I'm going back to the start position")
-    JuskeshinoNavigation.getClose("entrance", 30)
     JuskeshinoHRI.say("I finished the test")
     """
+
 
     return 
     while not rospy.is_shutdown():
