@@ -17,16 +17,17 @@ from geometry_msgs.msg import Pose,PoseArray,PoseStamped
 from vision_msgs.msg import Keypoint 
 from vision_msgs.msg import HumanCoordinates 
 from vision_msgs.msg import HumanCoordinatesArray
+from std_msgs.msg import Bool
 
 class PointingHandsDetector(smach.State):
     
-    def __init__(self,timeout=60.,tfBuffer=None):
+    def __init__(self,timeout=9000.,tfBuffer=None):
         smach.State.__init__(self,
                              outcomes=['success','failure','timeout'],
                              output_keys=['human_coordinate'])
 
         self.human_coordinate = None
-
+        self.string_hand = False
         self.timeout = timeout
 
         self.trace_keypoint = 0
@@ -211,19 +212,32 @@ class PointingHandsDetector(smach.State):
 
     def execute(self,userdata):
         try:
+            pub = rospy.Publisher('/vision/pointing_hand/status', Bool, queue_size=10)
             sub = rospy.Subscriber('/human_coordinates_array', HumanCoordinatesArray, self.callback) 
             start_time = rospy.Time.now()
             while not rospy.is_shutdown():
+
+                if self.string_hand == False:
+
+                    pub.publish(False)  #R h
+
+                else:
+                    pub.publish(True)   #L h
+
+
                 if self.human_coordinate:
     
                     userdata.human_coordinate = self.human_coordinate
                     print("to userdata variable ->> ",self.human_coordinate)
                     sub.unregister()
                     return 'success'
-    
+
+                
                 if (rospy.Time.now() - start_time).to_sec() > self.timeout:
                     sub.unregister()
                     return 'timeout'
+
+
         except:
             rospy.logger(traceback.format_exc())
             sub.unregister()

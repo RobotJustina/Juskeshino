@@ -15,13 +15,26 @@ class JuskeshinoVision:
         JuskeshinoVision.cltGetObjectPose       = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose",           RecognizeObject     ) 
         JuskeshinoVision.cltGetPointsAbovePlane = rospy.ServiceProxy("/vision/get_points_above_plane",                  PreprocessPointCloud)
         JuskeshinoVision.pubHumanPoseEnable     = rospy.Publisher("/vision/human_pose/enable", Bool, queue_size=1)
-        
+        JuskeshinoVision.pubHumanDetectorEnable     = rospy.Publisher("/vision/human_pose/enable", Bool, queue_size=1)
+
+        #ros::Publisher  pub = n.advertise<std_msgs::Bool>("human_detector_bool", 1);
+        rospy.Subscriber('/vision/pointing_hand/status', Bool ,JuskeshinoVision.callbackPointingHand)
+        JuskeshinoVision.pointing_hand = Bool()
+
         loop = rospy.Rate(10)
-        counter = 3;
+        counter = 3
         while not rospy.is_shutdown() and counter > 0:
             counter-=1
             loop.sleep()
         return True
+    
+
+    def pointingHand():
+        return JuskeshinoVision.pointing_hand
+
+
+    def callbackPointingHand(msg):
+        JuskeshinoVision.pointing_hand = msg
 
     def findTableEdge():
         req = FindLinesRequest()
