@@ -370,7 +370,7 @@ def wait_for_face(timeout=10, name=''):
     string_msg.data = 'Anyone'
     rospy.sleep(0.3)
     while (rospy.get_time() - start_time) < timeout:
-        img = rgbd.get_image()
+        img = rgb.get_image()
         req = RecognizeFaceRequest()
         print('Got  image with shape', img.shape)
         req.Ids.ids.append(string_msg)
