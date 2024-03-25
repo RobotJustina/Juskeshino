@@ -35,7 +35,7 @@ def search_bb_obj(objects, bb_target):
 
 
 def main():
-    print("INITIALIZING SERVE BREAKFAST 2024 TEST BY IBY..............ヾ(๑╹◡╹)ﾉ")
+    print("INITIALIZING SERVE BREAKFAST 2024 TEST BY ITZEL..............ヾ(๑╹◡╹)ﾉ")
     rospy.init_node("serve_breakfast_test")
     rate = rospy.Rate(10)
 

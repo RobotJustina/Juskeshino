@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+
 #from smach_utils2 import *  # TODO: Delete
-from smach_utils_justina import *
+from smach_utils_justina_carry import *
 from smach_ros import SimpleActionState
 
 #########################################################################################################
@@ -20,6 +21,7 @@ class Initial(smach.State):
             return 'tries'
         
         #READ YAML ROOMS XYS
+
         # TODO: delete---->       
         # global arm ,  hand_rgb
         # hand_rgb = HAND_RGB()
@@ -38,6 +40,19 @@ class Initial(smach.State):
 
         #gripper.close()
         #rospy.sleep(0.3)
+
+
+        
+        global arm ,  hand_rgb
+        
+        #TAKESHI ONLY
+        #arm = moveit_commander.MoveGroupCommander('arm')
+        #head.set_named_target('neutral')
+        #rospy.sleep(0.8)
+        #arm.set_named_target('go')
+        #arm.go()
+        #rospy.sleep(0.3)       
+        #TAKESHI ONLY
 
         
         return 'succ'
@@ -58,9 +73,11 @@ class Wait_push_hand(smach.State):
         if self.tries == 4:
             return 'tries'
         voice.talk('Gently... push my hand to begin')
+
         
         
-        succ = wait_for_push_hand(100) # NOT GAZEBABLE
+        #succ = wait_for_push_hand(100) # NOT JUSTIKESHINABLE #WAIT FOR DOOR
+        return 'succ'## REMOVE
         if succ:
             return 'succ'
         else:
@@ -80,13 +97,19 @@ class Goto_living_room(smach.State):
         self.tries += 1
         if self.tries == 3:
             return 'tries'
+
         if self.tries == 1: voice.talk('Navigating to, living room')
+
+
+
         res = omni_base.move_base(known_location='living_room', time_out=200)
         print(res)
         if res:
             return 'succ'
         else:
+
             voice.talk('Navigation Failed, retrying')
+
             return 'failed'
 
 #########################################################################################################
@@ -98,31 +121,35 @@ class Find_human(smach.State):
 
     def execute(self, userdata):
         rospy.loginfo('State : Find_human')
+
         voice.talk('Scanning the room for humans')
+        #talk('Scanning the room for humans')
+
         self.tries += 1
         if self.tries >= 4:
             self.tries = 0
             return'tries'
-        if self.tries==1:head.set_joint_values([ 0.0, 0.0])# Looking ahead
-        if self.tries==2:head.set_joint_values([ 0.5, 0.1])#looking left
-        if self.tries==3:head.set_joint_values([-0.5, 0.1])#looking right        
-        
+        #if self.tries==1:head.set_joint_values([ 0.0, 0.0])# Looking ahead
+        #if self.tries==2:head.set_joint_values([ 0.5, 0.1])#looking left
+        #if self.tries==3:head.set_joint_values([-0.5, 0.1])#looking right        
         humanpose=detect_human_to_tf()  #make sure service is running (pointing detector server now hosts this service)
         if humanpose== False:
             print ('no human ')
             return 'failed'
-        voice.talk('Please start pointing at the bag. In three')
+
+        #talk('Please start pointing at the bag. In three')
         rospy.sleep(1.0)
-        voice.talk('Two')
+        #talk('Two')
         rospy.sleep(1.0)
-        voice.talk('One')
+        #talk('One')
         rospy.sleep(1.5)
         res=pointing_detect_server.call()
         if (res.x_r+res.y_r)==0 and  (res.x_l+res.y_l)==0  :
-            voice.talk('I did not find a pointing arm, I will try again')
+            #talk('I did not find a pointing arm, I will try again')
             print ('no pointing ')
             return 'failed'
-        voice.talk('Ok')
+        #talk('Ok')
+
         rospy.sleep(0.8)
         if res.x_r ==-1: tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_')
         else: tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_')
@@ -162,7 +189,7 @@ class Scan_floor(smach.State):
         origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
 
         if len(res.poses.data)==0:
-            talk('no Objects in area....')
+            #talk('no Objects in area....')
             return 'failed'
         else:
             succ=seg_res_tf_pointing(res)   # Cambia ya que depende de tf pointing_
@@ -209,7 +236,9 @@ class Scan_table(smach.State):
         self.target= '003_cracker_box'
     def execute(self, userdata):
         rospy.loginfo('State : Scanning_table')
-        voice.talk('Scanning table')
+
+        #talk('Scanning table')
+
         self.tries += 1
         if self.tries >= 4:self.tries = 0
         if self.tries==1:head.set_joint_values([ 0.0, -0.7])
@@ -246,7 +275,9 @@ class Pre_pickup(smach.State):
         
     def execute(self, userdata):
         rospy.loginfo(f'State : Pre PICKUP  {self.target} ')
-        voice.talk(f'Picking up {self.target}, please stay where you are')
+
+        #talk(f'Picking up {self.target}, please stay where you are')
+
         rospy.sleep(0.7)
         global target_object, pca_angle
         head.set_named_target('neutral')
@@ -434,7 +465,9 @@ class Pickup_two(smach.State):
         if succ:
             brazo.set_named_target('neutral')         
             return 'succ'
-        voice.talk (' I think I missed the object, I will retry ')
+
+        #talk (' I think I missed the object, I will retry ')
+
         return 'failed'
         
 
@@ -450,7 +483,7 @@ class Post_Pickup(smach.State):
         rospy.loginfo('State :  PICKUP ')
         clear_octo_client()
         self.tries += 1
-        talk('Rotating to previous human location found')
+        #talk('Rotating to previous human location found')
         rospy.sleep(0.7)
         """
         _,rot= tf_man.getTF("base_link",ref_frame='map')
@@ -604,14 +637,18 @@ class Goto_table(smach.State):
         self.tries += 1
         if self.tries == 3:
             return 'tries'
-        if self.tries == 1: voice.talk('Navigating to, pickup')
+
+        if self.tries == 1: print("talk('Navigating to, pickup')")
+
         res = omni_base.move_base(known_location='table', time_out=200)
         print(res)
 
         if res:
             return 'succ'
         else:
-            voice.talk('Navigation Failed, retrying')
+
+            #talk('Navigation Failed, retrying')
+
             return 'failed'
 
 #########################################################################################################
@@ -664,18 +701,20 @@ class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
         
         
         if self.tries   <= 1: 
-                    voice.talk('Navigating to bed room')
+
+                    #talk('Navigating to bed room')
                     next_room='bedroom'
             
         elif self.tries == 2: 
-                    voice.talk('Navigating to kitchen')
+                    #talk('Navigating to kitchen')
                     next_room='kitchen'
         elif self.tries == 3: 
-                    voice.talk('Navigating to  living room')
+                    #talk('Navigating to  living room')
                     next_room='living_room'
             
         elif self.tries == 4: 
-                    voice.talk('Navigating to dining room')
+                    #talk('Navigating to dining room')
+
                     next_room='dining_room'
                     self.tries=0
        
@@ -689,276 +728,36 @@ class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
             return 'succ'
 
         else:
-            voice.talk('Navigation Failed, retrying')
+
+            #talk('Navigation Failed, retrying')
+
             self.tries +=-1
             return 'failed'
 
-###########################################################################################################
-class Lead_to_living_room(smach.State):
+    
+class Goto_human(smach.State):  
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
 
     def execute(self, userdata):
 
-        rospy.loginfo('STATE : navigate to known location')
+        rospy.loginfo('STATE : Navigate to known location')
 
-        print('Try', self.tries, 'of 3 attempts')
+        print(f'Try {self.tries} of 3 attempts')
         self.tries += 1
         if self.tries == 3:
             return 'tries'
-        _,guest_name = get_waiting_guests()
-
-
-
-
-        head.to_tf('human')
-        rospy.sleep(0.5)
-            
-        head.set_joint_values([0,1.3])
-        rospy.sleep(0.5)
-        res = omni_base.move_d_to(1.0,'human')
-
-
-        voice.talk(f'{guest_name}... I will lead you to the {closest_room}, please follow me')
-        # talk('Navigating to ,living room')
-        res = omni_base.move_base(known_location=closest_room)
+        if self.tries == 1: print("talk('Navigating to, living room')")
+        res = omni_base.move_base(known_location='living_room', time_out=200)
+        print(res)
         if res:
-            self.tries=0
-            voice.talk( ' You can remain here, thank you')
             return 'succ'
         else:
-            voice.talk('Navigation Failed, retrying')
+            #talk('Navigation Failed, retrying')
             return 'failed'
-
-###########################################################################################################
-class Analyze_human(smach.State):
-    def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed'])
-        self.tries = 0
-
-    def execute(self, userdata):
-
-        rospy.loginfo('STATE : Analyze  human')
-
-        head.set_joint_values([0,1.3])
-        rospy.sleep(1.0)
-            
-        
-        human_pos,_=tf_man.getTF('human')
-        #head.absolute(human_pos[0],human_pos[1],0.1)
-        ##### SHOES NO SHOES DETECTOR
-        
-        voice.talk( 'Please be sure to be standing in front of me')
-        probss=[]
-        head.absolute(human_pos[0],human_pos[1],-0.1)
-        rospy.sleep(1.9)
-        for i in range (5):
-            img=rgbd.get_image()
-            cv2.imwrite('feet.png',img)
-            print ('got image for feet analysis')
-            keys=[ "feet", "shoes",'socks','sandals','sock']
-            image = preprocess(Image.fromarray(img)).unsqueeze(0).to(device) #img array from grbd get image
-            text = clip.tokenize(keys).to(device)
-
-            with torch.no_grad():
-                image_features = model.encode_image(image)
-                text_features = model.encode_text(text)
-                
-                logits_per_image, logits_per_text = model(image, text)
-                probs = logits_per_image.softmax(dim=-1).cpu().numpy()
-
-            print("Label probs:", probs,keys[np.argmax(probs)] ,keys, probs[0][1] ) # prints: [[0.9927937  0.00421068 0.00299572]]
-        
-
-
-        head.to_tf('human')
-        head.set_joint_values([0,1.3])
-        rospy.sleep(0.5)
-
-        if (keys[np.argmax(probs)] in ['sandals','feet','socks', 'sock' ]   ) or ( probs[0][1]  < 0.4  ) :  
-
-            voice.talk ('Thanks for not wearing shoes.... Rule 1 is followed')
-            print ('Not wearing shoes')
-        else: 
-            voice.talk('Rule number 1 Broken... no shoes please... Would you mind taking them off?.... thank you ')
-            ##
-        return 'succ'
 
 #########################################################################################################
-class Analyze_area(smach.State):
-    def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
-        self.tries = 0
-        
-
-    def execute(self, userdata):
-
-        rospy.loginfo('STATE : Analyze_area')
-
-        
-        self.tries+=1
-        #NO MOVEIT
-        #hv=head_mvit.get_current_joint_values()
-        #hv[0]=1.0
-        #head_mvit.go(hv)
-
-        
-        
-        if self.tries==1: head.set_joint_values([0.9,-1])
-        elif self.tries==2: head.set_joint_values([-0.9,-1])
-        elif self.tries==3:
-            self.tries=0
-            return 'tries'
-        rospy.sleep(2.9)
-        ##### Segment and analyze
-        img=rgbd.get_image()
-        cv2.imwrite('rubb.png',img)
-        print ('got image for segmentation')
-        res=segmentation_server.call()
-        origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
-
-        if len(res.poses.data)==0:
-            voice.talk('no Trash  in area next to human....')
-            return 'failed'
-
-        else:
-            print('object found checking for inflated map')
-            
-            poses=np.asarray(res.poses.data)
-            poses=poses.reshape((int(len(poses)/3) ,3     )      )  
-            num_objs=len(poses)
-            print (num_objs)
-            for i,pose in enumerate(poses):
-                #print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
-                point_name=f'object_{i}'
-                tf_man.pub_static_tf(pos=pose, point_name=point_name, ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
-                rospy.sleep(0.3)
-                tf_man.change_ref_frame_tf(point_name=point_name, new_frame='map')
-                rospy.sleep(0.3)
-                pose,_= tf_man.getTF(point_name)
-                print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
-                if img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
-                    print ('reject point, most likely part of arena, occupied inflated map')
-                    tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
-                    num_objs-=1
-                print (f"object found at robot coords.{pose} ")
-
-        if num_objs!=0: 
-            head.to_tf('human')
-            rospy.sleep(0.5)
-            head.set_joint_values([0,1.3])
-
-            rospy.sleep(0.5)
-            voice.talk ('Rule number 2 Broken. Garbage detected, would you mind picking it up?')
-            self.tries=0
-            return 'succ'
-        voice.talk('Rule no littering Observed... There is no Trash in area next to human....')
-        return 'failed'
- 
-###########################################################################################################
-class Detect_drink(smach.State):
-    def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed','tries'])
-        self.tries = 0
-        
-    def execute(self,userdata):
-        rospy.loginfo('STATE: Detect_drinking')
-        print('Try', self.tries, 'of 3 attempts')
-        self.tries += 1
-        if self.tries ==2:
-            hv= head.get_joint_values()
-            hv[0]= hv[0]+0.6
-            head.set_joint_values(hv)
-            rospy.sleep(1.0)
-        if self.tries ==3:
-            hv= head.get_joint_values()
-            hv[0]= hv[0]-1.2
-            head.set_joint_values(hv)
-            rospy.sleep(1.0)
-            
-        if self.tries == 4:
-            talk('Number of tries reached, moving to the next area')
-            self.tries=0
-            rospy.sleep(0.8)
-            return 'failed'
-        # Guardo posicion para retornar
-        trans, quat=tf_man.getTF('base_link')
-        print("TRIES:",self.tries)
-        rospy.sleep(0.4)
-        if self.tries<2:
-            head.set_named_target('neutral')        
-            rospy.sleep(1.0)
-            hv= head.get_joint_values()
-            hv[1]= hv[1]+0.25
-            head.set_joint_values(hv)
-            rospy.sleep(1.0)
-        # ----------------ATENTO EN DONDE ESTARIAN LAS BEBIDAS------------
-        place_drinks='drinks_p'
-        #-----------------------------------------------------------------
-        voice.talk('Detecting drinking')
-        rospy.sleep(0.8)
-        reqAct.visual=0
-        # reqAct.in_ --> 4  para detectar Drinking
-        reqAct.in_=4
-        resAct=recognize_action(reqAct)
-
-        # 1 -> detecta una persona con drink y pasa a acercarce a la tf correspondiente para ofrecer bebida(?)
-        if resAct.i_out==1:
-            print(resAct.d_xyz)
-            voice.talk('Rule broken, I detect a person without a drink.')
-            rospy.sleep(0.8)
-            print("Aproaching")
-            res = omni_base.move_d_to(1.0,'head_xyz')
-            rospy.sleep(1.0)
-            head.to_tf('head_xyz')
-            rospy.sleep(1.0)
-
-            voice.talk('I detect that you may not have a drink. I will guide you for a drink, please follow me') 
-            rospy.sleep(0.8)
-            voice.talk(f'Navigating...')
-            rospy.sleep(0.8)
-            res = omni_base.move_base(known_location=place_drinks,timeout=115)
-            #print(res)
-            if res :
-                rospy.sleep(0.5)
-                brazo.set_named_target('neutral')        
-                rospy.sleep(1.0)
-                voice.talk('Arrived, you can grab a drink here and then come back to the other room, please.')# AGREGAR POINTING A LA TF DONDE ESTAN LAS BEBIDAS (?)
-                rospy.sleep(0.8)
-                #_ = omni_base.move_base(trans[0],trans[1],tf.transformations.euler_from_quaternion(quat)[2])
-                #rospy.sleep(0.8)
-                #self.tries=0
-                #return 'tries'
-            #else:
-            #    res = omni_base.move_base(known_location=place_drinks)
-            #    rospy.sleep(0.5)
-            #    brazo.set_named_target('neutral')        
-            #    rospy.sleep(1.0)
-            #    talk('Arrived, you can grab a drink here. I will come back to the room.')# AGREGAR POINTING A LA TF DONDE ESTAN LAS BEBIDAS (?)
-            #    rospy.sleep(0.8)
-            
-            _ = omni_base.move_base(trans[0],trans[1],tf.transformations.euler_from_quaternion(quat)[2])
-            rospy.sleep(0.8)
-            self.tries=0
-            return 'tries'
-        # 2 -> todos tienen bebida
-        elif resAct.i_out==2:
-            voice.talk('Ok, someone with a drink.')
-            rospy.sleep(0.8)
-            #cv2.destroyAllWindows()
-            self.tries = 0
-            return 'succ'
-        # 1 -> La tf salió con NaN, vuelve a calcular y obtener tf de la persona sin drink
-        elif resAct.i_out==3:
-            voice.talk('No person detected')
-            rospy.sleep(0.8)
-            return 'tries'
-        else:
-            voice.talk('Scanning...')
-            return 'tries'
-    
-
 ###########################################################################################################
 
 # --------------------------------------------------
@@ -1006,12 +805,13 @@ if __name__ == '__main__':
                                                                                          'succ': 'POST_PICKUP',   
                                                                                          'tries': 'END'})    
         smach.StateMachine.add("POST_PICKUP",       Post_Pickup(),          transitions={'failed': 'END',        
-                                                                                         'succ': 'GOTO_HUMAN',   
-                                                                                         'tries': 'END'})        
+                                                                                         'succ': 'END',   
+                                                                                         'tries': 'END'})   
+        smach.StateMachine.add("GOTO_HUMAN",         Goto_human(),          transitions={'failed': 'GOTO_HUMAN',        'succ': 'END' ,   'tries': 'END' })    
     
-        smach.StateMachine.add("GOTO_HUMAN", SimpleActionState('follow_server', FollowAction) ,transitions={'aborted': 'GOTO_HUMAN',        
-                                                                                                            'succeeded': 'END' ,   
-                                                                                                            'preempted': 'END' })
+        #smach.StateMachine.add("GOTO_HUMAN", SimpleActionState('follow_server', FollowAction) ,transitions={'aborted': 'GOTO_HUMAN',        
+        #                                                                                                  'succeeded': 'END' ,   
+        #                                                                                                  'preempted': 'END' })
         #smach.StateMachine.add("PICKUP_CEREAL",     Pickup_cereal(),        transitions={'failed': 'PICKUP_CEREAL',        'succ': 'POST_PICKUP'    ,   'tries': 'END'})        
         #smach.StateMachine.add("POST_PICKUP",        Post_pickup(),         transitions={'failed': 'POST_PICKUP',        'succ': 'GOTO_TABLE'    ,   'tries': 'END'})        
         #smach.StateMachine.add("GOTO_TABLE",        Goto_table(),           transitions={'failed': 'GOTO_TABLE',        'succ': 'PLACE_TABLE'    ,   'tries': 'END'})        

@@ -7,17 +7,41 @@ class JuskeshinoHRI:
     def setNodeHandle():
         print("JuskeshinoHRI.->Setting ros node...")
         rospy.Subscriber("/hri/sp_rec/recognized", RecognizedSpeech, JuskeshinoHRI.callbackRecognizedSpeech)
-        JuskeshinoHRI.pubSoundRequest    = rospy.Publisher("/hri/speech_generator", SoundRequest, queue_size=10)
-        JuskeshinoHRI.pubLegFinderEnable = rospy.Publisher("/hri/leg_finder/enable", Bool, queue_size=10)
-        JuskeshinoHRI.pubHFollowEnable   = rospy.Publisher("/hri/human_following/enable", Bool, queue_size=10)
-        
+        rospy.Subscriber("/hri/leg_finder/legs_found" , Bool , JuskeshinoHRI.callbackLegsFound)
+        JuskeshinoHRI.pubSoundRequest      = rospy.Publisher("/hri/speech_generator", SoundRequest, queue_size=10)
+        JuskeshinoHRI.pubLegFinderEnable   = rospy.Publisher("/hri/leg_finder/enable", Bool, queue_size=10)
+        JuskeshinoHRI.pubHFollowEnable     = rospy.Publisher("/hri/human_following/enable", Bool, queue_size=10)
+        JuskeshinoHRI.pubHumanFollowerStop = rospy.Publisher("/stop", Empty, queue_size=1)
+
         JuskeshinoHRI.recognizedSpeech = RecognizedSpeech()
+        JuskeshinoHRI.legsFound = Bool()
+
         loop = rospy.Rate(10)
         counter = 3
         while not rospy.is_shutdown() and counter > 0:
             counter-=1
             loop.sleep()
         return True
+    
+
+
+    def enableLegFinder(enable):
+        if(not enable):
+            print("JuskeshinoHRI.->Leg_finder disabled. ")
+        else:
+            print("JuskeshinoHRI.->Leg_finder enabled.")
+
+        msg = Bool()
+        msg.data = enable
+        JuskeshinoHRI.pubLegFinderEnable .publish(msg)
+
+
+    def frontalLegsFound():
+        return JuskeshinoHRI.legsFound 
+
+    def callbackLegsFound(msg):
+        print("JuskeshinoHRI.->Legs found signal received!")
+        JuskeshinoHRI.legsFound = msg
 
     def callbackRecognizedSpeech(msg):
         JuskeshinoHRI.recognizedSpeech = msg
@@ -37,6 +61,7 @@ class JuskeshinoHRI:
         JuskeshinoHRI.recognizedSpeech.confidences = tuple([])
         while (not rospy.is_shutdown() and attempts > 0):
             rec = JuskeshinoHRI.getLastRecognizedSentence()
+            print("****", rec)
             if rec is not None:
                 return rec
             loop.sleep()
@@ -53,9 +78,22 @@ class JuskeshinoHRI:
         rospy.sleep(0.09*len(text))
 
     def enableHumanFollowing(enable):
+        if(not enable):
+            print("JuskeshinoHRI.->Human_follower disabled. ")
+        else:
+            print("JuskeshinoHRI.->Human_follower enabled.")
+
         msg = Bool()
         msg.data = enable
-        JuskeshinoHRI.pubLegFinderEnable.publish(msg)
         JuskeshinoHRI.pubHFollowEnable.publish(msg)
+
+
+    def stopHumanFollower():
+        msg = Empty()
+        JuskeshinoHRI.pubHumanFollowerStop.publish(msg)
+
+    
+
+
 
         

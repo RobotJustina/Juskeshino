@@ -49,28 +49,7 @@ class Initial(smach.State):
 
 
 class Wait_push_hand(smach.State):
-    def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
-        self.tries = 0
-
-    def execute(self, userdata):
-
-        rospy.loginfo('STATE : Wait for Wait_push_hand')
-        print('Waiting for hand to be pushed')
-
-        self.tries += 1
-        print(f'Try {self.tries} of 4 attempts')
-        if self.tries == 4:
-            return 'tries'
-        head.set_named_target('neutral')
-        #brazo.set_named_target('go')  # TODO: Unnecessary
-        voice.talk('Gently... push my hand to begin')
-        succ = wait_for_push_hand(100)
-
-        if succ:
-            return 'succ'
-        else:
-            return 'failed'
+    pass
 
 # --------------------------------------------------
 
@@ -490,7 +469,8 @@ class Find_host(smach.State):
                     # voice.talk(f'looking for host on sit {i}')
                     voice.talk(f'looking for host on sit {i}')
 
-                    res, _ = wait_for_face()
+                    res, _ = 
+                    ()
                     if res is not None:
                         name = res.Ids.ids
                         print('Found: ', name)
@@ -600,8 +580,8 @@ if __name__ == '__main__':
                                'failed': 'INITIAL',           'succ': 'WAIT_DOOR_OPENED',   'tries': 'END'})
         smach.StateMachine.add("WAIT_DOOR_OPENED",  Wait_door_opened(),     transitions={
                                'failed': 'WAIT_DOOR_OPENED',  'succ': 'GOTO_DOOR',        'tries': 'END'})
-        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={
-                               'failed': 'WAIT_PUSH_HAND',    'succ': 'GOTO_DOOR',        'tries': 'WAIT_PUSH_HAND'})
+        # smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={
+        #                        'failed': 'WAIT_PUSH_HAND',    'succ': 'GOTO_DOOR',        'tries': 'WAIT_PUSH_HAND'})
 
         smach.StateMachine.add("SCAN_FACE",         Scan_face(),    transitions={
                                'failed': 'SCAN_FACE',     'succ': 'GET_DRINK',            'tries': 'GOTO_DOOR', 'unknown': 'NEW_FACE', })
@@ -619,6 +599,6 @@ if __name__ == '__main__':
         smach.StateMachine.add("FIND_HOST",             Find_host(),            transitions={
                                'failed': 'FIND_HOST',             'succ': 'INTRODUCE_GUEST',       'tries': 'FIND_HOST'})
         smach.StateMachine.add("INTRODUCE_GUEST",       Introduce_guest(),      transitions={
-                               'failed': 'INTRODUCE_GUEST',       'succ': 'WAIT_PUSH_HAND',        'tries': 'WAIT_PUSH_HAND'})
+                               'failed': 'INTRODUCE_GUEST',       'succ': 'GOTO_DOOR',        'tries': 'GOTO_DOOR'})
 
     outcome = sm.execute()
