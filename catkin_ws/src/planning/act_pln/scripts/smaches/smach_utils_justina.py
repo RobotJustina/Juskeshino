@@ -36,6 +36,7 @@ from hmm_navigation.msg import NavigateAction, NavigateActionGoal, NavigateActio
 from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
 from juskeshino_tools.JuskeshinoHardware import JuskeshinoHardware
 import time
+from receptionist_knowledge import *
 
 
 class Talker():
@@ -341,7 +342,19 @@ def match_speech(speech, to_match):
     return False
 # ------------------------------------------------------
 
-
+# Functions
+def places_2_tf():
+    places, locs = party.get_places_location()
+    for place, loc in zip(places, locs):
+        print(place, loc)
+        pos = [loc[0], loc[1], 0.85]
+        rot = tf.transformations.quaternion_from_euler(0.0, 0.0, loc[2])
+        tf_man.pub_static_tf(pos=pos, rot=rot, point_name=place)
+        rospy.sleep(0.6)
+        tf_face = place.replace('_', '_face')
+        tf_man.pub_static_tf(pos=[1.0, 0, 0], rot=rot, point_name=tf_face, ref=place)
+        rospy.sleep(0.6)
+#------------------------------------------------------
 def train_face(image, name):
     """writes request message and requests trainface service
             /face_recog pkg"""
@@ -360,52 +373,60 @@ def train_face(image, name):
 
 #########################################
 
-def wait_for_face(timeout=10, name=''):
-    """Wait for timeout seconds until a face is found.
-        if name is provided then only a face with id== name will return True
-    """
-    start_time = rospy.get_time()
-    strings = Strings()
-    string_msg = String()
-    string_msg.data = 'Anyone'
+def wait_for_face(timeout=10 , name=''):
+    
     rospy.sleep(0.3)
-    while (rospy.get_time() - start_time) < timeout:
-        img = rgb.get_image()
-        req = RecognizeFaceRequest()
-        print('Got  image with shape', img.shape)
+    
+    start_time = rospy.get_time()
+    strings=Strings()
+    string_msg= String()
+    string_msg.data='Anyone'
+    while rospy.get_time() - start_time < timeout:
+        img=rgbd.get_image()
+
+        img  
+        req=RecognizeFaceRequest()
+        print ('Got  image with shape',img.shape)
         req.Ids.ids.append(string_msg)
-        img_msg = bridge.cv2_to_imgmsg(img)
+        img_msg=bridge.cv2_to_imgmsg(img[:,150:-150])
         req.in_.image_msgs.append(img_msg)
-        res = recognize_face(req)
-        # NO FACE FOUND
+
+        res= recognize_face(req)
+
+
+        #NO FACE FOUND
         if res.Ids.ids[0].data == 'NO_FACE':
-            print(f'time {(rospy.get_time() - start_time)} elapsed')
-        # AT LEAST ONE FACE FOUND
+            print ('No face FOund Keep scanning')
+            
+            return None, None
+        #AT LEAST ONE FACE FOUND
         else:
             print('at least one face found')
-            ds_to_faces = []
-            for i, idface in enumerate(res.Ids.ids):
-                print(i, idface.data)
-                ds_to_faces.append(res.Ds.data[i])
-                if (idface.data) == name:
-                    new_res = RecognizeFaceResponse()
-                    new_res.Ds.data = res.Ds.data[i]
-                    new_res.Angs.data = res.Angs.data[i:i+4]
-                    new_res.Ids.ids = res.Ids.ids[i].data
-                    print('return res,img', new_res)
-                    print('hit', idface.data, 'at', res.Ds.data[i], 'meters')
-                    ds_to_faces = []
-                    return new_res, img
+            ds_to_faces=[]
+            for i , idface in enumerate(res.Ids.ids):
+                print (i,idface.data)
+                ds_to_faces.append(res.Ds.data[i])    ##
+                if (idface.data)==name :
+                    new_res= RecognizeFaceResponse()
+                    new_res.Ds.data= res.Ds.data[i]
+                    new_res.Angs.data= res.Angs.data[i:i+4]
+                    new_res.Ids.ids=res.Ids.ids[i].data
+                    print('return res,img',new_res)
+                    print ('hit',idface.data, 'at' , res.Ds.data[i]  , 'meters')
+                    ds_to_faces=[]
+                    return new_res , img
 
-            if len(ds_to_faces) != 0:
-                i = np.argmin(ds_to_faces)
-                new_res = RecognizeFaceResponse()
-                new_res.Ds.data = res.Ds.data[i]
-                new_res.Angs.data = res.Angs.data[i:i+4]
-                new_res.Ids.ids = res.Ids.ids[i].data
-                print('return res,img', new_res)
-                ds_to_faces = []
-                return new_res, img
+            if len (ds_to_faces)!=0:
+                i=np.argmin(ds_to_faces)
+                new_res= RecognizeFaceResponse()
+                new_res.Ds.data= res.Ds.data[i]
+                new_res.Angs.data= res.Angs.data[i:i+4]
+                new_res.Ids.ids=res.Ids.ids[i].data
+                print('return res,img',new_res)
+                ds_to_faces=[]
+                return new_res , img
+
+
 
 
 global omni_base, rgb, rgbd, bridge, pointing_detect_server, classify_client, segmentation_server, tf_man
@@ -419,6 +440,7 @@ omni_base = OMNIBASE()
 tf_man = TF_MANAGER()
 voice = Talker()
 head = Head()
+party = RECEPTIONIST()
 
 
 speech_recog_server = rospy.ServiceProxy(

@@ -1,0 +1,40 @@
+People:
+  Guest_0:
+    drink: Coke
+    location: Place_1
+    name: John
+  Guest_1:
+    description: None
+    drink: water
+    location: Place_3
+    name: john
+  Guest_2:
+    description: None
+    drink: something
+    location: Place_2
+    name: someone
+Places:
+  Place_0:
+    location:
+      theta: 0.0
+      x: 0.0
+      y: 0.0
+    occupied: Not_available
+  Place_1:
+    location:
+      theta: -1.0
+      x: 9.33
+      y: -3.69
+    occupied: John
+  Place_2:
+    location:
+      theta: -0.03
+      x: 9.66
+      y: -3.29
+    occupied: Guest_2
+  Place_3:
+    location:
+      theta: 0.02
+      x: 9.79
+      y: -2.42
+    occupied: Guest_1
