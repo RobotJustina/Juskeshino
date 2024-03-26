@@ -18,7 +18,7 @@ def main():
     rospy.init_node("carry_my_luggage_test")
     rate = rospy.Rate(10)
 
-    # Se subcribe a los servicios necesarios para manipulacion, navegacion,vision, etc...
+    # Se subcribe a los servicios y topicos necesarios para manipulacion, navegacion,vision, etc...
     JuskeshinoNavigation.setNodeHandle()
     JuskeshinoVision.setNodeHandle()
     JuskeshinoHardware.setNodeHandle()
@@ -26,10 +26,11 @@ def main():
     JuskeshinoHRI.setNodeHandle()
     JuskeshinoManipulation.setNodeHandle()
     JuskeshinoKnowledge.setNodeHandle()
-    #JuskeshinoKnowledge.loadLocations(locations_file)
 
     print("ACT-PLN.-> Carry_my_luggage_test 2024")
+    """
     JuskeshinoHRI.say("I am ready for the carry my luggage test")
+    
     JuskeshinoHRI.say("Please point at the bag that you want me to carry.")
     
     JuskeshinoHRI.say("Tell me, Justina yes, when you are pointing at the bag")
@@ -50,18 +51,30 @@ def main():
                 if "YES" in voice:
                     JuskeshinoNavigation.moveDistAngle(0.0, 0.2853, 10000)
                     JuskeshinoHRI.say("Please put the left bag on the gripper")
-    
-    print("ACT-PLN.-> Find person")
-    #JuskeshinoHRI.enableLegFinder(True)
-
-    print("legs found?", JuskeshinoHRI.frontalLegsFound())
-
     """
-    if(not JuskeshinoHRI.frontalLegsFound()):
-        print("ACT-PLN.-> Not found legs")
-        JuskeshinoHRI.say("I can't found you, please stand in front of me")
-        JuskeshinoHRI.enableHumanFollower(False)
-    """
+    while not rospy.is_shutdown():
+        print("ACT-PLN.-> Find person, enableHumanPose")
+        JuskeshinoVision.enableHumanPose(True)
+        print("ACT-PLN.-> calling human detector")
+        human_detector = JuskeshinoVision.humanDetector()
+        print("Humanos en frente?:_______", human_detector)
+        print("ACT-PLN.-> Find legs , enableLegFinder")
+        JuskeshinoHRI.enableLegFinder(True)
+        print("ACT-PLN.->  find legs in front")
+        legs_found = JuskeshinoHRI.frontalLegsFound()
+
+        print("Legs in front?___", legs_found.data)
+        #time.sleep(8)
+
+
+        if(legs_found):
+            print("ACT-PLN.-> found legs")
+            JuskeshinoHRI.enableHumanFollower(True)
+            print("ACT-PLN.-> HumanFollower enable")
+        else:
+            print("ACT-PLN.-> Not found legs")
+            JuskeshinoHRI.say("I can't found you, please stand in front of me")
+            JuskeshinoHRI.enableHumanFollower(False)
 
 
 

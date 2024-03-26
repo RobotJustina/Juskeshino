@@ -212,8 +212,8 @@ class PointingHandsDetector(smach.State):
 
     def execute(self,userdata):
         try:
-            pub = rospy.Publisher('/vision/pointing_hand/status', Bool, queue_size=10)
-            sub = rospy.Subscriber('/human_coordinates_array', HumanCoordinatesArray, self.callback) 
+            pub = rospy.Publisher('/vision/human_pose_estimation/pointing_hand/status', Bool, queue_size=10)
+            sub = rospy.Subscriber('vision/human_pose/human_pose_array', HumanCoordinatesArray, self.callback) 
             start_time = rospy.Time.now()
             while not rospy.is_shutdown():
 

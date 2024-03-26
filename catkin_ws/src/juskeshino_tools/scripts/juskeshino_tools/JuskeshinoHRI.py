@@ -8,6 +8,7 @@ class JuskeshinoHRI:
         print("JuskeshinoHRI.->Setting ros node...")
         rospy.Subscriber("/hri/sp_rec/recognized", RecognizedSpeech, JuskeshinoHRI.callbackRecognizedSpeech)
         rospy.Subscriber("/hri/leg_finder/legs_found" , Bool , JuskeshinoHRI.callbackLegsFound)
+
         JuskeshinoHRI.pubSoundRequest      = rospy.Publisher("/hri/speech_generator", SoundRequest, queue_size=10)
         JuskeshinoHRI.pubLegFinderEnable   = rospy.Publisher("/hri/leg_finder/enable", Bool, queue_size=10)
         JuskeshinoHRI.pubHFollowEnable     = rospy.Publisher("/hri/human_following/enable", Bool, queue_size=10)
@@ -77,7 +78,7 @@ class JuskeshinoHRI:
         JuskeshinoHRI.pubSoundRequest.publish(msg)
         rospy.sleep(0.09*len(text))
 
-    def enableHumanFollowing(enable):
+    def enableHumanFollower(enable):
         if(not enable):
             print("JuskeshinoHRI.->Human_follower disabled. ")
         else:

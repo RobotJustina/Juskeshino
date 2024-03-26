@@ -7,19 +7,21 @@ from vision_msgs.msg import *
 class JuskeshinoVision:
     def setNodeHandle():
         print("JuskeshinoVision.->Setting ros node...")
-        JuskeshinoVision.cltFindLines           = rospy.ServiceProxy("/vision/line_finder/find_table_edge",             FindLines           )
-        JuskeshinoVision.cltFindHoriPlanes      = rospy.ServiceProxy("/vision/line_finder/find_horizontal_plane_ransac",FindPlanes          )
-        JuskeshinoVision.cltTrainObject         = rospy.ServiceProxy("/vision/obj_reco/detect_and_train_object",        TrainObject         )
-        JuskeshinoVision.cltDetectRecogObjects  = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_objects",   RecognizeObjects    )
-        JuskeshinoVision.cltDetectRecogObject   = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_object",    RecognizeObject     )
-        JuskeshinoVision.cltGetObjectPose       = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose",           RecognizeObject     ) 
-        JuskeshinoVision.cltGetPointsAbovePlane = rospy.ServiceProxy("/vision/get_points_above_plane",                  PreprocessPointCloud)
-        JuskeshinoVision.pubHumanPoseEnable     = rospy.Publisher("/vision/human_pose/enable", Bool, queue_size=1)
-        JuskeshinoVision.pubHumanDetectorEnable     = rospy.Publisher("/vision/human_pose/enable", Bool, queue_size=1)
+        JuskeshinoVision.cltFindLines               = rospy.ServiceProxy("/vision/line_finder/find_table_edge",             FindLines           )
+        JuskeshinoVision.cltFindHoriPlanes          = rospy.ServiceProxy("/vision/line_finder/find_horizontal_plane_ransac",FindPlanes          )
+        JuskeshinoVision.cltTrainObject             = rospy.ServiceProxy("/vision/obj_reco/detect_and_train_object",        TrainObject         )
+        JuskeshinoVision.cltDetectRecogObjects      = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_objects",   RecognizeObjects    )
+        JuskeshinoVision.cltDetectRecogObject       = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_object",    RecognizeObject     )
+        JuskeshinoVision.cltGetObjectPose           = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose",           RecognizeObject     ) 
+        JuskeshinoVision.cltGetPointsAbovePlane     = rospy.ServiceProxy("/vision/get_points_above_plane",                  PreprocessPointCloud)
+        
+        #JuskeshinoVision.pubHumanPoseEnable         = rospy.Publisher("/vision/human_pose_estimation/enable", Bool, queue_size=1)
+        JuskeshinoVision.pubHumanPoseEnable         = rospy.Publisher("/vision/human_pose/enable", Bool, queue_size=1)
 
-        #ros::Publisher  pub = n.advertise<std_msgs::Bool>("human_detector_bool", 1);
-        rospy.Subscriber('/vision/pointing_hand/status', Bool ,JuskeshinoVision.callbackPointingHand)
-        JuskeshinoVision.pointing_hand = Bool()
+        rospy.Subscriber("/human_detector_bool", Bool ,JuskeshinoVision.callbackHumanBool)
+        rospy.Subscriber("/vision/human_pose_estimation/pointing_hand/status", Bool ,JuskeshinoVision.callbackPointingHand)
+        JuskeshinoVision.pointing_hand  = Bool()
+        JuskeshinoVision.human_detector = Bool()
 
         loop = rospy.Rate(10)
         counter = 3
@@ -29,12 +31,23 @@ class JuskeshinoVision:
         return True
     
 
-    def pointingHand():
-        return JuskeshinoVision.pointing_hand
-
 
     def callbackPointingHand(msg):
         JuskeshinoVision.pointing_hand = msg
+
+    def pointingHand():
+        return JuskeshinoVision.pointing_hand
+
+    def callbackHumanBool(msg):
+        JuskeshinoVision.human_detector = msg
+
+    def humanDetector():
+        return JuskeshinoVision.human_detector
+
+    def enableHumanPose(enable):
+        msg = Bool()
+        msg.data = enable
+        JuskeshinoVision.pubHumanPoseEnable.publish(msg)
 
     def findTableEdge():
         req = FindLinesRequest()
@@ -71,8 +84,3 @@ class JuskeshinoVision:
         except:
             print("JuskeshinoVision.->Cannot detect and recognize object '" + name + "'")
             return [None, None]
-
-    def enableHumanPoseDetection(enable):
-        msg = Bool()
-        msg.data = enable
-        JuskeshinoVision.pubHumanPoseEnable.publish(msg)

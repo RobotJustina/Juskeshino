@@ -87,7 +87,7 @@ std::vector<float> legs_y_filter_output;
 std::string frame_id;
 
 //Parameter-passed values
-std::string laser_scan_topic = "/scan";
+std::string laser_scan_topic = "hardware/scan";
 std::string laser_scan_frame = "laser_link";
 bool show_hypothesis = false;
 int scan_downsampling = 1;
@@ -384,6 +384,7 @@ void callback_scan(const sensor_msgs::LaserScan::Ptr& msg)
     float nearest_x, nearest_y;
     if(!legs_found && !stop_robot)
     {
+        //std::cout << "lalalallalalalalala " << std::endl;
         if(get_nearest_legs_in_front(legs_x, legs_y, nearest_x, nearest_y))
             legs_in_front_cnt++;
         if(legs_in_front_cnt > 20)
@@ -466,9 +467,13 @@ void callback_scan(const sensor_msgs::LaserScan::Ptr& msg)
 void callback_enable(const std_msgs::Bool::ConstPtr& msg)
 {
     if(msg->data)
+    {
+        std::cout << "Se suscribio a laser scan..." << std::endl;
         subLaserScan = n->subscribe(laser_scan_topic, 1, callback_scan);
+    }
     else
     {
+        std::cout << "cancela subs a laser scan..." << std::endl;
         subLaserScan.shutdown();
         legs_found = false;
         legs_in_front_cnt = 0;
@@ -496,20 +501,24 @@ int main(int argc, char** argv)
         ros::param::get("~laser_scan_frame",  laser_scan_frame);
     if(ros::param::has("~scan_downsampling"))
         ros::param::get("~scan_downsampling", scan_downsampling);
+
+    
     ros::Subscriber subEnable = n->subscribe("/hri/leg_finder/enable", 1, callback_enable);
     ros::Subscriber subStop   = n->subscribe("/stop", 1, callback_stop);
+    
     pub_legs_hypothesis = n->advertise<visualization_msgs::Marker>("/hri/leg_finder/hypothesis", 1);
     pub_legs_pose       = n->advertise<geometry_msgs::PointStamped>("/hri/leg_finder/leg_pose", 1);
-    pub_legs_found      = n->advertise<std_msgs::Bool>("/hri/leg_finder/legs_found", 1);            
+    pub_legs_found      = n->advertise<std_msgs::Bool>("/hri/leg_finder/legs_found", 1);  
     //n->getParam("~frame_id", frame_id);
     if(ros::param::has("~frame_id"))
         ros::param::get("~frame_id", frame_id);
     if(frame_id.compare("") == 0)
         frame_id = "base_link";
+    
 
     listener = new tf::TransformListener();
     listener->waitForTransform("base_link", laser_scan_topic, ros::Time(0), ros::Duration(10.0));
-    ros::Rate loop(20);
+    ros::Rate loop(20); 
 
     for(int i=0; i < 4; i++)
     {

@@ -33,7 +33,7 @@
 #include "vision_msgs/HumanCoordinates.h"
 #include "vision_msgs/HumanCoordinatesArray.h"
 
-std::string pcl_topic = "/points";
+std::string pcl_topic = "/camera/depth_registered/points";
 
 const std::vector<std::string> kpt_names{"nose", "neck", 
 	"r_sho", "r_elb", "r_wri", "l_sho", "l_elb", "l_wri",
