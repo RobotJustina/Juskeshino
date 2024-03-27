@@ -5,6 +5,7 @@ from smach_utils_justina import *
 ##### Define state INITIAL #####
 
 # --------------------------------------------------
+camera_enable = False
 
 class Initial(smach.State):
     def __init__(self):
@@ -19,34 +20,29 @@ class Initial(smach.State):
         print(f'Try {self.tries} of 5 attempts')
 
         party.clean_knowledge(host_name="John", host_location="Place_1")
-        # clean_knowledge()
         places_2_tf()
 
         # -----INIT GRAMMAR FOR VOSK
         # -----Use with get_keywords_speech()
         # -----------SPEECH REC
-        # drinks=['coke','juice','beer', 'water', 'soda', 'wine', 'i want a', 'i would like a']
         drinks = ['coke','juice','milk', 'water', 'soda', 'wine', 
                   'i want a', 'i would like a', 'tea', 'icedtea', 'cola', 'redwine', 'orangejuice', 'tropicaljuice']
-        #names=['rebeca','ana','jack', 'michael', ' my name is' , 'i am','george','mary','ruben','oscar','yolo','mitzi']
+       
         names = [' my name is' , 'i am','adel', 'angel', 'axel', 
                  'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone', 'jack']
         confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah']                     
         gram = drinks + names + confirmation   
 
         if self.tries == 1:
-            # set_grammar(gram)  ##PRESET DRINKS
-            print('SMACH STARTING')
+            # set_grammar(gram)  ##PRESET DRINKS  # TODO: fix
+            print(drinks)
+            return 'succ'
         elif self.tries == 3:
             return 'tries'
 
-        print(drinks)
-
-        # rospy.sleep(0.8)
-        return 'succ'
+        
 
 # --------------------------------------------------
-
 
 class Wait_push_hand(smach.State):
     pass
@@ -66,8 +62,8 @@ class Wait_door_opened(smach.State):
         self.tries += 1
         print(f'Try {self.tries} of 4 attempts')
 
-        if self.tries == 100:
-            return 'tries'
+        # if self.tries == 100:
+        #     return 'tries'
         voice.talk('I am ready for receptionist task.')
         rospy.sleep(0.8)
         voice.talk('I am waiting for the door to be opened')
@@ -116,7 +112,8 @@ class Scan_face(smach.State):
         rospy.loginfo('State : Scan face')
         head.set_joint_values([0.0, -0.1])
         voice.talk('Scanning for faces, look at me, please')
-        res, userdata.face_img = wait_for_face()  # default 10 secs
+        global camera_enable
+        res, userdata.face_img = wait_for_face(lap_camera=camera_enable)  # default 10 secs
         #rospy.sleep(0.7)
         if res != None:
             userdata.name = res.Ids.ids
@@ -331,7 +328,8 @@ class Find_sitting_place(smach.State):
         #commented detect human
         #res = detect_human_to_tf()
         voice.talk('I will check if this place is empty')
-        res , _ = wait_for_face()  # seconds
+        global camera_enable
+        res , _ = wait_for_face(lap_camera=camera_enable)  # seconds
         if res == None:
 
             print("Place is: ",place)
@@ -392,7 +390,8 @@ class Find_host_alternative(smach.State):
         voice.talk(f'looking for host on: {host_loc}')
         tf_host = host_loc.replace('_', '_face')
         #head.to_tf(tf_name) #TODO: implement
-        res, _ = wait_for_face()
+        global camera_enable
+        res, _ = wait_for_face(lap_camera=camera_enable)
         if res is not None:
             person_name = res.Ids.ids
             if (person_name == host_name) or dont_compare:

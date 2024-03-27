@@ -5,14 +5,9 @@ People:
     name: John
   Guest_1:
     description: None
-    drink: water
-    location: Place_3
-    name: john
-  Guest_2:
-    description: None
     drink: something
-    location: Place_2
-    name: someone
+    location: Place_3
+    name: jules
 Places:
   Place_0:
     location:
@@ -31,7 +26,7 @@ Places:
       theta: -0.03
       x: 9.66
       y: -3.29
-    occupied: Guest_2
+    occupied: None
   Place_3:
     location:
       theta: 0.02

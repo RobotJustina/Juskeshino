@@ -373,7 +373,7 @@ def train_face(image, name):
 
 #########################################
 
-def wait_for_face(timeout=10 , name=''):
+def wait_for_face(timeout=10 , name='', lap_camera=False):
     
     rospy.sleep(0.3)
     
@@ -382,7 +382,11 @@ def wait_for_face(timeout=10 , name=''):
     string_msg= String()
     string_msg.data='Anyone'
     while rospy.get_time() - start_time < timeout:
-        img=rgbd.get_image()
+        if lap_camera:
+            print("USB camera")
+            img=rgb.get_image()
+        else:
+            img=rgbd.get_image()
 
         img  
         req=RecognizeFaceRequest()
@@ -429,7 +433,8 @@ def wait_for_face(timeout=10 , name=''):
 
 
 
-global omni_base, rgb, rgbd, bridge, pointing_detect_server, classify_client, segmentation_server, tf_man
+global omni_base, rgb, rgbd, bridge, pointing_detect_server, classify_client
+global segmentation_server, tf_man, voice, head, party
 rospy.init_node('smach_justina_tune_vision')
 
 
