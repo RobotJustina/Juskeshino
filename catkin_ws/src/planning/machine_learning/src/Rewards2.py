@@ -148,11 +148,12 @@ def train(replay_buffer):
 	optimizer.step()
 	policy_net.to('cpu')
 	TAU = 0.005
-	if(total_steps%1000==0):
+	if(total_steps%8==0):
 		target_net_state_dict = target_net.state_dict()
 		policy_net_state_dict = policy_net.state_dict()
 		for key in policy_net_state_dict:
-			target_net_state_dict[key] = policy_net_state_dict[key]
+		#target_net_state_dict[key] = policy_net_state_dict[key]
+			target_net_state_dict[key]=policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
 		target_net.load_state_dict(target_net_state_dict)
 	state_action_values=state_action_values.to('cpu')
 	expected_state_action_values=expected_state_action_values.to('cpu')
@@ -165,14 +166,17 @@ def select_action(policy_net,steps, grid_act):
 	#disp = 'cuda' if th.cuda.is_available() else 'cpu'
 	disp='cpu'
 	epsilon= EPS_END + (EPS_START - EPS_END) *math.exp(-1. * steps / EPS_DECAY)
+	print(f'la probabilidad es {epsilon}')
 	random_number = np.random.rand()
 	#inicio = time.time()  # Registra el tiempo inicial
 	if(random_number>=epsilon):
 		entrada = np.expand_dims(np.asarray(grid_act), axis=0)
 		x_ent = th.tensor(entrada).to(th.device(disp), th.float32)
 		#policy_net.to(disp)
+		policy_net.eval()
 		with th.no_grad():
 			y_pred = policy_net(x_ent)
+		policy_net.train()
 		#x_ent=x_ent.to('cpu')
 		#policy_net.to('cpu')
 		#y_pred =y_pred.cpu().numpy()
@@ -253,7 +257,11 @@ def main():
 		if(grid_bef is not None and count%2==0  and not end and not next_train):
 			if(action_bef is not None and not done and not stop):
 				r_dist=grid_bef[6400]-grid_act[6400]
-				r=r_obstacle+100*r_dist+r_goal
+				if(100*r_dist>-1):
+					r_dist=-1
+				else:
+					r_dist=-3
+				r=r_obstacle+r_dist+r_goal
 				if(grid_bef[6400]>10):
 					grif_bef[6400]=10
 				if(grid_act[6400]>10):
@@ -274,7 +282,7 @@ def main():
 				steps+=1
 				replay_buffer.append((np.asarray(grid_bef),r, action_bef, np.asarray(grid_act), False))
 				end=True
-			if((total_steps+1)%10==0 and len(replay_buffer)>290):
+			if((total_steps+1)%2==0 and len(replay_buffer)>290):
 				next_train=True
 			if not done and not stop:
 				action_bef=select_action(policy_net, total_steps, grid_act)
@@ -288,6 +296,8 @@ def main():
 		elif(end or steps==1000):
 			grid_bef=None
 			end=False
+			next_train=False
+			count=0
 			if(stop):
 				#end=True
 				print("Cerrar launch")
