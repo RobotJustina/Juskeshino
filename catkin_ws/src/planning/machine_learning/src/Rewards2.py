@@ -47,6 +47,12 @@ target_net.eval()
 if os.path.exists(data_folder+"/DRL_gazebo_policy.pth"):
 	policy_net.load_state_dict(th.load(data_folder+"/DRL_gazebo_policy.pth",map_location=th.device('cpu')))
 	target_net.load_state_dict(th.load(data_folder+"/DRL_gazebo_target.pth",map_location=th.device('cpu')))
+else:
+	target_net_state_dict = target_net.state_dict()
+	policy_net_state_dict = policy_net.state_dict()
+	for key in policy_net_state_dict:
+		target_net_state_dict[key]=policy_net_state_dict[key]
+		target_net.load_state_dict(target_net_state_dict)
 
 if os.path.exists(data_folder+"/replay_buffer.npy"):
 	array_load = np.load(data_folder + "/replay_buffer.npy", allow_pickle=True)
