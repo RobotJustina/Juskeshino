@@ -37,6 +37,7 @@ from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
 from juskeshino_tools.JuskeshinoHardware import JuskeshinoHardware
 import time
 from receptionist_knowledge import *
+import trajectory_msgs.msg  # HAND point
 
 
 class Talker():
@@ -52,7 +53,7 @@ class Talker():
 
 
 class Head:  # known as Gaze on Takeshi grasp_utils.py
-    def __init__(self):
+    def __init__(self, head_controller_topic = '/head_trajectory_controller/command'):
         # pan, tilt are in rads
         JuskeshinoHardware.setNodeHandle()
         self.pan_min_limit = -1.5708
@@ -60,18 +61,79 @@ class Head:  # known as Gaze on Takeshi grasp_utils.py
         self.tilt_min_limit = -1.5
         self.tilt_max_limit = 0.3
 
-    def to_tf(tf):
-        pass
+        ##########
+        self._reference = 'map'
+        self._cam = 'realsense_link' #'head_rgbd_sensor_link'
+        self._base = 'base_link'
+        self._hand = 'left_arm_grip_center' #'hand_palm_link' # TODO: verify link
+        self._tf_man = TF_MANAGER()
+        self._pub = rospy.Publisher( head_controller_topic,
+            trajectory_msgs.msg.JointTrajectory, queue_size=10)
+
+    def _gaze_point(self):
+    ###Moves head to make center point of rgbd image to coordinates w.r.t.map
+        trans,_ = self._tf_man.getTF(ref_frame=self._reference,target_frame=self._cam)
+        rospy.sleep(0.3)
+        _,rot = self._tf_man.getTF(ref_frame=self._reference, target_frame=self._base)
+        _,_, th_rob = tf.transformations.euler_from_quaternion(rot)
+        
+        x_rob, y_rob, z_rob = trans[0], trans[1], trans[2]
+        D_x = x_rob - self._x
+        D_y = y_rob - self._y
+        D_z = z_rob - self._z
+        D_th = np.arctan2(D_y,D_x)
+        #pan: horizontal angle, tilt: vertical angle
+        #keep pan angle between -2*pi and 2*pi
+        pan_correct = (- th_rob + D_th + np.pi) % (2*np.pi)
+        #pan mapping from pi and -pi
+        if pan_correct > np.pi:
+            pan_correct -= 2 * np.pi
+        elif pan_correct < -np.pi:
+            pan_correct += 2 * np.pi
+        tilt_correct = -np.arctan2(D_z,np.linalg.norm((D_x,D_y)))
+        #pan exorcist alert 
+        print("pan, tilt:", pan_correct, tilt_correct)
+
+        #if abs(pan_correct) > 0.5 * np.pi:
+        if abs(pan_correct) > self.pan_max_limit:
+            print ('Exorcist alert')
+            # pan_correct=0.5*np.pi
+            self.set_joint_values([0.0, tilt_correct])
+            self.turn_base_gaze()
+            return [0.0, tilt_correct]
+            # return self._gaze_point()
+        else:    
+            head_pose = [pan_correct,  tilt_correct]
+            return head_pose
+
+    def _gaze_abs_rel(self, x, y, z):
+        self._x = x
+        self._y = y
+        self._z = z
+        head_pose =  self._gaze_point()
+        self.set_joint_values(head_pose)
+        return head_pose
+
+    def absolute(self, x: float, y:float, z: float):
+        #Head gaze to a x, y, z point relative to map
+        self._reference = 'map'
+        return self._gaze_abs_rel(x,y,z)
 
     def set_named_target(self, pose_name='neutral'):
         if pose_name == 'neutral':
             self.set_joint_values(head_pose=[0.0, 0.0])
-        if pose_name == 'down':
+        elif pose_name == 'down':
             self.set_joint_values(head_pose=[0.0, self.tilt_min_limit])
-        if pose_name == 'face_to_face':
+        elif pose_name == 'right': # TODO: verify
+            head_pose = [-1.0, 0.0]
+        elif pose_name == 'left':
+            head_pose = [1.0, 0.0]
+        elif pose_name == 'face_to_face':
             self.set_joint_values(head_pose=[0.0, -0.1])
 
-    def set_joint_values(self, head_pose=[0.0, 0.0]):
+    #def get_joint_values(self): 
+
+    def set_joint_values(self, head_pose=[0.0, 0.0]):  # JUSTINA version
         if head_pose[0] < self.pan_min_limit or head_pose[0] > self.pan_max_limit:
             print("Error! pan value exceeds limits")
             print("limits are: [", self.pan_min_limit,
@@ -83,9 +145,47 @@ class Head:  # known as Gaze on Takeshi grasp_utils.py
         else:  # in range
             JuskeshinoHardware.moveHead(head_pose[0], head_pose[1], 2)
 
-    def turn_base_gaze(tf, to_gaze):  # Tuns head and base to find target
-        pass
+    def to_tf(self, target_frame='None'):
+        print("target_frame", target_frame)
+        if target_frame != 'None':
+            rospy.sleep(0.5)
+            xyz,_ = self._tf_man.getTF(target_frame=target_frame)
+            rospy.sleep(0.8)
+            tries = 1
+            
+            print("---------- xyz:", xyz)
+            #type(xyz) is bool --> tf no encontrada
+            while (type(xyz) is bool):
+                num_loc = (int) (target_frame.replace('Place_face', ''))
+                locs = [[9.65,-2.02,0.0], [9.72,-2.1,0.0], [9.67,-3.06,0.0]]
+                loc =locs[num_loc-1]
+                xyz = [loc[0], loc[1], 0.85]
+            if type(xyz) is not bool:
+               self.absolute(*xyz)
 
+    def turn_base_gaze(self, tf='None', to_gaze ='base_link'):
+        base = OMNIBASE()
+        succ = False
+        THRESHOLD = 0.05
+        tries = 0
+        if tf != 'None':
+            target_frame = tf
+        else:
+            target_frame = 'gaze'
+            self._tf_man.pub_static_tf(pos=[self._x,self._y,self._z], point_name='gaze')
+            rospy.sleep(0.1)
+        while (not succ) and (tries <=10):
+            tries += 1
+            rospy.sleep(0.2)
+            xyz,_=self._tf_man.getTF(target_frame=target_frame, ref_frame=to_gaze)
+            eT = 0
+            if type(xyz) is not bool:
+                eT = np.arctan2(xyz[1],xyz[0])
+                succ = abs(eT) < THRESHOLD 
+            if succ:
+                eT = 0
+            base.tiny_move(velT = eT, MAX_VEL_THETA=1.1)
+        return True
 
 ######################################################
 def seg_res_tf(res):
@@ -234,10 +334,11 @@ class TF():
 
 # 3
 class OMNIBASE():
-    def __init__(self):
+    def __init__(self, cmd_vel_topic = '/cmd_vel'):  #'/hsrb/command_velocity'):
 
         self.timeout = 0.5
-
+        self._base_vel_pub = rospy.Publisher(
+            cmd_vel_topic , Twist, queue_size=10)
         self.navclient = actionlib.SimpleActionClient(
             '/navigate', NavigateAction)  # PUMAS NAV ACTION LIB
 
@@ -272,6 +373,36 @@ class OMNIBASE():
         # LOST            = 9
         action_state = self.navclient.get_state()
         return action_state
+
+    def _move_base_vel(self):
+        twist = Twist()
+        twist.linear.x = self.velX
+        twist.linear.y = self.velY
+        twist.angular.z = self.velT
+        self._base_vel_pub.publish(twist)
+
+    def _move_base_time(self):
+        start_time = rospy.Time.now().to_sec()
+        while rospy.Time.now().to_sec() - start_time < self.timeout:
+            self._move_base_vel()
+
+    def tiny_move(self, velX=0, velY=0, velT=0, std_time=0.5, MAX_VEL=0.03, MAX_VEL_THETA=0.5):
+        self.MAX_VEL = MAX_VEL
+        self.MAX_VEL_THETA = MAX_VEL_THETA
+        self.timeout = std_time
+        if abs(velX) > MAX_VEL:
+            self.velX = MAX_VEL * (velX / abs(velX))
+        else:
+            self.velX = velX
+        if abs(velY) > MAX_VEL:
+            self.velY = MAX_VEL * (velY / abs(velY))
+        else:
+            self.velY = velY
+        if abs(velT) > MAX_VEL_THETA:
+            self.velT = MAX_VEL_THETA * (velT / abs(velT))
+        else:
+            self.velT = velT
+        self._move_base_time()
 
 
 class RGB():
