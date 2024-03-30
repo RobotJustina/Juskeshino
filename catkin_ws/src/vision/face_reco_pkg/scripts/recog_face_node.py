@@ -5,6 +5,7 @@ import rospkg
 import cv2 as cv
 import face_recognition
 import os
+import numpy as np
 
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
@@ -109,6 +110,33 @@ def recognize_face(known_face_names ,known_face_encodings , cv_image, req):
         return response
     
 
+def handle_face_training(cv_image, req):
+    face_encodings = []
+    # Encontrar la cara en la imagen
+    face_locations = face_recognition.face_locations(cv_image)
+    face_encodings = face_recognition.face_encodings(cv_image, face_locations)
+    size = len(face_encodings)
+    # Agregar la codificacion de la cara a la lista
+    face_encodings.extend(face_encodings)
+    # Envia la respuesta del servicio
+    response = FaceTrainResponse()
+    # Guardar la imagen y las codificaciones de la cara en disco
+    if size == 1:
+        # Guardar la imagen J
+        print("if**")
+        cv.imwrite(os.path.expanduser('~/Juskeshino/catkin_ws/src/vision/face_reco_pkg/Train_faces/Image/'+req.name.data+'.jpg'), cv_image)
+        # Guardar las codificaciones de la cara en un archivo de texto
+        with open(os.path.expanduser('~/Juskeshino/catkin_ws/src/vision/face_reco_pkg/Train_faces/Text/'+req.name.data+'.txt'), 'a') as f:
+            np.savetxt(f, face_encodings[0])
+        response.success = True
+        response.message = "Cara entrenada con exito con el nombre " + req.name.data
+    else: 
+        print("else**")
+        response.success = False
+        response.message = "No hay un invitado o hay mas de uno en la escena. " 
+    return response
+    
+
 def callback_recognize_face(req):
     image_msg = rospy.wait_for_message(CAMERA_TOPIC_JUSTINA , Image)
     cv_image = image_convert(image_msg)
@@ -120,6 +148,14 @@ def callback_recognize_face(req):
     return resp
 
 
+def callback(req):
+    image_msg = rospy.wait_for_message(CAMERA_TOPIC_JUSTINA , Image)
+    cv_image = image_convert(image_msg)
+    #cv.imshow("Show image was called....", cv_image) #*****************
+    #cv.waitKey(0)
+    resp = handle_face_training(cv_image ,req)
+    return resp
+
 
 def main():
     global image_pub
@@ -128,6 +164,7 @@ def main():
 
     image_pub = rospy.Publisher('/face_recognition/image', Image, queue_size=10)
     rospy.Service('/vision/recognize_face/names', FaceRecog, callback_recognize_face)
+    rospy.Service('/vision/training_face/name', FaceTrain, callback)
     
     loop = rospy.Rate(30)
     while not rospy.is_shutdown():
