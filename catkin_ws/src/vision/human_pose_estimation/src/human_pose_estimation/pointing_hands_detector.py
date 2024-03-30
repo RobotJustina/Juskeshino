@@ -19,6 +19,9 @@ from vision_msgs.msg import HumanCoordinates
 from vision_msgs.msg import HumanCoordinatesArray
 from std_msgs.msg import Bool
 
+FRAME_ID_TAKESHI = "head_rgbd_sensor_rgb_frame"
+FRAME_ID_JUSTINA = "realsense_link"
+
 class PointingHandsDetector(smach.State):
     
     def __init__(self,timeout=9000.,tfBuffer=None):
@@ -52,10 +55,11 @@ class PointingHandsDetector(smach.State):
     def callback(self, data):
 
         people = data.coordinates_array
-        #print("how many people = ", data.number_of_people)
+        print("how many people = ", data.number_of_people)
 
         if people is None:
-            return
+            print("there are no people in front")
+            return False
 
         try:
 
@@ -115,11 +119,11 @@ class PointingHandsDetector(smach.State):
 
                 r_pose_array = PoseArray()
                 r_pose_array.header.stamp = rospy.Time.now()
-                r_pose_array.header.frame_id = "head_rgbd_sensor_rgb_frame"
+                r_pose_array.header.frame_id = FRAME_ID_JUSTINA
 
                 l_pose_array = PoseArray()
                 l_pose_array.header.stamp = rospy.Time.now()
-                l_pose_array.header.frame_id = "head_rgbd_sensor_rgb_frame"
+                l_pose_array.header.frame_id = FRAME_ID_JUSTINA
                                               
                 rt = 1
                 lt = 1

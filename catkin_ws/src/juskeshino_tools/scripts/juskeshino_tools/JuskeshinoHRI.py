@@ -41,7 +41,7 @@ class JuskeshinoHRI:
         return JuskeshinoHRI.legsFound 
 
     def callbackLegsFound(msg):
-        print("JuskeshinoHRI.->Legs found signal received!")
+        #print("JuskeshinoHRI.->Legs found signal received!")
         JuskeshinoHRI.legsFound = msg
 
     def callbackRecognizedSpeech(msg):

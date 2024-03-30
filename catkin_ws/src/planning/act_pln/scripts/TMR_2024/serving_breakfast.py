@@ -41,6 +41,9 @@ def main():
 
     rospack = rospkg.RosPack()
     locations_default = rospack.get_path("config_files") + "/known_locations_objects.yaml"
+
+    print("lalalalallaa")
+    print(locations_default)
     #locations_default = rospack.get_path("config_files") + "/known_locations_simul.yaml"
     locations_file = rospy.get_param("~locations", locations_default)
 

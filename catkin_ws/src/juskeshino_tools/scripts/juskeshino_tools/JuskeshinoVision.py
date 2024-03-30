@@ -14,12 +14,14 @@ class JuskeshinoVision:
         JuskeshinoVision.cltDetectRecogObject       = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_object",    RecognizeObject     )
         JuskeshinoVision.cltGetObjectPose           = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose",           RecognizeObject     ) 
         JuskeshinoVision.cltGetPointsAbovePlane     = rospy.ServiceProxy("/vision/get_points_above_plane",                  PreprocessPointCloud)
-        
-        #JuskeshinoVision.pubHumanPoseEnable         = rospy.Publisher("/vision/human_pose_estimation/enable", Bool, queue_size=1)
+        JuskeshinoVision.cltFindPersons             = rospy.ServiceProxy("/vision/recognize_face/names",                    FaceRecog           )
+        JuskeshinoVision.cltTrainPersons            = rospy.ServiceProxy("/vision/training_face/name",                      FaceTrain           )
+
         JuskeshinoVision.pubHumanPoseEnable         = rospy.Publisher("/vision/human_pose/enable", Bool, queue_size=1)
 
         rospy.Subscriber("/human_detector_bool", Bool ,JuskeshinoVision.callbackHumanBool)
         rospy.Subscriber("/vision/human_pose_estimation/pointing_hand/status", Bool ,JuskeshinoVision.callbackPointingHand)
+        
         JuskeshinoVision.pointing_hand  = Bool()
         JuskeshinoVision.human_detector = Bool()
 
@@ -84,3 +86,32 @@ class JuskeshinoVision:
         except:
             print("JuskeshinoVision.->Cannot detect and recognize object '" + name + "'")
             return [None, None]
+        
+
+    def enableRecogFacesName(flag):
+        req = FaceRecogRequest()
+        req.is_face_recognition_enabled = flag
+        resp = JuskeshinoVision.cltFindPersons.call(req)
+
+        if (resp):
+            for name in resp.names:
+                print(name)
+
+            name_recog =resp.names
+            return name_recog
+    
+        else:
+            print("vacio")
+            vector_vacio = resp.names
+            return vector_vacio
+    
+    
+    def trainingPerson(person):
+        print("JuskeshinoVision.->Train person: ", person)
+        req = FaceTrainRequest()
+        req.name.data = person
+        resp = JuskeshinoVision.cltTrainPersons.call(req)
+        if (resp):
+            print("Success ", resp.success)
+            print(resp.message)
+    

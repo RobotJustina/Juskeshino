@@ -1,0 +1,31 @@
+<launch>
+   <!--  VISION-->
+  <node name="human_detector" pkg="human_pose_estimation" type="human_detector"/>
+  <node name="human_pose_detector" pkg="human_pose_estimation" type="streaming_keypoints" output="screen">
+    <param name="point_cloud_topic" value="/camera/depth_registered/points"/>
+  </node>
+
+  <nodo name="pointing_hands_detector" pkg="human_pose_estimation" type="pointing_hands_detector.py"/>
+
+  <!--  HRI-->
+  <node name="speech_recog" pkg="sprec_pocketsphinx" type="asr.py" output="screen">
+    <remap from="jsgf_audio" to="sphinx_audio" />
+    <param name="gram_file" value="$(find sprec_pocketsphinx)/vocab/gpsr.gram"/>
+    <param name="dict_file" value="$(find sprec_pocketsphinx)/vocab/gpsr.dic"/>
+    <param name="grammar_name" value="gpsr"/>
+    <param name="rule_name" value="carry_my_luggage_commands"/>
+  </node>
+  <node name="audio_control" pkg="sprec_pocketsphinx" type="send_audio.py" output="screen">
+    <param name="input" value=":default"/>
+  </node>
+
+  <node name="leg_finder" pkg="leg_finder" type="leg_finder_node" output="screen">
+    <param name="scan_downsampling" value="1"/>
+    <param name="laser_scan_frame" value="laser_link"/>
+    <param name="laser_scan_topic" value="/hardware/scan"/>
+    <param name="show_hypothesis" value="False"/>
+  </node>
+
+
+
+</launch>

@@ -30,10 +30,10 @@
    
   <node name="object_pose" pkg="obj_segmentation_and_pose" type="obj_pose_node.py" output="screen"/>
   
-  <node name="human_detector" pkg="human_pose_estimation" type="human_detector"/>
-  <node name="human_pose_detector" pkg="human_pose_estimation" type="streaming_keypoints" output="screen">
+  <!--node name="human_detector" pkg="human_pose_estimation" type="human_detector"/-->
+  <!--node name="human_pose_detector" pkg="human_pose_estimation" type="streaming_keypoints" output="screen">
     <param name="point_cloud_topic" value="/camera/depth_registered/points"/>
-  </node>
+  </node-->
 
   <!--nodo name="pointing_hands_detector" pkg="human_pose_estimation" type="pointing_hands_detector.py"/-->
 

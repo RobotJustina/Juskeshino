@@ -54,7 +54,7 @@
   <include file="$(find surge_et_ambula)/launch/justina/manipulation.launch"/>
 
   
-  <node name="act_pln_grip" pkg="act_pln" type="act_pln_grip.py"/>
+  <node name="act_pln_grip" pkg="act_pln" type="act_pln_grip_for_GUI.py"/>
   
 
 
@@ -64,4 +64,7 @@
   </include> 
   
   <include file="$(find surge_et_ambula)/launch/justina/hri.launch"/>
+
+  <include file="$(find surge_et_ambula)/launch/justina/TMR_2024/carry_my_luggage.launch"/>
+
 </launch>

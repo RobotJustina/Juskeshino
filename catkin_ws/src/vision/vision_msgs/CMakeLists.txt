@@ -31,6 +31,8 @@ add_message_files(
 add_service_files(
   FILES
   
+  FaceRecog.srv
+  FaceTrain.srv
   FindLines.srv
   FindPlanes.srv
   HumanPoseEstimatorResult.srv
