@@ -42,12 +42,6 @@ def face_rec(cv_image, known_face_encodings, known_face_names):
         cv.imshow("Image Window", cv_image)
         cv.waitKey(0)
 
-        try:
-            image_pub.publish(bridge.cv2_to_imgmsg(cv_image, 'bgr8'))
-        except CvBridgeError as e:
-            print(e)
-            return
-
 
 def load_known_faces():
         rospack = rospkg.RosPack()
@@ -162,7 +156,6 @@ def main():
     print("Face recognice node.............ʕ•ᴥ•ʔ")
     rospy.init_node('face_recognition_node')
 
-    image_pub = rospy.Publisher('/face_recognition/image', Image, queue_size=10)
     rospy.Service('/vision/recognize_face/names', FaceRecog, callback_recognize_face)
     rospy.Service('/vision/training_face/name', FaceTrain, callback)
     
