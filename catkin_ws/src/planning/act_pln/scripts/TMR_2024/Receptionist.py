@@ -14,8 +14,8 @@ from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 
 
 def main():
-    print("INITIALIZING GPSR 2024 TEST NODE BY ITZEL.........ฅ^•ﻌ•^ฅ")
-    rospy.init_node("gpsr_test")
+    print("INITIALIZING Receptionist 2024 TEST NODE BY ITZEL..........<(˶ᵔᵕᵔ˶)>")
+    rospy.init_node("Receptionist_test")
     rate = rospy.Rate(10)
 
     # Se subcribe a los servicios y topicos necesarios para manipulacion, navegacion,vision, etc...
@@ -27,8 +27,8 @@ def main():
     JuskeshinoManipulation.setNodeHandle()
     JuskeshinoKnowledge.setNodeHandle()
 
-    print("ACT-PLN.-> GPSR_test 2024")    
-    JuskeshinoHRI.say("I am ready for the GPSR test")
+    print("ACT-PLN.-> Receptionist_test 2024")    
+    JuskeshinoHRI.say("I am ready for the Receptionist test")
 
 
 

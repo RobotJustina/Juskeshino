@@ -12,18 +12,16 @@ from cv_bridge import CvBridge, CvBridgeError
 from vision_msgs.srv import *
 from vision_msgs.msg import *
 
-
 CAMERA_TOPIC_JUSTINA = '/camera/depth_registered/rgb/image_raw'
 
+
+
 def face_rec(cv_image, known_face_encodings, known_face_names):
-        global image_pub
-        
         rgb_image = cv.cvtColor(cv_image, cv.COLOR_BGR2RGB)
         face_locations = face_recognition.face_locations(rgb_image)
         face_encodings = face_recognition.face_encodings(rgb_image, face_locations)
 
         face_names = []
-        bridge = CvBridge()
         for face_encoding in face_encodings:
             matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
             print(matches)
@@ -67,7 +65,6 @@ def load_known_faces():
 def image_convert(ros_image):  
     bridge = CvBridge()
     try:
-        # Convertir la imagen a formato OpenCV
         cv_image = bridge.imgmsg_to_cv2(ros_image , 'bgr8')
         return cv_image
     except:
@@ -131,33 +128,28 @@ def handle_face_training(cv_image, req):
     return response
     
 
-def callback_recognize_face(req):
+def callbackRecognizeFace(req):
     image_msg = rospy.wait_for_message(CAMERA_TOPIC_JUSTINA , Image)
     cv_image = image_convert(image_msg)
-    #cv.imshow("Show image was called....", cv_image) #*****************
-    #cv.waitKey(0)
     face_encodings, face_names = load_known_faces()
     resp = recognize_face(face_names ,face_encodings , cv_image, req)
     face_rec(cv_image, face_encodings, face_names)
     return resp
 
 
-def callback(req):
+def callbackTrainingFace(req):
     image_msg = rospy.wait_for_message(CAMERA_TOPIC_JUSTINA , Image)
     cv_image = image_convert(image_msg)
-    #cv.imshow("Show image was called....", cv_image) #*****************
-    #cv.waitKey(0)
     resp = handle_face_training(cv_image ,req)
     return resp
 
 
 def main():
-    global image_pub
-    print("Face recognice node.............ʕ•ᴥ•ʔ")
+    print("INITIALIZING FACE RECOGNITION AND TRAIN NODE.......ʕ•ᴥ•ʔ")
     rospy.init_node('face_recognition_node')
 
-    rospy.Service('/vision/recognize_face/names', FaceRecog, callback_recognize_face)
-    rospy.Service('/vision/training_face/name', FaceTrain, callback)
+    rospy.Service('/vision/face_reco_pkg/recognize_face/names', FaceRecog, callbackRecognizeFace)
+    rospy.Service('/vision/face_reco_pkg/training_face/name'  , FaceTrain,  callbackTrainingFace)
     
     loop = rospy.Rate(30)
     while not rospy.is_shutdown():

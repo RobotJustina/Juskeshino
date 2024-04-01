@@ -43,7 +43,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "human_detector");
   ros::NodeHandle n;
   ros::Subscriber sub = n.subscribe("vision/human_pose/human_pose_array", 1000, keyPointsCallback);
-  pub = n.advertise<std_msgs::Bool>("/human_detector_bool", 1);
+  pub = n.advertise<std_msgs::Bool>("/vision/human_pose_estimation/human_detector_bool", 1);
   ros::spin();
 
   while (ros::ok())

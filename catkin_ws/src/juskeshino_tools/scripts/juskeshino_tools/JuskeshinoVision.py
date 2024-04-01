@@ -14,12 +14,12 @@ class JuskeshinoVision:
         JuskeshinoVision.cltDetectRecogObject       = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_object",    RecognizeObject     )
         JuskeshinoVision.cltGetObjectPose           = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose",           RecognizeObject     ) 
         JuskeshinoVision.cltGetPointsAbovePlane     = rospy.ServiceProxy("/vision/get_points_above_plane",                  PreprocessPointCloud)
-        JuskeshinoVision.cltFindPersons             = rospy.ServiceProxy("/vision/recognize_face/names",                    FaceRecog           )
-        JuskeshinoVision.cltTrainPersons            = rospy.ServiceProxy("/vision/training_face/name",                      FaceTrain           )
+        JuskeshinoVision.cltFindPersons             = rospy.ServiceProxy('/vision/face_reco_pkg/recognize_face/names',      FaceRecog           )
+        JuskeshinoVision.cltTrainPersons            = rospy.ServiceProxy("/vision/face_reco_pkg/training_face/name",        FaceTrain           )
 
         JuskeshinoVision.pubHumanPoseEnable         = rospy.Publisher("/vision/human_pose/enable", Bool, queue_size=1)
 
-        rospy.Subscriber("/human_detector_bool", Bool ,JuskeshinoVision.callbackHumanBool)
+        rospy.Subscriber("/vision/human_pose_estimation/human_detector_bool", Bool ,JuskeshinoVision.callbackHumanBool)
         rospy.Subscriber("/vision/human_pose_estimation/pointing_hand/status", Bool ,JuskeshinoVision.callbackPointingHand)
         
         JuskeshinoVision.pointing_hand  = Bool()
@@ -101,7 +101,7 @@ class JuskeshinoVision:
             return name_recog
     
         else:
-            print("vacio")
+            print("uskeshinoVision.->vacio")
             vector_vacio = resp.names
             return vector_vacio
     

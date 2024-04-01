@@ -149,14 +149,14 @@ class JuskeshinoSimpleTasks:
 
         if position_obj.y > 0.26:
             dist_move = position_obj.y - left_threshold_manipulation
-            print("dist move izq", dist_move)
+            #print("dist move izq", dist_move)
             JuskeshinoNavigation.moveDistAngle(0, np.radians(90) , 5)
             JuskeshinoNavigation.moveDistAngle(dist_move, 0 , 5)
             JuskeshinoNavigation.moveDistAngle(0, np.radians(-90) , 5)
 
         if position_obj.y < 0.05:
             dist_move = abs(position_obj.y - 0.05)
-            print("dist move der", dist_move)
+            #print("dist move der", dist_move)
             JuskeshinoNavigation.moveDistAngle(0, np.radians(-90) , 5)
             JuskeshinoNavigation.moveDistAngle(dist_move, 0 , 5)
             JuskeshinoNavigation.moveDistAngle(0, np.radians(90) , 5)
@@ -170,22 +170,22 @@ class JuskeshinoSimpleTasks:
             JuskeshinoHardware.moveHead(-0.5,-1, 5) #move head to the right 
             time.sleep(2)
             [obj, img] = JuskeshinoVision.detectAndRecognizeObject(name_obj)
-            print("Primer intento")
+            print("JuskeshinoSimpleTask.->Primer intento")
 
             if obj == None: # si no reconocio el objeto
                 JuskeshinoHardware.moveHead(0.5,-1, 5) #move head to the left
                 time.sleep(2)
                 [obj, img] = JuskeshinoVision.detectAndRecognizeObject(name_obj)
-                print("Segundo intento")
+                print("JuskeshinoSimpleTask.->Segundo intento")
 
                 if obj == None: # si no reconocio el objeto
-                    print("NO se encontro el objeto")
+                    print("JuskeshinoSimpleTask.->NO se encontro el objeto")
                     return None
                 
             return [obj, img]
 
         else:
-            print("Objeto detectado ")
+            print("JuskeshinoSimpleTask.->Objeto detectado ")
             return [obj, img]
 
 
