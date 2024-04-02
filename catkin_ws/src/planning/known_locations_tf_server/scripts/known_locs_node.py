@@ -15,6 +15,7 @@ from geometry_msgs.msg import TransformStamped
 from copy import deepcopy
 #from utils.know_utils import *
 global path 
+
 #path = '/home/takeshi/Codes/known_locations.txt'
 def write_im(x=0,y=0,yaw=0,name=''):##########################
 
@@ -251,6 +252,7 @@ def processFeedback(feedback):
 
                  
 def callback2(req):
+    
     resp = Locations_serverResponse()
     #print (resp)
     try:
@@ -287,15 +289,15 @@ def callback2(req):
         return resp
     
 
-global tfBuffer,tf_static_broadcaster ,known_locs , rospack
+global tfBuffer, tf_static_broadcaster, known_locs, rospack, verbose
 rospy.init_node('locs_server') 
 tfBuffer = tf2_ros.Buffer()
 listener2 = tf2_ros.TransformListener(tfBuffer)
 broadcaster = tf2_ros.TransformBroadcaster()
 tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 rospack = rospkg.RosPack()
-
-
+verbose = False
+print(type(verbose))
 #df=pd.read_csv('known_locations.txt')
 
 #df=pd.read_csv(path)##RELATIVIZE PATH?
@@ -311,12 +313,15 @@ if len(df)!=0:
         quat=df[['qx','qy','qz','qw']].iloc[i].values
         trans[-1]=0
         t=write_tf(trans,quat,df['child_id_frame'].iloc[i])
-        print (t,i)
+        
+        if verbose:
+            print (t,i)
         tf_static_broadcaster.sendTransform(t)
 
         rospy.sleep(0.3)
         res=write_im(trans[0],trans[1],tf.transformations.euler_from_quaternion(quat)[2],df['child_id_frame'].iloc[i])
-        print (res)
+        if verbose:
+            print (res)
 
 
 

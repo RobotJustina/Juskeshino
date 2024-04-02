@@ -38,6 +38,7 @@ from juskeshino_tools.JuskeshinoHardware import JuskeshinoHardware
 import time
 from receptionist_knowledge import *
 import trajectory_msgs.msg  # HAND point
+import pandas as pd
 
 
 class Talker():
