@@ -7,8 +7,8 @@ from geometry_msgs.msg import TransformStamped, Quaternion
 from tf.transformations import quaternion_from_euler
 
 import tf2_ros
-x_ofs = 0.1
-y_ofs = 5.0
+x_ofs = 0.3
+y_ofs = 4.6
 
 class RECEPTIONIST:
     def __init__(self, knowledge_file='/receptionist_knowledge.yaml'):
@@ -233,6 +233,7 @@ class RECEPTIONIST:
             seat_transform.child_frame_id = place
             seat_transform.transform.translation.x = loc[0]
             seat_transform.transform.translation.y = loc[1]
+            #seat_transform.transform.translation.z = 0.0
             seat_transform.transform.rotation = Quaternion(*quaternion_from_euler(0,0,loc[2]))
             self.br.sendTransform(seat_transform)
 
@@ -240,7 +241,7 @@ class RECEPTIONIST:
             face_seat_transform.header.frame_id = place
             face_seat_transform.child_frame_id = place.replace('_', '_face')
             face_seat_transform.transform.translation.x = 0.5
-            face_seat_transform.transform.translation.z = 1.0
+            #face_seat_transform.transform.translation.z = 1.0
             face_seat_transform.transform.rotation.w = 1
             self.br.sendTransform(face_seat_transform)
         return True

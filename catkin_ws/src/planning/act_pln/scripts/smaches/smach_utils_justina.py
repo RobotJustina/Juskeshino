@@ -478,14 +478,15 @@ def places_2_tf():
     places, locs = party.get_places_location()
     for place, loc in zip(places, locs):
         print(place, loc)
-        pos = [loc[0], loc[1], 0.85]
+        pos = [loc[0], loc[1], 0.0] # TODO: Z was 0.85 why?
         rot = tf.transformations.quaternion_from_euler(0.0, 0.0, loc[2])
         tf_man.pub_static_tf(pos=pos, rot=rot, point_name=place)
         rospy.sleep(0.6)
         tf_face = place.replace('_', '_face')
-        tf_man.pub_static_tf(pos=[1.0, 0, 0], rot=rot, point_name=tf_face, ref=place)
+        tf_man.pub_static_tf(pos=[0.6, 0, 0.85], rot=rot, point_name=tf_face, ref=place)
         rospy.sleep(0.6)
 #------------------------------------------------------
+        
 def train_face(image, name):
     """writes request message and requests trainface service
             /face_recog pkg"""
