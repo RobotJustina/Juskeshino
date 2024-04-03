@@ -187,6 +187,58 @@ class Head:  # known as Gaze on Takeshi grasp_utils.py
                 eT = 0
             base.tiny_move(velT = eT, MAX_VEL_THETA=1.1)
         return True
+    
+    def publish_tfs(self):
+        file_name = rospy.get_param("file_name", "/known_locations.yaml")
+        file_path = rospkg.RosPack().get_path('config_files')  + file_name
+        print(file_path)
+        with open(file_path, 'r') as file:
+            con = yaml.safe_load(file)
+
+        values=[]
+        locations=[]
+        for c in con:
+            locations.append(c)
+
+            for i in range(len(con[c])):
+                values.append(list(con[c][i].values())[0])
+
+        data = np.asarray(values).reshape((int(len(values)/7),7))    #x , y ,theta  ,quat   since z always 0
+        df = pd.DataFrame(data)
+        df.columns=['x', 'y', 'th', 'qx', 'qy', 'qz', 'qw']
+        df['child_id_frame'] = locations
+        print (f'known locs server available using {file_name}')
+        print(locations)
+
+        if len(df)!=0:
+            for i in range(len(df)):
+                name = locations[i]
+                trans = df[['x','y','th']].iloc[i].values
+                quat = df[['qx','qy','qz','qw']].iloc[i].values
+                t = self.write_tf(trans, quat, name)
+
+                #self._tf_man.pub_static_tf(pos=[x, y, z], point_name='gaze')
+                self._tf_man._tf_static_broad.sendTransform(t)
+
+
+    def write_tf(self, pose, q, child_frame , parent_frame='map'):
+        if child_frame == "kitchen_table_search":
+            z = 1.0
+        else:
+            z = 0
+
+        t = TransformStamped()
+        t.header.stamp = rospy.Time(0)
+        t.header.frame_id = parent_frame
+        t.child_frame_id = child_frame
+        t.transform.translation.x = pose[0]
+        t.transform.translation.y = pose[1]
+        t.transform.translation.z = z
+        t.transform.rotation.x = q[0]
+        t.transform.rotation.y = q[1]
+        t.transform.rotation.z = q[2]
+        t.transform.rotation.w = q[3]
+        return t
 
 ######################################################
 def seg_res_tf(res):
@@ -261,6 +313,8 @@ class TF_MANAGER():
             return False
 
     def getTF(self, target_frame='', ref_frame='map'):
+        print(">>>>>>>>>>>>>", target_frame)
+        print(type(target_frame))
         try:
             tf = self._tfbuff.lookup_transform(
                 ref_frame, target_frame, rospy.Time(0))

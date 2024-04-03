@@ -3,4 +3,5 @@
     <node pkg="face_recog"  name="face_recog" type="face_recog_server.py"/>
     <node pkg="hmm_navigation"  name="pumas_nav_actionserver" type="pumas_nav_actionserver.py"/>
     <includenode pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"/>
+    <include file="$(find usb_cam)/launch/usb_cam-test.launch"/>
 </launch>

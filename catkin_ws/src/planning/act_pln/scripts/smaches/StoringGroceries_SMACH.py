@@ -59,6 +59,8 @@ class Initial(smach.State):
         head.set_named_target('neutral')
         rospy.sleep(0.8)
 
+        head.publish_tfs()
+
         return 'succ'
 
 
@@ -142,20 +144,25 @@ class Scan_table(smach.State):
             rospy.logwarn('--> STATE <: Scanning table')
             head.set_joint_values([0.0, -0.5])
             voice.talk('Scanning table')
-            return 'failed'  # TODO: Remove
+            head.turn_base_gaze(tf='kitchen_table_search', to_gaze='base_link')
+            rospy.sleep(1.0)
         
         if self.tries == 2:
-            head.set_joint_values([0.2, -0.7])
+            print("------------ Gaze door")  
+            rospy.sleep(1.0)
+            head.turn_base_gaze(tf='door', to_gaze='base_link') 
+            #head.set_joint_values([0.2, -0.7])
         
         if self.tries >= 3:
             self.tries = 0
             return 'succ'
+        
         global objs
         rospy.sleep(3.0)
         img_msg = bridge.cv2_to_imgmsg(rgbd.get_image())
         req = classify_client.request_class()
         req.in_.image_msgs.append(img_msg)
-        res = classify_client(req)
+        res = classify_client(req)  # TODO: repair
         objects = detect_object_yolo('all', res)
         # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         if len(objects) != 0:
@@ -672,7 +679,7 @@ if __name__ == '__main__':
                                transitions={'failed':'END', 'succ':'SCAN_TABLE', 'tries':'GOTO_PICKUP', 'pickup':'PICKUP'})
 
         smach.StateMachine.add("SCAN_TABLE", Scan_table(),
-                               transitions={'failed':'SCAN_TABLE', 'succ':'GOTO_PICKUP', 'tries':'GOTO_PICKUP'})
+                               transitions={'failed':'END', 'succ':'GOTO_PICKUP', 'tries':'GOTO_PICKUP'})
                                #transitions={'failed':'SCAN_TABLE', 'succ':'GOTO_PICKUP', 'tries':'GOTO_PICKUP'})
 
         smach.StateMachine.add("GOTO_SHELF", Goto_shelf(),
