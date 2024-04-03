@@ -6,6 +6,8 @@
   </node>
 
   <nodo name="pointing_hands_detector" pkg="human_pose_estimation" type="pointing_hands_detector.py"/>
+  
+  <!--nodo name="face_recognition_node" pkg="face_reco_pkg" type="recog_face_node.py"/-->
 
   <!--  HRI-->
   <node name="speech_recog" pkg="sprec_pocketsphinx" type="asr.py" output="screen">

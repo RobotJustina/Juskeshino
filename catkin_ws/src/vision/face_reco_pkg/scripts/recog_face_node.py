@@ -37,8 +37,8 @@ def face_rec(cv_image, known_face_encodings, known_face_names):
             cv.rectangle(cv_image, (left, top), (right, bottom), (0, 255, 0), 2)
             cv.putText(cv_image, name, (left, top - 10), cv.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
 
-        cv.imshow("Image Window", cv_image)
-        cv.waitKey(0)
+        #cv.imshow("Image Window", cv_image)
+        #cv.waitKey(0)
 
 
 def load_known_faces():
@@ -48,6 +48,7 @@ def load_known_faces():
         known_face_names = []
 
         for filename in os.listdir(Image_path):
+            
             name = os.path.splitext(filename)[0]                        #
             print ("name is:______", name)
             image_path = os.path.join(Image_path , filename)            #

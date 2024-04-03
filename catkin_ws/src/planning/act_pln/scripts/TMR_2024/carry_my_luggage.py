@@ -17,7 +17,7 @@ TAKE_OBJECT = [0.26, 0.22, -0.56, 1.2, 0, 0.44, 0.3 ]
 
 
 def main():
-    print("INITIALIZING CARRY MY LUGGAGE 2024 TEST NODE BY ITZEL.......ᐠ( ᐢ ᵕ ᐢ )ᐟ")
+    print("INITIALIZING CARRY MY LUGGAGE 2024 TEST NODE.......ᐠ( ᐢ ᵕ ᐢ )ᐟ")
     rospy.init_node("carry_my_luggage_test")
     rate = rospy.Rate(10)
 
@@ -39,6 +39,7 @@ def main():
     voice = ""
     JuskeshinoHRI.say("Please point at the bag that you want me to carry.")
     while not rospy.is_shutdown():
+    
         JuskeshinoHRI.say("Tell me, Justina yes, when you are pointing at the bag")
         time.sleep(1)
         voice = JuskeshinoHRI.waitForNewSentence(10)
@@ -51,9 +52,12 @@ def main():
     time.sleep(2)
     print("CML-PLN.->Pointing hand")
     p_h = JuskeshinoVision.pointingHand()
+    print("p_h:_", p_h)
     p_h_side = "left"
     print("CML-PLN.-> enableHumanPose was disabled")
-    JuskeshinoVision.enableHumanPose(True)
+    JuskeshinoVision.enableHumanPose(False)
+
+    """
     # Detectar en que lado del operador esta la bolsa
     if p_h:
         if p_h == "left":
@@ -103,6 +107,7 @@ def main():
     
     while not rospy.is_shutdown():
         JuskeshinoHRI.say("Say follow me when you are ready")
+        print("Say follow me when you are ready............")
         time.sleep(1)
         voice = JuskeshinoHRI.waitForNewSentence(10)
         print("voice: ", voice)
@@ -135,6 +140,7 @@ def main():
     JuskeshinoHRI.enableHumanFollower(False)
     print("CML-PLN.-> Find legs , enableLegFinder was disabled")
     JuskeshinoHRI.enableLegFinder(False)
+    
     
     # entregar bolsa
     JuskeshinoHRI.say("Please take the bag")
@@ -176,6 +182,7 @@ def main():
     JuskeshinoHRI.enableHumanFollower(False)
     print("CML-PLN.-> Find legs , enableLegFinder was disabled")
     JuskeshinoHRI.enableLegFinder(False)
+    """
     JuskeshinoHRI.say("I finished the test")
 
 

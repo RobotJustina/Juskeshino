@@ -8,8 +8,17 @@ kitchen:
   - 2.08
   - 0.0
 
+kitchen_2:
+  - 8.52
+  - 2.37
+  - 0.28
+
 breakfast_table:
   - 5.7
   - 2.12
   - 1.57
 
+backyard:
+  - 9.99
+  - 2.36
+  - 0.23

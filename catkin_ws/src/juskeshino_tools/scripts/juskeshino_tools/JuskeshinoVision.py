@@ -101,7 +101,7 @@ class JuskeshinoVision:
             return name_recog
     
         else:
-            print("uskeshinoVision.->vacio")
+            print("JuskeshinoVision.->vacio")
             vector_vacio = resp.names
             return vector_vacio
     

@@ -149,17 +149,13 @@ class JuskeshinoSimpleTasks:
 
         if position_obj.y > 0.26:
             dist_move = position_obj.y - left_threshold_manipulation
-            #print("dist move izq", dist_move)
-            JuskeshinoNavigation.moveDistAngle(0, np.radians(90) , 5)
-            JuskeshinoNavigation.moveDistAngle(dist_move, 0 , 5)
-            JuskeshinoNavigation.moveDistAngle(0, np.radians(-90) , 5)
+            print("dist move izq", dist_move)
+            JuskeshinoNavigation.moveLateral(dist_move , 10)
 
         if position_obj.y < 0.05:
-            dist_move = abs(position_obj.y - 0.05)
-            #print("dist move der", dist_move)
-            JuskeshinoNavigation.moveDistAngle(0, np.radians(-90) , 5)
-            JuskeshinoNavigation.moveDistAngle(dist_move, 0 , 5)
-            JuskeshinoNavigation.moveDistAngle(0, np.radians(90) , 5)
+            dist_move = position_obj.y - 0.05
+            print("dist move der", dist_move)
+            JuskeshinoNavigation.moveLateral(dist_move , 10)
 
 
     def object_search(name_obj):

@@ -11,7 +11,7 @@ from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
 from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
 from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 
-
+HOME              = [0,0,0,0,0,0,0]
 PREPARE           = [-0.69, 0.2, 0.0, 1.55, 0.0, 1.16, 0.0]
 LEAVE_CEREAL      = [0.2, 0.18, -0.03, 1.45, 0, 0, 0]
 LEAVE_MILK        = [0.2, -0.12, -0.03, 1.45, 0, 0, 0]
@@ -42,7 +42,6 @@ def main():
     rospack = rospkg.RosPack()
     locations_default = rospack.get_path("config_files") + "/known_locations_objects.yaml"
 
-    print("lalalalallaa")
     print(locations_default)
     #locations_default = rospack.get_path("config_files") + "/known_locations_simul.yaml"
     locations_file = rospy.get_param("~locations", locations_default)
@@ -82,22 +81,26 @@ def main():
     count = 0
     while count < 3: # Revisa pila
 
-        # Ir a locacion de ultimo objeto en la pila
+        # Ir a locacion de ingredientes
         JuskeshinoHRI.say("I'm going to the kitchen position.")
 
-        if not JuskeshinoNavigation.getClose("kitchen", 100):
+        if not JuskeshinoNavigation.getClose("backyard", 150):
             print("ACT-PLN.->Cannot get close to the kitchen position")
 
         # Alinearse con mueble
-        if not JuskeshinoHardware.moveHead(0,-1, 5):
-            print("ACT-PLN.->Cannot move head")
+        while not rospy.is_shutdown():
+            if not JuskeshinoHardware.moveHead(0,-1, 5):
+                print("ACT-PLN.->Cannot move head")
+            else: break
+
         if not JuskeshinoSimpleTasks.alignWithTable():
             print("ACT-PLN.->Cannot align with table")
 
         # Busqueda y reconocimiento del objeto
         print("ACT-PLN.->Trying to detect object: ")
         JuskeshinoHRI.say("I'm trying to detect the object")
-            
+        
+
         [obj, img] = JuskeshinoSimpleTasks.object_search("milk")
         if obj == None: 
             print("Object not found...........")
@@ -107,10 +110,13 @@ def main():
             JuskeshinoHRI.say("I found the object, I'm going to try to grasp them")
             # Colocandose en posicion de agarre
             JuskeshinoSimpleTasks.handling_location(obj)
+            while not rospy.is_shutdown():
+                if not JuskeshinoHardware.moveHead(0,-1, 5):
+                    print("ACT-PLN.->Cannot move head")
+                else: break
             time.sleep(2)
-            [obj, img] = JuskeshinoSimpleTasks.object_search("milk")
-            print("POSITION OBJECT......................", obj.pose.position)
-        
+            [obj, img] = JuskeshinoVision.detectAndRecognizeObject("milk")
+            print("ACT-PLN.->Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))
             # Tomar objeto
             print("ACT-PLN.->Sending goal traj to prepare")
             JuskeshinoHardware.moveLeftArmWithTrajectory([-0.66, 0.36, -0.04, 1.79, 0, 1.02, 0], 10)
@@ -138,60 +144,58 @@ def main():
 
             print("ACT-PLN.->Moving arm to prepare")
             JuskeshinoHardware.moveLeftArmWithTrajectory([-0.69, 0.2, 0, 1.55, 0, 1.16, 0], 10)  # prepare
-
-        """
     
-    # Ir a la mesa
-    actual_obj = "BOX" 
+            actual_obj = "BOX" 
+            # Ir a la mesa del desayuno
+        
+        print("ACT-PLN.->Getting close to breakfast table")
+        JuskeshinoHRI.say("I'm going to the breakfast table")
 
+        if not JuskeshinoNavigation.getClose("kitchen_2", 100):
+            print("ACT-PLN.->Cannot get close to desk position")
+    
+        if not JuskeshinoHardware.moveHead(0,-1, 5):
+            print("ACT-PLN.->Cannot move head")
+
+        print("ACT-PLN.->Aligning with table")
+        JuskeshinoSimpleTasks.alignWithTable()
+    
+        # Colocar el objeto sobre la mesa
+        print("ACT-PLN.->Moving base backwards")
+        JuskeshinoNavigation.moveDist(-0.3, 10)
+
+        print("ACT-PLN.->Moving left arm to deliver position")
+        JuskeshinoHRI.say("I'm going to leave the object")
+        if actual_obj == "BOX":
+            JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_CEREAL , 10)
+
+        if actual_obj == "PRISM":
+            JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_MILK , 10)  
+
+        if actual_obj == "BOWL":
+            JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_BOWL , 10) 
+
+        print("ACT-PLN.->Open gripper")
+        JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
+
+        print("ACT-PLN.->Moving base backwards")
+        JuskeshinoHRI.say("I have placed the object on the table")
+        JuskeshinoNavigation.moveDist(0.3, 7)
+        time.sleep(1)
+        # Moverse para atras
+        print("ACT-PLN.->Moving base backwards")
+        JuskeshinoNavigation.moveDist(-0.3, 7)
+        time.sleep(1)
+        print("ACT-PLN.->Moving left arm to prepare")
+        JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE , 10)
+        JuskeshinoHardware.moveLeftArmWithTrajectory(HOME , 10)
+    
+    
+    # Se prepara para la segunda parte de la prueba
     print("ACT-PLN.->Getting close to breakfast table")
     JuskeshinoHRI.say("I'm going to the breakfast table")
 
-    if not JuskeshinoNavigation.getClose("breakfast_table", 100):
-        print("ACT-PLN.->Cannot get close to desk position")
-    
-    if not JuskeshinoHardware.moveHead(0,-1, 5):
-        print("ACT-PLN.->Cannot move head")
-
-    print("ACT-PLN.->Aligning with table")
-    JuskeshinoSimpleTasks.alignWithTable()
-    
-    # Colocar el objeto sobre la mesa
-    print("ACT-PLN.->Moving base backwards")
-    JuskeshinoHRI.say("I'have grasped the object")
-    JuskeshinoNavigation.moveDist(-0.3, 10)
-
-    print("ACT-PLN.->Moving left arm to deliver position")
-    JuskeshinoHRI.say("I'm going to leave the object")
-    if actual_obj == "BOX":
-        JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_CEREAL , 10)
-
-    if actual_obj == "PRISM":
-        JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_MILK , 10)  
-
-    if actual_obj == "BOWL":
-        JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_BOWL , 10) 
-
-    print("ACT-PLN.->Open gripper")
-    JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
-
-    print("ACT-PLN.->Moving base backwards")
-    JuskeshinoHRI.say("I'have grasped the object")
-    JuskeshinoNavigation.moveDist(0.3, 7)
-
-    # Moverse para atras
-    print("ACT-PLN.->Moving base backwards")
-    JuskeshinoNavigation.moveDist(-0.3, 7)
-    time.sleep(1)
-    print("ACT-PLN.->Moving left arm to prepare")
-    JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE , 10)
-    
-    
-    # Ir a la mesa
-    print("ACT-PLN.->Getting close to breakfast table")
-    JuskeshinoHRI.say("I'm going to the breakfast table")
-
-    if not JuskeshinoNavigation.getClose("breakfast_table", 100):
+    if not JuskeshinoNavigation.getClose("kitchen", 100):
         print("ACT-PLN.->Cannot get close to desk position")
     
     if not JuskeshinoHardware.moveHead(0,-1, 5):
@@ -237,7 +241,7 @@ def main():
 
     # El desayuno esta servido 
     JuskeshinoHRI.say("I finished the test")
-    """
+    
 
 
     return 

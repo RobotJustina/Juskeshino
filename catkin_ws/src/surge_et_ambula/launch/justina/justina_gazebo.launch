@@ -44,6 +44,7 @@
     <arg name="training_dir"  value="$(find obj_reco)/training_simul"/>
   </include>
   <include file="$(find surge_et_ambula)/launch/justina/hri.launch"/>
+  <include file="$(find surge_et_ambula)/launch/justina/TMR_2024/carry_my_luggage.launch"/>
 
 
   <node name="act_pln_grip" pkg="act_pln" type="act_pln_grip.py"/> 
