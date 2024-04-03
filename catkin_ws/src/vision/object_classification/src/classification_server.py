@@ -19,12 +19,12 @@ from utils_srv import *
 
 ################################################################################
 def callback(req):
-    
     print ('got ',len(req.in_.image_msgs),'images')    
     res=ClassifyResponse()
     images=[]
     for i in range(len(req.in_.image_msgs)):
-        images.append(            cv2.cvtColor(bridge.imgmsg_to_cv2(req.in_.image_msgs[i]),cv2.COLOR_BGR2RGB)      )
+        images.append(cv2.cvtColor(bridge.imgmsg_to_cv2(req.in_.image_msgs[i]),cv2.COLOR_BGR2RGB))
+
     for test_img in images:
         img = torch.from_numpy(test_img).to(device) # RGB IMAGE TENSOR (TORCH)
         img = img / 255.0                              #NORMALIZE
@@ -37,11 +37,7 @@ def callback(req):
 
         #points_msg = rospy.wait_for_message('/hsrb/head_rgbd_sensor/depth_registered/rectified_points', PointCloud2) #Takeshi
         points_msg = rospy.wait_for_message('/camera/depth_registered/points', PointCloud2)
-        
         points= ros_numpy.numpify(points_msg)
-        
-
-
         for  det in pred:
             for *xyxy, conf, cls in (det):# Model Result is bounding box  confidence  and class
                 if conf.cpu().tolist() > 0.5:
@@ -90,23 +86,18 @@ def callback(req):
                     res.names.append(string_msg)               
         
         print(f'### number of detections -> {num_preds}')
+
     rgb_debug_img = cv2.cvtColor(debug_img, cv2.COLOR_BGR2RGB)    
-
     res.debug_image.image_msgs.append(bridge.cv2_to_imgmsg(rgb_debug_img))
-
     ##### TFS
-    
-    
     return res 
 
-def classify_server():
+
+def classify_server(model_name='ycb.pt'):
     global listener,rgbd, bridge , model , device , tfBuffer, broadcaster
     rospy.init_node('classification_server')
     rgbd= RGBD()
     bridge = CvBridge()
-
-   
-
 
     tfBuffer = tf2_ros.Buffer()
     tfBuffer = tf2_ros.Buffer()
@@ -116,16 +107,18 @@ def classify_server():
     broadcaster = tf2_ros.TransformBroadcaster()
     tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 
-
     device = select_device('')
-    rospack= rospkg.RosPack()
+    rospack = rospkg.RosPack()
     file_path = rospack.get_path('object_classification')
-    ycb_yolo_path=file_path+'/src/weights/ycb.pt'
-    #model=attempt_load('/home/roboworks/catkin_extras/src/yolov5_ros/scripts/yolov5/ycb.pt',device)
-    model=attempt_load(ycb_yolo_path,device)
-    rospy.loginfo("calssification_ YOLOV5 service available")                    # initialize a ROS node
+    ycb_yolo_path = file_path + '/src/weights/ycb.pt'
+    rospy.logwarn("Loaded model: " + model_name)
+
+    model = attempt_load(ycb_yolo_path, device)
+    #rospy.loginfo("calssification_ YOLOV5 service available")                    # initialize a ROS node
     s = rospy.Service('classify', Classify, callback) 
-    print("Classification service available")
+    # print("Classification service available")
     rospy.spin()
+
+
 if __name__ == "__main__":
     classify_server()

@@ -1392,10 +1392,10 @@
         </link>
       </model>
       <model name='Desk_03'>
-        <pose>1.48162 1.99255 0 0 0 -1.56804</pose>
+        <pose>1.415598 1.99255 0 0 0 -1.56804</pose>
         <scale>1 1 1</scale>
         <link name='link_0'>
-          <pose>1.48162 1.99255 0 0 0 -1.56804</pose>
+          <pose>1.415598 1.99255 0 0 0 -1.56804</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -1442,10 +1442,10 @@
         </link>
       </model>
       <model name='Shelf_02'>
-        <pose>0.857254 2.45 0 0 -0 3.1318</pose>
+        <pose>2.322850 1.835130 0 0 -0 3.1318</pose>
         <scale>1 1 1</scale>
         <link name='link_0'>
-          <pose>0.857254 2.45 0 0 -0 3.1318</pose>
+          <pose>2.322850 1.835130 0 0 -0 3.1318</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>

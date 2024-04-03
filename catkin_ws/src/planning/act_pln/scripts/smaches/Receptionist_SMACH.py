@@ -3,16 +3,13 @@ from smach_utils_justina import *
 # from smach_utils_receptionist import *
 
 ##### Define state INITIAL #####
-
-# --------------------------------------------------
 camera_enable = False
-
+# --------------------------------------------------
 class Initial(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'],
                              output_keys = ['l_arm_home'], input_keys=['l_arm_home'])
         self.tries = 0
-        
 
     def execute(self, userdata):
         print('\n> STATE <: INITIAL')
@@ -49,16 +46,11 @@ class Initial(smach.State):
             rospy.logerr('Failed! some error ocurred')
             return 'failed'
 
-        
-
 # --------------------------------------------------
-
 class Wait_push_hand(smach.State):
     pass
 
 # --------------------------------------------------
-
-
 class Wait_door_opened(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'])
@@ -101,12 +93,12 @@ class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
             print("Navigating to, door")
             voice.talk('Navigating to, door')
 
+        print(f'Try {self.tries} of {self.attempts} attempts')
         if self.tries == 3: 
             rospy.logerr('Navigation Failed, I can not reach the door')
             voice.talk('Navigation Failed, I can not reach the door')
             return 'failed'
         
-        print(f'Try {self.tries} of {self.attempts} attempts')
         res = omni_base.move_base(known_location='door', time_out=self.time_out)
         print("res:", res)
 
@@ -114,14 +106,13 @@ class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
             self.tries = 0
             return 'succ'
         elif res == 1 or res == 8:
-            if self.tries < self.attempts:
+            if self.tries < self.attempts-1:
                 rospy.logerr('Navigation Failed, retrying')
                 voice.talk('Navigation Failed, retrying')
             self.time_out = 25
             return 'tries'
         else:
             return 'failed'
-
 
 # --------------------------------------------------
 class Scan_face(smach.State):
@@ -154,8 +145,8 @@ class Scan_face(smach.State):
         else:
             return 'failed'
 
-# Decide face STATE: Decide if the new guest is known, unknown or can't be decided
 
+# Decide face STATE: Decide if the new guest is known, unknown or can't be decided
 class Decide_face(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
@@ -196,17 +187,14 @@ class Decide_face(smach.State):
                 party.add_guest(userdata.name)
                 return 'succ'
 
+
 # --------------------------------------------------
-
-
 class New_face(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                              outcomes=['succ', 'failed'],
                              input_keys=['name', 'face_img'],
                              output_keys=['name', 'face_img'])
-        #self.new_name = ''
-        #self.num_faces = 0
         self.tries = 0
 
     def execute(self, userdata):
@@ -262,9 +250,8 @@ class New_face(smach.State):
             voice.talk('lets try again')
             return 'failed'
 
+
 # --------------------------------------------------
-
-
 class Get_drink(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
@@ -323,9 +310,8 @@ class Get_drink(smach.State):
         self.tries = 0
         return 'succ'
 
+
 # --------------------------------------------------
-
-
 class Lead_to_living_room(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -359,9 +345,8 @@ class Lead_to_living_room(smach.State):
             self.tries = 0
             return 'failed'
 
+
 # --------------------------------------------------
-
-
 class Find_sitting_place(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'],
@@ -434,9 +419,8 @@ class Find_sitting_place(smach.State):
             voice.talk(f'I am sorry, here is {occupant_name}, I will find another place for you')
             self.failed = True
             return 'tries'
-
+        
 # --------------------------------------------------
-
 class Find_host_alternative(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes= ['succ', 'failed'],
@@ -487,9 +471,8 @@ class Find_host_alternative(smach.State):
         else:
             return 'failed'
 
+
 # --------------------------------------------------
-
-
 class Introduce_guest(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'],
@@ -536,15 +519,12 @@ class Introduce_guest(smach.State):
             return 'tries'
 
 
-
 # --------------------------------------------------
 # Entry point
 if __name__ == '__main__':
     print("Justina STATE MACHINE...")
-
     # State machine, final state "END"
     sm = smach.StateMachine(outcomes=['END'])
-
     # sm.userdata.clear = False
     sis = smach_ros.IntrospectionServer(
         'SMACH_VIEW_SERVER', sm, '/SM_RECEPTIONIST')
@@ -556,31 +536,40 @@ if __name__ == '__main__':
         # Initial states routine
         smach.StateMachine.add("INITIAL", Initial(),              
                                transitions={'failed':'INITIAL', 'succ':'WAIT_DOOR_OPENED'})
+        
         # smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(),       
         #                        transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'GOTO_DOOR'})
+
         smach.StateMachine.add("WAIT_DOOR_OPENED", Wait_door_opened(),     
                                transitions={'failed':'WAIT_DOOR_OPENED', 'succ':'GOTO_DOOR'})
+        
         smach.StateMachine.add("GOTO_DOOR", Goto_door(),            
                                transitions={'failed':'SCAN_FACE', 'tries':'GOTO_DOOR', 'succ':'SCAN_FACE'})
+        
         # Guest recognition states
         smach.StateMachine.add("SCAN_FACE", Scan_face(),    
                                transitions={'failed':'SCAN_FACE', 'succ':'DECIDE_FACE'})
+        
         smach.StateMachine.add("DECIDE_FACE", Decide_face(),
                                transitions={'failed':'SCAN_FACE', 'succ':'GET_DRINK', 'unknown':'NEW_FACE'})
+        
         smach.StateMachine.add("NEW_FACE", New_face(),     
                                transitions={'failed':'NEW_FACE', 'succ':'GET_DRINK'})
+        
         smach.StateMachine.add("GET_DRINK", Get_drink(),    
                                transitions={'tries':'GET_DRINK', 'failed':'LEAD_TO_LIVING_ROOM', 'succ':'LEAD_TO_LIVING_ROOM'})
 
         # Final states
         smach.StateMachine.add("LEAD_TO_LIVING_ROOM", Lead_to_living_room(),  
                                transitions={'tries':'LEAD_TO_LIVING_ROOM', 'failed':'FIND_SITTING_PLACE', 'succ':'FIND_SITTING_PLACE'})
+        
         smach.StateMachine.add("FIND_SITTING_PLACE", Find_sitting_place(),
                                transitions={'tries':'FIND_SITTING_PLACE', 'failed':'FIND_HOST', 'succ':'FIND_HOST'})
+        
         smach.StateMachine.add("FIND_HOST", Find_host_alternative(),
                                transitions={'failed':'FIND_HOST', 'succ':'INTRODUCE_GUEST'})
+        
         smach.StateMachine.add("INTRODUCE_GUEST", Introduce_guest(),
                                transitions={'failed':'INTRODUCE_GUEST', 'succ':'GOTO_DOOR', 'tries':'END'})
-
 
     outcome = sm.execute()
