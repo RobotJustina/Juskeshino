@@ -3,7 +3,7 @@ from smach_utils_justina import *
 # from smach_utils_receptionist import *
 
 ##### Define state INITIAL #####
-camera_enable = False
+camera_enable = True
 # --------------------------------------------------
 class Initial(smach.State):
     def __init__(self):
@@ -34,6 +34,8 @@ class Initial(smach.State):
         confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah']                     
         gram = drinks + names + confirmation   
 
+        #head.publish_tfs()
+        
         if self.tries == 1:
             # set_grammar(gram)  ##PRESET DRINKS  # TODO: fix
             print("drinks:")

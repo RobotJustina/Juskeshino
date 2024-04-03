@@ -240,6 +240,16 @@ class Head:  # known as Gaze on Takeshi grasp_utils.py
         t.transform.rotation.w = q[3]
         return t
 
+
+def detect_object_yolo(object_name,res):
+    # find object_name in the response message from object_classification service (Yolo)
+    objs=[]
+    for i,name in enumerate(res.names):
+        objs.append(name.data[4:])
+        if name.data[4:]==object_name:return res.poses[i]
+    if object_name=='all': return objs
+    return []
+
 ######################################################
 def seg_res_tf(res):
 
@@ -312,15 +322,20 @@ class TF_MANAGER():
         except:
             return False
 
-    def getTF(self, target_frame='', ref_frame='map'):
+    def getTF(self, target_frame='', ref_frame='map', times=0):
         print(">>>>>>>>>>>>>", target_frame)
         print(type(target_frame))
         try:
             tf = self._tfbuff.lookup_transform(
-                ref_frame, target_frame, rospy.Time(0))
+                ref_frame, target_frame, rospy.Time(0), rospy.Duration(1))
             return self.tf2_obj_2_arr(tf)
         except:
-            return [False, False]
+            times += 1
+            rospy.logerr("lookup_transform Failed, trying again")
+            if times > 3:
+                return [False, False]
+            else:
+                self.getTF(target_frame=target_frame, ref_frame=ref_frame, times=times)
 
     def tf2_obj_2_arr(self, transf):
         pos = []
@@ -621,7 +636,7 @@ def wait_for_face(timeout=10 , name='', lap_camera=False):
 
 
 global omni_base, rgb, rgbd, bridge, pointing_detect_server, classify_client
-global segmentation_server, tf_man, voice, head, party
+global segmentation_server, tf_man, voice, head, party, tfBuffer, listener
 rospy.init_node('smach_justina_tune_vision')
 
 
@@ -634,6 +649,8 @@ voice = Talker()
 head = Head()
 party = RECEPTIONIST()
 
+tfBuffer = tf2_ros.Buffer()
+listener = tf2_ros.TransformListener(tfBuffer)
 
 speech_recog_server = rospy.ServiceProxy(
     '/speech_recognition/vosk_service', GetSpeech)  # SPEECH VOSK RECOG FULL DICT
