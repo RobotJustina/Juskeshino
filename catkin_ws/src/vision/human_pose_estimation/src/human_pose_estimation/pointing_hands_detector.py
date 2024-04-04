@@ -20,7 +20,7 @@ from vision_msgs.msg import HumanCoordinatesArray
 from std_msgs.msg import Bool
 
 FRAME_ID_TAKESHI = "head_rgbd_sensor_rgb_frame"
-FRAME_ID_JUSTINA = "realsense_link"
+FRAME_ID_JUSTINA = "camera_rgb_optical_frame" #realsense_link
 
 class PointingHandsDetector(smach.State):
     

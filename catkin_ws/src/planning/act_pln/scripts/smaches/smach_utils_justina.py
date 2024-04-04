@@ -64,7 +64,7 @@ class Head:  # known as Gaze on Takeshi grasp_utils.py
 
         ##########
         self._reference = 'map'
-        self._cam = 'realsense_link' #'head_rgbd_sensor_link'
+        self._cam = 'camera_rgb_optical_frame'  #realsense_link, take:'head_rgbd_sensor_link'
         self._base = 'base_link'
         self._hand = 'left_arm_grip_center' #'hand_palm_link' # TODO: verify link
         self._tf_man = TF_MANAGER()
