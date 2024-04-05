@@ -36,7 +36,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg)
 
 int main(int argc, char **argv)
 {
-
+    bool replace = false;
     ROS_DEBUG("Initializing image_taker...");
 
     ros::init(argc, argv, "image_taker");
@@ -49,9 +49,10 @@ int main(int argc, char **argv)
     path_files = ros::package::getPath("create_dataset") + "/Dataset/";
     ROS_INFO("the path: %s", path_files.c_str());
     //DirectoryUtils::replaceDir("../images", true);
-    DirectoryUtils::replaceDir(path_files, true);
-
-    ros::Rate loop_rate(0.25);
+    if (replace){
+        DirectoryUtils::replaceDir(path_files, true);
+    }
+    ros::Rate loop_rate(1.0/10);
 
     //int counter = 0;
     while (ros::ok())

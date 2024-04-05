@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
     DataGenerator data_obtainer(nh, save_laser_position, save_rgbd, incremental_save);
 
     int count = 0;
-    ros::Rate loop_rate(1); // <<<<< TIME controller
+    ros::Rate loop_rate(.25); // <<<<< TIME controller
     while (ros::ok())
     {
         count++;
