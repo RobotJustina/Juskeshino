@@ -45,6 +45,7 @@ TAKEN_OBJECT_HORIZONTAL = [0.46, 0.87, -0.4, 1.99, -0.99, 0.4, 0.41]#[1, -0.08, 
 HOME = [0,0,0,0,0,0]
 LIFT_OBJECT = [0.11, 0.2, 0.0, 1.75, 0.0, 1.36, 0.0]
 PREPARE     = [-0.7, 0.2, 1.55, 0.0, 1.16, 0.0, 0.0]
+PREPARE_HIGH      = [-0.5, 0, 0, 2.4, 0, 0.5,0]
 
 GRIPPER_OPENING = 0.9   # Apertura de gripper
 
@@ -285,7 +286,16 @@ def main():
                 time.sleep(1)
             
             goal_la_reached =  False       
-            print("goal_la_reached STATUS", goal_la_reached)            
+            print("goal_la_reached STATUS", goal_la_reached)  
+            
+            q2q_traj(PREPARE_HIGH, clt_traj_planner, pub_la_goal_traj)
+            while (not goal_la_reached) or not rospy.is_shutdown:
+                print("status: moving arm....", goal_la_reached)                
+                time.sleep(1)
+            
+            goal_la_reached =  False       
+            print("goal_la_reached STATUS", goal_la_reached) 
+          
             state = SM_GRASP_OBJECT
 
 
@@ -304,7 +314,7 @@ def main():
             if resp_best_grip.graspable:
                 move_left_gripper(GRIPPER_OPENING, pub_la_goal_grip)
                 print("publicando trayectoria en q para brazo izquierdo...................")
-                #state = SM_INIT
+                state = SM_INIT
             
                 
                 pub_la_goal_traj.publish(resp_best_grip.articular_trajectory)
@@ -321,8 +331,9 @@ def main():
                     print("goal_la_reached STATUS", goal_la_reached)
                     state =  SM_PICK_UP_OBJECT
                 
+                
             else:
-                print("No se encontraron poses posibles...................")
+                print("No possible poses found...................")
                 resp = pub_status_msg_response(4, pub_object_status)  # ABORTED
                 state = SM_INIT
             

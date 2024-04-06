@@ -115,3 +115,14 @@ class JuskeshinoVision:
             print("Success ", resp.success)
             print(resp.message)
     
+
+    def recognize_obj_by_bb(objects, bb_target):
+        idx = 0
+        for obj in objects:   # Para cada objeto de la lista de VisionObjects
+            print("********************" ,obj.category)
+            if bb_target == obj.category:
+                print("Se encontró el objeto pedido.................")
+                return idx
+            idx = idx + 1
+        return None
+	

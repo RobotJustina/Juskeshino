@@ -22,7 +22,10 @@ class JuskeshinoManipulation:
         req = BestGraspTrajRequest()
         req.recog_object = vision_obj
         resp = JuskeshinoManipulation.cltBestGrip(req)      # Pasa la peticion al servicio de manipulacion y retorna la respuesta
-        return resp
+        if resp.graspable:
+            return [resp, True]
+        else:
+            return [resp, False]
     
     
     def cartesian_to_articular_pose(cartesian_pose):

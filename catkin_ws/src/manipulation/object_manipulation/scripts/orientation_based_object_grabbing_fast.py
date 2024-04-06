@@ -68,10 +68,13 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
 
     if obj_state == "horizontal":   # 10 cm por encima del objeto (z_base_link)
         grip_point_bl = points_actual_to_points_target(grip_point, 'object', 'base_link')
+
         grip_point_bl[2] = grip_point_bl[2] + 0.13 
         grip_point = points_actual_to_points_target(grip_point_bl, 'base_link', 'object')
         if debug:
-            marker_array_publish(grip_point, 'object', 59, 56)
+            #marker_array_publish(grip_point, 'object', 59, 56)
+            print("")
+            
         
 
     obj_pose_frame_object = obj_pose 
@@ -228,13 +231,15 @@ def cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj):
     
     # Primera lista de candidatos******************************************************************************
     obj_pos_1 = Pose()
-    if (type_obj == "BOX"):
-        print("BOX")
+    if (type_obj == "CUBIC"):
+        print("CUBIC")
         obj_pos_1.position.x, obj_pos_1.position.y, obj_pos_1.position.z = 0, 0, 0
     else:
         print("BOWL")
         obj_pos_1.position.x, obj_pos_1.position.y, obj_pos_1.position.z = 0, size.z/2 , 0
         print("GRIP POINT BOWL: ", obj_pos_1)
+        marker_array_publish(grip_point, 'object', 59, 56)
+        
 
     obj_pos_1.orientation.x = 0.0
     obj_pos_1.orientation.y = 0.0
@@ -243,9 +248,10 @@ def cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj):
     pose_list1 = generates_candidates([obj_pos_1.position.x , obj_pos_1.position.y ,obj_pos_1.position.z] , obj_pos_1, "P", obj_state ,  'c1', step = -12, num_candidates = 6)
     
     # Segunda lista de candidatos******************************************************************************
+    """
     obj_pose_2 = Pose()
-    if (type_obj == "BOX"):
-        print("BOX")
+    if (type_obj == "CUBIC"):
+        print("CUBIC")
         obj_pose_2.position.x, obj_pose_2.position.y, obj_pose_2.position.z = 0 , 0, 0
     else:
         print("BOWL")
@@ -272,36 +278,9 @@ def cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj):
         
     pose_list2 = generates_candidates([obj_pose_2.position.x , obj_pose_2.position.y , obj_pose_2.position.z] , obj_pose_2, "P", obj_state , 'C2', step = -12, num_candidates = 6)
     """
-
-    # Tercera lista de candidatos.................................
-    obj_pose_3 = Pose()
-    obj_pose_3.position.x, obj_pose_3.position.y, obj_pose_3.position.z = 0, 0, 0
-    obj_pose_3.orientation.x = 0.0
-    obj_pose_3.orientation.y = 0.0
-    obj_pose_3.orientation.z = 0.0
-    obj_pose_3.orientation.w = 1.0
-        
-    R, P, Y = tft.euler_from_quaternion([obj_pose_3.orientation.x ,  # pose expresada en RPY para realizar rotaciones
-                                                obj_pose_3.orientation.y ,
-                                                obj_pose_3.orientation.z, 
-                                                obj_pose_3.orientation.w])
-    Y = Y + np.deg2rad(-90) # Realiza un yaw de 90 grados 
-        
-        
-    q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
-    obj_pose_3.orientation.x = q_gripper[0]
-    obj_pose_3.orientation.y = q_gripper[1]
-    obj_pose_3.orientation.z = q_gripper[2]
-    obj_pose_3.orientation.w = q_gripper[3]
-    obj_pose_3.position.x = 0
-    obj_pose_3.position.y = 0
-    obj_pose_3.position.z = 0
-        
-    pose_list3 = generates_candidates([0,0,0], obj_pose_3 , "P", obj_state , 'c3', step = -14, num_candidates = 7)
-    """
-    print("Num Candidates:____", len(pose_list2 + pose_list1 ))
+    print("Num Candidates:____", len(pose_list1 ))
     
-    return pose_list1 + pose_list2
+    return pose_list1
     
 
 
