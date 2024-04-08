@@ -406,6 +406,9 @@ class TF():
 class OMNIBASE():
     def __init__(self, cmd_vel_topic = '/cmd_vel'):  #'/hsrb/command_velocity'):
 
+        if robot_real:
+            cmd_vel_topic = '/hardware/mobile_base/cmd_vel'
+
         self.timeout = 0.5
         self._base_vel_pub = rospy.Publisher(
             cmd_vel_topic , Twist, queue_size=10)
@@ -637,9 +640,10 @@ def wait_for_face(timeout=10 , name='', lap_camera=False):
 
 global omni_base, rgb, rgbd, bridge, pointing_detect_server, classify_client
 global segmentation_server, tf_man, voice, head, party, tfBuffer, listener
+global robot_real
 rospy.init_node('smach_justina_tune_vision')
 
-
+robot_real = False
 bridge = CvBridge()
 rgbd = RGBD()
 rgb = RGB()  # WEB CAM DEBUG
