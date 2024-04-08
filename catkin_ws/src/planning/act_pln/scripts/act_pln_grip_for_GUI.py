@@ -45,9 +45,10 @@ TAKEN_OBJECT_HORIZONTAL = [0.46, 0.87, -0.4, 1.99, -0.99, 0.4, 0.41]#[1, -0.08, 
 HOME = [0,0,0,0,0,0]
 LIFT_OBJECT = [0.11, 0.2, 0.0, 1.75, 0.0, 1.36, 0.0]
 PREPARE     = [-0.7, 0.2, 1.55, 0.0, 1.16, 0.0, 0.0]
+PREPARE_HIGH      = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
 
-GRIPPER_OPENING = 0.9   # Apertura de gripper
-
+GRIPPER_OPENING = 0.6   # Apertura de gripper
+GRIPPER_CLOSURE = -0.5
 
 def callback_goal_reached(msg): #¿?
     global goal_reached
@@ -274,6 +275,7 @@ def main():
             
         elif state == SM_PREPARE_ARM:
             print("state == SM_PREPARE_ARM")
+            """
             if (resp_pose_obj.recog_object.size.x < 0.11) or resp_pose_obj.recog_object.object_state == "horizontal":
                 q2q_traj(PREPARE_TOP_GRIP , clt_traj_planner, pub_la_goal_traj)
             else:
@@ -285,7 +287,17 @@ def main():
                 time.sleep(1)
             
             goal_la_reached =  False       
-            print("goal_la_reached STATUS", goal_la_reached)            
+            print("goal_la_reached STATUS", goal_la_reached)  
+            """
+            
+            q2q_traj(PREPARE_HIGH, clt_traj_planner, pub_la_goal_traj)
+            while (not goal_la_reached) or not rospy.is_shutdown:
+                print("status: moving arm....", goal_la_reached)                
+                time.sleep(1)
+            
+            goal_la_reached =  False       
+            print("goal_la_reached STATUS", goal_la_reached) 
+            time.sleep(2)
             state = SM_GRASP_OBJECT
 
 
@@ -321,8 +333,9 @@ def main():
                     print("goal_la_reached STATUS", goal_la_reached)
                     state =  SM_PICK_UP_OBJECT
                 
+                
             else:
-                print("No se encontraron poses posibles...................")
+                print("No possible poses found...................")
                 resp = pub_status_msg_response(4, pub_object_status)  # ABORTED
                 state = SM_INIT
             
@@ -334,9 +347,9 @@ def main():
             goal_la_reached =  False
             print("goal_la_reached STATUS", goal_la_reached)
             time.sleep(1.5)
-            move_left_gripper(-0.3 , pub_la_goal_grip)
+            move_left_gripper(GRIPPER_CLOSURE , pub_la_goal_grip)
             resp = pub_status_msg_response(3, pub_object_status)  # SUCCEEDED
-            state = SM_INIT#SM_LIFT_OBJECT
+            state = SM_LIFT_OBJECT
    
 
 
@@ -344,7 +357,7 @@ def main():
             print("Cambiando posicion de brazo a prepare....")
             goal_la_reached =  False       
             print("goal_la_reached STATUS", goal_la_reached)
-            q2q_traj(LIFT_OBJECT , clt_traj_planner, pub_la_goal_traj)
+            q2q_traj(PREPARE_HIGH , clt_traj_planner, pub_la_goal_traj)
 
             while (not goal_la_reached) or not rospy.is_shutdown:
                 print("status: moving arm....")

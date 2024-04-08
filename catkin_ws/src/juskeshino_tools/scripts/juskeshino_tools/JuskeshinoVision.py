@@ -115,3 +115,24 @@ class JuskeshinoVision:
             print("Success ", resp.success)
             print(resp.message)
     
+
+    def recognizeObjByBB():
+        [objs, imgs] = JuskeshinoVision.detectAndRecognizeObjects()
+        idx = 0
+        objs_2 = []
+        req = RecognizeObjectRequest()
+        print("LEN Objs____", len(objs))
+        for obj in objs:   # Para cada objeto de la lista de VisionObjects
+            print("obj.ID", obj.id)
+            
+            req.point_cloud = obj.point_cloud
+            resp = JuskeshinoVision.cltGetObjectPose.call(req)
+            objs_2.append(resp.recog_object)
+            
+            print("CATEGORY:___" ,obj.category)
+            if bb_target == obj.category:
+                print("Se encontró el objeto pedido.................")
+                return idx
+            idx = idx + 1
+            
+        return objs_2   # Regresa una lista de msgs de tipo VisionObject

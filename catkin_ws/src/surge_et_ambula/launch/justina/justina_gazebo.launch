@@ -47,7 +47,4 @@
   <include file="$(find surge_et_ambula)/launch/justina/TMR_2024/carry_my_luggage.launch"/>
 
 
-  <node name="act_pln_grip" pkg="act_pln" type="act_pln_grip.py"/> 
-
-
 </launch>
