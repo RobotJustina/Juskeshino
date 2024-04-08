@@ -145,17 +145,20 @@ class JuskeshinoSimpleTasks:
 
     def handling_location(vision_obj ):
         position_obj = vision_obj.pose.position
-        left_threshold_manipulation = 0.26
+        l_threshold_m = 0.26
+        r_threshold_m = 0.05
 
-        if position_obj.y > 0.26:
-            dist_move = position_obj.y - left_threshold_manipulation
+        if position_obj.y > 0.24:
+            dist_move = position_obj.y - l_threshold_m
             print("dist move izq", dist_move)
             JuskeshinoNavigation.moveLateral(dist_move , 10)
+            return dist_move
 
-        if position_obj.y < 0.05:
+        if position_obj.y < 0.08:
             dist_move = position_obj.y - 0.05
             print("dist move der", dist_move)
             JuskeshinoNavigation.moveLateral(dist_move , 10)
+            return dist_move
 
 
     def object_search(name_obj):

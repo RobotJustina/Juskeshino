@@ -13,9 +13,9 @@ from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 
 HOME              = [0,0,0,0,0,0,0]
 PREPARE           = [-0.69, 0.2, 0.0, 1.55, 0.0, 1.16, 0.0]
-PREPARE_TOP_GRIP  = [-0.5, 0, 0, 2.4, 0, 0.5,0]
-PREPARE_SERVING   = []
-SERVING           = []
+PREPARE_TOP_GRIP  = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
+PREPARE_SERVING   = [0.91, 0.4, -0.5, 1.45, 0, 0.16, 0.5]
+SERVING           = [0.91, 0.4, -0.5, 1.45, 0, 0.16, -1.6]
 LEAVE_CEREAL      = [0.2, 0.18, -0.03, 1.45, 0, 0, 0]
 LEAVE_MILK        = [0.2, -0.12, -0.03, 1.45, 0, 0, 0]
 LEAVE_BOWL        = [0.2, -0.6, -0.03, 1.45, 0, 0, 0]
@@ -35,9 +35,11 @@ def serving_breakfast(object):
     JuskeshinoHardware.moveLeftArmWithTrajectory(SERVING, 10)
     time.sleep(3)
     JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_SERVING, 10)
+    time.sleep(1)
     if object =="milk":
         JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_MILK, 10)
     else:
+        JuskeshinoNavigation.moveLateral(0.2, 10)
         JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_CEREAL, 10)
 
 
@@ -67,7 +69,6 @@ def main():
 
     # Esperar a que se abra la puerta
     JuskeshinoHRI.say("I'm waiting for the door to be open")
-    print("lalalalala")
     """
     if not JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(300):
         print("ACT-PLN.->Door never opened")
@@ -75,12 +76,14 @@ def main():
     JuskeshinoHRI.say("I can see now that the door is open")
     # Ir a la cocina
     """
-    pila = ["milk", "milk", "milk"]
+    pila = ["bowl", "cereal", "milk"] 
+    pila = ["milk", "milk", "milk"]        
 
     #pila = ["apple", "pringles", "soda"]
     
     count = 0
     while count < 3: # Revisa pila
+        
         print("OBJECT", pila[count])
         actual_obj = pila[count]
         # Ir a locacion de ingredientes
@@ -138,10 +141,11 @@ def main():
             time.sleep(1)
             print("PREPARE HIGHT")
             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP , 10)
-            time.sleep(2)
+            time.sleep(1)
             print("SB-PLN.->Open gripper")
-            JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
-
+            JuskeshinoHardware.moveLeftGripper(0.7, 3.0)
+            if actual_obj == "bowl": JuskeshinoHardware.moveLeftGripper(0.4 , 3.0)
+            time.sleep(1)
             print("SB-PLN.->Best Grasping Configuration")
             j=0
             while j <= 4:
@@ -176,8 +180,11 @@ def main():
             print("Actual object: ", actual_obj)
             # Ir a la mesa del desayuno
         
-        print("SB-PLN.->Getting close to breakfast table")
-        JuskeshinoHRI.say("I'm going to prepare the breakfast")
+
+        actual_obj = "cereal"
+        
+        print("SB-PLN.->Getting close to " + MESA_COMER + "location")
+        JuskeshinoHRI.say("I'm going to the location")
 
         if not JuskeshinoNavigation.getClose(MESA_COMER, 100):  #**********************************
         #if not JuskeshinoNavigation.getClose("cupboard", 100):
@@ -201,21 +208,16 @@ def main():
         # lleva  brazo a posicion por encima de la mesa
         print("SB-PLN.->Moving left arm to deliver position")
         JuskeshinoHRI.say("I'm going to leave the object")
-        if actual_obj == "cereal":
-            pour_cereal()
 
-        if actual_obj == "milk":
-            pour_milk()  
+        if (actual_obj == "milk") or (actual_obj == "cereal"):
+            serving_breakfast(actual_obj) 
 
         if actual_obj == "bowl":
             JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_BOWL , 10) 
             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP , 10) 
 
-        if actual_obj == "pringles":
-            pour_cereal()
-
-        if actual_obj == "soda":
-            pour_milk() 
+        if (actual_obj == "pringles") or (actual_obj == "soda"):
+            serving_breakfast(actual_obj)
 
         if actual_obj == "apple":
             JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_BOWL , 10) 
