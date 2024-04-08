@@ -179,7 +179,7 @@ def detect_pointing(points_msg):
     ##############################
     try:
             #tt = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())#Takeshi
-            tt = tfBuffer.lookup_transform('map', 'realsense_link', rospy.Time())            
+            tt = tfBuffer.lookup_transform('map', 'camera_rgb_optical_frame', rospy.Time())    # realsense_link         
             trans,rot=read_tf(tt)
             #print ("############head",trans,rot)
     except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
@@ -199,7 +199,7 @@ def detect_pointing(points_msg):
         pc_np_array = np.array([(found_joints['right_elbow'][0], found_joints['right_elbow'][1], found_joints['right_elbow'][2]),(found_joints['right_wrist'][0],found_joints['right_wrist'][1],found_joints['right_wrist'][2])]
          , dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
         #pc_np_array = np.array([found_joints['right_elbow'], found_joints['right_wrist'], (0.0, 0.0, 0.0)], dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
-        points_msg=ros_numpy.msgify(PointCloud2,pc_np_array,rospy.Time.now(),'realsense_link')
+        points_msg=ros_numpy.msgify(PointCloud2,pc_np_array,rospy.Time.now(),'camera_rgb_optical_frame') # realsense_link 
         cloud_out = do_transform_cloud(points_msg, tt)
         np_corrected=ros_numpy.numpify(cloud_out)
         corrected=np_corrected.reshape(pc_np_array.shape)
@@ -235,7 +235,7 @@ def detect_pointing(points_msg):
         pc_np_array = np.array([(found_joints['left_elbow'][0], found_joints['left_elbow'][1], found_joints['left_elbow'][2]),(found_joints['left_wrist'][0],found_joints['left_wrist'][1],found_joints['left_wrist'][2])]
          , dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
         #pc_np_array = np.array([found_joints['right_elbow'], found_joints['right_wrist'], (0.0, 0.0, 0.0)], dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
-        points_msg=ros_numpy.msgify(PointCloud2,pc_np_array,rospy.Time.now(),'realsense_link')
+        points_msg=ros_numpy.msgify(PointCloud2,pc_np_array,rospy.Time.now(),'camera_rgb_optical_frame') # realsense_link
         cloud_out = do_transform_cloud(points_msg, tt)
         np_corrected=ros_numpy.numpify(cloud_out)
         corrected=np_corrected.reshape(pc_np_array.shape)

@@ -46,7 +46,7 @@
         <depthImageTopicName>depth/image_raw</depthImageTopicName>
         <depthImageCameraInfoTopicName>depth/camera_info</depthImageCameraInfoTopicName>
         <pointCloudTopicName>points</pointCloudTopicName>
-        <frameName>realsense_link</frameName>
+        <frameName>camera_rgb_optical_frame</frameName> <!--realsense_link-->
         <pointCloudCutoffMax>3.5</pointCloudCutoffMax>
         <pointCloudCutoff>0.5</pointCloudCutoff>
         <CxPrime>0</CxPrime>

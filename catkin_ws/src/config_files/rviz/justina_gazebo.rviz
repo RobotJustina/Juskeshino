@@ -407,7 +407,7 @@ Visualization Manager:
           Value: false
         odom:
           Value: false
-        realsense_link:
+        camera_rgb_optical_frame:
           Value: true
         right_arm_grip_center:
           Value: false
@@ -468,7 +468,7 @@ Visualization Manager:
                     head_link2:
                       neck_link:
                         camera_link:
-                          realsense_link:
+                          camera_rgb_optical_frame:
                             {}
                   shoulders_left_link:
                     left_arm_link1:
