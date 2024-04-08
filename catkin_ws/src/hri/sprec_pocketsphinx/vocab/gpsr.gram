@@ -5,6 +5,8 @@ public <command> = (JUSTINA YES | JUSTINA NO | <deliver> | <fndppl> | <fndobj> |
 
 
 public <carry_my_luggage_commands> = (JUSTINA YES | JUSTINA NO | HERE IS THE CAR | FOLLOW ME | STOP);
+public <receptionist_commands> = (JUSTINA YES | JUSTINA NO | JUICE | MILK | SODA | WINE | TEA | ICED TEA | COLA | RED WINE | ORANGE JUICE | ANGEL | AXEL | JULES | JACK | YES | NO | ROBOT YES |ROBOT NO | NOPE | YEAH);
+
 
 <deliver> = (<deliver1> | <deliver2> | <deliver3> | <deliver4> | <deliver5> | <deliver6> | <deliver7> | <deliver8> | <deliver9> | <deliver10> | <deliver11>);
 

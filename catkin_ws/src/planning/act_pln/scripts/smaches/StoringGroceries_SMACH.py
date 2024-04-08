@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from smach_utils_justina import *  # from smach_utils2 import *
 # from smach_ros import SimpleActionState
-
+import matplotlib.pyplot as plt
 
 def categorize_objs(name):
     # 'fork', 'knife', 'mug', 'sponge', 'b_cups', 'c_cups', 'e_cups', 'f_cups', 'dice', 'marker', 'rubiks_cube'
@@ -77,9 +77,8 @@ class Goto_pickup(smach.State):
         self.attempts = 3
 
     def execute(self, userdata):
-        
         self.tries += 1
-        
+
         if self.tries == 1:
             self.time_out = 30
             print("\n")
@@ -159,11 +158,14 @@ class Scan_table(smach.State):
         
         global objs
         rospy.sleep(3.0)
+        img = rgbd.get_image()
+        plt.imshow(img)
         img_msg = bridge.cv2_to_imgmsg(rgbd.get_image())
         req = classify_client.request_class()
         req.in_.image_msgs.append(img_msg)
         res = classify_client(req)  # TODO: repair
         objects = detect_object_yolo('all', res)
+        print(objects)
         # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         if len(objects) != 0:
             for i in range(len(res.poses)):
@@ -173,12 +175,11 @@ class Scan_table(smach.State):
                 print('position,name', position, res.names[i].data[4:])
                 ##########################################################
                 object_point = PointStamped()
-                object_point.header.frame_id = "head_rgbd_sensor_rgb_frame"
+                object_point.header.frame_id = "camera_rgb_optical_frame" # take: "head_rgbd_sensor_rgb_frame"
                 object_point.point.x = position[0]
                 object_point.point.y = position[1]
                 object_point.point.z = position[2]
-                position_map = tfBuffer.transform(
-                    object_point, "map", timeout=rospy.Duration(1))
+                position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
                 print('position_map', position_map)
                 tf_man.pub_static_tf(pos=[position_map.point.x, position_map.point.y, position_map.point.z], rot=[
                                      0, 0, 0, 1], ref="map", point_name=res.names[i].data[4:])

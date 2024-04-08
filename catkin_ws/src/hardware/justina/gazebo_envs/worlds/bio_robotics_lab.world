@@ -1442,10 +1442,10 @@
         </link>
       </model>
       <model name='Shelf_02'>
-        <pose>2.322850 1.835130 0 0 -0 3.1318</pose>
+        <pose>2.76677 -1.58084 0 0 -0 0.019976</pose>
         <scale>1 1 1</scale>
         <link name='link_0'>
-          <pose>2.322850 1.835130 0 0 -0 3.1318</pose>
+          <pose>2.76677 -1.58084 0 0 -0 0.019976</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
