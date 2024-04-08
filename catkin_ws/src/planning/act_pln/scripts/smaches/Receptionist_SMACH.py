@@ -3,13 +3,21 @@ from smach_utils_justina import *
 # from smach_utils_receptionist import *
 
 ##### Define state INITIAL #####
-camera_enable = False
+
+
 # --------------------------------------------------
 class Initial(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'],
                              output_keys = ['l_arm_home'], input_keys=['l_arm_home'])
         self.tries = 0
+        global camera_enable
+        if robot_real:
+            print("Cam enable")
+            camera_enable = False
+        else:
+            print("Cam disable")
+            camera_enable = True
 
     def execute(self, userdata):
         print('\n> STATE <: INITIAL')
