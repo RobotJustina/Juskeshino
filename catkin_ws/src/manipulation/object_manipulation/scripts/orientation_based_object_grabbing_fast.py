@@ -24,6 +24,13 @@ def pose_actual_to_pose_target(pose, f_actual, f_target):
     poseStamped_msg.header.stamp = rospy.Time()  # la ultima transformacion
     poseStamped_msg.pose = pose
 
+    """
+    listener.waitForTransform("object", "shoulders_left_link", rospy.Time(), rospy.Duration(4.0))
+    new_poseStamped = listener.transformPose(f_target, poseStamped_msg)
+    new_pose = new_poseStamped.pose
+    return new_pose
+    """
+
     try:
         new_poseStamped = listener.transformPose(f_target, poseStamped_msg)
         new_pose = new_poseStamped.pose
@@ -69,13 +76,6 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
     if obj_state == "horizontal":   # 13 cm por encima del objeto (z_base_link)
         grip_point_bl = points_actual_to_points_target(grip_point, 'object', 'base_link')
 
-<<<<<<< HEAD
-        grip_point_bl[2] = grip_point_bl[2] + 0.13 
-        grip_point = points_actual_to_points_target(grip_point_bl, 'base_link', 'object')
-        if debug:
-            #marker_array_publish(grip_point, 'object', 59, 56)
-            print("")
-=======
         if type_obj == "BOWL":
             grip_point_bl[2] = grip_point_bl[2] + 0.24
             print("0.22***********************")
@@ -85,7 +85,6 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
         grip_point = points_actual_to_points_target(grip_point_bl, 'base_link', 'object')
         if debug:
             marker_array_publish(grip_point, 'object', 59, 56)
->>>>>>> e30787fbc86b3822e36fb826567cefa5ea0bba4f
             
         
 
@@ -129,8 +128,27 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
 def grip_rules(obj_pose, type_obj, obj_state, size, grip_point):
 
     if(type_obj == "BOWL"):
+        print("Best_Grasp_Node.->The object will be GRABBED AS BOWL.................")
+        return cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj)
+    
+    if(type_obj == "CUBIC"):
+        print("Best_Grasp_Node.->The object will be GRABBED AS CUBE.................")
         return cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj)
 
+    if(type_obj == "PRISM"):
+        print("Best_Grasp_Node.->The object will be GRABBED AS PRISM..................")
+        return prism(obj_pose, obj_state)
+    
+    if(type_obj == "BOX"):
+        print("Best_Grasp_Node.-> The object will be GRABBED as BOX....................")
+        return box(obj_pose, size, obj_state )
+    
+    else:
+        print("Error identificando forma del objeto.................")
+        poses_list = []
+        return poses_list
+
+    """
     if (size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x >= MINIMUM_HEIGHT_PRISM):
         print("Best_Grasp_Node.->The object will be GRABBED AS PRISM..................")
         return prism(obj_pose, obj_state)
@@ -142,6 +160,7 @@ def grip_rules(obj_pose, type_obj, obj_state, size, grip_point):
         else:
             print("Best_Grasp_Node.-> The object will be GRABBED as BOX....................")
             return box(obj_pose, size, obj_state )
+    """
 
 
 
@@ -243,25 +262,14 @@ def cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj):
     # Primera lista de candidatos******************************************************************************
     obj_pos_1 = Pose()
     if (type_obj == "CUBIC"):
-<<<<<<< HEAD
-        print("CUBIC")
-=======
->>>>>>> e30787fbc86b3822e36fb826567cefa5ea0bba4f
         obj_pos_1.position.x, obj_pos_1.position.y, obj_pos_1.position.z = 0, 0, 0
         num_candidates = 6
 
     else:
-<<<<<<< HEAD
-        print("BOWL")
-        obj_pos_1.position.x, obj_pos_1.position.y, obj_pos_1.position.z = 0, size.z/2 , 0
-        print("GRIP POINT BOWL: ", obj_pos_1)
-        marker_array_publish(grip_point, 'object', 59, 56)
-=======
         obj_pos_1.position.x, obj_pos_1.position.y, obj_pos_1.position.z = size.x/4, size.z/2 , 0
         #print("GRIP POINT BOWL: ", obj_pos_1)
         marker_array_publish(grip_point, 'object', 59, 56)
         num_candidates = 5
->>>>>>> e30787fbc86b3822e36fb826567cefa5ea0bba4f
         
 
     obj_pos_1.orientation.x = 0.0
@@ -274,29 +282,16 @@ def cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj):
     pose_list1 = generates_candidates([obj_pos_1.position.x , obj_pos_1.position.y ,obj_pos_1.position.z] , obj_pos_1, "P", obj_state ,  'c1', step , num_candidates, type_obj)
     
     # Segunda lista de candidatos******************************************************************************
-<<<<<<< HEAD
-    """
-    obj_pose_2 = Pose()
-    if (type_obj == "CUBIC"):
-        print("CUBIC")
-        obj_pose_2.position.x, obj_pose_2.position.y, obj_pose_2.position.z = 0 , 0, 0
-=======
     obj_pos_2 = Pose()
     if (type_obj == "CUBIC"):
         obj_pos_2.position.x, obj_pos_2.position.y, obj_pos_2.position.z = 0, 0, 0
         num_candidates = 6
->>>>>>> e30787fbc86b3822e36fb826567cefa5ea0bba4f
     else:
         obj_pos_2.position.x, obj_pos_2.position.y, obj_pos_2.position.z = size.x/4 , size.z/2 , 0
         #print("GRIP POINT BOWL: ", obj_pos_2)
         marker_array_publish(grip_point, 'object', 59, 56)
         num_candidates = 5
         
-<<<<<<< HEAD
-    pose_list2 = generates_candidates([obj_pose_2.position.x , obj_pose_2.position.y , obj_pose_2.position.z] , obj_pose_2, "P", obj_state , 'C2', step = -12, num_candidates = 6)
-    """
-    print("Num Candidates:____", len(pose_list1 ))
-=======
 
     obj_pos_2.orientation.x = 0.0
     obj_pos_2.orientation.y = 0.0
@@ -305,9 +300,8 @@ def cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj):
     step = -12
     pose_list2 = generates_candidates([obj_pos_2.position.x , obj_pos_2.position.y ,obj_pos_2.position.z] , obj_pos_2, "P", obj_state ,  'c2', step, num_candidates, type_obj)
     #print("Num Candidates:____", len(pose_list2 ))
->>>>>>> e30787fbc86b3822e36fb826567cefa5ea0bba4f
     
-    return pose_list1
+    return pose_list1 + pose_list2
     
 
 
@@ -697,8 +691,8 @@ def main():
     ik_srv = rospy.ServiceProxy( '/manipulation/la_ik_trajectory' , InverseKinematicsPose2Traj )
     marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10) 
     marker_array_pub = rospy.Publisher("/vision/obj_reco/marker_array", MarkerArray, queue_size = 10) 
-    
-    loop = rospy.Rate(30)
+
+    loop = rospy.Rate(10)
     while not rospy.is_shutdown():
         loop.sleep()
 

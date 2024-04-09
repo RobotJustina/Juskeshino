@@ -38,18 +38,14 @@ SM_PREPARE = 111
 SM_CLEAN_VARIABLES = 2
 
 # left arm poses
-PREPARE_TOP_GRIP = [-0.68, 0.38, -0.01, 1.84, 0, 1.06, -0.01]#[-0.9, 0.4, 0.0, 1.9, 0.01, 1, -0.01]  #funciona para pringles horizontal (prisma horizontal)
-PREPARE_LATERAL_GRIP = [-0.69, 0.2, 0, 1.55, 0, 1.16,0] #[-1.2, 0.2, 0  , 1.6, 0   , 1,     0] #Prepare original:funciona bien para pringles vertical (prisma vertical) 
-TAKEN_OBJECT_VERTICAL = [0.46, 0.87, -0.4, 1.99, -0.99, 0.4, 1.6]
+#PREPARE_TOP_GRIP = [-0.68, 0.38, -0.01, 1.84, 0, 1.06, -0.01]#[-0.9, 0.4, 0.0, 1.9, 0.01, 1, -0.01]  #funciona para pringles horizontal (prisma horizontal)
+#PREPARE_LATERAL_GRIP = [-0.69, 0.2, 0, 1.55, 0, 1.16,0] #[-1.2, 0.2, 0  , 1.6, 0   , 1,     0] #Prepare original:funciona bien para pringles vertical (prisma vertical) 
+#TAKEN_OBJECT_VERTICAL = [0.46, 0.87, -0.4, 1.99, -0.99, 0.4, 1.6]
 TAKEN_OBJECT_HORIZONTAL = [0.46, 0.87, -0.4, 1.99, -0.99, 0.4, 0.41]#[1, -0.08, -0.029, 0.44, 0, 0.66, -1.39]
 HOME = [0,0,0,0,0,0]
 LIFT_OBJECT = [0.11, 0.2, 0.0, 1.75, 0.0, 1.36, 0.0]
 PREPARE     = [-0.7, 0.2, 1.55, 0.0, 1.16, 0.0, 0.0]
-<<<<<<< HEAD
-PREPARE_HIGH      = [-0.5, 0, 0, 2.4, 0, 0.5,0]
-=======
-PREPARE_HIGH      = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
->>>>>>> e30787fbc86b3822e36fb826567cefa5ea0bba4f
+PREPARE_TOP_GRIP  = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
 
 GRIPPER_OPENING = 0.6   # Apertura de gripper
 GRIPPER_CLOSURE = -0.5
@@ -279,36 +275,15 @@ def main():
             
         elif state == SM_PREPARE_ARM:
             print("state == SM_PREPARE_ARM")
-            """
-            if (resp_pose_obj.recog_object.size.x < 0.11) or resp_pose_obj.recog_object.object_state == "horizontal":
-                q2q_traj(PREPARE_TOP_GRIP , clt_traj_planner, pub_la_goal_traj)
-            else:
-                q2q_traj(PREPARE_LATERAL_GRIP , clt_traj_planner, pub_la_goal_traj)
-
             
-            while (not goal_la_reached) or not rospy.is_shutdown:
-                print("status: moving arm....", goal_la_reached)                
-                time.sleep(1)
-            
-            goal_la_reached =  False       
-            print("goal_la_reached STATUS", goal_la_reached)  
-<<<<<<< HEAD
-=======
-            """
->>>>>>> e30787fbc86b3822e36fb826567cefa5ea0bba4f
-            
-            q2q_traj(PREPARE_HIGH, clt_traj_planner, pub_la_goal_traj)
+            q2q_traj(PREPARE_TOP_GRIP, clt_traj_planner, pub_la_goal_traj)
             while (not goal_la_reached) or not rospy.is_shutdown:
                 print("status: moving arm....", goal_la_reached)                
                 time.sleep(1)
             
             goal_la_reached =  False       
             print("goal_la_reached STATUS", goal_la_reached) 
-<<<<<<< HEAD
-          
-=======
             time.sleep(2)
->>>>>>> e30787fbc86b3822e36fb826567cefa5ea0bba4f
             state = SM_GRASP_OBJECT
 
 
@@ -368,7 +343,7 @@ def main():
             print("Cambiando posicion de brazo a prepare....")
             goal_la_reached =  False       
             print("goal_la_reached STATUS", goal_la_reached)
-            q2q_traj(PREPARE_HIGH , clt_traj_planner, pub_la_goal_traj)
+            q2q_traj(PREPARE_TOP_GRIP , clt_traj_planner, pub_la_goal_traj)
 
             while (not goal_la_reached) or not rospy.is_shutdown:
                 print("status: moving arm....")
