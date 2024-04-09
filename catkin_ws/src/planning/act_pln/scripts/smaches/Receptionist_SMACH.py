@@ -45,7 +45,8 @@ class Initial(smach.State):
         head.publish_tfs()
         
         if self.tries == 1:
-            # set_grammar(gram)  ##PRESET DRINKS  # TODO: fix
+            set_grammar(gram)  ##PRESET DRINKS  # TODO: fix
+            print("------------------------------------------------------------------------------------>")
             print("drinks:")
             print(drinks)
             print("-->")

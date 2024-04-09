@@ -5851,10 +5851,10 @@
         </link>
       </model>
       <model name='Shelf_02'>
-        <pose>2.76677 -1.58084 0 0 -0 0.019976</pose>
+        <pose>3.1815  -1.58084 0 0 -0 0.019976</pose>
         <scale>1 1 1</scale>
         <link name='link_0'>
-          <pose>2.76677 -1.58084 0 0 -0 0.019976</pose>
+          <pose>3.1815  -1.58084 0 0 -0 0.019976</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -5921,10 +5921,10 @@
         </link>
       </model>
       <model name='ToolBox_red'>
-        <pose>3.83799 -1.65909 -0.000651 2.1e-05 -0 0</pose>
+        <pose>4.050676 -1.65909 -0.000651 2.1e-05 -0 0</pose>
         <scale>1 1 1</scale>
         <link name='link_0'>
-          <pose>3.83799 -1.65909 -0.000651 2.1e-05 -0 0</pose>
+          <pose>4.050676 -1.65909 -0.000651 2.1e-05 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>-4e-06 0.027823 -7.77165 -0.490501 8e-06 0.000184</acceleration>
           <wrench>-7.8e-05 0.556457 -155.433 0 -0 0</wrench>

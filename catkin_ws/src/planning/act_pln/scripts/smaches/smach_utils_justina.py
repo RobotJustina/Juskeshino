@@ -11,7 +11,8 @@ from rospy.exceptions import ROSException
 import numpy as np
 import ros_numpy
 from sensor_msgs.msg import Image as ImageMsg, PointCloud2, LaserScan
-from geometry_msgs.msg import Twist, PointStamped, PoseStamped, Quaternion, Point, TransformStamped
+from geometry_msgs.msg import Twist, PoseStamped, Quaternion, Point, TransformStamped # PointStamped
+from tf2_geometry_msgs import PointStamped
 
 from std_msgs.msg import String
 import actionlib
@@ -644,6 +645,7 @@ global robot_real
 rospy.init_node('smach_justina_tune_vision')
 
 robot_real = False
+vosk_enable = False
 bridge = CvBridge()
 rgbd = RGBD()
 rgb = RGB()  # WEB CAM DEBUG
@@ -653,8 +655,8 @@ voice = Talker()
 head = Head()
 party = RECEPTIONIST()
 
-tfBuffer = tf2_ros.Buffer()
-listener = tf2_ros.TransformListener(tfBuffer)
+tfBuffer = tf2.Buffer()  # tf2_ros.Buffer()
+listener = tf2.TransformListener(tfBuffer) # tf2_ros.TransformListener(tfBuffer)
 
 speech_recog_server = rospy.ServiceProxy(
     '/speech_recognition/vosk_service', GetSpeech)  # SPEECH VOSK RECOG FULL DICT

@@ -170,19 +170,20 @@ class Scan_table(smach.State):
         if len(objects) != 0:
             for i in range(len(res.poses)):
                 # tf_man.getTF("head_rgbd_sensor_rgb_frame")
-                position = [res.poses[i].position.x,
-                            res.poses[i].position.y, res.poses[i].position.z]
+                position = [res.poses[i].position.x, res.poses[i].position.y, res.poses[i].position.z]
                 print('position,name', position, res.names[i].data[4:])
                 ##########################################################
                 object_point = PointStamped()
+                rospy.sleep(0.5)
                 object_point.header.frame_id = "camera_rgb_optical_frame" # take: "head_rgbd_sensor_rgb_frame"
                 object_point.point.x = position[0]
                 object_point.point.y = position[1]
                 object_point.point.z = position[2]
-                position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
+                print("obj.point", object_point)
+                position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(2))
                 print('position_map', position_map)
-                tf_man.pub_static_tf(pos=[position_map.point.x, position_map.point.y, position_map.point.z], rot=[
-                                     0, 0, 0, 1], ref="map", point_name=res.names[i].data[4:])
+                tf_man.pub_static_tf(pos=[position_map.point.x, position_map.point.y, position_map.point.z], 
+                                     rot=[0, 0, 0, 1], ref="map", point_name=res.names[i].data[4:])
                 new_row = {'x': position_map.point.x, 'y': position_map.point.y,
                            'z': position_map.point.z, 'obj_name': res.names[i].data[4:]}
                 objs.loc[len(objs)] = new_row
