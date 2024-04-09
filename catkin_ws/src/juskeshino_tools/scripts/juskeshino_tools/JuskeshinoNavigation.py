@@ -98,7 +98,7 @@ class JuskeshinoNavigation:
     def startMoveDist(distance):
         msg = Float32()
         msg.data = distance
-        JuskeshinoNavigation._simple_move_status.status = GoalStatus.PENDING;
+        JuskeshinoNavigation._simple_move_status.status = GoalStatus.PENDING
         JuskeshinoNavigation.pubSimpleMoveDist.publish(msg)
         rospy.sleep(0.1)
 
@@ -135,7 +135,7 @@ class JuskeshinoNavigation:
     #These methods use the mvn_pln node.
     def startGetCloseXYA(x, y, angle):
         msg = PoseStamped()
-        msg.header.frame_id = "map";
+        msg.header.frame_id = "map"
         msg.pose.position.x = x
         msg.pose.position.y = y
         msg.pose.position.z = 0

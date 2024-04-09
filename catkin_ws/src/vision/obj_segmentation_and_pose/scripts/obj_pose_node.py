@@ -248,8 +248,15 @@ def get_obj_pose_response(obj_state, c_obj, size_obj, obj_pose, graspable):
 def object_category(size_obj, obj_state):  # estima la forma geometrica del objeto. (x,z,y)
 
     if (size_obj.z <= MAXIMUM_GRIP_LENGTH) and (size_obj.y <= MAXIMUM_GRIP_LENGTH) and (size_obj.x >= 0.13):
-        print("The object will be GRABBED AS PRISM..................")
-        return "PRISM", True
+
+        if((size_obj.x /size_obj.z) < 1.4) and (obj_state == 'horizontal'):
+            print("The object is a bowl")
+            return "BOWL", True
+        else:
+            print("The object will be GRABBED AS PRISM..................")
+            return "PRISM", True
+
+
     else:
         if(size_obj.z <= MAXIMUM_GRIP_LENGTH) and (size_obj.y <= MAXIMUM_GRIP_LENGTH) and (size_obj.x < 0.13) and (size_obj.x > 0.07):
             print("Object spheric or cubic SMALL, SUPERIOR GRIP will be made")

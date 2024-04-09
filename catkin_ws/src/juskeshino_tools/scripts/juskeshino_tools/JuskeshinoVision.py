@@ -116,7 +116,7 @@ class JuskeshinoVision:
             print(resp.message)
     
 
-    def recognizeObjByBB():
+    def recognizeObjByBB(bb_target):
         [objs, imgs] = JuskeshinoVision.detectAndRecognizeObjects()
         idx = 0
         objs_2 = []

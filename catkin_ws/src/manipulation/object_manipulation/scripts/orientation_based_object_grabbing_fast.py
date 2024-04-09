@@ -24,6 +24,13 @@ def pose_actual_to_pose_target(pose, f_actual, f_target):
     poseStamped_msg.header.stamp = rospy.Time()  # la ultima transformacion
     poseStamped_msg.pose = pose
 
+    """
+    listener.waitForTransform("object", "shoulders_left_link", rospy.Time(), rospy.Duration(4.0))
+    new_poseStamped = listener.transformPose(f_target, poseStamped_msg)
+    new_pose = new_poseStamped.pose
+    return new_pose
+    """
+
     try:
         new_poseStamped = listener.transformPose(f_target, poseStamped_msg)
         new_pose = new_poseStamped.pose
@@ -121,8 +128,27 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
 def grip_rules(obj_pose, type_obj, obj_state, size, grip_point):
 
     if(type_obj == "BOWL"):
+        print("Best_Grasp_Node.->The object will be GRABBED AS BOWL.................")
+        return cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj)
+    
+    if(type_obj == "CUBIC"):
+        print("Best_Grasp_Node.->The object will be GRABBED AS CUBE.................")
         return cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj)
 
+    if(type_obj == "PRISM"):
+        print("Best_Grasp_Node.->The object will be GRABBED AS PRISM..................")
+        return prism(obj_pose, obj_state)
+    
+    if(type_obj == "BOX"):
+        print("Best_Grasp_Node.-> The object will be GRABBED as BOX....................")
+        return box(obj_pose, size, obj_state )
+    
+    else:
+        print("Error identificando forma del objeto.................")
+        poses_list = []
+        return poses_list
+
+    """
     if (size.z <= MAXIMUM_GRIP_LENGTH) and (size.y <= MAXIMUM_GRIP_LENGTH) and (size.x >= MINIMUM_HEIGHT_PRISM):
         print("Best_Grasp_Node.->The object will be GRABBED AS PRISM..................")
         return prism(obj_pose, obj_state)
@@ -134,6 +160,7 @@ def grip_rules(obj_pose, type_obj, obj_state, size, grip_point):
         else:
             print("Best_Grasp_Node.-> The object will be GRABBED as BOX....................")
             return box(obj_pose, size, obj_state )
+    """
 
 
 
@@ -664,8 +691,8 @@ def main():
     ik_srv = rospy.ServiceProxy( '/manipulation/la_ik_trajectory' , InverseKinematicsPose2Traj )
     marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10) 
     marker_array_pub = rospy.Publisher("/vision/obj_reco/marker_array", MarkerArray, queue_size = 10) 
-    
-    loop = rospy.Rate(30)
+
+    loop = rospy.Rate(10)
     while not rospy.is_shutdown():
         loop.sleep()
 
