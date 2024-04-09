@@ -97,8 +97,8 @@ def object_pose(centroid, principal_component, second_component, size_obj):  # v
     print("angulo del objeto respecto de la superficie: ", np.rad2deg(angle_obj))
 
     # ************************************************************************************************
-    if ((angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150))):  
-        if (size_obj.x >= 0.13):
+    if ((angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150))):  # Si el objeto es horizontal
+        if (size_obj.x >= 0.13):        # Si el objeto es
             # Realiza agarre superior
             obj_state = 'horizontal'
             print("Eje principal horizontal")
@@ -131,7 +131,7 @@ def object_pose(centroid, principal_component, second_component, size_obj):  # v
                 eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
             
         
-        else:
+        else:   # Sie el objeto es vertical
             # Si el objeto es pequenio se construye un frame que permita el agarre superior
             print("se construye un frame que permita el agarre superior")
             obj_state = 'horizontal'
@@ -144,21 +144,29 @@ def object_pose(centroid, principal_component, second_component, size_obj):  # v
     else: # Realiza agarre lateral
         obj_state = 'vertical'
         print("Eje principal vertical")
-        angle_2pc_x_bl =  math.atan2(second_component[1], second_component[0]) 
-        print("angulo de z_obj respecto de eje x base link", np.rad2deg(angle_2pc_x_bl))
-        if angle_2pc_x_bl < np.deg2rad(23):
-            if angle_2pc_x_bl > np.deg2rad(-157):
-                print("angulo fuera de rango de agarre ,se invirtio sentido de 2pc")
-                second_component[0] = -1*second_component[0]
-                second_component[1] = -1*second_component[1]
-                angle_2pc_x_bl =  math.atan2(second_component[1], second_component[0]) 
-                print("angulo de z_obj respecto de eje x base link despues", np.rad2deg(angle_2pc_x_bl))
+        if (size_obj.x >= 0.13):
+            angle_2pc_x_bl =  math.atan2(second_component[1], second_component[0]) 
+            print("angulo de z_obj respecto de eje x base link", np.rad2deg(angle_2pc_x_bl))
+            if angle_2pc_x_bl < np.deg2rad(23):
+                if angle_2pc_x_bl > np.deg2rad(-157):
+                    print("angulo fuera de rango de agarre ,se invirtio sentido de 2pc")
+                    second_component[0] = -1*second_component[0]
+                    second_component[1] = -1*second_component[1]
+                    angle_2pc_x_bl =  math.atan2(second_component[1], second_component[0]) 
+                    print("angulo de z_obj respecto de eje x base link despues", np.rad2deg(angle_2pc_x_bl))
 
-    # ******************************************************
-   # Asignacion de ejes del objeto
-        eje_z_obj = second_component 
-        eje_x_obj = principal_component 
-        eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+            # Asignacion de ejes del objeto
+            eje_z_obj = second_component 
+            eje_x_obj = principal_component 
+            eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+
+        else:
+            # Si el objeto es pequenio se construye un frame que permita el agarre superior
+            print("SMALL VERTICAL.................")
+            print("se construye un frame que permita el agarre superior")
+            eje_x_obj = np.asarray([1, 0, 0], dtype=np.float64)
+            eje_z_obj = eje_z
+            eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
 
     # **************************************************************************************************
     axis_x_obj = Point(x = eje_x_obj[0], y = eje_x_obj[1], z = eje_x_obj[2])    # Vector x_obj

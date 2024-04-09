@@ -465,6 +465,8 @@ void QtRosNode::call_take_object(std::string name)
     srv.request.name = name;
     */
     pubTakeObject.publish(msg);
+    msg.data = " ";
+    pubTakeObject.publish(msg);
 }
 
 
