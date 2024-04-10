@@ -644,7 +644,7 @@ global segmentation_server, tf_man, voice, head, party, tfBuffer, listener
 global robot_real
 rospy.init_node('smach_justina_tune_vision')
 
-robot_real = False
+robot_real = True
 vosk_enable = False
 bridge = CvBridge()
 rgbd = RGBD()

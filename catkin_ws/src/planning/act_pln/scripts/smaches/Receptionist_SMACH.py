@@ -9,7 +9,7 @@ from smach_utils_justina import *
 class Initial(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'],
-                             output_keys = ['l_arm_home'], input_keys=['l_arm_home'])
+                             output_keys = ['l_arm_home', 'confirm_list'], input_keys=['l_arm_home'] )
         self.tries = 0
         global camera_enable
         if robot_real:
@@ -19,8 +19,15 @@ class Initial(smach.State):
             print("Cam disable")
             camera_enable = True
 
+
     def execute(self, userdata):
         print('\n> STATE <: INITIAL')
+        global vosk_enable
+        if vosk_enable:
+            userdata.confirm_list = ['yes', 'jack', 'juice', 'justina yes', 'yeah']
+        else:
+            userdata.confirm_list = ["YES", "YEAH", "ROBOT YES", "JUSTINA YES", "JUICE"]
+
         self.tries += 1
         print(f'Try {self.tries}')
         userdata.l_arm_home = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -39,14 +46,13 @@ class Initial(smach.State):
        
         names = [' my name is' , 'i am','adel', 'angel', 'axel', 
                  'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone', 'jack']
-        confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah']                     
+        confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah', 'justina yes', 'justina no']                     
         gram = drinks + names + confirmation   
 
         head.publish_tfs()
         
         if self.tries == 1:
             set_grammar(gram)  ##PRESET DRINKS  # TODO: fix
-            print("------------------------------------------------------------------------------------>")
             print("drinks:")
             print(drinks)
             print("-->")
@@ -162,7 +168,7 @@ class Decide_face(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                              outcomes=['succ', 'failed', 'unknown'], 
-                             input_keys=['name', 'face_img'], 
+                             input_keys=['name', 'face_img', 'confirm_list'],
                              output_keys=['name', 'face_img'])
         self.tries = 0
     def execute(self, userdata):
@@ -184,11 +190,21 @@ class Decide_face(smach.State):
             print('Is it correct?')
             voice.talk(f'I found you, I Think you are, {userdata.name}.')
             voice.talk('Is it correct?')
-            #rospy.sleep(2.5)
-            confirmation = get_keywords_speech(8)
-            print(confirmation)
 
-            if confirmation not in ['yes', 'jack', 'juice', 'Justina yes', 'yeah']:
+            # TODO: TEST VOICE BEFORE START
+            if vosk_enable:
+                confirmation = get_keywords_speech(8)
+                #confirm_list = ['yes', 'jack', 'juice', 'justina yes', 'yeah']
+                #negation_list = ['no', 'robot no','not','now','nope','justina no'] 
+            else: 
+                JuskeshinoHRI.getLastRecognizedSentence()
+                rospy.sleep(0.3)
+                confirmation = JuskeshinoHRI.waitForNewSentence(3)
+                #confirm_list = ["YES", "YEAH", "ROBOT YES", "JUSTINA YES", "JUICE"]
+                #negation_list = ['NO', 'ROBOT NO','NOPE','JUSTINA NO']
+            
+            print(confirmation)
+            if confirmation not in userdata.confirm_list:
                 return 'unknown'
             elif confirmation == "timeout":
                 print('I could not hear you, lets try again, please speak louder.')
@@ -204,7 +220,7 @@ class New_face(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                              outcomes=['succ', 'failed'],
-                             input_keys=['name', 'face_img'],
+                             input_keys=['name', 'face_img', 'confirm_list'],
                              output_keys=['name', 'face_img'])
         self.tries = 0
 
@@ -227,8 +243,17 @@ class New_face(smach.State):
         #Asking for name
         print('Please, tell me your name')
         voice.talk('Please, tell me your name')
-        #rospy.sleep(1.0)
-        speech = get_keywords_speech(8)
+
+        # TODO: TEST VOICE BEFORE START
+        if vosk_enable:
+            speech = get_keywords_speech(8)
+        else: 
+            JuskeshinoHRI.getLastRecognizedSentence()
+            rospy.sleep(0.3)
+            speech = JuskeshinoHRI.waitForNewSentence(3)
+            speech.lower()
+
+
         # in case thinks like I am , my name is . etc
         if len(speech.split(' ')) > 1: 
             name = (speech.split(' ')[-1])
@@ -242,12 +267,21 @@ class New_face(smach.State):
 
         print(f'Is {name} your name?')
         voice.talk(f'Is {name} your name?')
-        #rospy.sleep(2.0)
-        confirmation = get_keywords_speech(8)
+
+        # TODO: TEST VOICE BEFORE START
+        if vosk_enable:
+            confirmation = get_keywords_speech(8)
+            #confirm_list = ['yes', 'jack', 'juice', 'justina yes', 'yeah']
+        else: 
+            JuskeshinoHRI.getLastRecognizedSentence()
+            rospy.sleep(0.3)
+            confirmation = JuskeshinoHRI.waitForNewSentence(3)
+            #confirm_list = ["YES", "YEAH", "ROBOT YES", "JUSTINA YES", "JUICE"]
+
         print (confirmation)
 
         confirmation = confirmation.split(' ')
-        confirm = match_speech(confirmation, ['yes','yeah','jack','juice'])
+        confirm = match_speech(confirmation, userdata.confirm_list)
         if confirm:
             userdata.name = name
             print(f'Nice to Meet You {userdata.name}')
@@ -267,7 +301,7 @@ class Get_drink(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                              outcomes=['succ', 'failed', 'tries'],
-                             input_keys=['name', 'face_img'])
+                             input_keys=['name', 'face_img', 'confirm_list'])
         #self.new_name = ''
         #self.num_faces = 0
         self.tries = 0
@@ -294,8 +328,15 @@ class Get_drink(smach.State):
         #Asking for drink
         print('What would you like to drink?')
         voice.talk('What would you like to drink?')
-        #rospy.sleep(2.0)
-        drink = get_keywords_speech(8)
+
+        # TODO: TEST VOICE BEFORE START
+        if vosk_enable:
+            drink = get_keywords_speech(8)
+        else: 
+            JuskeshinoHRI.getLastRecognizedSentence()
+            rospy.sleep(0.3)
+            drink = JuskeshinoHRI.waitForNewSentence(3)
+            drink.lower()
 
         if len(drink.split(' '))>1: drink=(drink.split(' ')[-1])
         print(drink)
@@ -308,10 +349,16 @@ class Get_drink(smach.State):
         print(f'Did you say {drink}?')
         voice.talk(f'Did you say {drink}?')
 
-        #rospy.sleep(2.5)
-        confirmation = get_keywords_speech(8)
+        # TODO: TEST VOICE BEFORE START
+        if vosk_enable:
+            confirmation = get_keywords_speech(8)
+        else: 
+            JuskeshinoHRI.getLastRecognizedSentence()
+            rospy.sleep(0.3)
+            confirmation = JuskeshinoHRI.waitForNewSentence(3)
+
         confirmation = confirmation.split(' ')
-        confirm = match_speech(confirmation, ['yes', 'yeah', 'jack', 'juice'])
+        confirm = match_speech(confirmation, userdata.confirm_list)
         if not confirm: 
             return 'tries' 
 
@@ -364,7 +411,7 @@ class Find_sitting_place(smach.State):
                              input_keys=['l_arm_home'])
         self.tries = 0
         self.failed = False
-        self.n_sits = 3
+        self.n_sits = 3  # TODO: SET THIS BEFORE START
         self.l_arm_offerSit = [0.3, 0.2, -0.4, 1.7, 0.0, -0.4, 1.5, 0.2]
 
     def execute(self, userdata):
@@ -463,8 +510,6 @@ class Find_host_alternative(smach.State):
                     dont_compare = True
                     break
         
-        #print("host location is: ", host_loc)
-        #print("host name is: ", host_name)
         print(f'looking for host on: {host_loc}')
         voice.talk(f'looking for host on: {host_loc}')
         tf_host = host_loc.replace('_', '_face')
@@ -489,7 +534,7 @@ class Introduce_guest(smach.State):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'],
                              input_keys=['name_like_host'])
         self.tries = 0
-        self.n_guest = 3
+        self.n_guest = 2  # TODO: SET THIS BEFORE START
 
     def execute(self, userdata):
         self.tries += 1
@@ -543,7 +588,6 @@ if __name__ == '__main__':
 
     with sm:
         # State machine for Receptionist task
-
         # Initial states routine
         smach.StateMachine.add("INITIAL", Initial(),              
                                transitions={'failed':'INITIAL', 'succ':'WAIT_DOOR_OPENED'})

@@ -179,7 +179,7 @@ class Scan_table(smach.State):
                 object_point.point.x = position[0]
                 object_point.point.y = position[1]
                 object_point.point.z = position[2]
-                print("obj.point", object_point)
+                print("obj.point>\n", object_point)
                 position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(2))
                 print('position_map', position_map)
                 tf_man.pub_static_tf(pos=[position_map.point.x, position_map.point.y, position_map.point.z], 
