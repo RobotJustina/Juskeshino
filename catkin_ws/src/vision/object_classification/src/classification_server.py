@@ -69,14 +69,8 @@ def callback(req):
                         
                         broadcaster.sendTransform(t)
                     debug_img=cv2.rectangle(debug_img ,pt_min,pt_max,  (0, 255, 0), 2   )
-                    debug_img= cv2.putText(
-                                debug_img ,model.names[int(cls.cpu().tolist())],
-                                pt_min,
-                                cv2.FONT_HERSHEY_SIMPLEX,
-                                0.5,
-                                (0, 255, 0),
-                                2
-                                )                
+                    debug_img= cv2.putText(debug_img ,model.names[int(cls.cpu().tolist())],
+                                pt_min, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)                
                     print (num_preds,pt_min, pt_max,conf.cpu().tolist(),model.names[int(cls.cpu().tolist())], cc )
                     for coord in pt_min:    res.pt_max.data.append(coord)
                     for coord in pt_max:    res.pt_min.data.append(coord)
