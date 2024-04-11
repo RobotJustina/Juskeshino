@@ -79,7 +79,7 @@ kitchen_table:
 - qz: 0.9999162035905428
 - qw: 0.012945493311438572
 kitchen_table_search:
-- x: 7.8
+- x: 7.6
 - y: 2.32
 - theta: 0.0
 - qx: 0.0
@@ -95,13 +95,13 @@ living_room:
 - qz: -0.647
 - qw: 0.761
 pickup:
-- x: 8.854
-- y: 2.461
-- theta: 3.047
-- qx: 0.0
+- x: 7.78
+- y: 0.949
+- theta: 0.0
+- qx: 0.704
 - qy: 0.0
-- qz: 0.998
-- qw: 0.047
+- qz: 0.0
+- qw: 0.709
 place_shelf:
 - x: 9.163
 - y: 0.411

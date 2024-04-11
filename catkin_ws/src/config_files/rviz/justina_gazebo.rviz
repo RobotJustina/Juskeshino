@@ -5,8 +5,9 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Status1
+        - /TF1
         - /TF1/Frames1
-      Splitter Ratio: 0.5
+      Splitter Ratio: 0.6521739363670349
     Tree Height: 346
   - Class: rviz/Selection
     Name: Selection
@@ -358,6 +359,8 @@ Visualization Manager:
       Value: true
     - Class: rviz/TF
       Enabled: true
+      Filter (blacklist): ""
+      Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
         All Enabled: false
@@ -371,6 +374,8 @@ Visualization Manager:
           Value: false
         camera_link:
           Value: false
+        camera_rgb_optical_frame:
+          Value: true
         head_link1:
           Value: false
         head_link2:
@@ -407,26 +412,24 @@ Visualization Manager:
           Value: false
         odom:
           Value: false
-        camera_rgb_optical_frame:
-          Value: true
         right_arm_grip_center:
-          Value: false
+          Value: true
         right_arm_grip_left:
-          Value: true
+          Value: false
         right_arm_grip_right:
-          Value: true
+          Value: false
         right_arm_link1:
-          Value: true
+          Value: false
         right_arm_link2:
-          Value: true
+          Value: false
         right_arm_link3:
-          Value: true
+          Value: false
         right_arm_link4:
-          Value: true
+          Value: false
         right_arm_link5:
-          Value: true
+          Value: false
         right_arm_link6:
-          Value: true
+          Value: false
         right_arm_link7:
           Value: false
         right_wheel_link:
@@ -576,7 +579,7 @@ Visualization Manager:
       Marker Topic: /vision/human_pose/human_pose_marker
       Name: HumanPoses
       Namespaces:
-        human_pose: true
+        {}
       Queue Size: 100
       Value: true
   Enabled: true
@@ -607,7 +610,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 11.563423156738281
+      Distance: 3.0306754112243652
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -615,17 +618,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 3.1563422679901123
-        Y: 4.367926597595215
-        Z: -0.9679096937179565
+        X: 6.933966636657715
+        Y: 2.362856149673462
+        Z: 0.5025760531425476
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.424795150756836
+      Pitch: 0.174796000123024
       Target Frame: <Fixed Frame>
-      Yaw: 0.0004076957702636719
+      Yaw: 3.625408887863159
     Saved: ~
 Window Geometry:
   Displays:
@@ -646,4 +649,4 @@ Window Geometry:
     collapsed: true
   Width: 1528
   X: 72
-  Y: 327
+  Y: 299

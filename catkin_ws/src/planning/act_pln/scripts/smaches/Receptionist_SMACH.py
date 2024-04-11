@@ -25,8 +25,10 @@ class Initial(smach.State):
         global vosk_enable
         if vosk_enable:
             userdata.confirm_list = ['yes', 'jack', 'juice', 'justina yes', 'yeah']
+            #negation_list = ['no', 'robot no','not','now','nope','justina no'] 
         else:
             userdata.confirm_list = ["YES", "YEAH", "ROBOT YES", "JUSTINA YES", "JUICE"]
+            #negation_list = ['NO', 'ROBOT NO','NOPE','JUSTINA NO']
 
         self.tries += 1
         print(f'Try {self.tries}')
@@ -52,7 +54,7 @@ class Initial(smach.State):
         head.publish_tfs()
         
         if self.tries == 1:
-            set_grammar(gram)  ##PRESET DRINKS  # TODO: fix
+            set_grammar(gram)
             print("drinks:")
             print(drinks)
             print("-->")
@@ -194,14 +196,11 @@ class Decide_face(smach.State):
             # TODO: TEST VOICE BEFORE START
             if vosk_enable:
                 confirmation = get_keywords_speech(8)
-                #confirm_list = ['yes', 'jack', 'juice', 'justina yes', 'yeah']
-                #negation_list = ['no', 'robot no','not','now','nope','justina no'] 
+
             else: 
                 JuskeshinoHRI.getLastRecognizedSentence()
                 rospy.sleep(0.3)
                 confirmation = JuskeshinoHRI.waitForNewSentence(3)
-                #confirm_list = ["YES", "YEAH", "ROBOT YES", "JUSTINA YES", "JUICE"]
-                #negation_list = ['NO', 'ROBOT NO','NOPE','JUSTINA NO']
             
             print(confirmation)
             if confirmation not in userdata.confirm_list:
@@ -271,12 +270,10 @@ class New_face(smach.State):
         # TODO: TEST VOICE BEFORE START
         if vosk_enable:
             confirmation = get_keywords_speech(8)
-            #confirm_list = ['yes', 'jack', 'juice', 'justina yes', 'yeah']
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
             rospy.sleep(0.3)
             confirmation = JuskeshinoHRI.waitForNewSentence(3)
-            #confirm_list = ["YES", "YEAH", "ROBOT YES", "JUSTINA YES", "JUICE"]
 
         print (confirmation)
 
@@ -302,8 +299,6 @@ class Get_drink(smach.State):
         smach.State.__init__(self, 
                              outcomes=['succ', 'failed', 'tries'],
                              input_keys=['name', 'face_img', 'confirm_list'])
-        #self.new_name = ''
-        #self.num_faces = 0
         self.tries = 0
         self.attempts = 3
 
@@ -481,7 +476,7 @@ class Find_sitting_place(smach.State):
 # --------------------------------------------------
 class Find_host_alternative(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes= ['succ', 'failed'],
+        smach.State.__init__(self, outcomes= ['succ', 'failed', 'tries'],
                              output_keys=['name_like_host'])
         self.tries = 0
     def execute(self, userdata):
@@ -503,15 +498,21 @@ class Find_host_alternative(smach.State):
         else:
             seats = party.get_guests_seat_assignments()
             print("seats: ", seats)
-
             for place, guest in seats.items():
                 if guest != party.get_active_guest():
                     host_loc = place
                     dont_compare = True
                     break
+
+        if self.tries == 3:
+            print(f'I am sorry, I can not find the host, lets keep going')
+            voice.talk(f'I am sorry, I can not find the host, lets keep going')
+            userdata.name_like_host, _ = party.get_host_info()
+            return 'failed'
         
         print(f'looking for host on: {host_loc}')
-        voice.talk(f'looking for host on: {host_loc}')
+        host_place_say = host_loc.replace('_', ' ')
+        voice.talk(f'looking for host on: {host_place_say}')
         tf_host = host_loc.replace('_', '_face')
         head.to_tf(tf_host)
 
@@ -523,9 +524,9 @@ class Find_host_alternative(smach.State):
                 userdata.name_like_host = person_name
                 return 'succ'
             else:
-                return 'failed'
+                return 'tries'
         else:
-            return 'failed'
+            return 'tries'
 
 
 # --------------------------------------------------
@@ -622,7 +623,7 @@ if __name__ == '__main__':
                                transitions={'tries':'FIND_SITTING_PLACE', 'failed':'FIND_HOST', 'succ':'FIND_HOST'})
         
         smach.StateMachine.add("FIND_HOST", Find_host_alternative(),
-                               transitions={'failed':'FIND_HOST', 'succ':'INTRODUCE_GUEST'})
+                               transitions={'tries':'FIND_HOST', 'failed':'INTRODUCE_GUEST', 'succ':'INTRODUCE_GUEST'})
         
         smach.StateMachine.add("INTRODUCE_GUEST", Introduce_guest(),
                                transitions={'failed':'INTRODUCE_GUEST', 'succ':'GOTO_DOOR', 'tries':'END'})

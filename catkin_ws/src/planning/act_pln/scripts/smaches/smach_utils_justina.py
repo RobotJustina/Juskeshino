@@ -242,13 +242,23 @@ class Head:  # known as Gaze on Takeshi grasp_utils.py
         return t
 
 
-def detect_object_yolo(object_name,res):
+def detect_object_yolo(object_name, res, long_names=True):
     # find object_name in the response message from object_classification service (Yolo)
     objs=[]
-    for i,name in enumerate(res.names):
-        objs.append(name.data[4:])
-        if name.data[4:]==object_name:return res.poses[i]
-    if object_name=='all': return objs
+    if long_names:  # removes nnn_ from name object
+        for i, name in enumerate(res.names):
+            objs.append(name.data[4:])
+            if name.data[4:]==object_name:
+                return res.poses[i]
+        if object_name=='all': 
+            return objs
+    else:
+        for i, name in enumerate(res.names):
+            objs.append(name)
+            if name==object_name:
+                return res.poses[i]
+        if object_name=='all': 
+            return objs
     return []
 
 ######################################################

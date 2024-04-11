@@ -110,7 +110,8 @@ def classify_server(model_name='ycb.pt'):
     device = select_device('')
     rospack = rospkg.RosPack()
     file_path = rospack.get_path('object_classification')
-    ycb_yolo_path = file_path + '/src/weights/ycb.pt'
+    ycb_yolo_path = file_path + '/src/weights/' + model_name
+    rospy.logwarn("model path: " + ycb_yolo_path)
     rospy.logwarn("Loaded model: " + model_name)
 
     model = attempt_load(ycb_yolo_path, device)
@@ -121,4 +122,5 @@ def classify_server(model_name='ycb.pt'):
 
 
 if __name__ == "__main__":
-    classify_server()
+    model_name = "TaRJust_ycb.pt"
+    classify_server(model_name)

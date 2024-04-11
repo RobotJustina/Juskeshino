@@ -163,15 +163,17 @@ class Scan_table(smach.State):
         img_msg = bridge.cv2_to_imgmsg(rgbd.get_image())
         req = classify_client.request_class()
         req.in_.image_msgs.append(img_msg)
-        res = classify_client(req)  # TODO: repair
-        objects = detect_object_yolo('all', res)
+        res = classify_client(req)
+        long_names = True
+        objects = detect_object_yolo('all', res, long_names)
         print(objects)
         # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         if len(objects) != 0:
             for i in range(len(res.poses)):
                 # tf_man.getTF("head_rgbd_sensor_rgb_frame")
                 position = [res.poses[i].position.x, res.poses[i].position.y, res.poses[i].position.z]
-                print('position,name', position, res.names[i].data[4:])
+                #print('position,name', position, res.names[i].data[4:])
+                print('position,name', position, res.names[i])
                 ##########################################################
                 object_point = PointStamped()
                 rospy.sleep(0.5)
@@ -179,14 +181,20 @@ class Scan_table(smach.State):
                 object_point.point.x = position[0]
                 object_point.point.y = position[1]
                 object_point.point.z = position[2]
-                print("obj.point>\n", object_point)
+                #print("obj.point>\n", object_point)
                 position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(2))
                 print('position_map', position_map)
+                if long_names:
+                    obj_name = res.names[i].data[4:]
+                else:
+                    obj_name = res.names[i].data[:]
+
                 tf_man.pub_static_tf(pos=[position_map.point.x, position_map.point.y, position_map.point.z], 
-                                     rot=[0, 0, 0, 1], ref="map", point_name=res.names[i].data[4:])
+                                     rot=[0, 0, 0, 1], ref="map", point_name=obj_name)
                 new_row = {'x': position_map.point.x, 'y': position_map.point.y,
-                           'z': position_map.point.z, 'obj_name': res.names[i].data[4:]}
+                           'z': position_map.point.z, 'obj_name': obj_name}
                 objs.loc[len(objs)] = new_row
+                print("########")
                 ###########################################################
 
         else:
