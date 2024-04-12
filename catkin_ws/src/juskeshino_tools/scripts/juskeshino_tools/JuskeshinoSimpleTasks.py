@@ -146,7 +146,7 @@ class JuskeshinoSimpleTasks:
     def handling_location(vision_obj ):
         position_obj = vision_obj.pose.position
         l_threshold_m = 0.26
-        r_threshold_m = 0.05
+        r_threshold_m = 0.1
 
         if position_obj.y > 0.24:
             dist_move = position_obj.y - l_threshold_m
@@ -154,8 +154,8 @@ class JuskeshinoSimpleTasks:
             JuskeshinoNavigation.moveLateral(dist_move , 10)
             return dist_move
 
-        if position_obj.y < 0.08:
-            dist_move = position_obj.y - 0.05
+        if position_obj.y < r_threshold_m:
+            dist_move = position_obj.y - r_threshold_m
             print("dist move der", dist_move)
             JuskeshinoNavigation.moveLateral(dist_move , 10)
             return dist_move
@@ -167,13 +167,13 @@ class JuskeshinoSimpleTasks:
 
         if obj == None: # si no reconocio el objeto
             JuskeshinoHardware.moveHead(-0.5,-1, 5) #move head to the right 
-            time.sleep(2)
+            time.sleep(1)
             [obj, img] = JuskeshinoVision.detectAndRecognizeObject(name_obj)
             print("JuskeshinoSimpleTask.->Primer intento")
 
             if obj == None: # si no reconocio el objeto
                 JuskeshinoHardware.moveHead(0.5,-1, 5) #move head to the left
-                time.sleep(2)
+                time.sleep(1)
                 [obj, img] = JuskeshinoVision.detectAndRecognizeObject(name_obj)
                 print("JuskeshinoSimpleTask.->Segundo intento")
 
