@@ -72,9 +72,9 @@ def pca(xyz_points):    # pc del contorno mas cercano
     W = np.max(pts_frame_PCA[:, 0]) - np.min(pts_frame_PCA[:, 0])
     
     size_obj = np.asarray([H, L,W])
-    idx = size_obj.argsort()
+    idx = size_obj.argsort()  # entrega el orden de las 3 componentes principale de menor a mayor 
     size_obj = size_obj[idx]
-    print("size obj", size_obj)
+    print("size obj", size_obj)         # menor a mayor 
     # Los vectores de salida estan en el frame base_link
     size_object = Vector3(x = size_obj[2] , z = size_obj[1], y = size_obj[0])
     return [eig_vect[:,2], eig_vect[:,1] , eig_vect[:,0]], [eig_val[2], eig_val[1], eig_val[0]], size_object
@@ -96,6 +96,14 @@ def object_pose(centroid, principal_component, second_component, size_obj):  # v
     angle_obj = np.abs(np.arcsin( np.dot(principal_component , eje_z ) / (np.linalg.norm(principal_component ) * 1) ))
     print("angulo del objeto respecto de la superficie: ", np.rad2deg(angle_obj))
 
+
+    """
+    p = Point()
+    p.x, p.y, p.z = second_component[0], second_component[1], second_component[2] 
+    print("s c", second_component)
+    publish_arow_marker(centroid, p ,"base_link", 6, "z_obj")
+    """
+    
     # ************************************************************************************************
     if ((angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150))):  # Si el objeto es horizontal
         if (size_obj.x >= 0.13):        # Si el objeto es
@@ -145,20 +153,38 @@ def object_pose(centroid, principal_component, second_component, size_obj):  # v
         obj_state = 'vertical'
         print("Eje principal vertical")
         if (size_obj.x >= 0.13):
-            angle_2pc_x_bl =  math.atan2(second_component[1], second_component[0]) 
-            print("angulo de z_obj respecto de eje x base link", np.rad2deg(angle_2pc_x_bl))
+            # Mide el angulo de la proyeccion del vector z_obj sobre el plano xy de base_link y el eje x_base_link
+            angle_2pc_x_bl =  math.atan2(second_component[1], second_component[0])  
+            print("angulo de la proyeccion del vector z_obj sobre el plano xy de base_link y el eje x_base_link", np.rad2deg(angle_2pc_x_bl))
+
+            print("eje_x_obj before:_____", principal_component)
+            print("eje_y_obj before:_____")
+            print("eje_z_obj before:_____", second_component)
+
             if angle_2pc_x_bl < np.deg2rad(23):
                 if angle_2pc_x_bl > np.deg2rad(-157):
                     print("angulo fuera de rango de agarre ,se invirtio sentido de 2pc")
+                    p = Point()
+                    p.x, p.y, p.z = second_component[0], second_component[1], second_component[2] 
+                    print("s c", second_component)
+                    publish_arow_marker(centroid, p ,"base_link", 6, "z_obj")
                     second_component[0] = -1*second_component[0]
                     second_component[1] = -1*second_component[1]
                     angle_2pc_x_bl =  math.atan2(second_component[1], second_component[0]) 
-                    print("angulo de z_obj respecto de eje x base link despues", np.rad2deg(angle_2pc_x_bl))
+                    print("angulo de vector z_obj respecto del eje x_base_link despues", np.rad2deg(angle_2pc_x_bl))
 
-            # Asignacion de ejes del objeto
-            eje_z_obj = second_component 
-            eje_x_obj = principal_component 
-            eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+                    # Asignacion de ejes del objeto
+                    eje_z_obj = second_component 
+                    eje_x_obj = principal_component 
+                    eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+
+
+
+            else:
+                # Asignacion de ejes del objeto
+                eje_z_obj = second_component 
+                eje_x_obj = principal_component 
+                eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
 
         else:
             # Si el objeto es pequenio se construye un frame que permita el agarre superior
@@ -169,6 +195,10 @@ def object_pose(centroid, principal_component, second_component, size_obj):  # v
             eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
 
     # **************************************************************************************************
+    print("eje_x_obj:_____", eje_x_obj)
+    print("eje_y_obj:_____", eje_y_obj)
+    print("eje_z_obj:_____", eje_z_obj)
+
     axis_x_obj = Point(x = eje_x_obj[0], y = eje_x_obj[1], z = eje_x_obj[2])    # Vector x_obj
     # Se forma la matriz de rotacion (columnas) del objeto, a partir de ella se obtienen los cuaterniones necesarios para generar el frame del objeto
     RM = np.asarray([eje_x_obj, eje_y_obj , eje_z_obj])
@@ -187,13 +217,15 @@ def object_pose(centroid, principal_component, second_component, size_obj):  # v
     obj_pose.orientation.z = quaternion_obj[2]
     obj_pose.orientation.w = quaternion_obj[3]
 
+    broadcaster_frame_object("base_link", "object", obj_pose)
     # Retorna la pose del objeto en 'base_link'
     return obj_pose , axis_x_obj, obj_state
 
 
 
 def broadcaster_frame_object(frame, child_frame, pose):   # Emite la transformacion en el frame base_link,
-    br = tf2_ros.TransformBroadcaster()
+    #br = tf2_ros.TransformBroadcaster()
+    br =  tf2_ros.StaticTransformBroadcaster()
     t = geometry_msgs.msg.TransformStamped()
     t.header.frame_id = frame
     t.child_frame_id = child_frame 
@@ -209,7 +241,7 @@ def broadcaster_frame_object(frame, child_frame, pose):   # Emite la transformac
 
 
 
-def publish_arow_marker(centroide_cam, p1,frame_id, ns, id):  
+def publish_arow_marker(centroide_cam, p1,frame_id, id, name):  
     p0 = PointStamped()
     p0.header.frame_id = frame_id
     p0.point.x , p0.point.y, p0.point.z = centroide_cam[0], centroide_cam[1], centroide_cam[2]
@@ -217,7 +249,7 @@ def publish_arow_marker(centroide_cam, p1,frame_id, ns, id):
     marker = Marker()
     marker.header.frame_id = frame
     marker.type = Marker.ARROW
-    marker.ns = 'principal_component'
+    marker.ns = name#'principal_component'
     marker.header.stamp = rospy.Time.now()
     marker.action = marker.ADD
     marker.id = 1#+10
@@ -268,7 +300,7 @@ def object_category(size_obj, obj_state):  # estima la forma geometrica del obje
                 return "BOWL", True
             else:
                 if (size_obj.z >= MAXIMUM_GRIP_LENGTH) and (size_obj.y >= MAXIMUM_GRIP_LENGTH) and (size_obj.x >= MAXIMUM_GRIP_LENGTH):
-                    return "BIG", False
+                    return "BOX", True#"BIG", False
                 
                 print("size object > MAX LENGHT GRIP")
                 print("The object will be GRABBED as BOX....................")
@@ -291,7 +323,6 @@ def callback_PoseObject(req):  # Request is a PointCloud2
 
     print("CENTROID:____", centroid)
     #publish_arow_marker(centroid, axis_x_obj, 'base_link', ns ="principal_component", id=22)
-    broadcaster_frame_object("base_link", "object", obj_pose)
     print("SIZE:________", )
     print(size_obj)
     print("OBJECT TYPE", c_obj)

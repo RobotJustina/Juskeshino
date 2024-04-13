@@ -20,14 +20,19 @@ MAXIMUM_CUBE_SIZE = 0.13
 def pose_actual_to_pose_target(pose, f_actual, f_target):
     global listener
     poseStamped_msg = PoseStamped()  
-    poseStamped_msg.header.frame_id = "object"   # frame de origen
+    poseStamped_msg.header.frame_id = f_actual   # frame de origen
     poseStamped_msg.header.stamp = rospy.Time()  # la ultima transformacion
     poseStamped_msg.pose = pose
 
+    """
+    listener.waitForTransform("object", "shoulders_left_link", rospy.Time(), rospy.Duration(4.0))
+    new_poseStamped = listener.transformPose(f_target, poseStamped_msg)
+    new_pose = new_poseStamped.pose
+    return new_pose
+    """
+
     try:
-        listener.waitForTransform("object", "shoulders_left_link", rospy.Time(0), rospy.Duration(10.0))
-        print("waitfor ..despues")
-        new_poseStamped = listener.transformPose('shoulders_left_link', poseStamped_msg)
+        new_poseStamped = listener.transformPose(f_target, poseStamped_msg)
         new_pose = new_poseStamped.pose
         return new_pose
     
@@ -35,19 +40,16 @@ def pose_actual_to_pose_target(pose, f_actual, f_target):
         print("Best_Grasp_Node.-> Could not get the pose in the desired frame")
         return -1
 
-
     
 
 def points_actual_to_points_target(point_in, f_actual, f_target):
     global listener
     point_msg = PointStamped()  
     point_msg.header.frame_id = f_actual   # frame de origen
-    point_msg.header.stamp = rospy.Time() # la ultima transformacion
+    point_msg.header.stamp = rospy.Time(0)  # la ultima transformacion
     point_msg.point.x = point_in[0]
     point_msg.point.y = point_in[1]
     point_msg.point.z = point_in[2]
-
-    listener.waitForTransform(f_actual, f_target, rospy.Time(), rospy.Duration())
     point_target_frame = listener.transformPoint(f_target, point_msg)
     new_point = point_target_frame.point
     return [ new_point.x , new_point.y , new_point.z ]
@@ -68,13 +70,14 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
         Retorna una lista de poses candidatas expresadas en cuaterniones (msg Pose)
     """
     global debug 
+    grasp_candidates_quaternion = []
     j = 0
 
     if obj_state == "horizontal":   # 13 cm por encima del objeto (z_base_link)
         grip_point_bl = points_actual_to_points_target(grip_point, 'object', 'base_link')
 
         if type_obj == "BOWL":
-            grip_point_bl[2] = grip_point_bl[2] + 0.2
+            grip_point_bl[2] = grip_point_bl[2] + 0.24
             print("0.22***********************")
 
         else:grip_point_bl[2] = grip_point_bl[2] + 0.14
@@ -82,58 +85,40 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
         grip_point = points_actual_to_points_target(grip_point_bl, 'base_link', 'object')
         if debug:
             marker_array_publish(grip_point, 'object', 59, 56)
+            
+        
 
+    obj_pose_frame_object = obj_pose 
 
-    #obj_pose_frame_object = Pose()
-    #obj_pose_frame_object = obj_pose
-    grasp_candidates_quaternion = []
-    q_gripper = []
-
-
-
-    R, P, Y = tft.euler_from_quaternion([obj_pose.orientation.x ,  # pose expresada en RPY para realizar rotaciones
-                                             obj_pose.orientation.y ,
-                                             obj_pose.orientation.z, 
-                                             obj_pose.orientation.w])
+    R, P, Y = tft.euler_from_quaternion([obj_pose_frame_object.orientation.x ,  # pose expresada en RPY para realizar rotaciones
+                                             obj_pose_frame_object.orientation.y ,
+                                             obj_pose_frame_object.orientation.z, 
+                                             obj_pose_frame_object.orientation.w])
     
     for j in range(num_candidates):      # genera candidatos
-        obj_pose_frame_object = Pose()
-        obj_pose_frame_object.orientation.x = 0
-        obj_pose_frame_object.orientation.y = 0
-        obj_pose_frame_object.orientation.z = 0
-        obj_pose_frame_object.orientation.w = 1
-        obj_pose_frame_object.position.x = 0
-        obj_pose_frame_object.position.y = 0
-        obj_pose_frame_object.position.z = 0
         q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
         obj_pose_frame_object.orientation.x = q_gripper[0]
         obj_pose_frame_object.orientation.y = q_gripper[1]
         obj_pose_frame_object.orientation.z = q_gripper[2]
         obj_pose_frame_object.orientation.w = q_gripper[3]
-
-    
         
         if rotacion == "P": 
             P = P + np.deg2rad(step) #horizontal grip
-            #print("Best_Grasp_Node.-> Rotacion en Pitch", np.rad2deg(P))
+            print("Best_Grasp_Node.-> Rotacion en Pitch")
 
         else:
             if rotacion == "R": R = R + np.deg2rad(step)  #vertical grip
-            #print("Best_Grasp_Node.-> Rotacion en Roll", np.rad2deg(R))
+            print("Best_Grasp_Node.-> Rotacion en Roll")
         
         obj_pose_frame_object.position.x = grip_point[0]
         obj_pose_frame_object.position.y = grip_point[1]
         obj_pose_frame_object.position.z = grip_point[2]
-        
+
         if debug:
             print("Best_Grasp_Node.-> emitiendo pose........." + name_frame+str(j)+obj_state , grip_point)
             broadcaster_frame_object('object', name_frame+str(j)+obj_state , obj_pose_frame_object )
-        
-        grasp_candidates_quaternion.append(obj_pose_frame_object )     # guarda el candidato en frame bl
-        
-        
-    #trajectory, pose, rpy_pose, graspable = evaluating_possibility_grip(grasp_candidates_quaternion , "horizontal")
 
+        grasp_candidates_quaternion.append(obj_pose_frame_object )     # guarda el candidato en frame bl
 
     return grasp_candidates_quaternion  # REGRESA A LOS CANDIDATOS EN FRAME OBJECT
 
@@ -279,7 +264,6 @@ def cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj):
 
     obj_state = "horizontal"
     
-    """
     # Primera lista de candidatos******************************************************************************
     obj_pos_1 = Pose()
     if (type_obj == "CUBIC"):
@@ -287,7 +271,7 @@ def cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj):
         num_candidates = 6
 
     else:
-        obj_pos_1.position.x, obj_pos_1.position.y, obj_pos_1.position.z = 0, size.z/2 , 0
+        obj_pos_1.position.x, obj_pos_1.position.y, obj_pos_1.position.z = size.x/4, size.z/2 , 0
         #print("GRIP POINT BOWL: ", obj_pos_1)
         marker_array_publish(grip_point, 'object', 59, 56)
         num_candidates = 5
@@ -298,32 +282,31 @@ def cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj):
     obj_pos_1.orientation.z = 0.0
     obj_pos_1.orientation.w = 1.0
 
-    step = 15
+    step = 12
 
     pose_list1 = generates_candidates([obj_pos_1.position.x , obj_pos_1.position.y ,obj_pos_1.position.z] , obj_pos_1, "P", obj_state ,  'c1', step , num_candidates, type_obj)
-    """
-
+    
     # Segunda lista de candidatos******************************************************************************
     obj_pos_2 = Pose()
     if (type_obj == "CUBIC"):
         obj_pos_2.position.x, obj_pos_2.position.y, obj_pos_2.position.z = 0, 0, 0
         num_candidates = 6
     else:
-        obj_pos_2.position.x, obj_pos_2.position.y, obj_pos_2.position.z = 0 , size.z/2 , 0
+        obj_pos_2.position.x, obj_pos_2.position.y, obj_pos_2.position.z = size.x/4 , size.z/2 , 0
         #print("GRIP POINT BOWL: ", obj_pos_2)
         marker_array_publish(grip_point, 'object', 59, 56)
-        num_candidates = 6
+        num_candidates = 5
         
 
     obj_pos_2.orientation.x = 0.0
     obj_pos_2.orientation.y = 0.0
     obj_pos_2.orientation.z = 0.0
     obj_pos_2.orientation.w = 1.0
-    step = -15
+    step = -12
     pose_list2 = generates_candidates([obj_pos_2.position.x , obj_pos_2.position.y ,obj_pos_2.position.z] , obj_pos_2, "P", obj_state ,  'c2', step, num_candidates, type_obj)
     #print("Num Candidates:____", len(pose_list2 ))
     
-    return pose_list2 
+    return pose_list1 + pose_list2
     
 
 
@@ -387,7 +370,7 @@ def box(obj_pose, size, obj_state):
         obj_pos_1.orientation.y = 0.0
         obj_pos_1.orientation.z = 0.0
         obj_pos_1.orientation.w = 1.0
-        grip_point_side = [size.x/4, 0, size.z/2]
+        grip_point_side = [0, 0, size.z/2]
         candidates_v_list = generates_candidates(grip_point_side , obj_pos_1, "R", obj_state ,'object', step = 10, num_candidates = 5, type_obj = None)  
 
         # Segunda lista de candidatos******************************************************************************
@@ -397,69 +380,11 @@ def box(obj_pose, size, obj_state):
         obj_pos_22.orientation.y = 0.0
         obj_pos_22.orientation.z = 0.0
         obj_pos_22.orientation.w = 1.0
-        grip_point_side_2 = [size.x/4, 0, size.z/2]
+        grip_point_side_2 = [0, 0, size.z/2]
         candidates_v_list_2 = generates_candidates(grip_point_side_2 , obj_pos_22, "R", obj_state ,'object', step = -10, num_candidates = 5, type_obj = None)  
 
-        # tercera lista de candidatos******************************************************************************
-        obj_pos_3 = Pose()
-        obj_pos_3.position.x, obj_pos_3.position.y, obj_pos_3.position.z = 0, 0, 0
-        obj_pos_3.orientation.x = 0.0
-        obj_pos_3.orientation.y = 0.0
-        obj_pos_3.orientation.z = 0.0
-        obj_pos_3.orientation.w = 1.0
 
-        R, P, Y = tft.euler_from_quaternion([obj_pos_3.orientation.x ,  # pose expresada en RPY para realizar rotaciones
-                                                    obj_pos_3.orientation.y ,
-                                                    obj_pos_3.orientation.z, 
-                                                    obj_pos_3.orientation.w])
-        R = R + np.deg2rad(180) 
-            
-            
-        q_grip = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
-        obj_pos_3.orientation.x = q_grip[0]
-        obj_pos_3.orientation.y = q_grip[1]
-        obj_pos_3.orientation.z = q_grip[2]
-        obj_pos_3.orientation.w = q_grip[3]
-        obj_pos_3.position.x = 0
-        obj_pos_3.position.y = 0
-        obj_pos_3.position.z = 0
-        # genera punto de agarre lateral
-        grip_point_side = [-size.x/4, 0, 0]
-        marker_array_publish(grip_point_side , 'object', 59, 56)
-            
-        candidates_V_list_3 = generates_candidates(grip_point_side , obj_pos_3, "R", 'vertical' , 'C2', step = -16, num_candidates = 4, type_obj = None)
-
-        # Cuarta lista de candidatos******************************************************************************
-        obj_pos_4 = Pose()
-        obj_pos_4.position.x, obj_pos_4.position.y, obj_pos_4.position.z = 0, 0, 0
-        obj_pos_4.orientation.x = 0.0
-        obj_pos_4.orientation.y = 0.0
-        obj_pos_4.orientation.z = 0.0
-        obj_pos_4.orientation.w = 1.0
-
-        R, P, Y = tft.euler_from_quaternion([obj_pos_4.orientation.x ,  # pose expresada en RPY para realizar rotaciones
-                                                    obj_pos_4.orientation.y ,
-                                                    obj_pos_4.orientation.z, 
-                                                    obj_pos_4.orientation.w])
-        R = R + np.deg2rad(180) 
-            
-            
-        q_grip = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
-        obj_pos_4.orientation.x = q_grip[0]
-        obj_pos_4.orientation.y = q_grip[1]
-        obj_pos_4.orientation.z = q_grip[2]
-        obj_pos_4.orientation.w = q_grip[3]
-        obj_pos_4.position.x = 0
-        obj_pos_4.position.y = 0
-        obj_pos_4.position.z = 0
-        # genera punto de agarre lateral
-        grip_point_side_4 = [-size.x/4, 0, 0]
-        marker_array_publish(grip_point_side_4 , 'object', 50, 53)
-            
-        candidates_V_list_4 = generates_candidates(grip_point_side_4, obj_pos_4, "R", 'vertical' , 'C2', step = 16, num_candidates = 4, type_obj = None)
-
-
-        return candidates_v_list + candidates_v_list_2 + candidates_V_list_3+candidates_V_list_4 # En frame 'object'
+        return candidates_v_list + candidates_v_list_2 # En frame 'object'
 
 
 
@@ -594,19 +519,18 @@ def pose_for_ik_service(pose_in_frame_object):
     Cambia a los candidatos de agarre del sistema 'object' al sistema del brazo izquierdo
     y regresa un arreglo [x,y,z,R,P,Y], si no lo consiguió retorna el valor -1
     """
-    print("In pose-for_ik_service")
     new_pose = pose_actual_to_pose_target(pose_in_frame_object, 'object' , 'shoulders_left_link') 
 
     if new_pose == -1:
         return -1, -1
-
+    
     x , y, z = new_pose.position.x , new_pose.position.y , new_pose.position.z
     roll,pitch,yaw = tft.euler_from_quaternion( [new_pose.orientation.x , new_pose.orientation.y , 
                                           new_pose.orientation.z , new_pose.orientation.w ])
-    cartesian_pose_shoulder = np.asarray([x ,y ,z , roll, pitch , yaw])
-    candidate = cartesian_pose_shoulder
+    pose_shoulder_frame = np.asarray([x ,y ,z , roll, pitch , yaw])
+    candidate = pose_shoulder_frame
 
-    return cartesian_pose_shoulder, new_pose
+    return candidate, new_pose
 
 
     
@@ -617,19 +541,16 @@ def evaluating_possibility_grip(candidate_quaternion_list, obj_state):
     """
     global ik_srv
     ik_msg = InverseKinematicsPose2TrajRequest()
-    ik_msg_3 = InverseKinematicsPose2TrajRequest()
-    temp_list = []
-    temp_list = candidate_quaternion_list
 
 
-    print("Best_Grasp_Node.-> Evaluating grip candidatessssss")
+    print("Best_Grasp_Node.-> Evaluating grip candidates...")
     i = 0
     for pose1 in candidate_quaternion_list:  # rellena el mensaje para el servicio IK
         if obj_state == "vertical":
             pose_xyzrpy, new_pos = pose_for_ik_service(pose1)
 
             if new_pos == -1:
-                #print("NEW POSE = ", new_pos)
+                print("NEW POSE = ", new_pos)
                 continue
 
             ik_msg.x = pose_xyzrpy[0] 
@@ -649,9 +570,8 @@ def evaluating_possibility_grip(candidate_quaternion_list, obj_state):
                 print("Best_Grasp_Node.-> Discarded candidate")  
                 continue
 
-        #***********************************************************************************************************************
 
-        else:   # OBJETO HORIZONTAL
+        else:   # objeto con 1pca horizontal
             pose1, new_pos = pose_for_ik_service(pose1)
 
             if new_pos == -1:
@@ -665,56 +585,15 @@ def evaluating_possibility_grip(candidate_quaternion_list, obj_state):
             ik_msg.pitch = pose1[4]
             ik_msg.yaw = pose1[5]
             ik_msg.duration = 7
-            ik_msg.time_step = 0.1
+            ik_msg.time_step = 0.09
             try:    # intenta la primera trayectoria
                 
                 resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
                 print("Best_Grasp_Node.-> Suitable pose 1 for horizontal object found.....................")
-                print("Generating second trajectory to take the object")
-
-                # el ultimo punto de la 1a trayectoria es el primero de la segunda
-                guess = [resp_ik_srv.articular_trajectory.points[-1].positions[0],
-                        resp_ik_srv.articular_trajectory.points[-1].positions[1],
-                        resp_ik_srv.articular_trajectory.points[-1].positions[2],
-                        resp_ik_srv.articular_trajectory.points[-1].positions[3],
-                        resp_ik_srv.articular_trajectory.points[-1].positions[4],
-                        resp_ik_srv.articular_trajectory.points[-1].positions[5],
-                        resp_ik_srv.articular_trajectory.points[-1].positions[6]]
-
-                temp_list.pop()
-                temp_list.pop()
-                for pose_obj in temp_list:
-                    print("lallalala")
-                    cartesian_pose_shoulder, new_pose_shoulder = pose_for_ik_service(pose_obj)
-                    if new_pose_shoulder == -1:
-                        continue
-
-                    ik_msg_3.x             = cartesian_pose_shoulder[0] 
-                    ik_msg_3.y             = cartesian_pose_shoulder[1]
-                    ik_msg_3.z             = cartesian_pose_shoulder[2]
-                    ik_msg_3.roll          = cartesian_pose_shoulder[3]      
-                    ik_msg_3.pitch         = cartesian_pose_shoulder[4]
-                    ik_msg_3.yaw           = cartesian_pose_shoulder[5]
-                    ik_msg_3.duration      = 6
-                    ik_msg_3.time_step     = 0.1
-                    ik_msg_3.initial_guess = guess
-
-                    try:
-                        resp_3_ik_srv = ik_srv(ik_msg_3)    # Envia al servicio de IK
-                        print("Best_Grasp_Node.-> Suitable pose 2 for horizontal object found.....................")
-                        resp_ik_srv.articular_trajectory.points = resp_ik_srv.articular_trajectory.points + resp_3_ik_srv.articular_trajectory.points
-               
-                    except:
-                        print("Best_Grasp_Node.-> Candidato de la segunda trayectoria no aprobado")
-                        continue
-               
-
-    
-
             except:
                 print("Best_Grasp_Node.-> candidato no aprobado")
                 continue
-            """
+    
             try:
                 print("Best_Grasp_Node.-> genera una segunda trayectoria para objeto horizontal")
                 # el ultimo punto de la 1a trayectoria es el primero de la segunda
@@ -741,18 +620,18 @@ def evaluating_possibility_grip(candidate_quaternion_list, obj_state):
                 print("Best_Grasp_Node.-> Second trajectory found.....................")
                 resp_ik_srv.articular_trajectory.points = resp_ik_srv.articular_trajectory.points + resp_2_ik_srv.articular_trajectory.points
                 
-                approved_pose = cartesian2pose_msg(pose1[0] ,pose1[1] ,pose1[2] -0.1 ,pose1[3] ,pose1[4] ,pose1[5]) 
+                approved_pose = cartesian2pose(pose1[0] ,pose1[1] ,pose1[2] -0.1 ,pose1[3] ,pose1[4] ,pose1[5]) 
 
                 return resp_ik_srv.articular_trajectory , approved_pose , new_pos, True
             except:
                 i = i + 1 
                 print("Best_Grasp_Node.-> Pose 2 no apta........")  
                 continue
-            """
+            
     return None, None, None, False
 
 
-def cartesian2pose_msg(x,y,z,R,P,Y):
+def cartesian2pose(x,y,z,R,P,Y):
     quaternion = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
     pose_obj = Pose()
     pose_obj.orientation.x = quaternion[0]
@@ -782,7 +661,6 @@ def callback(req):
 
     # Retorna lista de candidatos en frame 'object'
     pose_list_quaternion = grip_rules(req.recog_object.pose, req.recog_object.category, obj_state, req.recog_object.size , grip_point )
-    
     if len( pose_list_quaternion) <= 0:
         print("Best_Grasp_Node.-> object is no graspable")
         return resp

@@ -13,12 +13,15 @@ from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 
 HOME              = [0,0,0,0,0,0,0]
 PREPARE           = [-0.69, 0.2, 0.0, 1.55, 0.0, 1.16, 0.0]
+PREPARE_LATERAL_GRIP = [-0.69, 0.2, 0, 1.55, 0, 1.16,0] #[-1.2, 0.2, 0  , 1.6, 0   , 1,     0] #Prepare original:funciona bien para pringles vertical (prisma vertical) 
+
+PREPARE_TEST      = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
 PREPARE_TOP_GRIP  = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
 PREPARE_SERVING   = [0.91, 0.4, -0.5, 1.45, 0, 0.16, 0.5]
 SERVING           = [0.91, 0.4, -0.5, 1.45, 0, 0.16, -1.6]
 LEAVE_CEREAL      = [0.4, 0.18, -0.03, 1.45, 0, 0, 0]
 LEAVE_MILK        = [0.4, -0.12, -0.03, 1.45, 0, 0, 0]
-LEAVE_BOWL        = [0.4, -0.6, -0.03, 1.45, 0, 0, 0]
+LEAVE_BOWL        = [0.4,  0.6, -0.5, 1.45, 0, 0, 0]
 LEAVE_NEAR_CEREAL = [0.39, 0.18, -0.03, 1.45, 0, 0, 0]
 EMPTYING_POSE     = [0.37, 0.57, -0.11, 1.68, -0.73, 0.76, -0.90]
 LEAVE_NEAR_MILK   = [0.39, 0.18, -0.01, 1.42, 0, 0.37, 0]
@@ -30,20 +33,29 @@ def serving_breakfast(object):
     print("PREPARE TOP")
     JuskeshinoHardware.moveLeftGripper(-0.5, 2.0)
     JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
-    time.sleep(1)
+    time.sleep(0.5)
     JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_SERVING, 10)
     time.sleep(0.5)
+    JuskeshinoNavigation.moveDist(0.3, 7)
+    if object =="milk": JuskeshinoHRI.say("Serving milk")
+    else: JuskeshinoHRI.say("Serving cereal")
     JuskeshinoHardware.moveLeftArmWithTrajectory(SERVING, 10)
-    time.sleep(3)
+    time.sleep(2)
     JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_SERVING, 10)
-    time.sleep(1)
+    time.sleep(0.5)
     if object =="milk":
         JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_MILK, 10)
-        JuskeshinoHardware.moveLeftGripper(-0.5, 2.0)
+        time.sleep(0.5)
+        #JuskeshinoNavigation.moveDist(0.3, 7)
+        JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
+        
     else:
         JuskeshinoNavigation.moveLateral(0.22, 10)
         JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_CEREAL, 10)
-        JuskeshinoHardware.moveLeftGripper(-0.5, 2.0)
+        time.sleep(0.5)
+        #JuskeshinoNavigation.moveDist(0.3, 7)
+        #time.sleep(0.2)
+        JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
 
 
 
@@ -69,18 +81,21 @@ def main():
     JuskeshinoKnowledge.setNodeHandle()
     JuskeshinoKnowledge.loadLocations(locations_file)
 
-
+    
+    JuskeshinoHRI.say("I'm ready for the serving breakfast test")
     # Esperar a que se abra la puerta
     JuskeshinoHRI.say("I'm waiting for the door to be open")
-    """
+    
+    
     if not JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(300):
         print("ACT-PLN.->Door never opened")
         return
     JuskeshinoHRI.say("I can see now that the door is open")
     # Ir a la cocina
-    """
+    
+    
     pila = ["bowl", "cereal", "milk"] 
-    #pila = ["milk", "milk", "milk"]        
+    #pila = [ "cereal", "milk"]        
 
     #pila = ["apple", "pringles", "soda"]
     
@@ -96,8 +111,8 @@ def main():
         #if not JuskeshinoNavigation.getClose("desk", 150):
         if not JuskeshinoNavigation.getClose(MESA_INGREDIENTES, 100):  #*******************
             print("SB-PLN.->Cannot get close to the "+MESA_INGREDIENTES+" position")
-
-        time.sleep(2)
+        
+        time.sleep(1)
         # Alinearse con mueble
         print("SB-PLN.->move head")
         if not JuskeshinoHardware.moveHead(0,-1, 5):
@@ -106,7 +121,7 @@ def main():
             JuskeshinoHardware.moveHead(0,-1, 5)
 
 
-        time.sleep(2)
+        time.sleep(1)
         if not JuskeshinoSimpleTasks.alignWithTable():
             print("SB-PLN.->Cannot align with table")
 
@@ -134,23 +149,41 @@ def main():
                 JuskeshinoHardware.moveHead(0,-1, 5)
                 time.sleep(1)
             
-
-            j = 0
-        
-            while j < 4:
+            
+            """
+        if(1):
+            j=0
+            actual_obj = "bowl"
+            """
+            j=0
+            while j < 2:
                 # reconocimiento objeto
-                [obj, img] = JuskeshinoVision.detectAndRecognizeObject(actual_obj) #**************************
-                print("SB-PLN.->Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))
+                if not JuskeshinoHardware.moveHead(0,-1, 5):
+                    print("SB-PLN.->Cannot move head")
+                time.sleep(0.5)
+                JuskeshinoHardware.moveHead(0,-1, 5)
+                JuskeshinoHRI.say("I am looking for the object")
+                time.sleep(0.5)
+                try:
+                    [obj, img] = JuskeshinoVision.detectAndRecognizeObject(actual_obj) #**************************
+                    print("SB-PLN.->Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))
+                except:
+                    print("No se encontro el objeto")
+                    continue
                 # Tomar objeto                                              
                 print("SB-PLN.->Sending goal traj to prepare")
                 print("PREPARE HIGHT")
-                JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP , 10)
-                time.sleep(1)
+                if obj.category == "BOWL":
+                    JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP , 10)
+                else:
+                    JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_LATERAL_GRIP , 10)
+                time.sleep(0.5)
                 print("SB-PLN.->Open gripper")
                 if actual_obj == "bowl": JuskeshinoHardware.moveLeftGripper(0.4 , 3.0)
-                else: JuskeshinoHardware.moveLeftGripper(0.7, 3.0)
-                time.sleep(1)
+                else: JuskeshinoHardware.moveLeftGripper(0.9, 3.0)
+                time.sleep(0.5)
                 print("SB-PLN.-> Call Best Grasping Configuration Service")
+                JuskeshinoHRI.say("looking for the best way to grip")
                 
                 [resp, graspable] = JuskeshinoManipulation.planBestGraspingConfiguration(obj)
                 if graspable:
@@ -165,11 +198,13 @@ def main():
                 else:
                     print("SB-PLN.->No possible poses found")
                 j = j+1
+                time.sleep(1)
 
+            
             print("SB-PLN.->Moving base backwards")
             JuskeshinoHRI.say("I'have grasped the object")
             JuskeshinoNavigation.moveDist(-0.3, 10)
-            time.sleep(1)
+            time.sleep(0.5)
             print("ACT-PLN.->Moving arm to prepare***")
             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE, 10)  # prepare
     
@@ -194,7 +229,7 @@ def main():
             time.sleep(0.5)
             JuskeshinoHardware.moveHead(0,-1, 5)
         
-        time.sleep(2)
+        time.sleep(1)
         # Se alinea con la mesa
         JuskeshinoHRI.say("I'M GOING TO LINE UP WITH THE TABLE")
         print("SB-PLN.->Aligning with table")
@@ -213,10 +248,10 @@ def main():
             serving_breakfast(actual_obj) 
 
         if actual_obj == "bowl":
-            JuskeshinoHRI.say("Arm prepare")
+            JuskeshinoHRI.say("prepare")
             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP , 12) 
-            time.sleep(1)
-            JuskeshinoHRI.say("Arm bowl")
+            time.sleep(0.5)
+            JuskeshinoHRI.say("bowl")
             JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_BOWL , 12)
             time.sleep(1)
             # se mueve hacia delante 0.3 m
@@ -224,7 +259,7 @@ def main():
             JuskeshinoHRI.say("I'm going to place the object on the table")
             JuskeshinoNavigation.moveDist(0.3, 7)
             # Soltar el objeto
-            time.sleep(1)
+            time.sleep(0.5)
             print("SB-PLN.->Open gripper")
             JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
             time.sleep(1)            # Soltar el objeto
@@ -240,13 +275,15 @@ def main():
         # Moverse para atras
         print("SB-PLN.->Moving base backwards")
         JuskeshinoNavigation.moveDist(-0.3, 7)
-        time.sleep(1)
+        time.sleep(0.5)
         print("SB-PLN.->Moving left arm to prepare")
         JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE , 10)
-        #JuskeshinoHardware.moveLeftArmWithTrajectory(HOME , 10)
-    
+        time.sleep(0.5)
+        JuskeshinoHardware.moveLeftArmWithTrajectory(HOME , 10)
+        
     
     # El desayuno esta servido 
+    
     JuskeshinoHRI.say("I finished the test")
     
 
