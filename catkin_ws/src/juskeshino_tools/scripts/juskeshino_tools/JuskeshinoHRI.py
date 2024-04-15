@@ -24,9 +24,7 @@ class JuskeshinoHRI:
             loop.sleep()
         return True
     
-
-
-    def waitForNewSentence(enable):
+    def enableLegFinder(enable):
         if(not enable):
             print("JuskeshinoHRI.->Leg_finder disabled. ")
         else:
@@ -35,7 +33,6 @@ class JuskeshinoHRI:
         msg = Bool()
         msg.data = enable
         JuskeshinoHRI.pubLegFinderEnable.publish(msg)
-
 
     def frontalLegsFound():
         return JuskeshinoHRI.legsFound 
@@ -89,7 +86,6 @@ class JuskeshinoHRI:
         msg = Bool()
         msg.data = enable
         JuskeshinoHRI.pubHFollowEnable.publish(msg)
-
 
     def stopHumanFollower():
         msg = Empty()
