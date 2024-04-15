@@ -281,7 +281,8 @@ class FolowwHuman(smach.State):
 
         command_voice = JuskeshinoHRI.waitForNewSentence(10)
         print("command_voice: ", command_voice)
-        if "CAR" in voice:
+        if "CAR" in command_voice:
+            JuskeshinoHRI.enableHumanFollower(False)
             return 'succ'        
 
         if(legs_found):
