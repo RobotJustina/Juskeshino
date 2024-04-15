@@ -19,13 +19,21 @@
   
   <node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py"/>
   
-  <!-- <node pkg="leg_finder"  name="leg_finder_node" type="leg_finder_node"/>   -->
+  <node name="leg_finder" pkg="leg_finder" type="leg_finder_node" output="screen">
+    <param name="scan_downsampling" value="1"/>
+    <param name="laser_scan_frame" value="laser_link"/>
+    <param name="laser_scan_topic" value="/hardware/scan"/>
+    <param name="show_hypothesis" value="False"/>
+  </node>
+  
   <!--node pkg="human_follower"  name="human_follower_node" type="human_follower_node"/--> 
   
   <!--node pkg="action_server"  name="action_server" type="ACT_SRVR_Follow.py"/>  -x? -->
 
 
-  <include file="$(find surge_et_ambula)/launch/justina/hri.launch"/>
+
+
+  <!-- <include file="$(find surge_et_ambula)/launch/justina/hri.launch"/> -->
 
 
 

@@ -217,12 +217,14 @@ class AskForBag(smach.State):
         
         print('Tell me: Justina yes, when you put the bag')
         voice.talk('Tell me. Justina yes, when you put the bag')
-        answer = JuskeshinoHRI.waitForNewSentence(3)
+        answer = JuskeshinoHRI.waitForNewSentence(6)
         print("voice: ", answer)
         if "YES" in answer: 
             return 'succ'
         
         return 'tries'
+
+
 
 
 class FindLegs(smach.State):
@@ -232,12 +234,30 @@ class FindLegs(smach.State):
 
     def execute(self, userdata):
         self.tries += 1  
-             
+
+        if self.tries > 4:  # TODO: many times
+            print("I can't found you, I stop trying to follow you")
+            voice.talk("I can't found you, I stop trying to follow you")
+            return 'failed'
+        
         if self.tries == 1:
             print("\n")
             rospy.logwarn('--> STATE <: Find legs')
+            JuskeshinoVision.enableHumanPose(True)
+            print("I will start to follow you. Please stand in front of me")
+            voice.talk("I will start to follow you. Please stand in front of me")
             
-
+        human_detector = JuskeshinoVision.humanDetector()
+        print("CML-PLN.-> human detector is :__", human_detector)
+        if human_detector:
+            print("I'm going to follow you, please say here is the car if we reached the final location")
+            voice.talk("I'm going to follow you, please say. here is the car, if we reached the final location")
+            return 'succ'
+        else:
+            print("I can't found you, please stand in front of me")
+            voice.talk("I can't found you, please stand in front of me")
+    
+        return 'tries'
 
 
 
@@ -263,9 +283,9 @@ if __name__ == '__main__':
                                transitions={'failed':'END', 'succ':'ASK_FOR_BAG', 'tries':'POINTING_BAG'})
         
         smach.StateMachine.add("ASK_FOR_BAG", AskForBag(), 
-                               transitions={'failed':'END', 'succ':'END', 'tries':'ASK_FOR_BAG'})
+                               transitions={'failed':'END', 'succ':'FIND_LEGS', 'tries':'ASK_FOR_BAG'})
         
         smach.StateMachine.add("FIND_LEGS", FindLegs(), 
-                               transitions={'failed':'FIND_LEGS', 'succ':'FOLLOW_HUMAN', 'tries':'failed'})
+                               transitions={'failed':'FIND_LEGS', 'succ':'END', 'tries':'FIND_LEGS'})
 
     outcome = sm.execute()
