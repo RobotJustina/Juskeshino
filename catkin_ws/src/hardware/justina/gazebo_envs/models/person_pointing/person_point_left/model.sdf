@@ -14,7 +14,7 @@
         </inertia>
         <pose>0 0 0 0 -0 0</pose>
       </inertial>
-      <pose>0.418753 -0.370977 0 0 -0 0</pose>
+      <pose>0.0 0 0 0 -0 0</pose>
       <gravity>1</gravity>
       <self_collide>0</self_collide>
       <kinematic>0</kinematic>

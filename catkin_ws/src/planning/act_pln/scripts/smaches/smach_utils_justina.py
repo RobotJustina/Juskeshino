@@ -126,10 +126,10 @@ class Head:  # known as Gaze on Takeshi grasp_utils.py
             self.set_joint_values(head_pose=[0.0, 0.0])
         elif pose_name == 'down':
             self.set_joint_values(head_pose=[0.0, self.tilt_min_limit])
-        elif pose_name == 'right': # TODO: verify
-            head_pose = [-1.0, 0.0]
+        elif pose_name == 'right':
+            self.set_joint_values(head_pose=[-0.7, 0.0])
         elif pose_name == 'left':
-            head_pose = [1.0, 0.0]
+            self.set_joint_values(head_pose=[0.7, 0.0])
         elif pose_name == 'face_to_face':
             self.set_joint_values(head_pose=[0.0, -0.1])
 
@@ -294,10 +294,9 @@ def seg_res_tf(res):
             # tf_man.pub_static_tf(pos=cent, rot =rotation_quaternion, point_name=point_name, ref='map')## static tf
 
     return succ
+
+
 # ------------------------------------------------------
-# 3
-
-
 class TF_MANAGER():
     def __init__(self):
         self._tfbuff = tf2.Buffer()
@@ -524,9 +523,8 @@ class RGBD():
     def get_points(self):
         return self._points_data
 
+
 #########################################
-
-
 def get_keywords_speech(timeout=5):
     """ Function to get key words from ros VOSK service
         speech recognition (/speech_ recog)"""
@@ -547,16 +545,33 @@ def get_keywords_speech(timeout=5):
         rospy.loginfo('timeout')
         pub.publish(String())
         return 'timeout'
+
+
+#------------------------------------------------------
+def detect_human_to_tf():
+    humanpose = human_detect_server.call()
+    
+    norm = np.linalg.norm(np.asarray([humanpose.x, humanpose.y, humanpose.z]))
+    if (norm < 0.1):
+        print(np.asarray((humanpose.x, humanpose.y, humanpose.z)))
+        return False
+    else:
+        tf_man.pub_static_tf(np.asarray((humanpose.x, humanpose.x, humanpose.z)), point_name='human', ref='camera_rgb_optical_frame') #  Take: head_rgbd_sensor_link
+        succ = tf_man.change_ref_frame_tf('human')
+        print("change_ref_frame_tf", succ)
+        if succ: print(humanpose)
+        return True
+
+
 # ------------------------------------------------------
-
-
 def match_speech(speech, to_match):
     for element in to_match:
         if element in speech:
             return True
     return False
-# ------------------------------------------------------
 
+
+# ------------------------------------------------------
 # Functions
 def places_2_tf():
     places, locs = party.get_places_location()
@@ -651,7 +666,7 @@ def wait_for_face(timeout=10 , name='', lap_camera=False):
 
 global omni_base, rgb, rgbd, bridge, pointing_detect_server, classify_client
 global segmentation_server, tf_man, voice, head, party, tfBuffer, listener
-global robot_real
+global robot_real, human_detect_server
 rospy.init_node('smach_justina_tune_vision')
 
 robot_real = True
@@ -678,3 +693,6 @@ train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)  # FACE RECOG
 pointing_detect_server = rospy.ServiceProxy('/detect_pointing', Point_detector)
 classify_client = rospy.ServiceProxy('/classify', Classify)
 segmentation_server = rospy.ServiceProxy('/segment', Segmentation)
+
+
+human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)  ####HUMAN FINDER OPPOSEBASED

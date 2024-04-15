@@ -2,15 +2,34 @@
   <param name="file_name" value="/known_locations.yaml"/>
   <include file="$(find speech_recog)/launch/ros_vosk.launch"/>
   
+   <!--  VISION-->
+  <!-- <node name="human_detector" pkg="human_pose_estimation" type="human_detector"/>
+  <node name="human_pose_detector" pkg="human_pose_estimation" type="streaming_keypoints" output="screen">
+    <param name="point_cloud_topic" value="/camera/depth_registered/points"/>
+  </node> -->
+  <!--nodo name="pointing_hands_detector" pkg="human_pose_estimation" type="pointing_hands_detector.py"/-->
+
+
   <node pkg="face_recog"  name="face_recog" type="face_recog_server.py"/>
   <node pkg="hmm_navigation"  name="pumas_nav_actionserver" type="pumas_nav_actionserver.py"/>
   <node pkg="known_locations_tf_server"  name="known_locs" type="known_locs_node.py" output="screen" />
   <node pkg="object_classification"  name="objs_reco" type="classification_server.py"  /> 
   <node pkg="segmentation"  name="segmentation" type="segment_node.py"  />  
   <includenode pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"/>
+  
   <node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py"/>
-  <node pkg="leg_finder"  name="leg_finder_node" type="leg_finder_node"/>  
-  <node pkg="human_follower"  name="human_follower_node" type="human_follower_node"/>  
+  
+  <!-- <node pkg="leg_finder"  name="leg_finder_node" type="leg_finder_node"/>   -->
+  <!--node pkg="human_follower"  name="human_follower_node" type="human_follower_node"/--> 
+  
+  <!--node pkg="action_server"  name="action_server" type="ACT_SRVR_Follow.py"/>  -x? -->
+
+
+  <include file="$(find surge_et_ambula)/launch/justina/hri.launch"/>
+
+
+
+  
 </launch>
 
 

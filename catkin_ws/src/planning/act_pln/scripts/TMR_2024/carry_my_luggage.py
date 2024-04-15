@@ -57,7 +57,7 @@ def main():
     print("CML-PLN.-> enableHumanPose was disabled")
     JuskeshinoVision.enableHumanPose(False)
 
-    """
+    
     # Detectar en que lado del operador esta la bolsa
     if p_h:
         if p_h == "left":
@@ -141,7 +141,7 @@ def main():
     print("CML-PLN.-> Find legs , enableLegFinder was disabled")
     JuskeshinoHRI.enableLegFinder(False)
     
-    
+    """
     # entregar bolsa
     JuskeshinoHRI.say("Please take the bag")
     time.sleep(1)

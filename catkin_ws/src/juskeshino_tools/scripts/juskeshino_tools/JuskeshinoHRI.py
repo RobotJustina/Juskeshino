@@ -26,7 +26,7 @@ class JuskeshinoHRI:
     
 
 
-    def enableLegFinder(enable):
+    def waitForNewSentence(enable):
         if(not enable):
             print("JuskeshinoHRI.->Leg_finder disabled. ")
         else:
@@ -34,7 +34,7 @@ class JuskeshinoHRI:
 
         msg = Bool()
         msg.data = enable
-        JuskeshinoHRI.pubLegFinderEnable .publish(msg)
+        JuskeshinoHRI.pubLegFinderEnable.publish(msg)
 
 
     def frontalLegsFound():
@@ -56,17 +56,19 @@ class JuskeshinoHRI:
         return rec
 
     def waitForNewSentence(timeout):
-        attempts = int(timeout/0.1)
+        scaled = int(timeout/0.1)
+        attempts = 0
         loop = rospy.Rate(10)
         JuskeshinoHRI.recognizedSpeech.hypothesis = tuple([])
         JuskeshinoHRI.recognizedSpeech.confidences = tuple([])
-        while (not rospy.is_shutdown() and attempts > 0):
+        while (not rospy.is_shutdown() and attempts < scaled):
             rec = JuskeshinoHRI.getLastRecognizedSentence()
             print("****", rec)
             if rec is not None:
                 return rec
+            attempts += 1
             loop.sleep()
-        return None
+        return ''
 
     def say(text, voice="voice_cmu_us_slt_arctic_hts"):
         msg = SoundRequest()

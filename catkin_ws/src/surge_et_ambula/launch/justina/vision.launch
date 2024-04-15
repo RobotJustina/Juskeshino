@@ -28,7 +28,7 @@
     <param name="min_points_per_object" value="1000"/>"
   </node>
    
-  <!--node name="object_pose" pkg="obj_segmentation_and_pose" type="obj_pose_node.py" output="screen"/-->
+  <node name="object_pose" pkg="obj_segmentation_and_pose" type="obj_pose_node.py" output="screen"/>
   
   <!--node name="human_detector" pkg="human_pose_estimation" type="human_detector"/-->
   <!--node name="human_pose_detector" pkg="human_pose_estimation" type="streaming_keypoints" output="screen">

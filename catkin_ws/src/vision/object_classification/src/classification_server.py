@@ -117,4 +117,4 @@ def classify_server(model_name='ycb.pt'):
 
 if __name__ == "__main__":
     model_name = "TaRJust_ycb.pt"
-    classify_server(model_name)
+    classify_server()

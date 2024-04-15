@@ -112,12 +112,12 @@ class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
             print("Navigating to, door")
             voice.talk('Navigating to, door')
 
-        print(f'Try {self.tries} of {self.attempts} attempts')
-        if self.tries == 3: 
+        if self.tries == self.attempts + 1: 
             rospy.logerr('Navigation Failed, I can not reach the door')
             voice.talk('Navigation Failed, I can not reach the door')
             return 'failed'
         
+        print(f'Try {self.tries} of {self.attempts} attempts')
         res = omni_base.move_base(known_location='door', time_out=self.time_out)
         print("res:", res)
 
