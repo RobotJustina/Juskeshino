@@ -199,7 +199,7 @@ class AskForBag(smach.State):
         self.tries = 0
         self.offerSit = [0.3, 0.2, -0.4, 1.7, 0.0, -0.4, 1.5]
         self.getBag = [0.3, 0.2, -0.5, 1.7, 0.0, 0.3, 0.0, 0.4]
-        self.carryBag = [0.0, 0.0, 0.9, 0.3, 0.0, 1.7, 0.0, 0.0]
+        self.carryBag = [-0.69, 0.2, 0.0, 1.55, 0.0, 1.16, 0.0]
 
 
     def execute(self, userdata):
@@ -214,6 +214,7 @@ class AskForBag(smach.State):
             JuskeshinoHardware.moveLeftArmWithTrajectory(self.offerSit, 6)
             print('Can you put the bag over my hand? Please')
             voice.talk('Can you put the bag over my hand?. Please')
+            JuskeshinoHardware.moveLeftGripper(0, 2.0)
             JuskeshinoHardware.moveLeftArmWithTrajectory(self.getBag, 6)
         
         print('Tell me: Justina yes, when you put the bag')
