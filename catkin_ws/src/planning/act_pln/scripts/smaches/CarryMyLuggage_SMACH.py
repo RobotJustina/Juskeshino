@@ -43,6 +43,8 @@ class Initial(smach.State):
         print('I am ready for carry my luggage task.')
         voice.talk('I am ready for carry my luggage task.')
 
+        JuskeshinoVision.enableHumanPose(False)
+        JuskeshinoHRI.enableLegFinder(True)
         return 'succ'
 
 
@@ -227,7 +229,7 @@ class AskForBag(smach.State):
         
         return 'tries'
 
-
+# TODO: DEBUG ------>>>
 class FindLegs(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
