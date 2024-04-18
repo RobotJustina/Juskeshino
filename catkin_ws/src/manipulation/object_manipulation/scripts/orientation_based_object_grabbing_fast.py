@@ -5,6 +5,7 @@ import numpy as np
 import tf.transformations as tft
 import tf2_ros
 import tf
+import math
 from geometry_msgs.msg import PoseStamped, Point, PointStamped, Pose
 from vision_msgs.srv import *
 from manip_msgs.srv import *
@@ -15,6 +16,16 @@ MAXIMUM_GRIP_LENGTH = 0.14
 MINIMUM_HEIGHT_PRISM = 0.13
 MAXIMUM_CUBE_SIZE = 0.13
     
+
+def descarte_forced_poses(obj_pose):    # Entra un frame en el sistema 'object'
+    #obtener el angulo entre  proyeccion de eje x positivo del frame y eje y base link
+    # Angulo respecto de x_base_link
+    x_obj = obj_pose.position.x
+    y_obj = obj_pose.position.y
+    angle_obj_x_bl =  math.atan2(x_obj, y_obj) 
+    print("Angulo respecto de eje X de BASE_LINK:", np.rad2deg(angle_obj_x_bl))
+
+
 
 
 def pose_actual_to_pose_target(pose, f_actual, f_target):
@@ -617,7 +628,7 @@ def evaluating_possibility_grip(candidate_quaternion_list, obj_state, category):
     ik_msg = InverseKinematicsPose2TrajRequest()
     ik_msg_3 = InverseKinematicsPose2TrajRequest()
 
-    if category == "BOWL":
+    if obj_state == 'horizontal':#(category == "BOWL") or (category == "B"):
         first_trajectory  = []
         second_trajectory = []
 
