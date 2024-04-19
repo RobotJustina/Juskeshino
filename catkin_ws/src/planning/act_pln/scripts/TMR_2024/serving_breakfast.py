@@ -97,7 +97,7 @@ def main():
     # Ir a la cocina
     """
     
-    pila = ["milk", "cereal", "milk"] 
+    pila = ["cereal", "cereal", "milk"] 
     count = 0
     while count < 3: # Revisa pila
     
