@@ -109,8 +109,8 @@ class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
             self.time_out = 30
             print("\n")
             rospy.logwarn('--> STATE <: Navigate to Door')
-            print("Navigating to, door")
-            voice.talk('Navigating to, door')
+            print("Navigating door")
+            voice.talk('Navigating door')
 
         if self.tries == self.attempts + 1: 
             rospy.logerr('Navigation Failed, I can not reach the door')
@@ -153,8 +153,8 @@ class Scan_face(smach.State):
         rospy.sleep(0.3)
         head.set_joint_values([0.0, -0.1])
 
-        print('Scanning for faces, look at me, please')
-        voice.talk('Scanning for faces, look at me, please')
+        print('Scanning for faces')
+        voice.talk('Scanning for faces')
         
         # For simulation use camera_enable = True
         res, userdata.face_img = wait_for_face(lap_camera=camera_enable)  # default 10 secs
@@ -178,13 +178,13 @@ class Decide_face(smach.State):
         rospy.logwarn('--> STATE <: Decide face')
 
         if userdata.name == 'NO_FACE':
-            print('I did not see you, I will try again')
-            voice.talk('I did not see you, I will try again')
+            print('I did not see you, trying again')
+            voice.talk('I did not see you, trying try again')
             return 'failed'
 
         elif userdata.name == 'unknown':
-            print('I believe we have not met.')
-            voice.talk('I believe we have not met.')
+            print('I find you.')
+            voice.talk('I find you.')
             return 'unknown'
 
         else:
@@ -200,7 +200,7 @@ class Decide_face(smach.State):
             else: 
                 JuskeshinoHRI.getLastRecognizedSentence()
                 rospy.sleep(0.3)
-                confirmation = JuskeshinoHRI.waitForNewSentence(3)
+                confirmation = JuskeshinoHRI.waitForNewSentence(10)
             
             print(confirmation)
             if confirmation not in userdata.confirm_list:
@@ -249,7 +249,7 @@ class New_face(smach.State):
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
             rospy.sleep(0.3)
-            speech = JuskeshinoHRI.waitForNewSentence(3)
+            speech = JuskeshinoHRI.waitForNewSentence(10)
             speech.lower()
 
 
@@ -273,7 +273,7 @@ class New_face(smach.State):
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
             rospy.sleep(0.3)
-            confirmation = JuskeshinoHRI.waitForNewSentence(3)
+            confirmation = JuskeshinoHRI.waitForNewSentence(10)
 
         print (confirmation)
 
@@ -330,7 +330,7 @@ class Get_drink(smach.State):
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
             rospy.sleep(0.3)
-            drink = JuskeshinoHRI.waitForNewSentence(3)
+            drink = JuskeshinoHRI.waitForNewSentence(10)
             drink.lower()
 
         if len(drink.split(' '))>1: drink=(drink.split(' ')[-1])
@@ -350,7 +350,7 @@ class Get_drink(smach.State):
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
             rospy.sleep(0.3)
-            confirmation = JuskeshinoHRI.waitForNewSentence(3)
+            confirmation = JuskeshinoHRI.waitForNewSentence(10)
 
         confirmation = confirmation.split(' ')
         confirm = match_speech(confirmation, userdata.confirm_list)

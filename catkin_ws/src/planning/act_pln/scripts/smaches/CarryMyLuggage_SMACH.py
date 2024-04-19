@@ -391,7 +391,8 @@ if __name__ == '__main__':
     sis.start()
     
     with sm:
-        smach.StateMachine.add("INITIAL", Initial(), transitions={'failed':'INITIAL', 'succ':'GOTO_LIVING_ROOM'})#'GOTO_LIVING_ROOM'})
+        smach.StateMachine.add("INITIAL", Initial(), transitions={'failed':'INITIAL', 'succ':'FIND_HUMAN'})#'GOTO_LIVING_ROOM'})
+
 
         smach.StateMachine.add("GOTO_LIVING_ROOM", GotoLivingRoom(),            
                                transitions={'failed':'FIND_HUMAN', 'tries':'GOTO_LIVING_ROOM', 'succ':'FIND_HUMAN'})
