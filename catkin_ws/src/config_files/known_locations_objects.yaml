@@ -8,27 +8,13 @@ kitchen:
   - 2.08
   - 0.0
 
-kitchen_2:
-  - 8.52
-  - 2.4
-  - 0.28
+eat_table:
+  - -5.94
+  - -5.80
+  - 3.14
 
-breakfast_table:
-  - 5.35
-  - 2.45
-  - 1.57
+ingredients_table:
+  - -5.1
+  - -8.12
+  - 4.71
 
-backyard:
-  - 9.8
-  - 2.36
-  - 0.23
-
-mitzi_desk:
-  - 3.5
-  - 2.2
-  - 0.39
-
-entrance_desk:
-  - 2.95
-  - 0.4
-  - -1.57
