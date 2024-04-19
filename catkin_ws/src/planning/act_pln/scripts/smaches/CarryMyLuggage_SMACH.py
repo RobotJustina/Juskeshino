@@ -44,7 +44,7 @@ class Initial(smach.State):
         voice.talk('I am ready for carry my luggage task.')
 
         JuskeshinoVision.enableHumanPose(False)
-        JuskeshinoHRI.enableLegFinder(True)
+        JuskeshinoHRI.enableLegFinder(False)
         return 'succ'
 
 
@@ -189,7 +189,10 @@ class PointingBag(smach.State):
         else: 
             tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_')
         # TODO: Fix dancing bug
-        head.turn_base_gaze(tf='human', to_gaze='base_link') #'arm_flex_link'
+        ## First locate bag then move to bag
+
+
+        head.turn_base_gaze(tf='pointing_', to_gaze='base_link') #'arm_flex_link'
         head.to_tf('pointing_')
         # There is now a "human TF with humans aprrox location(face)"
         return 'succ'
@@ -207,7 +210,7 @@ class AskForBag(smach.State):
     def execute(self, userdata):
         self.tries += 1
         
-        if self.tries > 3:
+        if self.tries > 4:
             return 'failed'   
              
         if self.tries == 1:
@@ -225,6 +228,10 @@ class AskForBag(smach.State):
         print("voice: ", answer)
         if "YES" in answer:
             JuskeshinoHardware.moveLeftArmWithTrajectory(self.carryBag, 6)
+            head.set_named_target('face_to_face')
+            rospy.sleep(0.3)
+            head.set_named_target('face_to_face')
+
             return 'succ'
         
         return 'tries'
@@ -238,9 +245,11 @@ class FindLegs(smach.State):
     def execute(self, userdata):
         self.tries += 1  
 
-        if self.tries > 4:  # TODO: many times
+        if self.tries > 6:  # TODO: many times
             print("I can't found you, I stop trying to follow you")
             voice.talk("I can't found you, I stop trying to follow you")
+            print("Lets try again")
+            voice.talk("Lets try again")
             self.tries = 0
             return 'failed'
         
@@ -248,8 +257,8 @@ class FindLegs(smach.State):
             print("\n")
             rospy.logwarn('--> STATE <: Find legs')
             JuskeshinoVision.enableHumanPose(True)
-            print("I will start to follow you. Please stand in front of me")
-            voice.talk("I will start to follow you. Please stand in front of me")
+            #print("I will start to follow you. Please stand in front of me")
+            #voice.talk("I will start to follow you. Please stand in front of me")
             
         human_detector = JuskeshinoVision.humanDetector()
         print("CML-PLN.-> human detector is :__", human_detector)
@@ -282,6 +291,7 @@ class FolowwHuman(smach.State):
         print("CML-PLN.-> Legs in front?___", legs_found.data)
         time.sleep(1)
 
+        # TODO: here move
         command_voice = JuskeshinoHRI.waitForNewSentence(10)
         print("command_voice: ", command_voice)
         if "CAR" in command_voice:
@@ -312,7 +322,7 @@ if __name__ == '__main__':
     sis.start()
     
     with sm:
-        smach.StateMachine.add("INITIAL", Initial(), transitions={'failed':'INITIAL', 'succ':'GOTO_LIVING_ROOM'})
+        smach.StateMachine.add("INITIAL", Initial(), transitions={'failed':'INITIAL', 'succ':'GOTO_LIVING_ROOM'})#'GOTO_LIVING_ROOM'})
 
         smach.StateMachine.add("GOTO_LIVING_ROOM", GotoLivingRoom(),            
                                transitions={'failed':'FIND_HUMAN', 'tries':'GOTO_LIVING_ROOM', 'succ':'FIND_HUMAN'})

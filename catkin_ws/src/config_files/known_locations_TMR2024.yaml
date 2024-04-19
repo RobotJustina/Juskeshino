@@ -1,0 +1,80 @@
+start:
+- x: -0.09
+- y: -5.61
+- theta: 0.0
+- qx: 0.0
+- qy: 0.0
+- qz: 0.0
+- qw: 1.0
+door:
+- x: -1.74
+- y: -5.65
+- theta: 0.0
+- qx: 0.0
+- qy: 0.0
+- qz: 0.0
+- qw: 1.0
+living_room:
+- x: -1.54
+- y: -3.64
+- theta: 0.0
+- qx: 0.0
+- qy: 0.0
+- qz: 0.0
+- qw: 1.0
+center:
+- x: -3.38
+- y: -5.14
+- theta: 0.0
+- qx: 0.0
+- qy: 0.0
+- qz: 0.0
+- qw: 1.0
+breakfast_table:
+- x: -5.58
+- y: -5.8
+- theta: 0.0
+- qx: 0.0
+- qy: 0.0
+- qz: 0.0
+- qw: 1.0
+pose2:
+- x: -5.7
+- y: -6.11
+- theta: 0.0
+- qx: 0.0
+- qy: 0.0
+- qz: 0.0
+- qw: 1.0
+pickup_table:
+- x: -5.1
+- y: -8.06
+- theta: 0.0
+- qx: 0.0
+- qy: 0.0
+- qz: 0.0
+- qw: 1.0
+bedroom:
+- x: -4.22
+- y: -4.33
+- theta: 0.0
+- qx: 0.0
+- qy: 0.0
+- qz: 0.0
+- qw: 1.0
+bed_table:
+- x: -5.73
+- y: -4.53
+- theta: 0.0
+- qx: 0.0
+- qy: 0.0
+- qz: 0.0
+- qw: 1.0
+dining_room:
+- x: -2.27
+- y: -7.92
+- theta: 0.0
+- qx: 0.0
+- qy: 0.0
+- qz: 0.0
+- qw: 1.0
