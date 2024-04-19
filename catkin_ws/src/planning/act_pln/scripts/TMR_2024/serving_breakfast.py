@@ -19,16 +19,16 @@ PREPARE_TEST      = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
 PREPARE_TOP_GRIP  = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
 PREPARE_SERVING   = [0.91, 0.4, -0.5, 1.45, 0, 0.16, 0.5]
 SERVING           = [0.91, 0.4, -0.5, 1.45, 0, 0.16, -1.6]
-LEAVE_CEREAL      = [0.4, 0.18, -0.03, 1.45, 0, 0, 0]
-LEAVE_MILK        = [0.4, -0.12, -0.03, 1.45, 0, 0, 0]
-LEAVE_BOWL        = [0.4,  0.6, -0.8, 2.1, 0, 0.2, 0]
+LEAVE_CEREAL      = [0.44, 0.18, -0.03, 1.45, 0, 0, 0]
+LEAVE_MILK        = [0.44, 0.18, -0.03, 1.45, 0, 0, 0]
+LEAVE_BOWL        = [0.6,  0.6, -0.8, 1.7, 0, 0.2, 0]
 LEAVE_NEAR_CEREAL = [0.39, 0.18, -0.03, 1.45, 0, 0, 0]
 EMPTYING_POSE     = [0.37, 0.57, -0.11, 1.68, -0.73, 0.76, -0.90]
 LEAVE_NEAR_MILK   = [0.39, 0.18, -0.01, 1.42, 0, 0.37, 0]
 
 GRIPER_MILK = 0.2
 GRIPER_CEREAL = 0.0
-GRIPER_BOWL = -0.25
+GRIPER_BOWL = 0.0
 
 MESA_INGREDIENTES ="ingredients_table" 
 MESA_COMER        = "eat_table"
@@ -98,7 +98,7 @@ def main():
     """
     
     
-    pila = ["cereal", "cereal", "milk"] 
+    pila = ["bowl", "cereal", "milk"] 
     count = 0
     while count < 3: # Revisa pila
     
@@ -196,7 +196,8 @@ def main():
                 j = j+1
 
                 time.sleep(1)
-
+        
+        JuskeshinoHardware.moveLeftGripper(GRIPER_BOWL, 2.0)
         """  
         print("SB-PLN.->Moving base backwards")
         JuskeshinoHRI.say("I'have grasped the object")

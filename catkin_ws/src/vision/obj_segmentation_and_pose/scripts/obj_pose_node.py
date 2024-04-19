@@ -14,6 +14,7 @@ from cv_bridge import CvBridge
 
 
 MAXIMUM_GRIP_LENGTH = 0.16
+MAXIMIUN_CUBE_SIZE  = 0.15
 
 
 def get_cv_mats_from_cloud_message(cloud_msg):
@@ -106,7 +107,7 @@ def object_pose(centroid, principal_component, second_component, size_obj):  # v
     
     # ************************************************************************************************
     if ((angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150))):  # Si el objeto es horizontal
-        if (size_obj.x >= 0.13):        # Si el objeto es
+        if (size_obj.x >= MAXIMIUN_CUBE_SIZE):        # Si el objeto es
             # Realiza agarre superior
             obj_state = 'horizontal'
             print("Eje principal horizontal")
@@ -152,7 +153,7 @@ def object_pose(centroid, principal_component, second_component, size_obj):  # v
     else: # Realiza agarre lateral
         obj_state = 'vertical'
         print("Eje principal vertical")
-        if (size_obj.x >= 0.13):
+        if (size_obj.x >= MAXIMIUN_CUBE_SIZE):
             # Mide el angulo de la proyeccion del vector z_obj sobre el plano xy de base_link y el eje x_base_link
             angle_2pc_x_bl =  math.atan2(second_component[1], second_component[0])  
             print("angulo de la proyeccion del vector z_obj sobre el plano xy de base_link y el eje x_base_link", np.rad2deg(angle_2pc_x_bl))
@@ -290,7 +291,7 @@ def object_category(size_obj, obj_state):  # estima la forma geometrica del obje
 
 
     else:
-        if(size_obj.z <= MAXIMUM_GRIP_LENGTH) and (size_obj.y <= MAXIMUM_GRIP_LENGTH) and (size_obj.x < 0.13) and (size_obj.x > 0.07):
+        if(size_obj.z <= MAXIMUM_GRIP_LENGTH) and (size_obj.y <= MAXIMUM_GRIP_LENGTH) and (size_obj.x < MAXIMIUN_CUBE_SIZE) and (size_obj.x > 0.07):
             print("Object spheric or cubic SMALL, SUPERIOR GRIP will be made")
             return "CUBIC", True
             
