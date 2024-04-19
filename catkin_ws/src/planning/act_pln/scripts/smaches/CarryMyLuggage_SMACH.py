@@ -47,43 +47,6 @@ class Initial(smach.State):
         return 'succ'
 
 
-class GotoLivingRoom(smach.State):  
-    def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
-        self.tries = 0
-        self.time_out = 30
-        self.attempts = 2
-
-    def execute(self, userdata):
-        self.tries += 1
-        if self.tries == 1:
-            self.time_out = 30
-            print("\n")
-            rospy.logwarn('--> STATE <: Navigate to living room')
-            voice.talk('Navigating to, living room')
-        
-        if self.tries == self.attempts + 1: 
-            rospy.logerr('Navigation Failed, I can not reach the living room')
-            voice.talk('Navigation Failed, I can not reach the living room')
-            return 'failed'
-
-        print(f'Try {self.tries} of {self.attempts} attempts')        
-        res = omni_base.move_base(known_location='living_room', time_out=self.time_out)
-        print("res:", res)
-        
-        if res == 3:  # Success
-            self.tries = 0
-            return 'succ'
-        elif res == 1 or res == 8:
-            if self.tries < self.attempts-1:
-                rospy.logerr('Navigation Failed, retrying')
-                voice.talk('Navigation Failed, retrying')
-            self.time_out = 25
-            return 'tries'
-        else:
-            return 'failed'
-
-
 class FindHuman(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -191,11 +154,47 @@ class PointingBag(smach.State):
         ## First locate bag then move to bag
 
 
-        head.turn_base_gaze(tf='pointing_', to_gaze='base_link') #'arm_flex_link'
+        #head.turn_base_gaze(tf='pointing_', to_gaze='base_link') #'arm_flex_link'
         head.to_tf('pointing_')
         # There is now a "human TF with humans aprrox location(face)"
         return 'succ'
 
+
+class GotoLivingRoom(smach.State):  
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        self.tries = 0
+        self.time_out = 30
+        self.attempts = 2
+
+    def execute(self, userdata):
+        self.tries += 1
+        if self.tries == 1:
+            self.time_out = 30
+            print("\n")
+            rospy.logwarn('--> STATE <: Navigate to living room')
+            voice.talk('Navigating to, living room')
+        
+        if self.tries == self.attempts + 1: 
+            rospy.logerr('Navigation Failed, I can not reach the living room')
+            voice.talk('Navigation Failed, I can not reach the living room')
+            return 'failed'
+
+        print(f'Try {self.tries} of {self.attempts} attempts')        
+        res = omni_base.move_base(known_location='living_room', time_out=self.time_out)
+        print("res:", res)
+        
+        if res == 3:  # Success
+            self.tries = 0
+            return 'succ'
+        elif res == 1 or res == 8:
+            if self.tries < self.attempts-1:
+                rospy.logerr('Navigation Failed, retrying')
+                voice.talk('Navigation Failed, retrying')
+            self.time_out = 25
+            return 'tries'
+        else:
+            return 'failed'
 
 class AskForBag(smach.State):
     def __init__(self):
@@ -351,6 +350,8 @@ class AskArrive(smach.State):
         print("voice: ", answer)
         if "YES" in answer:
             return "succ"
+        if "NO" in answer:
+            return "failed"
         else:
             return "tries"
 
@@ -393,15 +394,15 @@ if __name__ == '__main__':
     with sm:
         smach.StateMachine.add("INITIAL", Initial(), transitions={'failed':'INITIAL', 'succ':'FIND_HUMAN'})#'GOTO_LIVING_ROOM'})
 
-
-        smach.StateMachine.add("GOTO_LIVING_ROOM", GotoLivingRoom(),            
-                               transitions={'failed':'FIND_HUMAN', 'tries':'GOTO_LIVING_ROOM', 'succ':'FIND_HUMAN'})
         
         smach.StateMachine.add("FIND_HUMAN", FindHuman(), 
                                transitions={'failed':'FIND_HUMAN', 'succ':'POINTING_BAG', 'tries':'FIND_HUMAN'})
         
         smach.StateMachine.add("POINTING_BAG", PointingBag(), 
-                               transitions={'failed':'END', 'succ':'ASK_FOR_BAG', 'tries':'POINTING_BAG'})
+                               transitions={'failed':'END', 'succ':'GOTO_LIVING_ROOM', 'tries':'POINTING_BAG'})
+        
+        smach.StateMachine.add("GOTO_LIVING_ROOM", GotoLivingRoom(),            
+                               transitions={'failed':'ASK_FOR_BAG', 'tries':'GOTO_LIVING_ROOM', 'succ':'ASK_FOR_BAG'})
         
         smach.StateMachine.add("ASK_FOR_BAG", AskForBag(), 
                                transitions={'failed':'END', 'succ':'FIND_LEGS', 'tries':'ASK_FOR_BAG'})

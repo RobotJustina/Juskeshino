@@ -1,8 +1,8 @@
 <launch>
   <arg name="debug" default="False"/>
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
-    <arg name="posx"  value="-0.09"/>
-    <arg name="posy"  value="5.61"/>
+    <arg name="posx"  value="-0.31"/>
+    <arg name="posy"  value="-5.69"/>
     <arg name="posz"  value="0.05"/>
     <arg name="yaw"   value="3.14"/>
     <arg name="world" value="tmr2024_walls"/>
