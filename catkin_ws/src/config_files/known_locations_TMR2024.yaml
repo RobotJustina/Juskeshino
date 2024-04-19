@@ -70,9 +70,17 @@ bed_table:
 - qy: 0.0
 - qz: 0.0
 - qw: 1.0
-dining_room:
+dining_room_table:
 - x: -2.27
 - y: -7.92
+- theta: 0.0
+- qx: 0.0
+- qy: 0.0
+- qz: 0.0
+- qw: 1.0
+dining_room:
+- x: -2.98
+- y: -5.53
 - theta: 0.0
 - qx: 0.0
 - qy: 0.0
