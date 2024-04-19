@@ -89,13 +89,15 @@ def main():
     # Esperar a que se abra la puerta
     JuskeshinoHRI.say("I'm waiting for the door to be open")
     
+    """
     if not JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(300):
         print("ACT-PLN.->Door never opened")
         return
     JuskeshinoHRI.say("I can see now that the door is open")
     # Ir a la cocina
+    """
     
-    pila = ["bowl", "cereal", "milk"] 
+    pila = ["milk", "cereal", "milk"] 
     count = 0
     while count < 3: # Revisa pila
     
@@ -105,9 +107,11 @@ def main():
         JuskeshinoHRI.say("I'm going to the kitchen position.")
         print("I'm going to the "+MESA_INGREDIENTES+" position.")
 
+        """
         if not JuskeshinoNavigation.getClose(MESA_INGREDIENTES, 100):  #*******************
             print("SB-PLN.->Cannot get close to the "+MESA_INGREDIENTES+" position")
         
+            
         time.sleep(1)
         # Alinearse con mueble
         print("SB-PLN.->move head")
@@ -116,12 +120,13 @@ def main():
             time.sleep(0.5)
             JuskeshinoHardware.moveHead(0,-1, 5)
         
-        #JuskeshinoHardware.moveHead(0,-1, 5)
+        JuskeshinoHardware.moveHead(0,-1, 5)
 
 
         time.sleep(1)
         if not JuskeshinoSimpleTasks.alignWithTable():
             print("SB-PLN.->Cannot align with table")
+            """
 
         # Busqueda y reconocimiento del objeto
 
@@ -167,7 +172,8 @@ def main():
                 print("SB-PLN.->object position", obj.pose.position)
                 print("SB-PLN.->Sending best gripper configuration")
                 time.sleep(1)
-                JuskeshinoHardware.moveLeftArmWithTrajectory(resp.articular_trajectory,10)
+                """
+                #JuskeshinoHardware.moveLeftArmWithTrajectory(resp.articular_trajectory,10)
                 print("SB-PLN.->Closing gripper")
                 if actual_obj == "bowl":
                     JuskeshinoHardware.moveLeftGripper(GRIPER_BOWL, 2.0) 
@@ -189,7 +195,7 @@ def main():
 
                 time.sleep(1)
 
-            
+        
         print("SB-PLN.->Moving base backwards")
         JuskeshinoHRI.say("I'have grasped the object")
         JuskeshinoNavigation.moveDist(-0.3, 10)
@@ -262,7 +268,7 @@ def main():
         JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE , 10)
         time.sleep(0.5)
         JuskeshinoHardware.moveLeftArmWithTrajectory(HOME , 10)
-    
+        """
         
     # El desayuno esta serv ido 
     
