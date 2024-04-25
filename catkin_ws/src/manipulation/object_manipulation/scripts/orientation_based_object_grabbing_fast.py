@@ -695,7 +695,7 @@ def evaluating_possibility_grip(candidate_quaternion_list, obj_state, category):
             ik_msg.pitch     = pose1[4]
             ik_msg.yaw       = pose1[5]
             ik_msg.duration  = 7
-            ik_msg.time_step = 0.1
+            ik_msg.time_step = 0.07
             try:    # intenta obtener la primera trayectoria en el espacio articular
                 resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
                 print("Best_Grasp_Node.-> Suitable pose 1 for horizontal object found.....................")
@@ -719,12 +719,13 @@ def evaluating_possibility_grip(candidate_quaternion_list, obj_state, category):
 
                     ik_msg_3.x             = cartesian_pose_shoulder[0] 
                     ik_msg_3.y             = cartesian_pose_shoulder[1]
-                    ik_msg_3.z             = cartesian_pose_shoulder[2] #- 0.1
+                    ik_msg_3.z             = cartesian_pose_shoulder[2] - 0.11
                     ik_msg_3.roll          = cartesian_pose_shoulder[3]      
                     ik_msg_3.pitch         = cartesian_pose_shoulder[4]
                     ik_msg_3.yaw           = cartesian_pose_shoulder[5]
                     ik_msg_3.duration      = 6
-                    ik_msg_3.time_step     = 0.1
+                    ik_msg_3.time_step     = 0.07
+            
                     ik_msg_3.initial_guess = guess
 
                     try:
@@ -818,7 +819,7 @@ def callback(req):
     trajectory, pose, rpy_pose, graspable = evaluating_possibility_grip(pose_list_quaternion , obj_state, req.recog_object.category)
    
     if graspable:
-        print("Best_Grasp_Node.-> Graphing in RViz suitable pose for object manipulation...")
+        print("Best_Grasp_Node.-> SUITABLE POSE FOR OBJECT MANIPULATION......")
         broadcaster_frame_object('object', 'suitable_pose' , pose)
         resp.articular_trajectory = trajectory  # Retorna trayectoria en el espacio articular
 

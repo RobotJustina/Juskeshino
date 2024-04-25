@@ -19,16 +19,16 @@ PREPARE_TEST      = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
 PREPARE_TOP_GRIP  = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
 PREPARE_SERVING   = [0.91, 0.4, -0.5, 1.45, 0, 0.16, 0.5]
 SERVING           = [0.91, 0.4, -0.5, 1.45, 0, 0.16, -1.6]
-LEAVE_CEREAL      = [0.44, 0.18, -0.03, 1.45, 0, 0, 0]
+LEAVE_CEREAL      = [0.54, 0.28, -0.13, 1.45, 0, 0, 0]
 LEAVE_MILK        = [0.44, 0.18, -0.03, 1.45, 0, 0, 0]
 LEAVE_BOWL        = [0.6,  0.6, -0.8, 1.7, 0, 0.2, 0]
 LEAVE_NEAR_CEREAL = [0.39, 0.18, -0.03, 1.45, 0, 0, 0]
 EMPTYING_POSE     = [0.37, 0.57, -0.11, 1.68, -0.73, 0.76, -0.90]
 LEAVE_NEAR_MILK   = [0.39, 0.18, -0.01, 1.42, 0, 0.37, 0]
 
-GRIPER_MILK = 0.2
+GRIPER_MILK   = 0.0
 GRIPER_CEREAL = 0.0
-GRIPER_BOWL = 0.0
+GRIPER_BOWL   = 0.0
 
 MESA_INGREDIENTES ="ingredients_table" 
 MESA_COMER        = "eat_table"
@@ -39,7 +39,7 @@ def serving_breakfast(object):
     time.sleep(0.5)
     JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_SERVING, 10)
     time.sleep(0.5)
-    JuskeshinoNavigation.moveDist(0.3, 7)
+    #JuskeshinoNavigation.moveDist(0.3, 7)      # mueve la base adelante con el brazo levantado y extendido
     if object =="milk": JuskeshinoHRI.say("Serving milk")
     else: JuskeshinoHRI.say("Serving cereal")
     JuskeshinoHardware.moveLeftArmWithTrajectory(SERVING, 10)
@@ -85,15 +85,15 @@ def main():
     JuskeshinoKnowledge.loadLocations(locations_file)
 
     
-    JuskeshinoHRI.say("I'm ready for the serving breakfast test")
+    #JuskeshinoHRI.say("I'm ready for the serving breakfast test")
     # Esperar a que se abra la puerta
-    JuskeshinoHRI.say("I'm waiting for door to be open")
+    JuskeshinoHRI.say("I'm waiting for door open")
+    print(("I'm waiting for door open"))
     
-    
-    if not JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(300):
-        print("ACT-PLN.->Door never opened")
-        return
-    JuskeshinoHRI.say("I can see now that the door is open")
+    #if not JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(300):
+    #    print("ACT-PLN.->Door never opened")
+    #    return
+    JuskeshinoHRI.say("door open")
     # Ir a la cocina
     
     
@@ -105,21 +105,24 @@ def main():
         print("OBJECT", pila[count])
         actual_obj = pila[count]
         # Ir a locacion de ingredientes
-        JuskeshinoHRI.say("I'm going to the kitchen position.")
+        JuskeshinoHRI.say("I'm going to kitchen")
         print("I'm going to the "+MESA_INGREDIENTES+" position.")
 
         
-        if not JuskeshinoNavigation.getClose(MESA_INGREDIENTES, 100):  #*******************
-            print("SB-PLN.->Cannot get close to the "+MESA_INGREDIENTES+" position")
+        #if not JuskeshinoNavigation.getClose(MESA_INGREDIENTES, 120):  #*******************
+        #    print("SB-PLN.->Cannot get close to the "+MESA_INGREDIENTES+" position")
         
             
-        time.sleep(1)
+        time.sleep(1.3)
         # Alinearse con mueble
         print("SB-PLN.->move head")
         if not JuskeshinoHardware.moveHead(0,-1, 5):
             print("SB-PLN.->Cannot move head")
-            time.sleep(0.5)
+            time.sleep(1.0)
             JuskeshinoHardware.moveHead(0,-1, 5)
+            time.sleep(1.0)
+            JuskeshinoHardware.moveHead(0,-1, 5)
+            
         
         JuskeshinoHardware.moveHead(0,-1, 5)
 
@@ -132,7 +135,7 @@ def main():
         # Busqueda y reconocimiento del objeto
 
         print("SB-PLN.->Trying to detect object: ")
-        JuskeshinoHRI.say("I'm trying to detect the object:____", actual_obj)
+        JuskeshinoHRI.say("I'm trying to detect the object")
             
         [obj, img] = JuskeshinoSimpleTasks.object_search(actual_obj)   #**************************
         if obj == None: 
@@ -142,12 +145,12 @@ def main():
 
         else:   # Objeto detectado.............................................
             print("SB-PLN.->Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))
-            JuskeshinoHRI.say("I found the object")
+            JuskeshinoHRI.say("I found" + actual_obj)
             print("SB-PLN.->handling location ")
             [dist, mov] = JuskeshinoSimpleTasks.handling_location(obj)
 
         j=0
-        while j < 2:
+        while j < 3:
             [obj, img] = JuskeshinoVision.detectAndRecognizeObject(actual_obj) #**************************
             #print("SB-PLN.->Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))
                         
@@ -155,11 +158,13 @@ def main():
             # Tomar objeto                                              
             print("SB-PLN.->Sending goal traj to prepare")
             print("PREPARE HIGHT")
+            """
             if actual_obj=='cereal':
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_LATERAL_GRIP, 10)  # prepare 
             else:    
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)  # prepare 
-                   
+            """
+            JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)  # prepare
             time.sleep(0.1)
             print("SB-PLN.->Open gripper")
             if actual_obj == "bowl": JuskeshinoHardware.moveLeftGripper(0.4 , 3.0)
@@ -169,7 +174,7 @@ def main():
                 
             [resp, graspable] = JuskeshinoManipulation.planBestGraspingConfiguration(obj)
             if graspable:
-                JuskeshinoHRI.say("I going to take the object")
+                JuskeshinoHRI.say("take object")
                 print("SB-PLN.->object position", obj.pose.position)
                 print("SB-PLN.->Sending best gripper configuration")
                 time.sleep(1)
@@ -200,7 +205,7 @@ def main():
         JuskeshinoHardware.moveLeftGripper(GRIPER_BOWL, 2.0)
           
         print("SB-PLN.->Moving base backwards")
-        JuskeshinoHRI.say("I'have grasped the object")
+        #JuskeshinoHRI.say("I'have grasped the object")
         JuskeshinoNavigation.moveDist(-0.3, 10)
         time.sleep(0.5)
         print("ACT-PLN.->Moving arm to prepare***")
@@ -209,7 +214,10 @@ def main():
         actual_obj = pila[count]
         count = count + 1
         print("Actual object: ", actual_obj)
-        # Ir a la mesa del desayuno
+
+        #.........................................................................................................................
+        # Ir a la mesa del desayuno...............................................................................................
+        #.........................................................................................................................
         
         
         print("SB-PLN.->Getting close to " + MESA_COMER + "location")
@@ -237,12 +245,12 @@ def main():
 
         # lleva  brazo a posicion por encima de la mesa
         print("SB-PLN.->Moving left arm to deliver position")
-        JuskeshinoHRI.say("I'm going to leave the object")
+        JuskeshinoHRI.say("Leave object")
 
         if (actual_obj == "milk") or (actual_obj == "cereal"):
             time.sleep(1)
             print("SB-PLN.->Moving base backwards")
-            JuskeshinoNavigation.moveDist(-0.3, 10)
+            #JuskeshinoNavigation.moveDist(-0.3, 10)    #..........se hecha para atras para extender brazo
             serving_breakfast(actual_obj) 
 
         if actual_obj == "bowl":
@@ -273,9 +281,8 @@ def main():
         JuskeshinoHardware.moveLeftArmWithTrajectory(HOME , 10)
         
         
-    # El desayuno esta serv ido 
-    
-    JuskeshinoHRI.say("I finished the test")
+    # El desayuno esta servido 
+    JuskeshinoHRI.say("Breakfast is served. I finish the test")
     
 
 
