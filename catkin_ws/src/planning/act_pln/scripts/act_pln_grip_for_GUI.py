@@ -15,8 +15,15 @@ from std_msgs.msg import String, Float64MultiArray, Float32, Float64,Bool, Float
 from actionlib_msgs.msg import GoalStatus
 from tf.transformations import euler_from_quaternion
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-from cv_bridge import CvBridge
 from actionlib_msgs.msg import GoalStatus
+
+from juskeshino_tools.JuskeshinoNavigation import JuskeshinoNavigation
+from juskeshino_tools.JuskeshinoVision import JuskeshinoVision
+from juskeshino_tools.JuskeshinoHardware import JuskeshinoHardware
+from juskeshino_tools.JuskeshinoSimpleTasks import JuskeshinoSimpleTasks
+from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
+from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
+from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 
 
 
@@ -48,7 +55,7 @@ PREPARE     = [-0.7, 0.2, 1.55, 0.0, 1.16, 0.0, 0.0]
 PREPARE_TOP_GRIP  = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
 
 GRIPPER_OPENING = 0.6   # Apertura de gripper
-GRIPPER_CLOSURE = -0.5
+GRIPPER_CLOSURE = 0.0
 
 def callback_goal_reached(msg): #¿?
     global goal_reached
@@ -174,6 +181,14 @@ def main():
     rospy.init_node("act_pln_grip") 
     global goal_reached, goal_hd_reached, goal_la_reached, object_name
     global executing_command, new_command, recognized_speech
+
+    JuskeshinoNavigation.setNodeHandle()
+    #JuskeshinoVision.setNodeHandle()
+    JuskeshinoHardware.setNodeHandle()
+    JuskeshinoSimpleTasks.setNodeHandle()
+    #JuskeshinoHRI.setNodeHandle()
+    #JuskeshinoManipulation.setNodeHandle()
+    #JuskeshinoKnowledge.setNodeHandle()
 
     rospy.wait_for_service("/vision/obj_segmentation/get_obj_pose") # Servicio que da la pose del objeto a tomar
     clt_pose_obj          = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose", RecognizeObject)

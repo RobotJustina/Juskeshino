@@ -17,20 +17,20 @@ servo_arm_ids:
   - 5
   - 6
 servo_arm_zeros:
-  - 3789
-  - 1392
-  - 0
-  - 3513
-  - 2048
-  - 1843
-  - 1921
+  - 8050
+  - 1400
+  - 1760
+  - 8000
+  - 2071
+  - 1853
+  - 1941
 servo_arm_directions:
   - -1
-  - 1
   - -1
   - -1
   - -1
   - 1
+  - -1
   - -1
 servo_gripper_bits_per_radian:
   - 651.739491961
