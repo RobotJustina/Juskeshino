@@ -102,10 +102,10 @@ int main(int argc, char ** argv){
     if(!simul) 
         jrkManager = std::make_shared<JrkManager>(port, baudRate, 100);
 
-    ros::Publisher pubTorsoPose = n.advertise<std_msgs::Float32MultiArray>("/hardware/torso/current_pose", 1);
-    ros::Publisher pubGoalReached = n.advertise<std_msgs::Bool>("/hardware/torso/goal_reached", 1);
-    ros::Publisher pubJointState = n.advertise<sensor_msgs::JointState>("/joint_states", 1);
-    ros::Subscriber subRelativeHeight = n.subscribe("/hardware/torso/goal_rel_pose", 1, callbackRelativeHeight);
+    ros::Publisher pubTorsoPose         = n.advertise<std_msgs::Float32MultiArray>("/hardware/torso/current_pose", 1);
+    ros::Publisher pubGoalReached       = n.advertise<std_msgs::Bool>("/hardware/torso/goal_reached", 1);
+    ros::Publisher pubJointState        = n.advertise<sensor_msgs::JointState>("/joint_states", 1);
+    ros::Subscriber subRelativeHeight   = n.subscribe("/hardware/torso/goal_rel_pose", 1, callbackRelativeHeight);
     ros::Subscriber subAbsoluteHeight = n.subscribe("/hardware/torso/goal_pose", 1, callbackAbsoluteHeight);
 
     if(!simul)
