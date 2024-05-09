@@ -449,7 +449,7 @@ void QtRosNode::call_take_object(std::string name)
     std_msgs::String msg;
     msg.data = name;
 
-    std::cout << "Tomar objeto**************************************************" << std::endl;
+    std::cout << "JustinaGUI.->Take object**************************************************" << std::endl;
     
     /*
     vision_msgs::RecognizeObject srv;

@@ -23,6 +23,8 @@
 
   <!--node name="gripper_orientation_for_grasping" pkg="object_manipulation" type="orientation_based_object_grabbing_fast.py" output="screen"/-->
   
-  <node name="act_pln_grip" pkg="act_pln" type="act_pln_grip_for_GUI.py"/>
+  <node name="grasp_object_ra" pkg="object_manipulation" type="grasp_object.py" output="screen"/>
+
+  <node name="grip_test" pkg="object_manipulation" type="demo_grasp.py"/>
 
 </launch>
