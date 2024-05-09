@@ -145,22 +145,41 @@ class JuskeshinoSimpleTasks:
 
     def handling_location(vision_obj ):
         position_obj = vision_obj.pose.position
-        l_threshold_m = 0.26
-        r_threshold_m = 0.1
+        l_threshold_la = 0.25
+        r_threshold_la = 0.11
+        l_threshold_ra = -0.16
+        r_threshold_ra = -0.32
 
-        if position_obj.y > 0.24:
-            dist_move = position_obj.y - l_threshold_m
-            print("dist move izq", dist_move)
-            JuskeshinoNavigation.moveLateral(dist_move , 10)
-            return dist_move, True
+        if position_obj.y >= 0:     # Lado izq del robot
+            if position_obj.y > l_threshold_la:
+                dist_move = position_obj.y - l_threshold_la
+                print("dist move izq", dist_move)
+                JuskeshinoNavigation.moveLateral(dist_move , 10)
+                return dist_move, True
 
-        if position_obj.y < r_threshold_m:
-            dist_move = position_obj.y - r_threshold_m
-            print("dist move der", dist_move)
-            JuskeshinoNavigation.moveLateral(dist_move , 10)
-            return dist_move, True
+            if position_obj.y < r_threshold_la:
+                dist_move = position_obj.y - r_threshold_la
+                print("dist move der", dist_move)
+                JuskeshinoNavigation.moveLateral(dist_move , 10)
+                return dist_move, True
+            
+            return 0, False
+            
+        if position_obj.y < 0:
+            if position_obj.y > l_threshold_ra:
+                dist_move =  l_threshold_ra - position_obj.y
+                print("dist move right", dist_move)
+                JuskeshinoNavigation.moveLateral(dist_move , 10)
+                return dist_move, True
+
+            if position_obj.y < r_threshold_ra:
+                dist_move = r_threshold_ra - position_obj.y
+                print("dist move left", dist_move)
+                JuskeshinoNavigation.moveLateral(dist_move , 10)
+                return dist_move, True
         
-        return 0, False
+            return 0, False
+
 
 
     def object_search(name_obj):
