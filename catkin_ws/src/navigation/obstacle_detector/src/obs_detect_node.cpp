@@ -286,10 +286,20 @@ int main(int argc, char** argv)
     std::cout << (use_cloud ? point_cloud_topic : "" ) << " " << (use_lidar ? laser_scan_topic : "") << std::endl;
     boost::shared_ptr<sensor_msgs::PointCloud2 const> ptr_cloud_temp; 
     boost::shared_ptr<sensor_msgs::LaserScan const>   ptr_lidar_temp;
-    if(use_cloud) ptr_cloud_temp = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(point_cloud_topic,ros::Duration(10.0));
-    if(use_lidar) ptr_lidar_temp = ros::topic::waitForMessage<sensor_msgs::LaserScan>  (laser_scan_topic, ros::Duration(10.0));
-    if(use_cloud && ptr_cloud_temp == NULL) return -1;
-    if(use_lidar && ptr_lidar_temp == NULL) return -1;
+    for(int i=0; i<10 && use_cloud && ptr_cloud_temp==NULL; i++)
+        ptr_cloud_temp = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(point_cloud_topic,ros::Duration(1.0));
+    for(int i=0; i<10 && use_lidar && ptr_lidar_temp==NULL; i++)
+        ptr_lidar_temp = ros::topic::waitForMessage<sensor_msgs::LaserScan>  (laser_scan_topic, ros::Duration(1.0));
+    if(use_cloud && ptr_cloud_temp == NULL)
+    {
+        std::cout << "ObsDetector.->Cannot get first message for cloud from topic " << point_cloud_topic << std::endl;
+        return -1;
+    }
+    if(use_lidar && ptr_lidar_temp == NULL)
+    {
+        std::cout << "ObsDetector.->Cannot get first message for lidar from topic " << laser_scan_topic << std::endl;
+        return -1;
+    }
     std::cout << "ObsDetector.->First messages received..." << std::endl;
     
     std::cout << "ObsDetector.->Waiting for transforms to be available..." << std::endl;
