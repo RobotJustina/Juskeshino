@@ -3,32 +3,32 @@
 #include <iostream>
 #include <memory>
 #include <sensor_msgs/JointState.h>
-#include <std_msgs/Float32.h>
+#include <std_msgs/Float64.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Empty.h>
 #include <hardware_tools/JrkManager.hpp>
 
 #define TH_ERR 0.001
 
-float getPositionFromFeedback(int feedback){
+double getPositionFromFeedback(int feedback){
     return 0.0076491823 * feedback - 0.5021359358;
 }
 
-int getFeedbackFromPosition(float position){
+int getFeedbackFromPosition(double position){
     return 130.657375698 * position + 66.7352975312;
 }
 bool newGoalPose = false;
-std_msgs::Float32 goalPose;
-float goalSpeeds_simul[5] = {0.1, 0.1, 0.1, 0.1, 0.1};
+std_msgs::Float64 goalPose;
+double goalSpeeds_simul[5] = {0.1, 0.1, 0.1, 0.1, 0.1};
 
 std::shared_ptr<JrkManager> jrkManager;
 int currFeedback = 0;
 bool simul = true;
 
-void callbackRelativeHeight(const std_msgs::Float32::ConstPtr &msg){
+void callbackRelativeHeight(const std_msgs::Float64::ConstPtr &msg){
     std::cout << "torso_node_pololu.->Receiving relative new goal pose." << std::endl;
     newGoalPose = true;
-    float absPosition;
+    double absPosition;
     if(!simul){
         currFeedback = jrkManager->getFeedback();
         absPosition = getPositionFromFeedback(currFeedback) / 100.0f;
@@ -49,7 +49,7 @@ void callbackRelativeHeight(const std_msgs::Float32::ConstPtr &msg){
     }
 }
 
-void callbackAbsoluteHeight(const std_msgs::Float32::ConstPtr &msg){
+void callbackAbsoluteHeight(const std_msgs::Float64::ConstPtr &msg){
     std::cout << "torso_node_pololu.->Reciving absolute new goal pose." << std::endl;
     newGoalPose = true;
     goalPose.data = msg->data;
@@ -102,7 +102,7 @@ int main(int argc, char ** argv){
     if(!simul) 
         jrkManager = std::make_shared<JrkManager>(port, baudRate, 100);
 
-    ros::Publisher pubTorsoPose         = n.advertise<std_msgs::Float32>("/hardware/torso/current_pose", 1);
+    ros::Publisher pubTorsoPose         = n.advertise<std_msgs::Float64>("/hardware/torso/current_pose", 1);
     ros::Publisher pubGoalReached       = n.advertise<std_msgs::Bool>("/hardware/torso/goal_reached", 1);
     ros::Publisher pubJointState        = n.advertise<sensor_msgs::JointState>("/joint_states", 1);
     ros::Subscriber subRelativeHeight   = n.subscribe("/hardware/torso/goal_rel_pose", 1, callbackRelativeHeight);
@@ -112,8 +112,8 @@ int main(int argc, char ** argv){
         jrkManager->getErrorsHalting();
 
     //std::string names[5] = {"spine_connect","waist_connect","shoulders_connect", "shoulders_left_connect", "shoulders_right_connect"};
-    float positions[5] = {0, 0, 0, 0, 0};
-    float deltaPose[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+    double positions[5] = {0, 0, 0, 0, 0};
+    double deltaPose[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
 
     sensor_msgs::JointState jointStates;
     //jointStates.name.insert(jointStates.name.begin(), names, names + 5);
@@ -121,7 +121,7 @@ int main(int argc, char ** argv){
     jointStates.name.push_back("spine_connect");
     jointStates.position.push_back(0);
 
-    std_msgs::Float32 msgCurrentPose;
+    std_msgs::Float64 msgCurrentPose;
     //msgCurrentPose.data.resize(3);
 
     //goalPose.data.resize(3);
@@ -150,7 +150,7 @@ int main(int argc, char ** argv){
         }
 
         if(newGoalPose){
-            float err = fabs(positions[0] - goalPose.data);
+            double err = fabs(positions[0] - goalPose.data);
             if(err <= TH_ERR){
                 std_msgs::Bool msg;
                 msg.data = true;

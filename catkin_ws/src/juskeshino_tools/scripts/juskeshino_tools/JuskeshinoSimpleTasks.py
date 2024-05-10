@@ -147,7 +147,7 @@ class JuskeshinoSimpleTasks:
         position_obj = vision_obj.pose.position
         l_threshold_la = 0.25
         r_threshold_la = 0.11
-        l_threshold_ra = -0.16
+        l_threshold_ra = -0.12
         r_threshold_ra = -0.32
 
         if position_obj.y >= 0:     # Lado izq del robot

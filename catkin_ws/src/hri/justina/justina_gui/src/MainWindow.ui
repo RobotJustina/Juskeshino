@@ -1056,7 +1056,7 @@ QRadioButton::indicator{
         <double>0.020000000000000</double>
        </property>
        <property name="maximum">
-        <double>0.290000000000000</double>
+        <double>0.280000000000000</double>
        </property>
        <property name="singleStep">
         <double>0.020000000000000</double>

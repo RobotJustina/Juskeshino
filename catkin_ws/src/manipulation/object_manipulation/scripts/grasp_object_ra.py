@@ -15,7 +15,7 @@ import geometry_msgs.msg
 MAXIMUM_GRIP_LENGTH = 0.14
 MINIMUM_HEIGHT_PRISM = 0.13
 MAXIMUM_CUBE_SIZE = 0.13
-Z_OFFSET = 0.05
+Z_OFFSET = 0.0
     
 
 def descarte_forced_poses(obj_pose):   
@@ -298,32 +298,8 @@ def cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj):
     global debug
 
     obj_state = "horizontal"
-    
-    
-    # Primera lista de candidatos******************************************************************************
-    obj_pos_1 = Pose()
-    if (type_obj == "CUBIC"):
-        obj_pos_1.position.x, obj_pos_1.position.y, obj_pos_1.position.z = 0, 0, 0
-        num_candidates = 6
 
-    else:
-        obj_pos_1.position.x, obj_pos_1.position.y, obj_pos_1.position.z = 0, size.z/2 , 0
-        #print("GRIP POINT BOWL: ", obj_pos_1)
-        marker_array_publish(grip_point, 'object', 59, 56)
-        num_candidates = 5
-        
-
-    obj_pos_1.orientation.x = 0.0
-    obj_pos_1.orientation.y = 0.0
-    obj_pos_1.orientation.z = 0.0
-    obj_pos_1.orientation.w = 1.0
-
-    step = 15
-
-    pose_list1 = generates_candidates([obj_pos_1.position.x , obj_pos_1.position.y ,obj_pos_1.position.z] , obj_pos_1, "P", obj_state ,  'c1', step , num_candidates, type_obj)
-    
-
-    # Segunda lista de candidatos******************************************************************************
+    # Lista de candidatos******************************************************************************
     obj_pos_2 = Pose()
     if (type_obj == "CUBIC"):
         obj_pos_2.position.x, obj_pos_2.position.y, obj_pos_2.position.z = 0, 0, 0
@@ -340,9 +316,9 @@ def cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj):
     obj_pos_2.orientation.z = 0.0
     obj_pos_2.orientation.w = 1.0
     step = -15
-    pose_list2 = generates_candidates([obj_pos_2.position.x , obj_pos_2.position.y ,obj_pos_2.position.z] , obj_pos_2, "P", obj_state ,  'c2', step, num_candidates, type_obj)
+    pose_list = generates_candidates([obj_pos_2.position.x , obj_pos_2.position.y ,obj_pos_2.position.z] , obj_pos_2, "P", obj_state ,  'c2', step, num_candidates, type_obj)
  
-    return pose_list1 + pose_list2
+    return pose_list 
     
 
 
@@ -636,7 +612,8 @@ def evaluating_possibility_grip(candidate_quaternion_list, obj_state, category):
     """
     global ik_srv
     ik_msg = InverseKinematicsPose2TrajRequest()
-    ik_msg_3 = InverseKinematicsPose2TrajRequest()    
+    ik_msg_3 = InverseKinematicsPose2TrajRequest() 
+ 
         
 
     print("Best_Grasp_Node.-> evaluating_possibility_grip()")
@@ -670,7 +647,7 @@ def evaluating_possibility_grip(candidate_quaternion_list, obj_state, category):
         #***********************************************************************************************************************
 
         else:   # OBJETO HORIZONTAL
-            print("HORIZONTAL GRIP")
+            print("CUBIC GRIP")
             pose1, new_pos = pose_for_ik_service(pose1)
 
             if new_pos == -1: continue
@@ -681,92 +658,18 @@ def evaluating_possibility_grip(candidate_quaternion_list, obj_state, category):
             ik_msg.roll      = pose1[3]     
             ik_msg.pitch     = pose1[4]
             ik_msg.yaw       = pose1[5]
-            ik_msg.duration  = 7
+            ik_msg.duration  = 5
             ik_msg.time_step = 0.07
             try:    # intenta obtener la primera trayectoria en el espacio articular
                 resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
                 print("Best_Grasp_Node.-> Suitable pose 1 for horizontal object found.....................")
                 #resp_ik_srv.articular_trajectory.points = resp_ik_srv.articular_trajectory.points
                 return resp_ik_srv.articular_trajectory , pose1 , new_pos, True
-                print("Generating second trajectory to take the object")
-
-                # el ultimo punto de la 1a trayectoria es el primero de la segunda
-                guess = [resp_ik_srv.articular_trajectory.points[-1].positions[0],
-                        resp_ik_srv.articular_trajectory.points[-1].positions[1],
-                        resp_ik_srv.articular_trajectory.points[-1].positions[2],
-                        resp_ik_srv.articular_trajectory.points[-1].positions[3],
-                        resp_ik_srv.articular_trajectory.points[-1].positions[4],
-                        resp_ik_srv.articular_trajectory.points[-1].positions[5],
-                        resp_ik_srv.articular_trajectory.points[-1].positions[6]]
-
-               # SEGUNDA TRAYECTORIA..........................................................................
-                for pose_obj in second_trajectory:
-                    cartesian_pose_shoulder, new_pose_shoulder = pose_for_ik_service(pose_obj)
-
-                    if new_pose_shoulder == -1: # Si no se pudo realizar la conversion de sistema objec a shoulder
-                        continue
-
-                    ik_msg_3.x             = cartesian_pose_shoulder[0] 
-                    ik_msg_3.y             = cartesian_pose_shoulder[1]
-                    ik_msg_3.z             = cartesian_pose_shoulder[2] - Z_OFFSET
-                    ik_msg_3.roll          = cartesian_pose_shoulder[3]      
-                    ik_msg_3.pitch         = cartesian_pose_shoulder[4]
-                    ik_msg_3.yaw           = cartesian_pose_shoulder[5]
-                    ik_msg_3.duration      = 6
-                    ik_msg_3.time_step     = 0.07
-            
-                    ik_msg_3.initial_guess = guess
-
-                    try:
-                        resp_3_ik_srv = ik_srv(ik_msg_3)    # Envia al servicio de IK
-                        print("Best_Grasp_Node.-> Suitable pose 2 for horizontal object found.....................")
-                        resp_ik_srv.articular_trajectory.points = resp_ik_srv.articular_trajectory.points + resp_3_ik_srv.articular_trajectory.points
-                        return resp_ik_srv.articular_trajectory , pose_obj , new_pos, True
-                    except:
-                        print("Best_Grasp_Node.-> Candidato de la segunda trayectoria no aprobado")
-                        continue
-               
-
-    
 
             except:
                 print("Best_Grasp_Node.-> candidato no aprobado")
                 continue
-            """
-            try:
-                print("Best_Grasp_Node.-> genera una segunda trayectoria para objeto horizontal")
-                # el ultimo punto de la 1a trayectoria es el primero de la segunda
-                guess = [resp_ik_srv.articular_trajectory.points[-1].positions[0],
-                        resp_ik_srv.articular_trajectory.points[-1].positions[1],
-                        resp_ik_srv.articular_trajectory.points[-1].positions[2],
-                        resp_ik_srv.articular_trajectory.points[-1].positions[3],
-                        resp_ik_srv.articular_trajectory.points[-1].positions[4],
-                        resp_ik_srv.articular_trajectory.points[-1].positions[5],
-                        resp_ik_srv.articular_trajectory.points[-1].positions[6]]
-                    
-                # Ultimo punto de la segunda trayectoria
-                ik_msg.x = pose1[0] 
-                ik_msg.y = pose1[1]
-                ik_msg.z = pose1[2] - 0.11
-                ik_msg.roll = pose1[3]
-                ik_msg.pitch = pose1[4]
-                ik_msg.yaw = pose1[5]
-                ik_msg.duration = 1
-                ik_msg.time_step = 0.1
-                ik_msg.initial_guess = guess
-            
-                resp_2_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
-                print("Best_Grasp_Node.-> Second trajectory found.....................")
-                resp_ik_srv.articular_trajectory.points = resp_ik_srv.articular_trajectory.points + resp_2_ik_srv.articular_trajectory.points
-                
-                approved_pose = cartesian2pose_msg(pose1[0] ,pose1[1] ,pose1[2] -0.1 ,pose1[3] ,pose1[4] ,pose1[5]) 
 
-                return resp_ik_srv.articular_trajectory , approved_pose , new_pos, True
-            except:
-                i = i + 1 
-                print("Best_Grasp_Node.-> Pose 2 no apta........")  
-                continue
-            """
     return None, None, None, False
 
 
