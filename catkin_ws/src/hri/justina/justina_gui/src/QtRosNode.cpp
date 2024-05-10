@@ -39,7 +39,7 @@ void QtRosNode::run()
     ros::Rate loop(30);
     pubCmdVel     = n->advertise<geometry_msgs::Twist>("/cmd_vel", 1);
     
-    pubTorso      = n->advertise<std_msgs::Float64>("/torso_controller/command", 1);
+    pubTorso      = n->advertise<std_msgs::Float64>("/hardware/torso/goal_pose", 1);
     pubLaGoalQ    = n->advertise<std_msgs::Float64MultiArray>("/hardware/left_arm/goal_pose", 1);
     pubRaGoalQ    = n->advertise<std_msgs::Float64MultiArray>("/hardware/right_arm/goal_pose", 1);
     pubLaGoalTraj = n->advertise<trajectory_msgs::JointTrajectory>("/manipulation/la_q_trajectory",1);
