@@ -149,12 +149,12 @@ class JuskeshinoHardware:
     
     def waitForTorsoGoalReached(timeout):
         current = rospy.wait_for_message("/hardware/torso/current_pose", Float64, timeout=1.0).data
-        e = numpy.linalg.norm(current - JuskeshinoHardware.laGoalPose)
+        e = numpy.linalg.norm(current - JuskeshinoHardware.torsoGoalPose)
         attempts = int(timeout/0.1)
         loop = rospy.Rate(10)
         while (not rospy.is_shutdown() and e > TORSO_TOLERANCE and attempts > 0):
             loop.sleep()
-            current = numpy.asarray(rospy.wait_for_message("/hardware/head/current_pose", Float64MultiArray, timeout=1.0).data)
+            current = numpy.asarray(rospy.wait_for_message("/hardware/torso/current_pose", Float64, timeout=1.0).data)
             e = numpy.linalg.norm(current - JuskeshinoHardware.torsoGoalPose)
             attempts -= 1
         return e <= TORSO_TOLERANCE

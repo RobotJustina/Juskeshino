@@ -89,6 +89,15 @@ def main():
     # Esperar a que se abra la puerta
     JuskeshinoHRI.say("I'm waiting for door open")
     print(("I'm waiting for door open"))
+
+
+
+
+
+    JuskeshinoHardware.moveTorso(0.1, 5.0)
+
+
+
     
     if not JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(300):
         print("ACT-PLN.->Door never opened")

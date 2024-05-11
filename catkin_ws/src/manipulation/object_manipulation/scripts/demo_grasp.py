@@ -24,7 +24,6 @@ PREPARE_RA_PRISM       = [-1, -0.2, 0.0, 1.3, 1,0, 0.0]
 PREPARE_RA_CUB    = [-0.8, -0.1, 0.0, 1.3, 1.3,0, 0.0]
 
 
-
 def callback_take_object(msg):
     global object_name
     print("MENSAJE PUBLICADO EN TOPICO /plannning/take_object....")
