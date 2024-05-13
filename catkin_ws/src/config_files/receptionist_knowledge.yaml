@@ -3,16 +3,6 @@ People:
     drink: Coke
     location: Place_1
     name: John
-  Guest_1:
-    description: None
-    drink: something
-    location: Place_3
-    name: jules
-  Guest_2:
-    description: None
-    drink: COKE
-    location: Place_2
-    name: SIMONE
 Places:
   Place_0:
     location:
@@ -31,10 +21,10 @@ Places:
       theta: -0.03
       x: 9.66
       y: -3.29
-    occupied: Guest_2
+    occupied: None
   Place_3:
     location:
       theta: 0.02
       x: 9.79
       y: -2.42
-    occupied: Guest_1
+    occupied: None
