@@ -81,6 +81,32 @@ def pca(xyz_points):    # pc del contorno mas cercano
     return [eig_vect[:,2], eig_vect[:,1] , eig_vect[:,0]], [eig_val[2], eig_val[1], eig_val[0]], size_object
 
 
+def object_pose_without_PCA(centroid):
+    # Asignacion de ejes del objeto
+    eje_x_obj = np.asarray([1, 0, 0], dtype=np.float64 )# coordenadas en 'base_link' 
+    eje_z_obj = np.asarray([0, 0, 1], dtype=np.float64 )# coordenadas en 'base_link'
+    eje_y_obj = np.asarray([0, 1, 0], dtype=np.float64 )# coordenadas en 'base_link'
+    # Se forma la matriz de rotacion (columnas) del objeto, a partir de ella se obtienen los cuaterniones necesarios para generar el frame del objeto
+    RM = np.asarray([eje_x_obj, eje_y_obj , eje_z_obj])
+    RM = RM.T
+    TM = [[RM[0,0], RM[0,1] , RM[0,2], 0],
+         [RM[1,0], RM[1,1] , RM[1,2], 0],
+         [RM[2,0], RM[2,1] , RM[2,2], 0], 
+         [0, 0, 0, 1]]
+
+    r,p,y = tft.euler_from_matrix(np.asarray(TM))
+    quaternion_obj = tft.quaternion_from_euler(r, p, y)
+    obj_pose = Pose()
+    obj_pose.position.x, obj_pose.position.y, obj_pose.position.z = centroid[0], centroid[1], centroid[2]
+    obj_pose.orientation.x = quaternion_obj[0]
+    obj_pose.orientation.y = quaternion_obj[1]
+    obj_pose.orientation.z = quaternion_obj[2]
+    obj_pose.orientation.w = quaternion_obj[3]
+
+    broadcaster_frame_object("base_link", "object", obj_pose)
+    # Retorna la pose del objeto en 'base_link'
+    return obj_pose
+
 
 
 def object_pose(centroid, principal_component, second_component, size_obj):  # vectores de entrada estan en frame base_link
@@ -309,7 +335,7 @@ def object_category(size_obj, obj_state):  # estima la forma geometrica del obje
     
 
 
-def callback_PoseObject(req):  # Request is a PointCloud2
+def callbackPoseObjectOrientation(req):  # Request is a PointCloud2
     cv_mats= get_cv_mats_from_cloud_message(req.point_cloud)
     obj_xyz = get_object_xyz(cv_mats , req.obj_mask)
 
@@ -333,14 +359,33 @@ def callback_PoseObject(req):  # Request is a PointCloud2
     return resp
 
 
+def callbackPoseObject(req):
+    cv_mats= get_cv_mats_from_cloud_message(req.point_cloud)
+    obj_xyz = get_object_xyz(cv_mats , req.obj_mask)
+
+    print("**    OBJECT INFORMATION    **********************")
+
+    centroid = np.mean(obj_xyz, axis=0)
+    graspable = True
+    obj_pose = object_pose_without_PCA(centroid)
+    print("CENTROID:____", centroid)
+    resp = RecognizeObjectResponse()
+    resp.recog_object.graspable  = graspable 
+    resp.recog_object.pose = obj_pose
+    resp.recog_object.category = "CUBIC"
+    return resp
+
+
+
 
 def main():
     print("Obj_segmentation_and_pose --> obj_pose by Iby *******************(✿◠‿◠)7**")
     rospy.init_node("object_pose")
 
-    global pub_point, marker_pub, debug
+    global pub_point, marker_pub, debug 
     debug = False
-    rospy.Service("/vision/obj_segmentation/get_obj_pose", RecognizeObject, callback_PoseObject) 
+    rospy.Service("/vision/obj_segmentation/get_obj_pose_with_orientation", RecognizeObject, callbackPoseObjectOrientation) 
+    rospy.Service("/vision/obj_segmentation/get_obj_pose_without_orientation", RecognizeObject, callbackPoseObject) 
     pub_point = rospy.Publisher('/vision/detected_object', PointStamped, queue_size=10)
     marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10) 
 
