@@ -143,42 +143,36 @@ class JuskeshinoSimpleTasks:
         return [obj_p.point.x, obj_p.point.y, obj_p.point.z]
     
 
-    def handling_location(vision_obj ):
+    def handling_location(vision_obj, arm ):
         position_obj = vision_obj.pose.position
-        l_threshold_la = 0.25
-        r_threshold_la = 0.11
-        l_threshold_ra = -0.12
-        r_threshold_ra = -0.32
+        l_threshold_la       = 0.25
+        r_threshold_la       = 0.11
+        l_threshold_ra       = -0.14
+        r_threshold_ra       = -0.32
+        suitable_grip_height = 0.70
 
-        if position_obj.y >= 0:     # Lado izq del robot
-            if position_obj.y > l_threshold_la:
-                dist_move = position_obj.y - l_threshold_la
-                print("dist move izq", dist_move)
-                JuskeshinoNavigation.moveLateral(dist_move , 10)
-                return dist_move, True
-
-            if position_obj.y < r_threshold_la:
-                dist_move = position_obj.y - r_threshold_la
-                print("dist move der", dist_move)
-                JuskeshinoNavigation.moveLateral(dist_move , 10)
-                return dist_move, True
-            
-            return 0, False
-            
-        if position_obj.y < 0:
+        if position_obj.z > suitable_grip_height:
+            try:
+                JuskeshinoHardware.moveTorso(np.linalg.norm(position_obj.z - suitable_grip_height) , 5.0)
+                time.sleep(0.5)
+            except:
+                print("Cannot move torso")
+        if "ra":
             if position_obj.y > l_threshold_ra:
-                dist_move =  l_threshold_ra - position_obj.y
-                print("dist move right", dist_move)
-                JuskeshinoNavigation.moveLateral(dist_move , 10)
-                return dist_move, True
-
+                JuskeshinoNavigation.moveLateral( l_threshold_ra - position_obj.y , 5.0)
+                return True
             if position_obj.y < r_threshold_ra:
-                dist_move = r_threshold_ra - position_obj.y
-                print("dist move left", dist_move)
-                JuskeshinoNavigation.moveLateral(dist_move , 10)
-                return dist_move, True
-        
-            return 0, False
+                JuskeshinoNavigation.moveLateral(r_threshold_ra - position_obj.y , 5.0)
+                return True
+            return False
+        else:     # Lado izq del robot
+            if position_obj.y > l_threshold_la:
+                JuskeshinoNavigation.moveLateral(position_obj.y - l_threshold_la , 5.0)
+                return True
+            if position_obj.y < r_threshold_la:
+                JuskeshinoNavigation.moveLateral(position_obj.y - r_threshold_la , 5.0)
+                return True
+            return False
 
 
 

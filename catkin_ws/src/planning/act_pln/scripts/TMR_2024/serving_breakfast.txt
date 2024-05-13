@@ -11,19 +11,26 @@ from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
 from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
 from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 
-# Left arm
 HOME              = [0,0,0,0,0,0,0]
 PREPARE           = [-0.69, 0.2, 0.0, 1.55, 0.0, 1.16, 0.0]
+PREPARE_LATERAL_GRIP = [-0.69, 0.2, 0, 1.55, 0, 1.16,0] #[-1.2, 0.2, 0  , 1.6, 0   , 1,     0] #Prepare original:funciona bien para pringles vertical (prisma vertical) 
+
+PREPARE_TEST      = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
 PREPARE_TOP_GRIP  = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
 PREPARE_SERVING   = [0.91, 0.4, -0.5, 1.45, 0, 0.16, 0.5]
 SERVING           = [0.91, 0.4, -0.5, 1.45, 0, 0.16, -1.6]
 LEAVE_CEREAL      = [0.54, 0.28, -0.13, 1.45, 0, 0, 0]
 LEAVE_MILK        = [0.44, 0.18, -0.03, 1.45, 0, 0, 0]
 LEAVE_BOWL        = [0.6,  0.6, -0.8, 1.7, 0, 0.2, 0]
+LEAVE_NEAR_CEREAL = [0.39, 0.18, -0.03, 1.45, 0, 0, 0]
+EMPTYING_POSE     = [0.37, 0.57, -0.11, 1.68, -0.73, 0.76, -0.90]
+LEAVE_NEAR_MILK   = [0.39, 0.18, -0.01, 1.42, 0, 0.37, 0]
 
-# RIght arm
 PREPARE_RA    = [-0.8, -0.1, 0.0, 1.3, 1.3,0, 0.0]
 
+GRIPER_MILK   = 0.0
+GRIPER_CEREAL = 0.0
+GRIPER_BOWL   = 0.0
 
 MESA_INGREDIENTES ="ingredients_table" 
 MESA_COMER        = "eat_table"
@@ -85,7 +92,14 @@ def main():
     JuskeshinoHRI.say("I'm waiting for the door to be open")
     print(("I'm waiting for door open"))
 
+
+
+
+
     JuskeshinoHardware.moveTorso(0.1, 5.0)
+
+
+
     
     if not JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(300):
         print("ACT-PLN.->Door never opened")
@@ -213,7 +227,8 @@ def main():
         # Navega hacia la segunda mesa
         print("SB-PLN.->Getting close to " + MESA_COMER + "location")
         JuskeshinoHRI.say("I'm going to the" + MESA_COMER + "location")
-        if not JuskeshinoNavigation.getClose(MESA_COMER, 100):  
+        if not JuskeshinoNavigation.getClose(MESA_COMER, 100):  #**********************************
+        #if not JuskeshinoNavigation.getClose("cupboard", 100):
             print("SB-PLN.->Cannot get close to " + MESA_COMER +" position")
         JuskeshinoHRI.say("I have arrived at the" + MESA_COMER + " location")
         time.sleep(1)
@@ -252,7 +267,6 @@ def main():
             JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
             time.sleep(1)            # Soltar el objeto
 
-        """
         print("SB-PLN.->Moving right arm to deliver position")
         JuskeshinoHRI.say("Leave objectwith right arm")
         if (actual_obj == "milk") or (actual_obj == "cereal"):
@@ -275,7 +289,8 @@ def main():
             print("SB-PLN.->Open gripper")
             JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
             time.sleep(1)            # Soltar el objeto
-            """
+
+            
 
         # Moverse para atras
         print("SB-PLN.->Moving base backwards")
@@ -285,10 +300,13 @@ def main():
         JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE , 10)
         time.sleep(0.5)
         JuskeshinoHardware.moveLeftArmWithTrajectory(HOME , 10)
-            
+        
+        
     # El desayuno esta servido 
     JuskeshinoHRI.say("Breakfast is served. I finish the test")
     
+
+
     return 
     while not rospy.is_shutdown():
         rate.sleep()
@@ -296,3 +314,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+	
