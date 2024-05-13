@@ -135,22 +135,25 @@ def main():
                 
                 # El robot se mueve a la mejor mejor ubicacion de agarre
                 print("SB-PLN.->handling location ")
-                if (j > 0):
+                if (j > 0): # Toma objeto con la brazo derecho
                     if (actual_obj == "spoon"):
                         print("spoon")
                         break
                     mov = JuskeshinoSimpleTasks.handling_location(obj, "ra")
                     # En la mejor ubicacion de agarre realiza de nuevo un reconocimiento del objeto***********************
-                    print("SB-PLN.->Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))                        
+                    [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj)   #**************************
+                    if obj == None: 
+                        JuskeshinoHRI.say("I couldn't find the object")
+                    print("SB-PLN.->Detected object : " + str([obj.id, obj.pose.position]))                        
                     # Tomar objeto                                             
                     print("SB-PLN.->Sending goal traj to prepare")
 
-                    JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_RA, 10)  # prepare 
+                    JuskeshinoHardware.moveRightArmWithTrajectory(PREPARE_RA, 10)  # prepare 
                     time.sleep(0.2)
                     print("SB-PLN.->Open gripper")
                     JuskeshinoHardware.moveRightGripper(0.7, 3.0)
                     print("SB-PLN.-> Call Best Grasping Configuration Service")
-                    [resp, graspable] = JuskeshinoManipulation.GripLa(obj)
+                    [resp, graspable] = JuskeshinoManipulation.GripRa(obj)
                     if graspable:
                         JuskeshinoHRI.say("graspable object")
                         print("SB-PLN.->object position", obj.pose.position)
@@ -165,9 +168,12 @@ def main():
                         JuskeshinoHRI.say("No possible poses found")
                         print("SB-PLN.->No possible poses found")
 
-                else:
+                else:   # Toma objeto con brazo izquierdo
                     mov = JuskeshinoSimpleTasks.handling_location(obj, "la")
                     # En la mejor ubicacion de agarre realiza de nuevo un reconocimiento del objeto***********************
+                    [obj, img] = JuskeshinoVision.detectAndRecognizeObject(actual_obj)   #**************************
+                    if obj == None: 
+                        JuskeshinoHRI.say("I couldn't find the object")
                     print("SB-PLN.->Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))                        
                     # Tomar objeto                                             
                     print("SB-PLN.->Sending goal traj to prepare")
