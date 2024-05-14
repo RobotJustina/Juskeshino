@@ -143,40 +143,53 @@ class JuskeshinoSimpleTasks:
         return [obj_p.point.x, obj_p.point.y, obj_p.point.z]
     
 
-    def handling_location(vision_obj ):
+    def handling_location(vision_obj, arm ):
         position_obj = vision_obj.pose.position
-        l_threshold_m = 0.26
-        r_threshold_m = 0.1
+        l_threshold_la       = 0.25
+        r_threshold_la       = 0.11
+        l_threshold_ra       = -0.14
+        r_threshold_ra       = -0.32
+        suitable_grip_height = 0.70
 
-        if position_obj.y > 0.24:
-            dist_move = position_obj.y - l_threshold_m
-            print("dist move izq", dist_move)
-            JuskeshinoNavigation.moveLateral(dist_move , 10)
-            return dist_move, True
+        if position_obj.z > suitable_grip_height:
+            try:
+                JuskeshinoHardware.moveTorso(np.linalg.norm(position_obj.z - suitable_grip_height) , 5.0)
+                time.sleep(0.5)
+            except:
+                print("Cannot move torso")
+        if "ra":
+            if position_obj.y > l_threshold_ra:
+                JuskeshinoNavigation.moveLateral( l_threshold_ra - position_obj.y , 5.0)
+                return True
+            if position_obj.y < r_threshold_ra:
+                JuskeshinoNavigation.moveLateral(r_threshold_ra - position_obj.y , 5.0)
+                return True
+            return False
+        else:     # Lado izq del robot
+            if position_obj.y > l_threshold_la:
+                JuskeshinoNavigation.moveLateral(position_obj.y - l_threshold_la , 5.0)
+                return True
+            if position_obj.y < r_threshold_la:
+                JuskeshinoNavigation.moveLateral(position_obj.y - r_threshold_la , 5.0)
+                return True
+            return False
 
-        if position_obj.y < r_threshold_m:
-            dist_move = position_obj.y - r_threshold_m
-            print("dist move der", dist_move)
-            JuskeshinoNavigation.moveLateral(dist_move , 10)
-            return dist_move, True
-        
-        return 0, False
 
 
     def object_search(name_obj):
         JuskeshinoHardware.moveHead(0,-1, 5)
-        [obj, img] = JuskeshinoVision.detectAndRecognizeObject(name_obj)
+        [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(name_obj)
 
         if obj == None: # si no reconocio el objeto
             JuskeshinoHardware.moveHead(-0.5,-1, 5) #move head to the right 
             time.sleep(1.5)
-            [obj, img] = JuskeshinoVision.detectAndRecognizeObject(name_obj)
+            [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(name_obj)
             print("JuskeshinoSimpleTask.->Primer intento")
 
             if obj == None: # si no reconocio el objeto
                 JuskeshinoHardware.moveHead(0.5,-1, 5) #move head to the left
                 time.sleep(1.5)
-                [obj, img] = JuskeshinoVision.detectAndRecognizeObject(name_obj)
+                [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(name_obj)
                 print("JuskeshinoSimpleTask.->Segundo intento")
 
                 if obj == None: # si no reconocio el objeto

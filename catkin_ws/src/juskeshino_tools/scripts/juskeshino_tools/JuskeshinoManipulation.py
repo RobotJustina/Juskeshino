@@ -7,9 +7,22 @@ class JuskeshinoManipulation:
     def setNodeHandle():
     	# Se subcribe a los servicios necesarios para manipulacion de objetos
         rospy.wait_for_service("/manipulation/get_best_grasp_traj")
-        JuskeshinoManipulation.cltBestGrip = rospy.ServiceProxy("/manipulation/get_best_grasp_traj", BestGraspTraj )
+        JuskeshinoManipulation.cltGripLa = rospy.ServiceProxy("/manipulation/get_best_grasp_traj", BestGraspTraj )
+
+        rospy.wait_for_service("/manipulation/grasp_object_ra")
+        JuskeshinoManipulation.cltGripRa = rospy.ServiceProxy("/manipulation/grasp_object_ra", BestGraspTraj )
+        
         rospy.wait_for_service("/manipulation/la_ik_trajectory")
-        JuskeshinoManipulation.cltIkPose = rospy.ServiceProxy("/manipulation/la_ik_trajectory", InverseKinematicsPose2Traj )
+        JuskeshinoManipulation.cltIkLaPose = rospy.ServiceProxy("/manipulation/la_ik_trajectory", InverseKinematicsPose2Traj )
+
+        rospy.wait_for_service("/manipulation/ra_ik_trajectory")
+        JuskeshinoManipulation.cltIkRaPose = rospy.ServiceProxy("/manipulation/ra_ik_trajectory", InverseKinematicsPose2Traj )
+        
+        rospy.wait_for_service("/manipulation/ra_forward_kinematics")
+        JuskeshinoManipulation.cltFkRaPose = rospy.ServiceProxy("/manipulation/ra_forward_kinematics", ForwardKinematics )
+        
+        rospy.wait_for_service("/manipulation/la_forward_kinematics")
+        JuskeshinoManipulation.cltFkLaPose = rospy.ServiceProxy("/manipulation/la_forward_kinematics", ForwardKinematics )
 
         loop = rospy.Rate(10)
         counter = 3
@@ -18,17 +31,33 @@ class JuskeshinoManipulation:
             loop.sleep()
         return True
     
-    def planBestGraspingConfiguration(vision_obj):
+    def GripLa(vision_obj):
         req = BestGraspTrajRequest()
         req.recog_object = vision_obj
-        resp = JuskeshinoManipulation.cltBestGrip(req)      # Pasa la peticion al servicio de manipulacion y retorna la respuesta
+        resp = JuskeshinoManipulation.cltGripLa(req)      # Pasa la peticion al servicio de manipulacion y retorna la respuesta
+        if resp.graspable:
+            return [resp, True]
+        else:
+            return [resp, False]
+        
+
+    def GripRa(vision_obj):
+        req = BestGraspTrajRequest()
+        req.recog_object = vision_obj   
+        resp = JuskeshinoManipulation.cltGripRa(req)      # Pasa la peticion al servicio de manipulacion y retorna la respuesta
         if resp.graspable:
             return [resp, True]
         else:
             return [resp, False]
     
+    def raFk(q_array):
+        req = ForwardKinematicsRequest()    
+        req.q = q_array
+        resp = JuskeshinoManipulation.cltFkRaPose(req)
+        return resp
+
     
-    def cartesian_to_articular_pose(cartesian_pose):
+    def raIk(cartesian_pose):
         req = InverseKinematicsPose2TrajRequest()
         req.x = cartesian_pose[0]
         req.y = cartesian_pose[1]
@@ -38,8 +67,8 @@ class JuskeshinoManipulation:
         req.yaw = cartesian_pose[5]
         req.duration = 7
         req.time_step = 0.2
-        resp = JuskeshinoManipulation.cltIkPose(req)      # Pasa la peticion al servicio de manipulacion y retorna la respuesta
-        return resp.points[-1]
+        resp = JuskeshinoManipulation.cltIkRaPose(req)      # Pasa la peticion al servicio de manipulacion y retorna la respuesta
+        return resp#.points[-1]
     
 
     

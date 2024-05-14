@@ -677,7 +677,7 @@ def callback(req):
         return resp
 
     else: 
-        print("Best_Grasp_Node.-> No possible poses found :'(...................")
+        print("Best_Grasp_Node.-> No possible poses found :'(..................."))
         resp.graspable = False
         return resp
 

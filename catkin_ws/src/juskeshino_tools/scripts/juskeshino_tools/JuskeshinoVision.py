@@ -12,7 +12,8 @@ class JuskeshinoVision:
         JuskeshinoVision.cltTrainObject             = rospy.ServiceProxy("/vision/obj_reco/detect_and_train_object",        TrainObject         )
         JuskeshinoVision.cltDetectRecogObjects      = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_objects",   RecognizeObjects    )
         JuskeshinoVision.cltDetectRecogObject       = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_object",    RecognizeObject     )
-        JuskeshinoVision.cltGetObjectPose           = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose",           RecognizeObject     ) 
+        JuskeshinoVision.cltGetObjectPose           = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose_with_orientation",  RecognizeObject     ) 
+        JuskeshinoVision.cltGetObjectPoseWithoutOrientation           = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose_without_orientation",  RecognizeObject     )
         JuskeshinoVision.cltGetPointsAbovePlane     = rospy.ServiceProxy("/vision/get_points_above_plane",                  PreprocessPointCloud)
         JuskeshinoVision.cltFindPersons             = rospy.ServiceProxy('/vision/face_reco_pkg/recognize_face/names',      FaceRecog           )
         JuskeshinoVision.cltTrainPersons            = rospy.ServiceProxy("/vision/face_reco_pkg/training_face/name",        FaceTrain           )
@@ -86,7 +87,24 @@ class JuskeshinoVision:
         except:
             print("JuskeshinoVision.->Cannot detect and recognize object '" + name + "'")
             return [None, None]
-        
+
+
+    def detectAndRecognizeObjectWithoutOrientation(name):
+        req = RecognizeObjectRequest()
+        req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2, timeout=1.0)
+        req.name = name
+        try:
+            resp = JuskeshinoVision.cltDetectRecogObject(req)
+            reqObjPose = RecognizeObjectRequest()
+            reqObjPose.point_cloud = resp.recog_object.point_cloud
+            reqObjPose.image       = resp.recog_object.image
+            reqObjPose.obj_mask    = resp.recog_object.obj_mask
+            respObjPose = JuskeshinoVision.cltGetObjectPoseWithoutOrientation(reqObjPose)
+            return [respObjPose.recog_object, resp.image]
+        except:
+            print("JuskeshinoVision.->Cannot detect and recognize object '" + name + "'")
+            return [None, None]
+
 
     def enableRecogFacesName(flag):
         req = FaceRecogRequest()
@@ -116,23 +134,3 @@ class JuskeshinoVision:
             print(resp.message)
     
 
-    def recognizeObjByBB(bb_target):
-        [objs, imgs] = JuskeshinoVision.detectAndRecognizeObjects()
-        idx = 0
-        objs_2 = []
-        req = RecognizeObjectRequest()
-        print("LEN Objs____", len(objs))
-        for obj in objs:   # Para cada objeto de la lista de VisionObjects
-            print("obj.ID", obj.id)
-            
-            req.point_cloud = obj.point_cloud
-            resp = JuskeshinoVision.cltGetObjectPose.call(req)
-            objs_2.append(resp.recog_object)
-            
-            print("CATEGORY:___" ,obj.category)
-            if bb_target == obj.category:
-                print("Se encontró el objeto pedido.................")
-                return idx
-            idx = idx + 1
-            
-        return objs_2   # Regresa una lista de msgs de tipo VisionObject

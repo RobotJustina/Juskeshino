@@ -5,19 +5,14 @@ People:
     name: John
   Guest_1:
     description: None
-    drink: wine
+    drink: something
     location: Place_3
     name: jules
   Guest_2:
     description: None
-    drink: milk
+    drink: COKE
     location: Place_2
-    name: jules
-  Guest_3:
-    description: None
-    drink: None
-    location: None
-    name: jules
+    name: SIMONE
 Places:
   Place_0:
     location:

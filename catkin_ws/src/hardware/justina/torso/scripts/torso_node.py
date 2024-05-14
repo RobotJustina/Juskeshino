@@ -13,15 +13,15 @@ from hardware_tools import roboclaw_driver as Roboclaw1
 
 
 def printHelp():
-    print "Torso. Options:"
-    print "\t --port \t    Serial port name. If not provided, the default value is \"/dev/ttyACM0\""
-    print "\t --simul\t    Simulation mode."
-    print "\t -c, --calib  Calibration mode."
-    print "PLEASE DON'T TRY TO OPERATE JUSTINA IF YOU ARE NOT QUALIFIED ENOUGH."
+    print("Torso. Options:")
+    print("\t --port \t    Serial port name. If not provided, the default value is \"/dev/ttyACM0\"")
+    print("\t --simul\t    Simulation mode.")
+    print("\t -c, --calib  Calibration mode.")
+    print("PLEASE DON'T TRY TO OPERATE JUSTINA IF YOU ARE NOT QUALIFIED ENOUGH.")
 
 
 def calibration(portName1, simulated):
-    print "INITIALIZING TORSO CALIBRATION..."
+    print("INITIALIZING TORSO CALIBRATION...")
     rospy.init_node("torso")
 
     jointStates = JointState()
@@ -36,7 +36,7 @@ def calibration(portName1, simulated):
 
     rate = rospy.Rate(30)
     if not simulated:
-        print "Torso.-> Trying to open serial port on \"" + portName1 + "\""
+        print("Torso.-> Trying to open serial port on \"" + portName1 + "\"")
         Roboclaw1.Open(portName1, 38400) #ttyACM0  --- M1: front  --- M2: rear
         address = 0x80
         print "Torso.-> Serial port openned on \"" + portName1 + "\" at 38400 bps (Y)"
@@ -219,11 +219,7 @@ def main(portName1, simulated):
 
 if __name__ == '__main__':
     try:
-        if "--help" in sys.argv:
-            printHelp()
-        elif "-h" in sys.argv:
-            printHelp()
-        elif "--calib" in sys.argv:
+        if "--calib" in sys.argv:
             portName1 = "/dev/ttyACM0"
             simulated = False
             calibration(portName1, simulated)

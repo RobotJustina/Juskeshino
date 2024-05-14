@@ -45,7 +45,7 @@ QRadioButton::indicator{
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tabGeneral">
      <attribute name="title">
@@ -1053,13 +1053,13 @@ QRadioButton::indicator{
         <number>4</number>
        </property>
        <property name="minimum">
-        <double>-1.570800000000000</double>
+        <double>0.020000000000000</double>
        </property>
        <property name="maximum">
-        <double>1.570800000000000</double>
+        <double>0.280000000000000</double>
        </property>
        <property name="singleStep">
-        <double>0.050000000000000</double>
+        <double>0.020000000000000</double>
        </property>
       </widget>
       <widget class="QLabel" name="hdLblPan_2">

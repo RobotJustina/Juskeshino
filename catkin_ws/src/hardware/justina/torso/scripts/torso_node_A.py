@@ -20,12 +20,6 @@ DIST_LIM_SUP       = 45.0
 TORSO_ADJUSTMENT   = 0
 ITER_RATE          = 30
 
-def printHelp():
-    print "Torso. Options:"
-    print "\t --port \t    Serial port name. If not provided, the default value is \"/dev/justinaTorso\""
-    print "\t --simul\t    Simulation mode."
-    print "PLEASE DON'T TRY TO OPERATE JUSTINA IF YOU ARE NOT QUALIFIED ENOUGH."
-
 def callbackEmergency(msg):
     global eme_stop
     global new_eme_msg_recv
@@ -63,7 +57,7 @@ def callbackTorsoDown(msg):
     torsoDown = True 
 
 def main(portName1, simulated):
-    print "INITIALIZING TORSO..."
+    print("INITIALIZING TORSO...")
 
 
     ###Connection with ROS
@@ -227,17 +221,12 @@ def main(portName1, simulated):
 
 if __name__ == '__main__':
     try:
-        if "--help" in sys.argv:
-            printHelp()
-        elif "-h" in sys.argv:
-            printHelp()
-        else:
-            portName1 = "/dev/justinaTorso"
-            simulated = False
-            if "--port" in sys.argv:
-                portName1 = sys.argv[sys.argv.index("--port1") + 1]
-            if "--simul" in sys.argv:
-                simulated = True
-            main(portName1, simulated)
+        portName1 = "/dev/justinaTorso"
+        simulated = False
+        if "--port" in sys.argv:
+            portName1 = sys.argv[sys.argv.index("--port1") + 1]
+        if "--simul" in sys.argv:
+            simulated = True
+        main(portName1, simulated)
     except rospy.ROSInterruptException:
         pass
