@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import rospy
 import rospkg
+import time
 from juskeshino_tools.JuskeshinoNavigation import JuskeshinoNavigation
 from juskeshino_tools.JuskeshinoVision import JuskeshinoVision
 from juskeshino_tools.JuskeshinoHardware import JuskeshinoHardware
@@ -22,6 +23,21 @@ def main():
     JuskeshinoKnowledge.setNodeHandle()
 
     JuskeshinoHRI.say("hello")
+    JuskeshinoNavigation.moveDist(1, 7)
+    first = [1, 0, 0, 0, 0, 0, 0]
+    JuskeshinoHardware.moveLeftArmWithTrajectory(first, 10)
+    """
+    data1 = [0, 0, 0, 0, 0, 0, 0]
+    data2 = [0, 0, 0, 0, 0, 0, 0]
+    for i in range(7):
+        data1 = [0, 0, 0, 0, 0, 0, 0]
+        data2 = [0, 0, 0, 0, 0, 0, 0]
+        data1[i] = 1
+        data2[-i] = 1
+        JuskeshinoHardware.moveLeftArmWithTrajectory(data1, 10)
+        JuskeshinoHardware.moveRightArmWithTrajectory(data2, 10)
+        time.sleep(1)
+    """
 
 if __name__ == "__main__":
     main()
