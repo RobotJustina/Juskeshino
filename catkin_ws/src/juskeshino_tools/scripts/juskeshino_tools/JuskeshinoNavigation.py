@@ -5,7 +5,8 @@ from std_msgs.msg import Empty, Float32, Float32MultiArray
 from std_srvs.srv import Trigger, TriggerRequest
 from geometry_msgs.msg import PoseStamped
 from actionlib_msgs.msg import GoalStatus
-from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
+from planning_msgs.srv import *
+from planning_msgs.msg import *
 
 class JuskeshinoNavigation:
     def setNodeHandle():
@@ -19,6 +20,7 @@ class JuskeshinoNavigation:
         JuskeshinoNavigation.pubSimpleMoveLateral   = rospy.Publisher("/simple_move/goal_dist_lateral", Float32, queue_size=10)
         JuskeshinoNavigation.pubMvnPlnGetCloseXYA   = rospy.Publisher("/move_base_simple/goal", PoseStamped, queue_size=10)
         JuskeshinoNavigation.pubNavigationStop      = rospy.Publisher("/navigation/stop", Empty, queue_size=10)
+        JuskeshinoNavigation.cltKnownLocation       = rospy.ServiceProxy("/planning/get_known_location", GetLocation)
         JuskeshinoNavigation.tfListener = tf.TransformListener()
         JuskeshinoNavigation._stop = False;
         JuskeshinoNavigation._navigation_status = GoalStatus()
@@ -149,10 +151,18 @@ class JuskeshinoNavigation:
 
 
     def startGetClose(location):
-        pose = JuskeshinoKnowledge.getKnownLocation(location)
-        if pose is None:
-            return None
-        JuskeshinoNavigation.startGetCloseXYA(pose[0], pose[1], pose[2])
+        req = GetLocationRequest()
+        req.name = location
+        try:
+            resp = JuskeshinoNavigation.cltKnownLocation(req)
+            p = resp.location.pose.position
+            q = resp.location.pose.orientation
+            a = math.atan2(q.z, q.w)*2
+        except:
+            print("JuskeshinoNavigation.->Cannot get position for location " + location)
+            return False
+        JuskeshinoNavigation.startGetCloseXYA(p.x, p.y, a)
+        return True
     
     def getCloseXYA(x, y, angle, timeout):
         JuskeshinoNavigation.startGetCloseXYA(x,y,angle)
@@ -160,8 +170,9 @@ class JuskeshinoNavigation:
 
 
     def getClose(location, timeout):
-        JuskeshinoNavigation.startGetClose(location)
-        return JuskeshinoNavigation.waitForGlobalGoalReached(timeout)
+        if JuskeshinoNavigation.startGetClose(location):
+            return JuskeshinoNavigation.waitForGlobalGoalReached(timeout)
+        return False
 
     def isThereObstacleInFront():
         clt = rospy.ServiceProxy("/navigation/obs_detector/obstacle_in_front", Trigger)
