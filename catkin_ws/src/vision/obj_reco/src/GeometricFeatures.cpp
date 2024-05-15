@@ -318,7 +318,9 @@ std::vector<cv::Vec3f> GeometricFeatures::find_table_edge(cv::Mat& cloud, float 
     for(int i=0; i<lines.size(); i+=2)
     {
         float d = GeometricFeatures::dist_point_to_line_segment(0, 0, 0, lines[i][0], lines[i][1], lines[i][2], lines[i+1][0], lines[i+1][1], lines[i+1][2]);
-        if(d < min_dist)
+        float a = atan2(lines[i+1][0] - lines[i][0], lines[i+1][1] - lines[i][1]);
+        std::cout << "ObjRecog. Finde table edge angle: " << a << std::endl;
+        if(d < min_dist && fabs(a) < 0.5)
         {
             min_dist = d;
             nearest_line[0] = lines[i];

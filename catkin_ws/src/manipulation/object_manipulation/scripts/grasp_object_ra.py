@@ -15,7 +15,7 @@ import geometry_msgs.msg
 MAXIMUM_GRIP_LENGTH = 0.14
 MINIMUM_HEIGHT_PRISM = 0.13
 MAXIMUM_CUBE_SIZE = 0.13
-Z_OFFSET = 0.0
+Z_OFFSET = 0.13
     
 
 

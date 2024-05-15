@@ -146,10 +146,10 @@ class JuskeshinoSimpleTasks:
     def handling_location(vision_obj, arm ):
         position_obj = vision_obj.pose.position
         l_threshold_la       = 0.25
-        r_threshold_la       = 0.11
+        r_threshold_la       = 0.15
         l_threshold_ra       = -0.14
         r_threshold_ra       = -0.32
-        suitable_grip_height = 0.70
+        suitable_grip_height = 0.72
 
         if position_obj.z > suitable_grip_height:
             try:
@@ -157,7 +157,7 @@ class JuskeshinoSimpleTasks:
                 time.sleep(0.5)
             except:
                 print("Cannot move torso")
-        if "ra":
+        if (arm == "ra"):
             if position_obj.y > l_threshold_ra:
                 JuskeshinoNavigation.moveLateral( l_threshold_ra - position_obj.y , 5.0)
                 return True

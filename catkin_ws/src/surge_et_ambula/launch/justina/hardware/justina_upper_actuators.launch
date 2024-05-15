@@ -14,7 +14,7 @@
       <remap from="/hardware/arm_voltage"             to="/hardware/left_arm_voltage"/>
     </node>
 
-    <!-- -->
+    <!-- 
     <node name="right_arm" pkg="arms" type="arm_node" output="screen" respawn="false"> 
       <rosparam command="load" file="$(find config_files)/justina/arms/right_arm_params.yaml"/> 
       <remap from="/hardware/arm/goal_pose"      to="/hardware/right_arm/goal_pose"     /> 
@@ -28,6 +28,7 @@
       <remap from="/manipulation/arm/goal_reached"    to="/manipulation/right_arm/goal_reached"/> 
       <remap from="/hardware/arm_voltage"             to="/hardware/right_arm_voltage"/> 
     </node> 
+    -->
 
     <node name="head" pkg="head" type="head_node" output="screen">
       <rosparam command="load" file="$(find config_files)/justina/head/head_params.yaml"/>

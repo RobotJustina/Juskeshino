@@ -293,7 +293,7 @@ def cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj):
         obj_pos_2.position.x, obj_pos_2.position.y, obj_pos_2.position.z = 0 , size.z/2 , 0
         #print("GRIP POINT BOWL: ", obj_pos_2)
         marker_array_publish(grip_point, 'object', 59, 56)
-        num_candidates = 10
+        num_candidates = 6
         
 
     obj_pos_2.orientation.x = 0.0
@@ -678,7 +678,7 @@ def evaluating_possibility_grip(candidate_quaternion_list, obj_state, category):
 
                         ik_msg_3.x             = cartesian_pose_shoulder[0] 
                         ik_msg_3.y             = cartesian_pose_shoulder[1]
-                        ik_msg_3.z             = cartesian_pose_shoulder[2] - Z_OFFSET
+                        ik_msg_3.z             = cartesian_pose_shoulder[2] - 0.06
                         ik_msg_3.roll          = cartesian_pose_shoulder[3]      
                         ik_msg_3.pitch         = cartesian_pose_shoulder[4]
                         ik_msg_3.yaw           = cartesian_pose_shoulder[5]

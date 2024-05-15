@@ -21,7 +21,7 @@ PREPARE_TEST      = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
 PREPARE_TOP_GRIP  = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
 
 PREPARE_RA_PRISM       = [-1, -0.2, 0.0, 1.3, 1,0, 0.0]
-PREPARE_RA_CUB    = [-0.9, 0, 0.0, 1.3, 1.3,0, 0.0]
+PREPARE_RA_CUB    = [-8, 0, 0.0, 1.3, 1.3,0, 0.0]
 
 
 def callback_take_object(msg):
@@ -78,7 +78,7 @@ def main():
         j=0 # Intentos de agarre de objetos
         while j < 2:#realiza de nuevo un reconocimiento del objeto
             try:
-                [obj, img] = JuskeshinoVision.detectAndRecognizeObject(actual_obj) #**************************
+                [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj) #**************************
                 print("SB-PLN.->Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))
                 if obj == None: 
                     print("SB-PLN.->Object  no found...........")
@@ -92,12 +92,6 @@ def main():
                 la = True
                 print("the object is taken with the left arm")
                 JuskeshinoSimpleTasks.handling_location(obj, "la")
-            else: 
-                la = False
-                print("the object is taken with the right arm")
-                mov = JuskeshinoSimpleTasks.handling_location(obj, "ra")
-
-            if mov:
                 try:
                     [obj, img] = JuskeshinoVision.detectAndRecognizeObject(actual_obj) #**************************
                     print("SB-PLN.->Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))
@@ -108,6 +102,22 @@ def main():
                         break
                 except:
                     break
+
+            else: 
+                la = False
+                print("the object is taken with the right arm")
+                mov = JuskeshinoSimpleTasks.handling_location(obj, "ra")
+                try:
+                    [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj) #**************************
+                    print("SB-PLN.->Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))
+                    if obj == None: 
+                        print("SB-PLN.->Object  no found...........")
+                        JuskeshinoHRI.say("I couldn't find the object")
+                        j = j + 1
+                        break
+                except:
+                    break
+
 
 
             # Tomar objeto                                              
