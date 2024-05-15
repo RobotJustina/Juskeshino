@@ -46,5 +46,7 @@
   <include file="$(find surge_et_ambula)/launch/justina/hri.launch"/>
   <include file="$(find surge_et_ambula)/launch/justina/TMR_2024/carry_my_luggage.launch"/>
 
-
+  <include file="$(find surge_et_ambula)/launch/justina/planning.launch">
+    <arg name="known_locations" value="$(find config_files)/navigation/known_locations_lab.yaml"/>
+  </include>
 </launch>

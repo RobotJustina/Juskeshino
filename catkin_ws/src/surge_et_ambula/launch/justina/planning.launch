@@ -1,0 +1,7 @@
+<launch>
+  <arg name="known_locations"  default="$(find config_files)/navigation/known_locations.yaml"/>
+
+  <node name="known_locations" pkg="known_locations" type="known_locations_node.py">
+    <param name="locations" value="$(arg known_locations)"/>
+  </node>
+</launch>

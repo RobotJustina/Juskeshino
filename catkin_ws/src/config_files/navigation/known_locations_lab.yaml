@@ -1,0 +1,24 @@
+entrance:
+  x: 2.0
+  y: 0.0
+  theta: 0.4
+  parent: home
+
+kitchen:
+  x: 6.77
+  y: 2.08
+  theta: 0.0
+  parent: home
+
+eat_table:
+  x: -5.94
+  y: -5.80
+  theta: 3.14
+  parent: home
+
+ingredients_table:
+  x: -5.1
+  y: -8.13
+  theta: 4.71
+  parent: home
+
