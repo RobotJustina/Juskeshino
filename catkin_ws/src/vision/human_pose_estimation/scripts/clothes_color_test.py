@@ -15,13 +15,13 @@ def main():
     print("Test node color of clothes.........ʕ•ᴥ•ʔ")
     rospy.init_node("clothes_color_test")
 
-    rospy.wait_for_service("/vision/obj_segmentation_and_pose/clothes_color")
-    fp_srv = rospy.ServiceProxy("/vision/obj_segmentation_and_pose/clothes_color", FindPerson)
+    rospy.wait_for_service("/vision/human_pose_estimation/pointing_hands_status")
+    fp_srv = rospy.ServiceProxy("/vision/human_pose_estimation/pointing_hands_status", FindPerson)
 
     #mensaje*****************************************************************
     fp_msg = FindPersonRequest()
     #pc = rospy.wait_for_message("/hardware/realsense/points", PointCloud2)
-    pc = rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", PointCloud2)
+    pc = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
     fp_msg.cloud = pc
 
     resp = fp_srv(fp_msg)
