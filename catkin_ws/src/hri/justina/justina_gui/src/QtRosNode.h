@@ -12,6 +12,7 @@
 #include "geometry_msgs/PoseStamped.h"
 #include "nav_msgs/GetPlan.h"
 #include "sensor_msgs/PointCloud2.h"
+#include "sensor_msgs/Image.h"
 #include "trajectory_msgs/JointTrajectory.h"
 #include "sound_play/SoundRequest.h"
 #include "tf/transform_listener.h"

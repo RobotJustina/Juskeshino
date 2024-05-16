@@ -17,6 +17,7 @@ tf::TransformListener* tf_listener;
 ros::Publisher pubMarkers;
 ros::Publisher pubMarkerArray;
 ros::Publisher pubResultCloud;
+ros::ServiceClient cltRecogYolo;
 
 bool  debug = false;
 float min_x =  0.3;
@@ -41,6 +42,23 @@ float plane_min_area = 0.5;
 int   histogram_size = 18;
 int   min_points_per_object = 1000;
 std::string training_dir;
+
+bool call_recognize_object_with_yolo(cv::Mat& img, std::string& label, double& confidence)
+{
+    label = "unknown";
+    vision_msgs::RecognizeObjects srv;
+    cv_bridge::CvImage cv_img;
+    cv_img.header.stamp = ros::Time::now();
+    cv_img.image = img;
+    cv_img.encoding = "bgr8";
+    cv_img.toImageMsg(srv.request.image);
+    cltRecogYolo.call(srv);
+    if(srv.response.recog_objects.size() < 1)
+        return false;
+    label = srv.response.recog_objects[0].id;
+    confidence = srv.response.recog_objects[0].confidence;
+    return true;
+}
 
 bool callback_find_table_edge(vision_msgs::FindLines::Request& req, vision_msgs::FindLines::Response& resp)
 {
@@ -75,7 +93,7 @@ bool callback_find_planes(vision_msgs::FindPlanes::Request& req, vision_msgs::Fi
 
 bool callback_detect_and_recog_objs(vision_msgs::RecognizeObjects::Request& req, vision_msgs::RecognizeObjects::Response& resp)
 {
-    std::cout << "ObjReco.->Recognizing objects by Jebug's method (corrected and improved by Marcosoft)." << std::endl;
+    std::cout << "ObjReco.->Recognizing objects by Jebug's method (corrected and improved by Marcosoft and Oscar)." << std::endl;
     cv::Mat img, cloud, output_mask;
     if(debug) cv::destroyAllWindows();
         
@@ -91,7 +109,8 @@ bool callback_detect_and_recog_objs(vision_msgs::RecognizeObjects::Request& req,
     std::vector<std::string> labels(objects_bgr.size(), "");
     std::vector<double> confidences(objects_bgr.size(), -1);
     for(int i=0; i<objects_bgr.size(); i++){
-        ObjectRecognizer::recognize(objects_bgr[i], objects_masks[i], histogram_size, labels[i], confidences[i], debug);
+        //ObjectRecognizer::recognize(objects_bgr[i], objects_masks[i], histogram_size, labels[i], confidences[i], debug);
+        call_recognize_object_with_yolo(objects_bgr[i], labels[i], confidences[i]);
         cv::bitwise_or(img, objects_bgr[i], img);
         std::cout << "ObjReco.->Recognized object: " << labels[i] << " with confidence " << confidences[i] << std::endl;
     }
@@ -121,7 +140,8 @@ bool callback_detect_and_recog_obj(vision_msgs::RecognizeObject::Request& req, v
     double max_confidence = -1;
     int recog_obj_idx = -1;
     for(int i=0; i<objects_bgr.size(); i++){
-        ObjectRecognizer::recognize(objects_bgr[i], objects_masks[i], histogram_size, recognized_label, confidence, debug);
+        //ObjectRecognizer::recognize(objects_bgr[i], objects_masks[i], histogram_size, recognized_label, confidence, debug);
+        call_recognize_object_with_yolo(objects_bgr[i], recognized_label, confidence);
         if(recognized_label == req.name && confidence > max_confidence)
         {
             recog_obj_idx = i;
@@ -232,6 +252,7 @@ int main(int argc, char** argv)
     ros::ServiceServer srvRecogObj        = n.advertiseService("/vision/obj_reco/recognize_object" , callback_recog_obj );
     ros::ServiceServer srvDetectTrainObj  = n.advertiseService("/vision/obj_reco/detect_and_train_object", callback_detect_and_train_object);
     ros::ServiceServer srvProcessCloud    = n.advertiseService("/vision/get_points_above_plane", callback_get_points_above_plane);
+    cltRecogYolo       = n.serviceClient<vision_msgs::RecognizeObjects>("/vision/obj_reco/recognize_objects_yolo");
     pubMarkers     = n.advertise<visualization_msgs::Marker>("/vision/obj_reco/markers", 1);
     pubMarkerArray = n.advertise<visualization_msgs::MarkerArray>("/vision/obj_reco/marker_array", 1);
     pubResultCloud = n.advertise<sensor_msgs::PointCloud2>("/vision/obj_reco/resulting_cloud", 1);

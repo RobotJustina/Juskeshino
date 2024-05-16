@@ -414,14 +414,19 @@ bool QtRosNode::call_train_object(std::string name)
 bool QtRosNode::call_recognize_objects()
 {
     vision_msgs::RecognizeObjects srv;
-    boost::shared_ptr<sensor_msgs::PointCloud2 const> ptr;
-    ptr = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/camera/depth_registered/points", ros::Duration(1.0));
-    if(ptr==NULL)
-    {
-        std::cout << "JustinaGUI.->Cannot get point cloud before calling train object service..." << std::endl;
-        return false;
-    }
-    srv.request.point_cloud = *ptr;
+    boost::shared_ptr<sensor_msgs::PointCloud2 const> ptrCloud;
+    boost::shared_ptr<sensor_msgs::Image const> ptrImg;
+    ptrCloud = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/camera/depth_registered/points", ros::Duration(1.0));
+    ptrImg   = ros::topic::waitForMessage<sensor_msgs::Image>("/camera/depth_registered/rgb/image_raw", ros::Duration(1.0));
+    if(ptrCloud==NULL)
+        std::cout << "JustinaGUI.->WARNING!!!! Cannot get point cloud before calling recognize object service..." << std::endl;
+    else
+        srv.request.point_cloud = *ptrCloud;
+    if(ptrImg == NULL)
+        std::cout << "JustinaGUI.->WARNING!!!! Cannot get image before calling recognize object service..." << std::endl;
+    else
+        srv.request.image = *ptrImg;
+    
     return cltRecogObjects.call(srv);
 }
 
