@@ -148,7 +148,9 @@ def main():
                 if la:
                     JuskeshinoHardware.moveLeftArmWithTrajectory(resp.articular_trajectory,10)
                     print("SB-PLN.->Closing gripper")
-                    #JuskeshinoHardware.moveLeftGripper(0, 2.0) 
+                    time.sleep(0.5)
+                    JuskeshinoHardware.moveLeftGripper(0, 2.0) 
+                    time.sleep(0.5)
                 else:
                     JuskeshinoHardware.moveRightArmWithTrajectory(resp.articular_trajectory,10)
                     print("SB-PLN.->Closing gripper")

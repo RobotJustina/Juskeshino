@@ -26,7 +26,14 @@ PREPARE_RA    = [-0.8, -0.1, 0.0, 1.3, 1.3,0, 0.0]
 
 
 MESA_INGREDIENTES ="desk_justina" 
-MESA_COMER        = "desk_takeshi" #"eat_table"
+MESA_COMER        = "kitchen"   #desk_takeshi" #"eat_table"
+
+# Gripper_aperture
+GRIP_MILK   = 0.3
+GRIP_BOWL   = -0.1
+GRIP_CEREAL = 0.1
+
+
 
 def serving_breakfast(object):
     print("PREPARE TOP")
@@ -62,12 +69,12 @@ def main():
     rospy.init_node("serve_breakfast_test")
     rate = rospy.Rate(10)
 
-    rospack = rospkg.RosPack()
-    locations_default = rospack.get_path("config_files") + "/known_locations_objects.yaml"
+    #rospack = rospkg.RosPack()
+    #locations_default = rospack.get_path("config_files") + "/known_locations_objects.yaml"
 
-    print(locations_default)
+    #print(locations_default)
     #locations_default = rospack.get_path("config_files") + "/known_locations_simul.yaml"
-    locations_file = rospy.get_param("~locations", locations_default)
+    #locations_file = rospy.get_param("~locations", locations_default)
 
     # Se subcribe a los servicios necesarios para manipulacion, navegacion,vision, etc...
     JuskeshinoNavigation.setNodeHandle()
@@ -77,7 +84,6 @@ def main():
     JuskeshinoHRI.setNodeHandle()
     JuskeshinoManipulation.setNodeHandle()
     JuskeshinoKnowledge.setNodeHandle()
-    JuskeshinoKnowledge.loadLocations(locations_file)
 
     
     JuskeshinoHRI.say("I'm ready for the test")
@@ -155,7 +161,13 @@ def main():
                 print("SB-PLN.->object position", obj.pose.position)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(resp.articular_trajectory,10)
                 print("SB-PLN.->Closing gripper")
-                JuskeshinoHardware.moveLeftGripper(-0.3, 2.0) 
+                if (actual_obj == "bowl"):
+                    JuskeshinoHardware.moveLeftGripper(GRIP_BOWL , 2.0) 
+                if (actual_obj == "milk"):
+                    JuskeshinoHardware.moveLeftGripper(GRIP_MILK , 2.0) 
+                if (actual_obj == "cereal"):
+                    JuskeshinoHardware.moveLeftGripper(GRIP_CEREAL , 2.0) 
+
                 time.sleep(0.5)
                 print("ACT-PLN.->Moving arm to prepare***")
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)  # prepare    

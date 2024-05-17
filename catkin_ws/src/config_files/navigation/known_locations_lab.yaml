@@ -3,22 +3,38 @@ entrance:
   y: 0.0
   theta: 0.4
   parent: home
-
 kitchen:
   x: 6.77
   y: 2.08
   theta: 0.0
   parent: home
-
 eat_table:
   x: -5.94
-  y: -5.80
+  y: -5.8
   theta: 3.14
   parent: home
-
 ingredients_table:
   x: -5.1
   y: -8.13
   theta: 4.71
   parent: home
-
+computer:
+  x: 5.0
+  y: 0.0
+  theta: 0.0
+  parent: home
+door:
+  x: 1.0
+  y: 0.0
+  theta: 0.0
+  parent: home
+desk_justina:
+  x: 5.46
+  y: 2.15
+  theta: 1.5
+  parent: home
+desk_takeshi:
+ x: 7.0
+ y: 1.77
+ theta: 0.0
+ parent: home
