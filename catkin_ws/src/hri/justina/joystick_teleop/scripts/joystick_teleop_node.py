@@ -197,7 +197,7 @@ def main():
 
         if math.fabs(panPos) > 0 or math.fabs(tiltPos) > 0:
             msgHeadPos.data = [panPos, tiltPos]
-            pubHeadPos.publish(msgHeadPos)
+            #pubHeadPos.publish(msgHeadPos)
 
         if stop == 1:
             pubStop.publish(msgStop)
