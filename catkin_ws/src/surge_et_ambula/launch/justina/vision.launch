@@ -1,6 +1,7 @@
 <launch>
   <arg name="debug"         default="false"/>
   <arg name="training_dir"  default="$(find obj_reco)/training_simul"/>
+  <arg name="use_yolo" default="true"/>
 
   <node name="obj_reco" pkg="obj_reco" type="obj_reco_node" output="screen">
     <param name="debug"               value="$(arg debug)"/>
@@ -26,13 +27,14 @@
     <param name="plane_min_area"        value="0.2"/>
     <param name="histogram_size"        value="18"/>
     <param name="min_points_per_object" value="1000"/>"
+    <param name="use_yolo" value="$(arg use_yolo)"/>
   </node>
    
   <node name="object_pose" pkg="obj_segmentation_and_pose" type="obj_pose_node.py" output="screen"/>
   
   <node name="PoseEstimator" pkg="human_pose_estimation" type="pose_estimator_srv"/>
 
-  <node name="object_classification" pkg="object_classification" type="obj_classification_node.py" output="screen">
+  <node if="$(arg use_yolo)" name="object_classification" pkg="object_classification" type="obj_classification_node.py" output="screen">
     <param name="model" value="$(find object_classification)/src/weights/TaRJustv3_ycb.pt"/>
   </node>
 

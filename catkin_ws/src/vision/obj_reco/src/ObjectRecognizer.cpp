@@ -19,6 +19,8 @@ bool ObjectRecognizer::segment_by_contours(cv::Mat cloud, cv::Mat img_bgr, cv::M
     for( size_t i = 0; i< contours.size(); i++ )
     {
         cv::drawContours(contour_masks[i], contours, (int)i, 255, -1, cv::LINE_8, hierarchy, 0);
+        cv::Mat element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7, 7), cv::Point(3, 3));
+        cv::erode(contour_masks[i], contour_masks[i], element);
         int points_in_object = cv::countNonZero(contour_masks[i]);
         if(debug) std::cout << "ObjRecognizer.->Obj detected with " << points_in_object << " points. " << std::endl;
         if( points_in_object < min_points)

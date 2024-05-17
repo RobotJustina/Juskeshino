@@ -41,6 +41,7 @@ float plane_dist_threshold = 0.05;
 float plane_min_area = 0.5;
 int   histogram_size = 18;
 int   min_points_per_object = 1000;
+bool  use_yolo = true;
 std::string training_dir;
 
 bool call_recognize_object_with_yolo(cv::Mat& img, std::string& label, double& confidence)
@@ -109,15 +110,21 @@ bool callback_detect_and_recog_objs(vision_msgs::RecognizeObjects::Request& req,
     std::vector<std::string> labels(objects_bgr.size(), "");
     std::vector<double> confidences(objects_bgr.size(), -1);
     for(int i=0; i<objects_bgr.size(); i++){
-        //ObjectRecognizer::recognize(objects_bgr[i], objects_masks[i], histogram_size, labels[i], confidences[i], debug);
-        call_recognize_object_with_yolo(objects_bgr[i], labels[i], confidences[i]);
+        if(use_yolo)
+            call_recognize_object_with_yolo(objects_bgr[i], labels[i], confidences[i]);
+        else
+            ObjectRecognizer::recognize(objects_bgr[i], objects_masks[i], histogram_size, labels[i], confidences[i], debug);
         cv::bitwise_or(img, objects_bgr[i], img);
+        cv::Mat non_zero_points;
+        cv::findNonZero(objects_masks[i], non_zero_points);
+        cv::Rect bb = cv::boundingRect(non_zero_points);
+        cv::putText(img, labels[i], cv::Point(bb.x, bb.y), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0,255,0), 1);
         std::cout << "ObjReco.->Recognized object: " << labels[i] << " with confidence " << confidences[i] << std::endl;
     }
-    //cv::imshow("Points above plane", img);
 
     resp = Utils::get_recog_objects_response(objects_bgr, objects_xyz, objects_masks, labels, confidences, img, req.point_cloud.header.frame_id);
     pubMarkerArray.publish(Utils::get_objects_markers(resp.recog_objects));
+    cv::imshow("ObjReco - Recognition Result", img);
     return resp.recog_objects.size() > 0;
 }
 
@@ -139,9 +146,12 @@ bool callback_detect_and_recog_obj(vision_msgs::RecognizeObject::Request& req, v
     double confidence = -1;
     double max_confidence = -1;
     int recog_obj_idx = -1;
+    img = cv::Mat::zeros(img.rows, img.cols, CV_8UC3);
     for(int i=0; i<objects_bgr.size(); i++){
-        //ObjectRecognizer::recognize(objects_bgr[i], objects_masks[i], histogram_size, recognized_label, confidence, debug);
-        call_recognize_object_with_yolo(objects_bgr[i], recognized_label, confidence);
+        if(use_yolo)
+            call_recognize_object_with_yolo(objects_bgr[i], recognized_label, confidence);
+        else
+            ObjectRecognizer::recognize(objects_bgr[i], objects_masks[i], histogram_size, recognized_label, confidence, debug);
         if(recognized_label == req.name && confidence > max_confidence)
         {
             recog_obj_idx = i;
@@ -150,9 +160,16 @@ bool callback_detect_and_recog_obj(vision_msgs::RecognizeObject::Request& req, v
     }
     if(recog_obj_idx < 0) return false;
 
+    cv::bitwise_or(img, objects_bgr[recog_obj_idx], img);
+    cv::Mat non_zero_points;
+    cv::findNonZero(objects_masks[recog_obj_idx], non_zero_points);
+    cv::Rect bb = cv::boundingRect(non_zero_points);
+    cv::putText(img, recognized_label, cv::Point(bb.x, bb.y), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0,255,0), 1);
+
     resp = Utils::get_recog_object_response(objects_bgr[recog_obj_idx], objects_xyz[recog_obj_idx], objects_masks[recog_obj_idx],
                                             req.name, max_confidence, req.point_cloud.header.frame_id);
     pubMarkerArray.publish(Utils::get_object_marker(resp.recog_object));
+    cv::imshow("ObjReco - Recognition Result", img);
     return recog_obj_idx >= 0;
 }
 
@@ -307,6 +324,7 @@ int main(int argc, char** argv)
         ros::param::get("~histogram_size", histogram_size);
     if(ros::param::has("~min_points_per_object"))
         ros::param::get("~min_points_per_object", min_points_per_object);
+    ros::param::param<bool >("~use_yolo", use_yolo, true);
 
     Utils::debug = debug;
     ObjectRecognizer::train_from_folder(training_dir, histogram_size, debug);

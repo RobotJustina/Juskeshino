@@ -1,11 +1,12 @@
 <launch>
   <arg name="debug" default="False"/>
+  <arg name="use_yolo" default="True"/>
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
     <arg name="posx"  value="10.61"/>
     <arg name="posy"  value="11.24"/>
     <arg name="posz"  value="0.05"/>
     <arg name="yaw"   value="3.14"/>
-    <arg name="world" value="appartment_april_tags"/>
+    <arg name="world" value="appartment"/>
   </include>
   
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_gazebo.rviz"/>
@@ -42,6 +43,7 @@
   <include file="$(find surge_et_ambula)/launch/justina/vision.launch">
     <arg name="debug"         value="$(arg debug)"/>
     <arg name="training_dir"  value="$(find obj_reco)/training_simul"/>
+    <arg name="use_yolo"      value="$(arg use_yolo)"/>
   </include>
   <include file="$(find surge_et_ambula)/launch/justina/hri.launch"/>
   <include file="$(find surge_et_ambula)/launch/justina/TMR_2024/carry_my_luggage.launch"/>
