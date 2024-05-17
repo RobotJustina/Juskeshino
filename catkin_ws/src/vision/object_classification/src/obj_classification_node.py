@@ -59,7 +59,7 @@ def main():
 
     rospy.Service("/vision/obj_reco/recognize_objects_yolo", RecognizeObjects, callback_recognize_objects)
     while not rospy.is_shutdown():
-        cv2.imshow("Result", result_img)
+        cv2.imshow("YOLO - Recognition Result", result_img)
         cv2.waitKey(10)
         loop.sleep()
 
