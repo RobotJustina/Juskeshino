@@ -693,7 +693,7 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
 
                         ik_msg_3.x             = cartesian_pose_shoulder[0] 
                         ik_msg_3.y             = cartesian_pose_shoulder[1]
-                        ik_msg_3.z             = cartesian_pose_shoulder[2] - 0.06
+                        ik_msg_3.z             = cartesian_pose_shoulder[2] - 0.08
                         ik_msg_3.roll          = cartesian_pose_shoulder[3]      
                         ik_msg_3.pitch         = cartesian_pose_shoulder[4]
                         ik_msg_3.yaw           = cartesian_pose_shoulder[5]

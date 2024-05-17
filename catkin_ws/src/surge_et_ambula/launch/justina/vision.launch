@@ -1,7 +1,7 @@
 <launch>
   <arg name="debug"         default="false"/>
   <arg name="training_dir"  default="$(find obj_reco)/training_simul"/>
-  <arg name="use_yolo" default="true"/>
+  <arg name="use_yolo" default="False"/>
 
   <node name="obj_reco" pkg="obj_reco" type="obj_reco_node" output="screen">
     <param name="debug"               value="$(arg debug)"/>
