@@ -30,8 +30,8 @@ MESA_COMER        = "kitchen"   #desk_takeshi" #"eat_table"
 
 # Gripper_aperture
 GRIP_MILK   = 0.3
-GRIP_BOWL   = -0.1
-GRIP_CEREAL = 0.1
+GRIP_BOWL   = 0.0
+GRIP_CEREAL = 0.0
 
 
 
@@ -68,13 +68,6 @@ def main():
     print("INITIALIZING SERVE BREAKFAST 2024 TEST BY ITZEL..............ヾ(๑╹◡╹)ﾉ")
     rospy.init_node("serve_breakfast_test")
     rate = rospy.Rate(10)
-
-    #rospack = rospkg.RosPack()
-    #locations_default = rospack.get_path("config_files") + "/known_locations_objects.yaml"
-
-    #print(locations_default)
-    #locations_default = rospack.get_path("config_files") + "/known_locations_simul.yaml"
-    #locations_file = rospy.get_param("~locations", locations_default)
 
     # Se subcribe a los servicios necesarios para manipulacion, navegacion,vision, etc...
     JuskeshinoNavigation.setNodeHandle()
@@ -139,6 +132,14 @@ def main():
                 
             # El robot se mueve a la mejor mejor ubicacion de agarre ,Toma objeto con brazo izquierdo
             mov = JuskeshinoSimpleTasks.handling_location(obj, "la")
+
+            if (obj.pose.position.z > 0.72) and (actual_obj == "bowl"):
+                try:
+                    JuskeshinoHardware.moveTorso(np.linalg.norm(obj.pose.position.z - 0.72) , 5.0)
+                    time.sleep(0.5)
+                except:
+                    print("Cannot move torso")
+
             # En la mejor ubicacion de agarre realiza de nuevo un reconocimiento del objeto***********************
             [obj, img] = JuskeshinoVision.detectAndRecognizeObject(actual_obj)   #**************************
             if obj == None: 

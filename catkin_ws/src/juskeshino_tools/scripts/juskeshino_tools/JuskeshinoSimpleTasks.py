@@ -146,33 +146,36 @@ class JuskeshinoSimpleTasks:
     def handling_location(vision_obj, arm ):
         position_obj = vision_obj.pose.position
         l_threshold_la       = 0.25
-        r_threshold_la       = 0.15
+        r_threshold_la       = 0.14
+
         l_threshold_ra       = -0.14
         r_threshold_ra       = -0.32
-        suitable_grip_height = 0.72
 
-        if position_obj.z > suitable_grip_height:
-            try:
-                JuskeshinoHardware.moveTorso(np.linalg.norm(position_obj.z - suitable_grip_height) , 5.0)
-                time.sleep(0.5)
-            except:
-                print("Cannot move torso")
         if (arm == "ra"):
             if position_obj.y > l_threshold_ra:
                 JuskeshinoNavigation.moveLateral( l_threshold_ra - position_obj.y , 5.0)
+
                 return True
             if position_obj.y < r_threshold_ra:
                 JuskeshinoNavigation.moveLateral(r_threshold_ra - position_obj.y , 5.0)
                 return True
             return False
+        
         else:     # Lado izq del robot
-            if position_obj.y > l_threshold_la:
-                JuskeshinoNavigation.moveLateral(position_obj.y - l_threshold_la , 5.0)
-                return True
-            if position_obj.y < r_threshold_la:
-                JuskeshinoNavigation.moveLateral(position_obj.y - r_threshold_la , 5.0)
-                return True
-            return False
+            if (arm == "la"):
+                if position_obj.y > l_threshold_la:
+                    mov_izq = position_obj.y - l_threshold_la
+                    print("distancia desplazada", mov_izq)
+                    JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
+                    return True
+                
+                if position_obj.y < r_threshold_la:
+                    mov_der = position_obj.y - l_threshold_la
+                    print("distancia desplazada", mov_der)
+                    JuskeshinoNavigation.moveLateral(mov_der , 5.0)
+                    return True
+                return False
+        return
 
 
 
