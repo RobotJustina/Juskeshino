@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  graph_msgs
   message_generation
 )
 
@@ -50,11 +51,9 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  Edges.msg
-  GeometryGraph.msg
-)
+# add_message_files(
+#   FILES
+# )
 
 ## Generate services in the 'srv' folder
 add_service_files(
@@ -62,6 +61,7 @@ add_service_files(
    GetInflatedMap.srv
    GetBoundaryPoints.srv
    GetGoalPoint.srv
+   PlanPath.srv
  )
 
 ## Generate actions in the 'action' folder
@@ -74,7 +74,7 @@ add_service_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  geometry_msgs   nav_msgs   std_msgs
+  geometry_msgs   nav_msgs   std_msgs graph_msgs
 )
 
 ################################################

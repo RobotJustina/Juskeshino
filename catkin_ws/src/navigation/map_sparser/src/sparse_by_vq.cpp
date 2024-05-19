@@ -1,6 +1,6 @@
 #include "ros/ros.h"
-#include "navig_msgs/Edges.h"
-#include "navig_msgs/GeometryGraph.h"
+#include "graph_msgs/Edges.h"
+#include "graph_msgs/GeometryGraph.h"
 #include "nav_msgs/GetMap.h"
 #include "nav_msgs/OccupancyGrid.h"
 #include "visualization_msgs/Marker.h"
@@ -146,9 +146,9 @@ bool are_visible(geometry_msgs::Point a, geometry_msgs::Point b, nav_msgs::Occup
     return true;
 }
 
-navig_msgs::GeometryGraph build_graph(std::vector<geometry_msgs::Point>& centroids, nav_msgs::OccupancyGrid& map)
+graph_msgs::GeometryGraph build_graph(std::vector<geometry_msgs::Point>& centroids, nav_msgs::OccupancyGrid& map)
 {
-    navig_msgs::GeometryGraph graph;
+    graph_msgs::GeometryGraph graph;
     
 
     
@@ -205,7 +205,7 @@ visualization_msgs::Marker get_nodes_marker(std::vector<geometry_msgs::Point>& c
     return marker;
 }
 
-visualization_msgs::Marker get_edges_marker(navig_msgs::GeometryGraph& graph)
+visualization_msgs::Marker get_edges_marker(graph_msgs::GeometryGraph& graph)
 {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
@@ -267,7 +267,7 @@ int main(int argc, char** argv)
     std::cout << "MapSparser.->Calculating centroids by vector quantization..." << std::endl;
     std::vector<geometry_msgs::Point> centroids = get_centroids(points, num_centroids, epsilon, tolerance);
     std::cout << "MapSparser.->Building graph from centroids and map..." << std::endl;
-    navig_msgs::GeometryGraph graph = build_graph(centroids, map);
+    graph_msgs::GeometryGraph graph = build_graph(centroids, map);
     
 
     ros::Rate loop(1);
