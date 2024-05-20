@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(path_planner)
+project(local_grid_map)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -15,7 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   tf
-  navig_msgs
+  tf_conversions
 )
 
 ## System dependencies are found with CMake's conventions
@@ -109,7 +109,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES path_planner_pkg
+#  LIBRARIES local_grid_map
 #  CATKIN_DEPENDS geometry_msgs nav_msgs roscpp rospy sensor_msgs std_msgs tf
 #  DEPENDS system_lib
 )
@@ -127,7 +127,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/path_planner_pkg.cpp
+#   src/${PROJECT_NAME}/local_grid_map.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -138,7 +138,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(path_planner_node src/path_planner_node.cpp src/PathPlanner.cpp)
+add_executable(local_grid_map_node src/local_grid_map_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -148,10 +148,10 @@ add_executable(path_planner_node src/path_planner_node.cpp src/PathPlanner.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(path_planner_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(local_grid_map_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(path_planner_node
+target_link_libraries(local_grid_map_node
   ${catkin_LIBRARIES}
 )
 
@@ -202,7 +202,7 @@ target_link_libraries(path_planner_node
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_path_planner_pkg.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_local_grid_map.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

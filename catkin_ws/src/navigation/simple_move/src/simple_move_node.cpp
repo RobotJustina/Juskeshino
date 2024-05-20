@@ -157,20 +157,10 @@ geometry_msgs::Twist calculate_speeds(float robot_angle, float goal_angle, float
     return result;
 }
 
-void get_robot_position_wrt_map(tf::TransformListener& tf_listener, float& robot_x, float& robot_y, float& robot_t)
+void get_robot_position(tf::TransformListener& tf_listener, std::string reference_frame, float& robot_x, float& robot_y, float& robot_t)
 {
     tf::StampedTransform transform;
-    tf_listener.lookupTransform("map", base_link_name, ros::Time(0), transform);
-    robot_x = transform.getOrigin().x();
-    robot_y = transform.getOrigin().y();
-    tf::Quaternion q = transform.getRotation();
-    robot_t = atan2((float)q.z(), (float)q.w()) * 2;
-}
-
-void get_robot_position_wrt_odom(tf::TransformListener& tf_listener, float& robot_x, float& robot_y, float& robot_t)
-{
-    tf::StampedTransform transform;
-    tf_listener.lookupTransform("odom", base_link_name, ros::Time(0), transform);
+    tf_listener.lookupTransform(reference_frame, base_link_name, ros::Time(0), transform);
     robot_x = transform.getOrigin().x();
     robot_y = transform.getOrigin().y();
     tf::Quaternion q = transform.getRotation();
@@ -192,8 +182,6 @@ void get_goal_position_wrt_odom(float goal_distance, float goal_angle, tf::Trans
     
     goal_x = robot_x + goal_distance * cos(robot_t + goal_angle + (move_lat?M_PI/2:0));
     goal_y = robot_y + goal_distance * sin(robot_t + goal_angle + (move_lat?M_PI/2:0));
-    
-
 }
 
 float get_path_total_distance(nav_msgs::Path& path)
@@ -378,7 +366,7 @@ int main(int argc, char** argv)
 
             
         case SM_GOAL_POSE_ACCEL:
-            get_robot_position_wrt_odom(tf_listener, robot_x, robot_y, robot_t);
+            get_robot_position(tf_listener, "odom", robot_x, robot_y, robot_t);
             global_error = sqrt((goal_x - robot_x)*(goal_x - robot_x) + (goal_y - robot_y)*(goal_y - robot_y));
             if(global_error < fine_dist_tolerance)
                 state = SM_GOAL_POSE_CORRECT_ANGLE;
@@ -404,7 +392,7 @@ int main(int argc, char** argv)
 
             
         case SM_GOAL_POSE_CRUISE:
-            get_robot_position_wrt_odom(tf_listener, robot_x, robot_y, robot_t);
+            get_robot_position(tf_listener, "odom", robot_x, robot_y, robot_t);
             global_error = sqrt((goal_x - robot_x)*(goal_x - robot_x) + (goal_y - robot_y)*(goal_y - robot_y));
             if(global_error < fine_dist_tolerance)
                 state = SM_GOAL_POSE_CORRECT_ANGLE;
@@ -424,7 +412,7 @@ int main(int argc, char** argv)
 
             
         case SM_GOAL_POSE_DECCEL:
-            get_robot_position_wrt_odom(tf_listener, robot_x, robot_y, robot_t);
+            get_robot_position(tf_listener, "odom", robot_x, robot_y, robot_t);
             global_error = sqrt((goal_x - robot_x)*(goal_x - robot_x) + (goal_y - robot_y)*(goal_y - robot_y));
             if(global_error < fine_dist_tolerance)
                     state = SM_GOAL_POSE_CORRECT_ANGLE;
@@ -441,7 +429,7 @@ int main(int argc, char** argv)
 
 
         case SM_GOAL_POSE_CORRECT_ANGLE:
-            get_robot_position_wrt_odom(tf_listener, robot_x, robot_y, robot_t);
+            get_robot_position(tf_listener, "odom", robot_x, robot_y, robot_t);
             global_error = (goal_t - robot_t);
             if (global_error > M_PI) global_error-=2*M_PI;
             if (global_error <= -M_PI) global_error+=2*M_PI;
@@ -485,7 +473,7 @@ int main(int argc, char** argv)
                 state = SM_GOAL_PATH_FAILED;
             }
             else{
-                get_robot_position_wrt_map(tf_listener, robot_x, robot_y, robot_t);
+                get_robot_position(tf_listener, goal_path.header.frame_id, robot_x, robot_y, robot_t);
                 get_next_goal_from_path(robot_x, robot_y, robot_t, goal_x, goal_y, prev_pose_idx, next_pose_idx);
                 global_error = sqrt((global_goal_x - robot_x)*(global_goal_x - robot_x) + (global_goal_y - robot_y)*(global_goal_y - robot_y));
                 if(global_error < coarse_dist_tolerance)
@@ -522,7 +510,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                get_robot_position_wrt_map(tf_listener, robot_x, robot_y, robot_t);
+                get_robot_position(tf_listener, goal_path.header.frame_id, robot_x, robot_y, robot_t);
                 get_next_goal_from_path(robot_x, robot_y, robot_t, goal_x, goal_y, prev_pose_idx, next_pose_idx);
                 global_error = sqrt((global_goal_x - robot_x)*(global_goal_x - robot_x) + (global_goal_y - robot_y)*(global_goal_y - robot_y));
                 if(global_error < coarse_dist_tolerance)
@@ -553,7 +541,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                get_robot_position_wrt_map(tf_listener, robot_x, robot_y, robot_t);
+                get_robot_position(tf_listener, goal_path.header.frame_id, robot_x, robot_y, robot_t);
                 get_next_goal_from_path(robot_x, robot_y, robot_t, goal_x, goal_y, prev_pose_idx, next_pose_idx);
                 global_error = sqrt((global_goal_x - robot_x)*(global_goal_x - robot_x) + (global_goal_y - robot_y)*(global_goal_y - robot_y));
                 if(global_error < coarse_dist_tolerance)

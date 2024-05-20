@@ -3,6 +3,7 @@
 #include "nav_msgs/Path.h"
 #include "nav_msgs/GetPlan.h"
 #include "nav_msgs/GetMap.h"
+#include "navig_msgs/PlanPath.h"
 #include "PathPlanner.h"
 
 ros::ServiceClient cltGetStaticMap       ;
@@ -61,6 +62,17 @@ bool callback_a_star_with_augmented_map(nav_msgs::GetPlan::Request& req, nav_msg
     return success;
 }
 
+bool callback_a_star_local_grid(navig_msgs::PlanPath::Request& req, navig_msgs::PlanPath::Response& resp)
+{
+    std::cout << "PathPlanner.-> Received path planning request using local grid map..." << std::endl;
+    bool success = PathPlanner::AStar(req.grid_map, req.grid_map, req.start.pose, req.goal.pose, true, resp.plan);
+    if(success)
+        resp.plan = PathPlanner::SmoothPath(resp.plan, smooth_alpha, smooth_beta);
+    else
+        std::cout << "PathPlanner.-> Cannot calculte path from start to goal positions using local grid map..." << std::endl;
+    return success;
+}
+
 int main(int argc, char** argv)
 {
     std::cout << "INITIALIZING PATH CALCULATOR BY MARCO NEGRETE..." << std::endl;
@@ -92,6 +104,7 @@ int main(int argc, char** argv)
 
     ros::ServiceServer srvGetPlanStatic   =n.advertiseService("/path_planner/plan_path_with_static"   , callback_a_star_with_static_map);
     ros::ServiceServer srvGetPlanAugmented=n.advertiseService("/path_planner/plan_path_with_augmented", callback_a_star_with_augmented_map);
+    ros::ServiceServer srvPlanLocalGrid   =n.advertiseService("/path_planner/plan_path_local_grid"    , callback_a_star_local_grid);
 
     while(ros::ok())
     {
