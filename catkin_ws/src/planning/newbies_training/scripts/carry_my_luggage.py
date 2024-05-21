@@ -96,8 +96,8 @@ def human_callback(data):
         pointStamped.header = h
         point_publisher.publish(pointStamped)
         print(point)
-        JuskeshinoHardware.moveHead(-0.5,0, 5)
-        #JuskeshinoHardware.moveHead(math.atan(r_wri[0]),math.atan(r_wri[1]), 5)
+        #JuskeshinoHardware.moveHead(-0.5,0, 5)
+        JuskeshinoHardware.moveHead(math.tan(r_wri[1]/r_wri[2]),math.tan(r_wri[0]/r_wri[2]), 5)
         detected = True
     elif delta_l > delta_r:
         print("Left wrist's farest")
@@ -117,8 +117,8 @@ def human_callback(data):
         pointStamped.header = h
         point_publisher.publish(pointStamped)
         print(point)
-        JuskeshinoHardware.moveHead(0.5,0, 5)
-        #JuskeshinoHardware.moveHead(math.atan(l_wri[0]),math.atan(l_wri[1]), 5)
+        #JuskeshinoHardware.moveHead(0.5,0, 5)
+        JuskeshinoHardware.moveHead(math.tan(l_wri[1]/l_wri[2]),math.tan(l_wri[0]/l_wri[2]), 5)
         detected = True
     else:
         print("IDK")
