@@ -29,7 +29,7 @@ def descarte_forced_poses(obj_pose):
     vector_z_obj = [RM[0][2] , RM[1][2]]
     angle_z_obj = np.rad2deg(math.atan2(vector_z_obj[1] , vector_z_obj[0]))
 
-    if (angle_z_obj > 150) or (angle_z_obj < -150): descarte = False
+    if (angle_z_obj > 140) or (angle_z_obj < -140): descarte = False
     else:
         descarte = True
         print("GraspLa.-> Forced pose discarded")
@@ -95,7 +95,7 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
         grip_point_bl = points_actual_to_points_target(grip_point, 'object', 'base_link')
 
         if type_obj == "BOWL":
-            grip_point_bl[2] = grip_point_bl[2] + 0.17
+            grip_point_bl[2] = grip_point_bl[2] + 0.19
 
         else:grip_point_bl[2] = grip_point_bl[2] + Z_OFFSET
 
@@ -627,7 +627,7 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
         
     print("Best_Grasp_Node.-> evaluating_possibility_grip()")
     i = 0
-    for pose1 in candidate_quaternion_list:  # rellena el mensaje para el servicio IK
+    for pose1 in candidate_q_list:  # rellena el mensaje para el servicio IK
         if obj_state == "vertical":
             pose_xyzrpy, new_pos = pose_for_ik_service(pose1)
             if new_pos == -1:
@@ -693,7 +693,7 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
 
                         ik_msg_3.x             = cartesian_pose_shoulder[0] 
                         ik_msg_3.y             = cartesian_pose_shoulder[1]
-                        ik_msg_3.z             = cartesian_pose_shoulder[2] - 0.08
+                        ik_msg_3.z             = cartesian_pose_shoulder[2] #- 0.08
                         ik_msg_3.roll          = cartesian_pose_shoulder[3]      
                         ik_msg_3.pitch         = cartesian_pose_shoulder[4]
                         ik_msg_3.yaw           = cartesian_pose_shoulder[5]

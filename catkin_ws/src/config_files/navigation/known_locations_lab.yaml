@@ -5,7 +5,7 @@ entrance:
   parent: home
 kitchen:
   x: 6.77
-  y: 2.08
+  y: 2.0
   theta: 0.0
   parent: home
 eat_table:
@@ -29,12 +29,12 @@ door:
   theta: 0.0
   parent: home
 desk_justina:
-  x: 5.46
+  x: 5.52
   y: 2.15
   theta: 1.5
   parent: home
 desk_takeshi:
- x: 7.0
+ x: 7.05
  y: 1.77
  theta: 0.0
  parent: home
