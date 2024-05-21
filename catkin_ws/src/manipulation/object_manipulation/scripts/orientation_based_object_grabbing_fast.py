@@ -18,18 +18,56 @@ MAXIMUM_CUBE_SIZE = 0.13
 Z_OFFSET = 0.13
     
 
+def publish_arow_marker(origen ,final ,frame_id, ns):  
+    p0 = PointStamped()
+    p0.header.frame_id = frame_id
+    p0.point.x , p0.point.y, p0.point.z = origen[0], origen[1], origen[2]
+    p1 = PointStamped()
+    p1.header.frame_id = frame_id
+    p1.point.x , p1.point.y, p1.point.z = final[0], final[1], final[2]
+    frame = frame_id
+    marker = Marker()
+    marker.header.frame_id = frame
+    marker.type = Marker.ARROW
+    marker.ns = ns
+    marker.header.stamp = rospy.Time.now()
+    marker.action = marker.ADD
+    marker.id = 1#+10
+    # body radius, Head radius, hight head
+    marker.scale.x, marker.scale.y, marker.scale.z = 0.02, 0.1, 0.04 
+    marker.color.r , marker.color.g , marker.color.b, marker.color.a = 20, 0.0, 100.0, 1.0
+    point = Point()
+    point.x, point.y, point.z = p0.point.x + p1.x , p0.point.y + p1.y , p0.point.z + p1.z
+    marker.lifetime = rospy.Duration(10.0)
+    marker.points = [p0.point, point]
+    marker.pose.orientation.w = 1.0
+    marker_pub.publish(marker)
+
+
+
 def descarte_forced_poses(obj_pose):   
-    vector_z_obj = [obj_pose.position.x, obj_pose.position.y]
+    #vector_z_obj = [obj_pose.position.x, obj_pose.position.y]
 
     R, P, Y = tft.euler_from_quaternion([obj_pose.orientation.x ,  # pose expresada en RPY para realizar rotaciones
                                              obj_pose.orientation.y ,
                                              obj_pose.orientation.z, 
                                              obj_pose.orientation.w])
     RM = tft.euler_matrix(R, P, Y)
-    vector_z_obj = [RM[0][2] , RM[1][2]]
-    angle_z_obj = np.rad2deg(math.atan2(vector_z_obj[1] , vector_z_obj[0]))
+    vector_z_obj = [RM[0][2] , RM[1][2]]        # Este vector se alinea con el antebrazo de Justina
+    
+    origen = [obj_pose.position.x, obj_pose.position.y, obj_pose.position.z]
+    final = [RM[0][2] , RM[1][2], RM[2][2]]
 
-    if (angle_z_obj > 140) or (angle_z_obj < -140): descarte = False
+    publish_arow_marker(origen ,final ,"shoulders_left_link" , "VECTOR_Z")
+
+    # Angulo entre vector z obj y eje x
+    angle_z_obj = np.rad2deg(math.atan2(vector_z_obj[1] , vector_z_obj[0]))
+    print("angulo de Z_OBJECT:___",  angle_z_obj)
+
+
+
+    if (angle_z_obj > 140) or (angle_z_obj < -140): 
+        descarte = False
     else:
         descarte = True
         print("GraspLa.-> Forced pose discarded")
@@ -630,9 +668,7 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
     for pose1 in candidate_q_list:  # rellena el mensaje para el servicio IK
         if obj_state == "vertical":
             pose_xyzrpy, new_pos = pose_for_ik_service(pose1)
-            if new_pos == -1:
-                #print("NEW POSE = ", new_pos)
-                continue
+            if new_pos == -1: continue
             descarte =  descarte_forced_poses(new_pos)
             if descarte: continue
 
@@ -643,11 +679,11 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
             ik_msg.pitch = pose_xyzrpy[4]
             ik_msg.yaw = pose_xyzrpy[5]
             ik_msg.duration = 4
-            ik_msg.time_step = 0.06
+            ik_msg.time_step = 0.09
             try:
                 resp_ik_srv = ik_srv(ik_msg)
                 print("Best_Grasp_Node.-> Suitable pose for vertical object found.....................")
-                return resp_ik_srv.articular_trajectory , candidate_quaternion_list[i] , pose_xyzrpy, True
+                return resp_ik_srv.articular_trajectory , candidate_q_list[i] , pose_xyzrpy, True
             except:
                 i = i + 1 
                 print("Best_Grasp_Node.-> Discarded candidate")  
