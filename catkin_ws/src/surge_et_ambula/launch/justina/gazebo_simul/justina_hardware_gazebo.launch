@@ -23,7 +23,9 @@
     <param name="use_tf_static" value="false"/>
   </node>
   <node name="topic_resender" pkg="gazebo_envs" type="topic_resender.py" output="screen"/>
-  <node name="omni_base_control" pkg="gazebo_envs" type="omni_base_gazebo_control.py" output="screen"/>
+  <node name="omni_base_control" pkg="gazebo_envs" type="omni_base_gazebo_control.py" output="screen">
+    <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
+  </node>
   <node name="tf_camera_connect" pkg="tf" type="static_transform_publisher" args="0 0 0 -1.5708 0 -1.5708 camera_link camera_rgb_optical_frame 30"/>
   <!--realsense_link-->
 </launch>

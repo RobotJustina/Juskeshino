@@ -13,6 +13,7 @@ from segmentation.msg import *
 import numpy as np
 import ros_numpy
 import os
+from glob import glob
 import matplotlib.pyplot as plt
 import cv2 
 from collections import Counter
@@ -36,28 +37,24 @@ usr_url=os.path.expanduser( '~' )
 protoFile = usr_url+"/openpose/models/pose/body_25/pose_deploy.prototxt"
 weightsFile = usr_url+"/openpose/models/pose/body_25/pose_iter_584000.caffemodel"
 net = cv2.dnn.readNetFromCaffe(protoFile, weightsFile)
-#tf_listener = tf.TransformListener()
-#broadcaster= tf.TransformBroadcaster()
-#tf_static_broadcaster= tf2_ros.StaticTransformBroadcaster()
-#pub = rospy.Publisher('/segmented_images', Image, queue_size=1)
+
 bridge=CvBridge()
 
 #-----------------------------------------------------------------
 def write_tf(pose, q, child_frame , parent_frame='map'):
     t= TransformStamped()
     t.header.stamp = rospy.Time.now()
-    #t.header.stamp = rospy.Time(0)
     t.header.frame_id =parent_frame
     t.child_frame_id =  child_frame
     t.transform.translation.x = pose[0]
     t.transform.translation.y = pose[1]
     t.transform.translation.z = pose[2]
-    #q = tf.transformations.quaternion_from_euler(eu[0], eu[1], eu[2])
     t.transform.rotation.x = q[0]
     t.transform.rotation.y = q[1]
     t.transform.rotation.z = q[2]
     t.transform.rotation.w = q[3]
     return t
+
 #-----------------------------------------------------------------
 def read_tf(t):
     pose=np.asarray((
@@ -73,8 +70,8 @@ def read_tf(t):
         ))
     
     return pose, quat
-#-----------------------------------------------------------------
 
+#-----------------------------------------------------------------
 def getTF(target_frame='', ref_frame='map'):
         try:
             tf = tfBuffer.lookup_transform(
@@ -82,6 +79,7 @@ def getTF(target_frame='', ref_frame='map'):
             return tf2_obj_2_arr(tf)
         except:
             return [False, False]
+
 #-----------------------------------------------------------------
 def tf2_obj_2_arr(transf):
         pos = []
@@ -96,6 +94,7 @@ def tf2_obj_2_arr(transf):
         rot.append(transf.transform.rotation.w)
 
         return [pos, rot]
+
 #-----------------------------------------------------------------
 def change_ref_frame_tf(point_name='', rotational=[0, 0, 0, 1], new_frame='map'):
         try:
@@ -108,7 +107,6 @@ def change_ref_frame_tf(point_name='', rotational=[0, 0, 0, 1], new_frame='map')
             return True
         except:
             return False
-#-----------------------------------------------------------------
 
 #-----------------------------------------------------------------
 def probmap_to_3d_mean(points_data,probMap, thres_prob=0.3):
@@ -136,25 +134,21 @@ def probmap_to_3d_mean(points_data,probMap, thres_prob=0.3):
         cent=np.zeros(3)
     return cent
 
-
-def detect_human(points_msg):
+#-----------------------------------------------------------------
+def detect_human(points_msg,dist = 6):
     points_data = ros_numpy.numpify(points_msg)    
     image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
     image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
-    #image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
-    #rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     print (image.shape)
     frame=image
     inHeight = frame.shape[0]
     inWidth = frame.shape[1]
-
 
     # Prepare the frame to be fed to the network
     inpBlob = cv2.dnn.blobFromImage(frame, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
 
     # Set the prepared object as the input blob of the network
     net.setInput(inpBlob)
-
     output = net.forward()
     i = 0 #Face
     #i = 1# Neck
@@ -169,21 +163,35 @@ def detect_human(points_msg):
     res.x= cent[0]
     res.y= cent[1]
     res.z= cent[2]
-    
+
     return res    
 
+#-----------------------------------------------------------------
+def detect_pointing(points_msg,dist = 6):
 
-def detect_pointing(points_msg):
-    points_data = ros_numpy.numpify(points_msg)    
-    image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
-    image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
-    pts= points_data
-    print (image.shape)
+    pts= ros_numpy.numpify(points_msg)  
+    #---
+    human, _ =getTF(target_frame='human',ref_frame='camera_rgb_optical_frame') 
+    distToTF = np.linalg.norm(human) if human[0] else 2
+    print("DISTANCIA AL HUMANO ",distToTF)
+
+    # <<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
+    # HARDCODEADA LA DISTANCIA A 2 METROS (+ 0.3 m) 
+    # NECESARIO MODIFICAR PARA PRUEBAS EN ROBOCUP DE ACUERDO A ESPACIOS Y 
+    # DISTANCIAS DE LA PRUEBA 
+    # SE IBA A UTILIZAR -> distToTF DE ACUERDO A LA TF DE LA PERSONA DETECTADA
+    # PERO NO ES MUY EXACTO
+    # <<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
+    image, masked_image = removeBackground(points_msg, dist)
+    data = len(glob(os.path.join(os.path.expanduser( '~' )+"/Documentos","*"))) # cambiar a Documents si esta en ingles 
+    cv2.imwrite(os.path.expanduser( '~' )+"/Documentos/maskedImage_"+str(data + 1)+".jpg",masked_image)
+    
+    #---
     frame=image
     inHeight = frame.shape[0]
     inWidth = frame.shape[1]
     # Prepare the frame to be fed to the network
-    inpBlob = cv2.dnn.blobFromImage(image, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
+    inpBlob = cv2.dnn.blobFromImage(masked_image, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
     # Set the prepared object as the input blob of the network
     net.setInput(inpBlob)
     output = net.forward()
@@ -213,7 +221,7 @@ def detect_pointing(points_msg):
     # left wrist
     ##############################
     try:
-            tt = tfBuffer.lookup_transform('map', 'camera_rgb_optical_frame', rospy.Time())  #head_rgbd_sensor_link
+            tt = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
                         
             trans,rot=read_tf(tt)
             #print ("############head",trans,rot)
@@ -235,31 +243,22 @@ def detect_pointing(points_msg):
                                  (found_joints['right_wrist'][0],found_joints['right_wrist'][1],found_joints['right_wrist'][2])]
          , dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
         #pc_np_array = np.array([found_joints['right_elbow'], found_joints['right_wrist'], (0.0, 0.0, 0.0)], dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
-        points_msg=ros_numpy.msgify(PointCloud2,pc_np_array,rospy.Time.now(),'head_rgbd_sensor_rgb_frame')
+        points_msg=ros_numpy.msgify(PointCloud2,pc_np_array,rospy.Time.now(),'camera_rgb_optical_frame')
         cloud_out = do_transform_cloud(points_msg, tt)
         np_corrected=ros_numpy.numpify(cloud_out)
         corrected=np_corrected.reshape(pc_np_array.shape)
         print(corrected,'########################### Left', found_joints)
-        #t=write_tf((corrected['x'][0],corrected['y'][0],corrected['z'][0]),(0,0,0,1),'right_elbow')
-        #print (t)
-        #b_st.sendTransform(t)
-        #t=write_tf((corrected['x'][1],corrected['y'][1],corrected['z'][1]),(0,0,0,1),'right_wrist')
-        #print (t)
-        #b_st.sendTransform(t)
+
         elbow_xyz,wrist_xyz=[corrected['x'][0],corrected['y'][0],corrected['z'][0]],[corrected['x'][1],corrected['y'][1],corrected['z'][1]]
         v= np.asarray(wrist_xyz)-np.asarray(elbow_xyz)
-        #print("ELBOW RIGHT",elbow_xyz)
-        #print("WRIST RIGHT",wrist_xyz)
+
         vd = [-(wrist_xyz[0] - elbow_xyz[0]), -(wrist_xyz[1]-elbow_xyz[1]),-1-(wrist_xyz[2]-elbow_xyz[2])]
         
         vectD = [wrist_xyz[0]-elbow_xyz[0],wrist_xyz[1]-elbow_xyz[1],wrist_xyz[2]-elbow_xyz[2]]
         alfa = -wrist_xyz[2]/vectD[2]
         y=wrist_xyz[1]+alfa*vectD[1]
         x=wrist_xyz[0]+alfa*vectD[0]
-        
-        #t= elbow_xyz[2]-   v[2]
-        #x= elbow_xyz[0]+ t*v[0]
-        #y= elbow_xyz[1]+ t*v[1]
+
         print(x,y,'x,y')
         t=write_tf((x,y,0),(0,0,0,1),'pointing_right')
         b_st.sendTransform(t)
@@ -279,20 +278,14 @@ def detect_pointing(points_msg):
         pc_np_array = np.array([(found_joints['left_elbow'][0], found_joints['left_elbow'][1], found_joints['left_elbow'][2]),(found_joints['left_wrist'][0],found_joints['left_wrist'][1],found_joints['left_wrist'][2])]
          , dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
         #pc_np_array = np.array([found_joints['right_elbow'], found_joints['right_wrist'], (0.0, 0.0, 0.0)], dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
-        points_msg=ros_numpy.msgify(PointCloud2,pc_np_array,rospy.Time.now(),'head_rgbd_sensor_rgb_frame')
+        points_msg=ros_numpy.msgify(PointCloud2,pc_np_array,rospy.Time.now(),'camera_rgb_optical_frame')
         cloud_out = do_transform_cloud(points_msg, tt)
         np_corrected=ros_numpy.numpify(cloud_out)
         corrected=np_corrected.reshape(pc_np_array.shape)
         print(corrected,'###########################Right', found_joints)
-        #t=write_tf((corrected['x'][0],corrected['y'][0],corrected['z'][0]),(0,0,0,1),'right_elbow')
-        #print (t)
-        #b_st.sendTransform(t)
-        #t=write_tf((corrected['x'][1],corrected['y'][1],corrected['z'][1]),(0,0,0,1),'right_wrist')
-        #print (t)
-        #b_st.sendTransform(t)
+
         elbow_xyz,wrist_xyz=[corrected['x'][0],corrected['y'][0],corrected['z'][0]],[corrected['x'][1],corrected['y'][1],corrected['z'][1]]
-        #print("ELBOW LEFT",elbow_xyz)
-        #print("WRIST LEFT",wrist_xyz)
+
         v= np.asarray(wrist_xyz)-np.asarray(elbow_xyz)
         vi = [-(wrist_xyz[0] - elbow_xyz[0]), -(wrist_xyz[1]-elbow_xyz[1]),-1-(wrist_xyz[2]-elbow_xyz[2])]
         vectD = [wrist_xyz[0]-elbow_xyz[0],wrist_xyz[1]-elbow_xyz[1],wrist_xyz[2]-elbow_xyz[2]]
@@ -300,9 +293,6 @@ def detect_pointing(points_msg):
         y=wrist_xyz[1]+alfa*vectD[1]
         x=wrist_xyz[0]+alfa*vectD[0]
         
-        #t= elbow_xyz[2]-   v[2]
-        #x= elbow_xyz[0]+ t*v[0]
-        #y= elbow_xyz[1]+ t*v[1]
         print(x,y, v,'x,y')
         t=write_tf((x,y,0),(0,0,0,1),'pointing_left')
         b_st.sendTransform(t)
@@ -311,14 +301,12 @@ def detect_pointing(points_msg):
         res.z_l=0
         
     else:
-
         res.x_l=0.0
         res.y_l=0.0
         res.z_l=0.0
         t=write_tf((0,0,0),(0,0,0,1),'pointing_left')
         b_st.sendTransform(t)
 
-    
     if np.linalg.norm(vd)>np.linalg.norm(vi):
         print("Mano DERECHA levantada")
         res.x_l = -1.0
@@ -445,33 +433,36 @@ def detect_pointing(points_msg):
 
     return res    
 
-def detect_pointing2(points_msg):
+#-----------------------------------------------------------------
+def detect_pointing2(points_msg,dist = 6):
     #tf_man = TF_MANAGER()
     res=Point_detectorResponse()
-    points_data = ros_numpy.numpify(points_msg)    
-    image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
-    image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
-    pts= points_data
+    points_data = ros_numpy.numpify(points_msg)
+
+    image, masked_image = removeBackground(points_msg,distance = dist)
+    data = len(glob(os.path.join(os.path.expanduser( '~' )+"/Documents","*"))) # cambiar a Documents si esta en ingles 
+    cv2.imwrite(os.path.expanduser( '~' )+"/Documents/maskedImage_"+str(data + 1)+".jpg",masked_image)
+
     print (image.shape)
     frame=image
     inHeight = frame.shape[0]
     inWidth = frame.shape[1]
     # Prepare the frame to be fed to the network
-    inpBlob = cv2.dnn.blobFromImage(image, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
+    inpBlob = cv2.dnn.blobFromImage(masked_image, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
     # Set the prepared object as the input blob of the network
     net.setInput(inpBlob)
     output = net.forward()
     try:
         poses = getconectionJoints(output,inHeight,inWidth)
         imageDraw = drawSkeletons(image,poses,plot=False)
-    except:
-        print("Ocurrio un error al construir el esqueleto")
-        raise OpenPException("Ocurrio un error al construir el esqueleto ")
+        cv2.imwrite(os.path.expanduser( '~' )+"/Documents/maskedImageWithOP.jpg",imageDraw)
+    
+    except Exception as e:
+        print("Ocurrio un error al construir el esqueleto",e,type(e).__name__)
+        raise Exception("Ocurrio un error al construir el esqueleto ")
 
-    #print(os.path.expanduser( '~' )+"/Documents/tmpPOINTING.jpg")
-    #cv2.imwrite(os.path.expanduser( '~' )+"/Documents/tmpPOINTING.jpg",imageDraw)
+
     res.debug_image.append(bridge.cv2_to_imgmsg(imageDraw))
-
     dists=[]
     for i,pose in enumerate(poses):
         if pose[0,0] != 0:
@@ -479,10 +470,9 @@ def detect_pointing2(points_msg):
             pose_xyz =[points_data['x'][int(pose[0,1]), int(pose[0,0])],
                        points_data['y'][int(pose[0,1]), int(pose[0,0])],
                        points_data['z'][int(pose[0,1]), int(pose[0,0])]]
-            #if (pose_xyz == None).any():               # PENDIENTE DE TERMINAR Y PROBAR
-            #    raise TFException("Error al obtener datos de PointCloud")
+
             dists.append(np.linalg.norm(pose_xyz)) 
-            t=write_tf((pose_xyz[0],pose_xyz[1],pose_xyz[2]),(0,0,0,1),'person_'+str(i),parent_frame='head_rgbd_sensor_rgb_frame')
+            t=write_tf((pose_xyz[0],pose_xyz[1],pose_xyz[2]),(0,0,0,1),'person_'+str(i),parent_frame='camera_rgb_optical_frame')
             b_st.sendTransform(t)
             rospy.sleep(0.3)
         elif pose[0,0] == 0 and pose[1,0] != 0:
@@ -490,16 +480,15 @@ def detect_pointing2(points_msg):
             pose_xyz =[points_data['x'][int(pose[1,1]), int(pose[1,0])],
                        points_data['y'][int(pose[1,1]), int(pose[1,0])],
                        points_data['z'][int(pose[1,1]), int(pose[1,0])]]
-            #if (pose_xyz == None).any():               # PENDIENTE DE TERMINAR Y PROBAR
-            #    raise TFException("Error al obtener datos de PointCloud")
+
             dists.append(np.linalg.norm(pose_xyz))  
-            t=write_tf((pose_xyz[0],pose_xyz[1],pose_xyz[2]),(0,0,0,1),'person_'+str(i),parent_frame='head_rgbd_sensor_rgb_frame')
+            t=write_tf((pose_xyz[0],pose_xyz[1],pose_xyz[2]),(0,0,0,1),'person_'+str(i),parent_frame='camera_rgb_optical_frame')
             b_st.sendTransform(t)
             rospy.sleep(0.3)
         else:
             print("NO HAY DATOS PARA PUBLICAR")   
                     # PENDIENTE DE TERMINAR Y PROBAR
-            #raise ZeroSKException("Error, datos en zero para TF")
+            #raise Exception("Error, datos en zero para TF")
 
 
     print(np.min(dists),np.argmin(dists))
@@ -521,56 +510,43 @@ def detect_pointing2(points_msg):
             points_data['y'][int(poses[k,7,1]), int(poses[k,7,0])],
             points_data['z'][int(poses[k,7,1]), int(poses[k,7,0])]]
             
-    #if (codoD == None).any() or (manoD == None).any():               # PENDIENTE DE TERMINAR Y PROBAR
-    #    raise WriteTFException("Error al publicar TF (empty)")
-    t=write_tf((codoD[0],codoD[1],codoD[2]),(0,0,0,1),'codoD',parent_frame='head_rgbd_sensor_rgb_frame')
+    t=write_tf((codoD[0],codoD[1],codoD[2]),(0,0,0,1),'codoD',parent_frame='camera_rgb_optical_frame')
     b_st.sendTransform(t)
     rospy.sleep(0.3)
-    t=write_tf((manoD[0],manoD[1],manoD[2]),(0,0,0,1),'manoD',parent_frame='head_rgbd_sensor_rgb_frame')
+    t=write_tf((manoD[0],manoD[1],manoD[2]),(0,0,0,1),'manoD',parent_frame='camera_rgb_optical_frame')
     b_st.sendTransform(t)
     rospy.sleep(0.3)
-    #if (codoI == None).any() or (manoI == None).any():               # PENDIENTE DE TERMINAR Y PROBAR
-    #    raise WriteTFException("Error al publicar TF (empty)")
-    t=write_tf((codoI[0],codoI[1],codoI[2]),(0,0,0,1),'codoI',parent_frame='head_rgbd_sensor_rgb_frame')
+    t=write_tf((codoI[0],codoI[1],codoI[2]),(0,0,0,1),'codoI',parent_frame='camera_rgb_optical_frame')
     b_st.sendTransform(t)
     rospy.sleep(0.3)
-    t=write_tf((manoI[0],manoI[1],manoI[2]),(0,0,0,1),'manoI',parent_frame='head_rgbd_sensor_rgb_frame')
+    t=write_tf((manoI[0],manoI[1],manoI[2]),(0,0,0,1),'manoI',parent_frame='camera_rgb_optical_frame')
     b_st.sendTransform(t)
     rospy.sleep(0.7)
-
     change_ref_frame_tf(point_name='codoD')
     change_ref_frame_tf(point_name='codoI')
     change_ref_frame_tf(point_name='manoD')
     change_ref_frame_tf(point_name='manoI')
-    
     codoD, _ =getTF(target_frame='codoD')
     codoI, _ =getTF(target_frame='codoI')
     manoD, _ =getTF(target_frame='manoD')
     manoI, _ =getTF(target_frame='manoI')
-    #if codoD[0] and codoI[0] and manoI[0] and codoI[0]:
     ds=[manoD[2]-codoD[2],manoI[2]-codoI[2]]
-   
     v1=[-(manoD[0]-codoD[0]),-(manoD[1]-codoD[1]),ds[np.argmin(ds)]-(manoD[2]-codoD[2])]
     v2=[-(manoI[0]-codoI[0]),-(manoI[1]-codoI[1]),ds[np.argmin(ds)]-(manoI[2]-codoI[2])]
-    
     vectD = [manoD[0]-codoD[0],manoD[1]-codoD[1],manoD[2]-codoD[2]]
     alfa = -manoD[2]/vectD[2]
     y=manoD[1]+alfa*vectD[1]
     x=manoD[0]+alfa*vectD[0]
-    #print(x,y,'x,y DER')
     t=write_tf((x,y,0),(0,0,0,1),'pointing_right')
     b_st.sendTransform(t)
     res.x_r=x
     res.y_r=y
     res.z_r=0
-
     rospy.sleep(0.3)
-
     vectD = [manoI[0]-codoI[0],manoI[1]-codoI[1],manoI[2]-codoI[2]]
     alfa = -manoI[2]/vectD[2]
     y=manoD[1]+alfa*vectD[1]
     x=manoD[0]+alfa*vectD[0]
-    #print(x,y,'x,y IZQ')
     t=write_tf((x,y,0),(0,0,0,1),'pointing_left')
     b_st.sendTransform(t)
     res.x_l=x
@@ -589,108 +565,31 @@ def detect_pointing2(points_msg):
         res.y_r = -1.0
         res.z_r = -1.0
     return res
-    
-
-#><>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-    i = 0 #Face
-    #i = 1# Neck
-    probMap = output[0, i, :, :]
-    probMap = cv2.resize(probMap, (inWidth, inHeight))
-    cent= probmap_to_3d_mean(points_data,probMap)
-    print (cent)
-    if np.isnan(cent.any()):return Human_detectorResponse()
-    print (cent)
-    if np.isnan(cent.any()):cent=np.zeros(3)
-    res=Human_detectorResponse()
-    res.x= cent[0]
-    res.y= cent[1]
-    res.z= cent[2]
-    
-    return res    
-
-
-def get_points(frame,inHeight,inWidth,output,threshold=0.1):
-    
-    h=output.shape[2]
-    w=output.shape[3]
-    points=[]
-
-    for i in range(25):
-        probMap = output[0,i,:,:]
-        minVal,prob,minLoc,point = cv2.minMaxLoc(probMap)
-        print("P: ",point)
-        x = (inWidth * point[0]) / w
-        y = (inHeight * point[1]) / h
-
-        if prob > threshold : 
-            cv2.circle(frame,(int(x),int(y)),5,(0,255,255),-1)
-            cv2.putText(frame,str(i),(int(x),int(y)),
-                        cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,165,5),1,
-                        lineType=cv2.LINE_AA)
-
-            points.append((x,y))
-        else:
-            points.append(None)
-
-    return points
-
-
-# IN PROGRESS
-def detect_all(points_msg):
-    direct=os.path.expanduser( '~' )
-    im=cv2.imread(direct+"/Documents/Tests/persons2.jpg")
-    print(im.shape)
-    points_data = ros_numpy.numpify(points_msg)    
-    image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
-    image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
-    #image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
-    #rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    print (image.shape)
-    frame=im
-    inHeight = frame.shape[0]
-    inWidth = frame.shape[1]
-
-    keypoints=[]
-    # Prepare the frame to be fed to the network
-    inpBlob = cv2.dnn.blobFromImage(frame, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
-
-    # Set the prepared object as the input blob of the network
-    net.setInput(inpBlob)
-
-    output = net.forward()
-
-    points = get_points(frame,inHeight,inWidth,output)
-    print("POINTSSSS",len(points),points)
-    cv2.imshow("DRAW",frame)
-    cv2.waitKey(0)
-
-    """
-    i = 0 #Face
-    #i = 1# Neck
-    print("SHAPEs",output.shape)
-    probMap = output[0, i, :, :]
-    print(probMap.shape)
-    probMap = cv2.resize(probMap, (inWidth, inHeight))
-    minVal, prob, minLoc, point = cv2.minMaxLoc(probMap)
- 
-        #imr=cv2.bitwise_or(im, probMap)
-    cv2.imshow("A",cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
-    for i in range(output.shape[1]):
-        probM=output[0,i,:,:]
-        probM=cv2.resize(probM, (inWidth, inHeight))
-
-        cv2.imshow("B",probM)
-        cv2.waitKey(0)
-
-    """
-    cv2.destroyAllWindows()
-
-    return Point_detectorResponse() 
 
 
 # FUNCIONES PARA DETECTAR TODOS LOS KEYPOINTS
+#--------------------------------------
+def getKeypoints(output,inWidth, inHeight,numKeys=8):
+    # se obtiene primero los keypoints 
+    keypoints=[]
+    for i in range (numKeys):
+        probMap = output[0, i, :, :]
+        probMap = cv2.resize(probMap, (inWidth, inHeight))
+        mapSmooth = cv2.GaussianBlur(probMap,(3,3),0,0)
+        thresh =-256 if mapSmooth.max() < 0.1 else 256
+        minthresh = mapSmooth.max()*thresh/2 if thresh == 256 else mapSmooth.min()*thresh/2
+        if minthresh >15:
+            _,mapMask = cv2.threshold(mapSmooth*thresh,minthresh-12,255,cv2.THRESH_BINARY)
+        else:
+            _,mapMask = cv2.threshold(mapSmooth*thresh,minthresh-1,255,cv2.THRESH_BINARY)
+        contours,_ = cv2.findContours(np.uint8(mapMask), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        for cnt in contours:
+            blobMask = np.zeros(mapMask.shape)
+            blobMask = cv2.fillConvexPoly(blobMask, cnt, 1)
+            maskedProbMap = mapSmooth * blobMask
+            _, maxVal, _, maxLoc = cv2.minMaxLoc(maskedProbMap)
+            keypoints.append(maxLoc + (probMap[maxLoc[1], maxLoc[0]],) +(i,))
+    return keypoints
 
 #----------------------
 def getGroups(output,conections):
@@ -776,3 +675,23 @@ def drawSkeletons(frame,sk,plot=False):
     if plot:
         plt.imshow(rgbbkg)
     return rgbbkg
+
+#--------------------------
+# para quitar fondo, es necesario rgbd de la camara del robot
+def removeBackground(points_msg,distance = 2):
+    # Obtengo rgb
+    points_data = ros_numpy.numpify(points_msg)
+    image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
+    rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)    
+
+    # Quito todos los pixeles que esten a una distancia mayor y/o a una distancia menor
+    # Para poder obtener una mascara con ceros y unos
+    zs_no_nans=np.where(~np.isnan(points_data['z']),points_data['z'],10)
+    img_corrected = np.where((zs_no_nans < distance + 0.3),zs_no_nans,0)
+    #img_corrected = np.where((img_corrected >1.5),img_corrected,0)
+    img_corrected = np.where((img_corrected == 0),img_corrected,1)
+
+    # operacion AND entre la imagen original y la mascara para quitar fondo (background)
+    #img_corrected = img_corrected.astype(np.uint8)
+    masked_image = cv2.bitwise_and(rgb_image, rgb_image, mask=img_corrected.astype(np.uint8))
+    return rgb_image, masked_image
