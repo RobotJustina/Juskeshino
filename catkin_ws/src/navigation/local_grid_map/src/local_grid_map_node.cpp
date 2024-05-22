@@ -3,6 +3,7 @@
 #include "std_srvs/Trigger.h"
 #include "sensor_msgs/LaserScan.h"
 #include "sensor_msgs/PointCloud2.h"
+#include "geometry_msgs/PointStamped.h"
 #include "nav_msgs/OccupancyGrid.h"
 #include "tf/transform_listener.h"
 #include "tf_conversions/tf_eigen.h"
@@ -14,12 +15,16 @@ bool  use_lidar;
 bool  use_cloud;
 int   no_data_cloud_counter  = 0;
 int   no_data_lidar_counter  = 0;
+int   no_legs_detection_counter = 0;
+float legs_x = 0;
+float legs_y = 0;
 sensor_msgs::LaserScan msg_lidar;
 sensor_msgs::PointCloud2 msg_cloud;
 
 ros::NodeHandle* nh;
 ros::Subscriber sub_cloud;
 ros::Subscriber sub_lidar;
+ros::Subscriber sub_legs;
 std::string point_cloud_topic;
 std::string laser_scan_topic;
 
@@ -35,6 +40,13 @@ void callback_point_cloud(const sensor_msgs::PointCloud2::ConstPtr& msg)
     msg_cloud = *msg;
 }
 
+void callback_legs_position(const geometry_msgs::PointStamped::ConstPtr& msg)
+{
+    no_legs_detection_counter = 0;
+    legs_x = msg->point.x;
+    legs_y = msg->point.y;
+}
+
 void callback_enable(const std_msgs::Bool::ConstPtr& msg)
 {
     if(msg->data)
@@ -42,6 +54,7 @@ void callback_enable(const std_msgs::Bool::ConstPtr& msg)
         std::cout<<"LocalGridMap.->Starting local grid map builder using: "<<(use_lidar?"lidar ":"")<<(use_cloud?"point_cloud":"")<<std::endl;
         if(use_cloud ) sub_cloud = nh->subscribe(point_cloud_topic, 1, callback_point_cloud );
         if(use_lidar ) sub_lidar = nh->subscribe(laser_scan_topic , 1, callback_lidar);
+        sub_legs = nh->subscribe("/hri/leg_finder/leg_pose", 1, callback_legs_position);
     }
     else
     {
@@ -49,6 +62,7 @@ void callback_enable(const std_msgs::Bool::ConstPtr& msg)
         std::cout << "LocalGridMap.->Stopping obstacle detection..." <<std::endl;
         if(use_cloud)  sub_cloud.shutdown();
         if(use_lidar)  sub_lidar.shutdown();
+        sub_legs.shutdown();
     }
     enable = msg->data;
 }
@@ -159,6 +173,16 @@ nav_msgs::OccupancyGrid get_cost_map(nav_msgs::OccupancyGrid& map, float cost_ra
     return cost_map;
 }
 
+void clear_goal_position(nav_msgs::OccupancyGrid& map, float goal_x, float goal_y, float inflation_radius)
+{
+    int goal_w = (int)((goal_x - map.info.origin.position.x)/map.info.resolution);
+    int goal_h = (int)((goal_y - map.info.origin.position.y)/map.info.resolution);
+    int n      = (int)(inflation_radius / map.info.resolution);
+    for(int w = goal_w - n; w <= goal_w + n; w++)
+        for(int h = goal_h - n; h <= goal_h + n; h++)
+            map.data[h*map.info.width + w] = 0;
+}
+
 int main(int argc, char** argv)
 {
     std::cout << "INITIALIZING LOCAL GRID MAP BUILDER BY MARCOSOFT... " << std::endl;
@@ -249,6 +273,7 @@ int main(int argc, char** argv)
         if(enable)
         {
             clear_local_grid(local_grid);
+
             if(use_lidar && no_data_lidar_counter++ > no_sensor_data_timeout*RATE)
                 std::cout << "LocalGridMap.->WARNING!!! No lidar data received from topic: " << laser_scan_topic << std::endl;
             else if(use_lidar)
@@ -259,6 +284,8 @@ int main(int argc, char** argv)
             else if(use_cloud)
                 update_local_grid_cloud(local_grid, msg_cloud, tf_listener, cloud_downsampling, min_x, min_y, min_z,
                                         max_x, max_y, max_z, footprint_min_x, footprint_min_y, footprint_max_x, footprint_max_y);
+            if(no_legs_detection_counter++ < no_sensor_data_timeout*RATE)
+                clear_goal_position(local_grid, legs_x, legs_y, 0.5);
 
             local_grid = inflate_map(local_grid, inflation_radius);
             local_grid = get_cost_map(local_grid, cost_radius);

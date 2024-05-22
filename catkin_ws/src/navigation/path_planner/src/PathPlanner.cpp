@@ -1,118 +1,216 @@
 #include "PathPlanner.h"
 
-bool PathPlanner::AStar(nav_msgs::OccupancyGrid& map, nav_msgs::OccupancyGrid& cost_map,
-                      geometry_msgs::Pose& start_pose, geometry_msgs::Pose& goal_pose, bool diagonal_paths, nav_msgs::Path& result_path)
+// bool PathPlanner::_AStar(nav_msgs::OccupancyGrid& map, nav_msgs::OccupancyGrid& cost_map, geometry_msgs::Pose& start_pose, 
+//                         geometry_msgs::Pose& goal_pose, bool diagonal_paths, nav_msgs::Path& result_path, std::string frame_id)
+// {
+//     std::cout << "PathCalculator.-> Calculating by A* from " << start_pose.position.x << "  ";
+//     std::cout << start_pose.position.y << "  to " << goal_pose.position.x << "  " << goal_pose.position.y << std::endl;
+
+//     int idx_start_x;
+//     int idx_start_y;
+//     int idx_goal_x;
+//     int idx_goal_y;
+//     idx_start_y = (int)((start_pose.position.y - map.info.origin.position.y)/map.info.resolution);
+//     idx_start_x = (int)((start_pose.position.x - map.info.origin.position.x)/map.info.resolution);
+//     idx_goal_y  = (int)((goal_pose.position.y  - map.info.origin.position.y)/map.info.resolution);
+//     idx_goal_x  = (int)((goal_pose.position.x  - map.info.origin.position.x)/map.info.resolution);
+//     int idx_start = idx_start_y*map.info.width + idx_start_x;
+//     int idx_goal  = idx_goal_y *map.info.width + idx_goal_x;
+
+//     if(map.data[idx_goal] > 20)
+//     {
+//         std::cout << "PathPlanner.->Goal point is inside non-free space!!!!" << std::endl;
+//         return false;
+//     }
+//     if(map.data[idx_start] > 20)
+//     {
+//         std::cout << "PathPlanner.->Start point is inside non-free space!!!!" << std::endl;
+//         return false;
+//     }
+
+//     std::vector<Node> nodes;
+//     Node* current_node; 
+//     std::vector<int> node_neighbors;
+//     int steps = 0;
+//     nodes.resize(map.data.size());
+//     if(diagonal_paths)
+//         node_neighbors.resize(8);
+//     else
+//         node_neighbors.resize(4);
+//     std::priority_queue<Node*, std::vector<Node*>, CompareByFValue>   open_list;
+//     for(size_t i=0;  i < map.data.size(); i++)
+// 	nodes[i].index = i;
+
+//     current_node = &nodes[idx_start];
+//     current_node->g_value      = 0;
+//     current_node->in_open_list = true;    
+//     open_list.push(current_node);
+    
+//     while(!open_list.empty() && current_node->index != idx_goal)
+//     {
+        
+//             current_node = open_list.top();  
+//             open_list.pop();                   
+//             current_node->in_closed_list = true;
+
+//             node_neighbors[0] = current_node->index + map.info.width;
+//             node_neighbors[1] = current_node->index + 1;
+//             node_neighbors[2] = current_node->index - map.info.width;
+//             node_neighbors[3] = current_node->index - 1;
+//             if(diagonal_paths)
+//             {
+//                 node_neighbors[4] = current_node->index + map.info.width + 1;
+//                 node_neighbors[5] = current_node->index + map.info.width - 1;
+//                 node_neighbors[6] = current_node->index - map.info.width + 1;
+//                 node_neighbors[7] = current_node->index - map.info.width - 1;
+//             }
+           
+//             for(size_t i=0; i < node_neighbors.size(); i++)
+//             {
+//                 if(map.data[node_neighbors[i]] != 0 || nodes[node_neighbors[i]].in_closed_list)
+//                     continue;
+           
+//                 Node* neighbor = &nodes[node_neighbors[i]];
+//                 float delta_g = i < 4 ? 1.0 : 1.414213562;
+//                 float g_value = current_node->g_value + (i < 4 ? 1.0 : 1.414213562) + cost_map.data[node_neighbors[i]];
+//                 float h_value;
+//                 int   h_value_x = node_neighbors[i]%map.info.width - idx_goal_x;
+//                 int   h_value_y = node_neighbors[i]/map.info.width - idx_goal_y;
+//                 if(diagonal_paths)
+//                     h_value = sqrt(h_value_x*h_value_x + h_value_y*h_value_y);
+//                 else
+//                     h_value = fabs(h_value_x) + fabs(h_value_y);
+                
+//                 if(g_value < neighbor->g_value)
+//                 {
+//                     neighbor->g_value = g_value;
+//                     neighbor->f_value = g_value + h_value;
+//                     neighbor->parent  = current_node;
+//                 }
+
+//                 if(!neighbor->in_open_list)
+//                 {
+//                     neighbor->in_open_list = true;
+//                     open_list.push(neighbor);
+//                 }
+//             }
+//             steps++;
+        
+//     }
+//     std::cout << "PathPlanner.->A* Algorithm ended after " << steps << " steps" << std::endl;
+
+//     if(current_node->index != idx_goal)
+// 	return false;
+    
+//     result_path.header.frame_id = frame_id;
+//     result_path.poses.clear();
+//     geometry_msgs::PoseStamped p;
+//     p.header.frame_id = frame_id;
+//     while(current_node->parent != NULL)
+//     {
+// 	p.pose.position.x = current_node->index % map.info.width * map.info.resolution + map.info.origin.position.x;	
+// 	p.pose.position.y = current_node->index / map.info.width * map.info.resolution + map.info.origin.position.y;
+// 	result_path.poses.insert(result_path.poses.begin(), p);
+// 	current_node = current_node->parent;
+//     }
+    
+//     std::cout << "PathCalculator.->Resulting path by A* has " << result_path.poses.size() << " points." << std::endl;
+//     return true;
+// }
+
+bool PathPlanner::AStar(nav_msgs::OccupancyGrid& map, nav_msgs::OccupancyGrid& cost_map, geometry_msgs::Pose& start_pose, 
+                        geometry_msgs::Pose& goal_pose, bool diagonal_paths, nav_msgs::Path& result_path, std::string frame_id)
 {
     std::cout << "PathCalculator.-> Calculating by A* from " << start_pose.position.x << "  ";
     std::cout << start_pose.position.y << "  to " << goal_pose.position.x << "  " << goal_pose.position.y << std::endl;
 
-    int idx_start_x;
-    int idx_start_y;
-    int idx_goal_x;
-    int idx_goal_y;
-    idx_start_y = (int)((start_pose.position.y - map.info.origin.position.y)/map.info.resolution);
-    idx_start_x = (int)((start_pose.position.x - map.info.origin.position.x)/map.info.resolution);
-    idx_goal_y  = (int)((goal_pose.position.y  - map.info.origin.position.y)/map.info.resolution);
-    idx_goal_x  = (int)((goal_pose.position.x  - map.info.origin.position.x)/map.info.resolution);
-    int idx_start = idx_start_y*map.info.width + idx_start_x;
-    int idx_goal  = idx_goal_y *map.info.width + idx_goal_x;
-
-    if(map.data[idx_goal] != 0)
+    int start_x   = (int)((start_pose.position.x - map.info.origin.position.x)/map.info.resolution);
+    int start_y   = (int)((start_pose.position.y - map.info.origin.position.y)/map.info.resolution);
+    int goal_x    = (int)((goal_pose.position.x  - map.info.origin.position.x)/map.info.resolution);
+    int goal_y    = (int)((goal_pose.position.y  - map.info.origin.position.y)/map.info.resolution);
+    int idx_start = start_y*map.info.width + start_x;
+    int idx_goal  = goal_y *map.info.width + goal_x;
+    std::cout << "Start idx=" << idx_start << "  Goal idx=" << idx_goal << std::endl;
+    if(map.data[idx_goal] > 20)
     {
         std::cout << "PathPlanner.->Goal point is inside non-free space!!!!" << std::endl;
         return false;
     }
-    if(map.data[idx_start] != 0)
+    if(map.data[idx_start] > 20)
     {
         std::cout << "PathPlanner.->Start point is inside non-free space!!!!" << std::endl;
         return false;
     }
 
+    //std::cout << "Points start and end inside valid spaces" << std::endl;
     std::vector<Node> nodes;
     Node* current_node; 
-    std::vector<int> node_neighbors;
     int steps = 0;
     nodes.resize(map.data.size());
-    if(diagonal_paths)
-        node_neighbors.resize(8);
-    else
-        node_neighbors.resize(4);
+    int adjacents[8][2] = {{1,0},{0,1},{-1,0},{0,-1},{1,1},{-1,1},{-1,-1},{1,-1}};
+    size_t adjacent_n = diagonal_paths ? 8 : 4;
+    
+
     std::priority_queue<Node*, std::vector<Node*>, CompareByFValue>   open_list;
     for(size_t i=0;  i < map.data.size(); i++)
-	nodes[i].index = i;
-
+        nodes[i].index = i;
     current_node = &nodes[idx_start];
     current_node->g_value      = 0;
     current_node->in_open_list = true;    
     open_list.push(current_node);
-    
+
+    //std::cout << "Starting main while loop"  << std::endl;
     while(!open_list.empty() && current_node->index != idx_goal)
     {
-        
-            current_node = open_list.top();  
-            open_list.pop();                   
-            current_node->in_closed_list = true;
-
-            node_neighbors[0] = current_node->index + map.info.width;
-            node_neighbors[1] = current_node->index + 1;
-            node_neighbors[2] = current_node->index - map.info.width;
-            node_neighbors[3] = current_node->index - 1;
-            if(diagonal_paths)
+        current_node = open_list.top();
+        open_list.pop();
+        current_node->in_closed_list = true;
+        //std::cout << "Step: " << steps << std::endl;
+        for(size_t i=0; i < adjacent_n; i++)
+        {
+            //std::cout << "Checking neighbours..." << std::endl;
+            int row = current_node->index / map.info.width + adjacents[i][1];
+            int col = current_node->index % map.info.width + adjacents[i][0];
+            if(row < 0 || row >= map.info.height || col < 0 || col >= map.info.width) //Cells outside map
+                continue;
+            int n = row*map.info.width + col;
+            //std::cout << "Checking node " << n << std::endl;
+            if(map.data[n] > 20 || map.data[n] < 0 || nodes[n].in_closed_list) //Cell in closed list, or occupied or unknown
+                continue;
+            //std::cout << "Valid neighbour" << std::endl;
+            Node* neighbor = &nodes[n];
+            float g_value = current_node->g_value + (i < 4 ? 1.0 : 1.414213562f) + cost_map.data[n];
+            float h_value = sqrt((row - goal_y)*(row - goal_y) + (col - goal_x)*(col - goal_x));
+            if(g_value < neighbor->g_value)
             {
-                node_neighbors[4] = current_node->index + map.info.width + 1;
-                node_neighbors[5] = current_node->index + map.info.width - 1;
-                node_neighbors[6] = current_node->index - map.info.width + 1;
-                node_neighbors[7] = current_node->index - map.info.width - 1;
+                neighbor->g_value = g_value;
+                neighbor->f_value = g_value + h_value;
+                neighbor->parent  = current_node;
             }
-           
-            for(size_t i=0; i < node_neighbors.size(); i++)
+            if(!neighbor->in_open_list)
             {
-                if(map.data[node_neighbors[i]] != 0 || nodes[node_neighbors[i]].in_closed_list)
-                    continue;
-           
-                Node* neighbor = &nodes[node_neighbors[i]];
-                float delta_g = i < 4 ? 1.0 : 1.414213562;
-                float g_value = current_node->g_value + (i < 4 ? 1.0 : 1.414213562) + cost_map.data[node_neighbors[i]];
-                float h_value;
-                int   h_value_x = node_neighbors[i]%map.info.width - idx_goal_x;
-                int   h_value_y = node_neighbors[i]/map.info.width - idx_goal_y;
-                if(diagonal_paths)
-                    h_value = sqrt(h_value_x*h_value_x + h_value_y*h_value_y);
-                else
-                    h_value = fabs(h_value_x) + fabs(h_value_y);
-                
-                if(g_value < neighbor->g_value)
-                {
-                    neighbor->g_value = g_value;
-                    neighbor->f_value = g_value + h_value;
-                    neighbor->parent  = current_node;
-                }
-
-                if(!neighbor->in_open_list)
-                {
-                    neighbor->in_open_list = true;
-                    open_list.push(neighbor);
-                }
+                neighbor->in_open_list = true;
+                open_list.push(neighbor);
             }
-            steps++;
-        
-    }
+        }
+        steps++;
+    }    
     std::cout << "PathPlanner.->A* Algorithm ended after " << steps << " steps" << std::endl;
-
     if(current_node->index != idx_goal)
-	return false;
+        return false;
     
-    result_path.header.frame_id = "map";
+    result_path.header.frame_id = frame_id;
     result_path.poses.clear();
     geometry_msgs::PoseStamped p;
-    p.header.frame_id = "map";
+    p.header.frame_id = frame_id;
     while(current_node->parent != NULL)
     {
-	p.pose.position.x = current_node->index % map.info.width * map.info.resolution + map.info.origin.position.x;	
-	p.pose.position.y = current_node->index / map.info.width * map.info.resolution + map.info.origin.position.y;
-	result_path.poses.insert(result_path.poses.begin(), p);
-	current_node = current_node->parent;
+        p.pose.position.x = current_node->index % map.info.width * map.info.resolution + map.info.origin.position.x;	
+        p.pose.position.y = current_node->index / map.info.width * map.info.resolution + map.info.origin.position.y;
+        result_path.poses.insert(result_path.poses.begin(), p);
+        current_node = current_node->parent;
     }
+
     
     std::cout << "PathCalculator.->Resulting path by A* has " << result_path.poses.size() << " points." << std::endl;
     return true;
@@ -120,10 +218,7 @@ bool PathPlanner::AStar(nav_msgs::OccupancyGrid& map, nav_msgs::OccupancyGrid& c
 
 nav_msgs::Path PathPlanner::SmoothPath(nav_msgs::Path& path, float weight_data, float weight_smooth, float tolerance)
 {
-    nav_msgs::Path newPath;
-    for(int i=0; i< path.poses.size(); i++)
-        newPath.poses.push_back(path.poses[i]);
-    newPath.header.frame_id = "map";   
+    nav_msgs::Path newPath = path;
     if(path.poses.size() < 3)  return newPath;
     int attempts = 0;
     tolerance *= path.poses.size();

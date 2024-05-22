@@ -65,7 +65,7 @@ bool callback_a_star_with_augmented_map(nav_msgs::GetPlan::Request& req, nav_msg
 bool callback_a_star_local_grid(navig_msgs::PlanPath::Request& req, navig_msgs::PlanPath::Response& resp)
 {
     std::cout << "PathPlanner.-> Received path planning request using local grid map..." << std::endl;
-    bool success = PathPlanner::AStar(req.grid_map, req.grid_map, req.start.pose, req.goal.pose, true, resp.plan);
+    bool success = PathPlanner::AStar(req.grid_map, req.grid_map, req.start.pose, req.goal.pose, true, resp.plan, req.grid_map.header.frame_id);
     if(success)
         resp.plan = PathPlanner::SmoothPath(resp.plan, smooth_alpha, smooth_beta);
     else

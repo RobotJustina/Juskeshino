@@ -72,7 +72,7 @@ void QtRosNode::run()
     pubHumanPoseEnable     = n->advertise<std_msgs::Bool>("/vision/human_pose/enable", 1);
     pubTakeObject          = n->advertise<std_msgs::String>("/plannning/simple_task/take_object", 1);
 
-    pubLegFinderEnable     = n->advertise<std_msgs::Bool>("/hri/leg_finder/enable", 1);
+    //pubLegFinderEnable     = n->advertise<std_msgs::Bool>("/hri/leg_finder/enable", 1);
     pubFollowHumanEnable   = n->advertise<std_msgs::Bool>("/hri/human_following/enable", 1);
     
     int pub_zero_counter = 5;
@@ -517,6 +517,6 @@ void QtRosNode::publish_enable_human_following(bool enable)
 {
     std_msgs::Bool msg;
     msg.data = enable;
-    pubLegFinderEnable.publish(msg);
+    //pubLegFinderEnable.publish(msg);
     pubFollowHumanEnable.publish(msg);
 }
