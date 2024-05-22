@@ -29,7 +29,7 @@ from object_classification.srv import *
 from face_recog.msg import *
 from face_recog.srv import *
 #
-from human_detector.srv import Human_detector, Human_detectorResponse
+from human_detector.srv import Human_detector, Human_detectorResponse, Human_detectorRequest 
 from human_detector.srv import Point_detector, Point_detectorResponse
 #
 from hmm_navigation.msg import NavigateAction, NavigateActionGoal, NavigateActionFeedback, NavigateActionResult
@@ -40,6 +40,7 @@ import time
 from receptionist_knowledge import *
 import trajectory_msgs.msg  # HAND point
 import pandas as pd
+
 
 
 class Talker():
@@ -548,19 +549,22 @@ def get_keywords_speech(timeout=5):
 
 
 #------------------------------------------------------
-def detect_human_to_tf():
-    humanpose = human_detect_server.call()
-    
-    norm = np.linalg.norm(np.asarray([humanpose.x, humanpose.y, humanpose.z]))
-    if (norm < 0.1):
-        print(np.asarray((humanpose.x, humanpose.y, humanpose.z)))
+def detect_human_to_tf(dist = 6):
+    req = Human_detectorRequest()
+    req.dist = dist
+    humanpose=human_detect_server(req)
+    #print ("humanpose",humanpose)
+    if (np.asarray((humanpose.x,humanpose.y,humanpose.z)).all()== np.zeros(3).all()):
+        #print ("ASARRAY",np.asarray((humanpose.x,humanpose.y,humanpose.z)))
         return False
     else:
-        tf_man.pub_static_tf(np.asarray((humanpose.x, humanpose.x, humanpose.z)), point_name='human', ref='camera_rgb_optical_frame') #  Take: head_rgbd_sensor_link
-        succ = tf_man.change_ref_frame_tf('human')
-        print("change_ref_frame_tf", succ)
-        if succ: print(humanpose)
-        return True
+        tf_man.pub_static_tf(np.asarray((humanpose.x,humanpose.x,humanpose.z)),point_name='human', ref='head_rgbd_sensor_link')
+        rospy.sleep(0.5)
+        succ=tf_man.change_ref_frame_tf('human')
+        rospy.sleep(0.5)
+        #print("SUCC?", succ)
+        return succ
+
 
 
 # ------------------------------------------------------
