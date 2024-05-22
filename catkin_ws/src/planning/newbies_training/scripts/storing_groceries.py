@@ -12,6 +12,9 @@ from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
 from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
 from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 from sensor_msgs.msg import LaserScan
+
+DESK = "desk_justina"
+SIMUL_DESK = 'simul_desk' 
 # TODO
     # 1. WAIT FOR THE DOOR TO OPEN         
     # 2. NAVIGATE TO THE TESTING AREA (TABLE)
@@ -39,7 +42,7 @@ class Wait_for_the_door(smach.State):
             rospy.logwarn('\n--> STATE 1 <: Wait for the door opened')
 
             #JuskeshinoHRI.say("Door is closed. Waiting for door to open")
-            print("Door is closed. Waiting for door to open")
+            print("Waiting for door")
             rospy.sleep(2.5)
 
 
@@ -65,8 +68,10 @@ class Navigate_to_table(smach.State):
         self.counter += 1
         if self.counter==1:
             rospy.logwarn('\n--> STATE 2 <: Reaching the table')
+            JuskeshinoNavigation.getClose(DESK, 120)#real
+            #JuskeshinoNavigation.getClose('simul_desk', 120) #simul
             JuskeshinoHRI.say(" I am moving to the table")
-            JuskeshinoNavigation.getClose(location, 300)
+            return 'succed'
             #JuskeshinoNavigation.
 class Find_table(smach.State):
     def __init__(self):
@@ -88,6 +93,19 @@ class Find_table(smach.State):
             else:
                 print(response)
                 return'succed'
+# class Recognize_objects(smach.State):
+#     def __init__(self):
+#         smach.State.__init__(self, 
+#                             outcomes=['succed', 'failed'],
+#                             output_keys=['object_output'])
+#         self.counter = 0
+
+#         # The input and output data of a state is called 'userdata'
+#     def execute(self,userdata):
+#         self.counter += 1
+#         if self.counter==1:
+        
+
 
 def main():
     rospy.init_node("storing_groceries")
@@ -122,13 +140,15 @@ def main():
         transitions={'failed':'NAVIGATE_TO_TABLE', 
                      'succed':'FIND_TABLE'})
         smach.StateMachine.add('FIND_TABLE',Find_table(), 
-        transitions={'failed':'FIND_TABLE', 
+        transitions={'failed':'NAVIGATE_TO_TABLE', 
                      'succed':'END'})                 
-        
+        # smach.StateMachine.add('RECOGNIZE_OBJ',Recognize_objects(), 
+        # transitions={'failed':'RECOGNIZE_OBJ', 
+        #              'succed':'END'})
   
     # Execute SMACH plan
     outcome = sm.execute()
-
+    
     recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
     for obj in recog_objects:
         print(obj.id)
@@ -137,14 +157,13 @@ def main():
         x,y,z = obj.pose.position.x, obj.pose.position.y, obj.pose.position.z
         x,y,z = JuskeshinoSimpleTasks.transformPoint(x,y,z, "shoulders_left_link", "base_link")
         print(x,y,z)
-        PREPARE_TOP_GRIP  = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
+        PREPARE_TOP_GRIP = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
         JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)  # prepare 
         response=JuskeshinoManipulation.laIk([x,y,z,0,-1.5,0])
 
-        #[response, success] = JuskeshinoManipulation.GripLa(obj)
+                #[response, success] = JuskeshinoManipulation.GripLa(obj)
         print(response)
+    
     
 if __name__ == "__main__":
     main()
-
-
