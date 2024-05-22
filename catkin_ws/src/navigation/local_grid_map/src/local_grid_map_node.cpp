@@ -94,7 +94,7 @@ void update_local_grid_lidar(nav_msgs::OccupancyGrid& map, sensor_msgs::LaserSca
         float angle = msg.angle_min + i*msg.angle_increment;
         Eigen::Vector3d v(msg.ranges[i]*cos(angle), msg.ranges[i]*sin(angle), 0);
         v = tf * v;
-        if(v.x() > footprint_min_x && v.x() < footprint_max_x && v.y() > footprint_min_y && v.y() > footprint_max_y)
+        if(v.x() > footprint_min_x && v.x() < footprint_max_x && v.y() > footprint_min_y && v.y() < footprint_max_y)
             continue;
         if(v.x() > min_x && v.x() < max_x && v.y() > min_y && v.y() < max_y && v.z() > min_z && v.z() < max_z)
         {
@@ -117,7 +117,7 @@ void update_local_grid_cloud(nav_msgs::OccupancyGrid& map, sensor_msgs::PointClo
     {
         Eigen::Vector3d v(*((float*)(p)), *((float*)(p+4)), *((float*)(p+8)));
         v = tf * v;
-        if(v.x() > footprint_min_x && v.x() < footprint_max_x && v.y() > footprint_min_y && v.y() > footprint_max_y)
+        if(v.x() > footprint_min_x && v.x() < footprint_max_x && v.y() > footprint_min_y && v.y() < footprint_max_y)
             continue;
         if(v.x() > min_x && v.x() < max_x && v.y() > min_y && v.y() < max_y && v.z() > min_z && v.z() < max_z)
         {

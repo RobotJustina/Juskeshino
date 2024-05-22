@@ -9,8 +9,12 @@ from juskeshino_tools.JuskeshinoSimpleTasks import JuskeshinoSimpleTasks
 from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
 from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
 from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
-from std_msgs.msg import Bool, Float32
+from std_msgs.msg import Bool, Float32, Header
 from vision_msgs.msg import HumanCoordinatesArray
+from geometry_msgs.msg import Point, PointStamped
+import math 
+
+detected = False
 
 def get_by_name(data, goal):
     for human in data.coordinates_array:
@@ -30,7 +34,25 @@ def get_by_name(data, goal):
         print(name)
     return [None, None, None]
 
+def intersect_points_ground(p1, p2):
+    line = [
+            p2[0]-p1[0],
+            p2[1]-p1[1],
+            p2[2]-p1[2],
+            ]
+    t = -p1[2]/line[2]
+    intersection = [
+            p1[0] + t * line[0],
+            p1[1] + t * line[1]
+            ,
+            0
+            ]
+    return intersection
+
 def human_callback(data):
+    global point_publisher, detected
+    if detected:
+        return data
     r_elb = get_by_name(data, "r_elb")
     r_sho = get_by_name(data, "r_sho")
     r_wri = get_by_name(data, "r_wri")
@@ -40,33 +62,69 @@ def human_callback(data):
     l_wri = get_by_name(data, "l_wri")
     l_hip = get_by_name(data, "l_hip")
     neck = get_by_name(data, "neck")
-    x_mean = (neck[2] + r_hip[2] + l_hip[2]) / 3
+    """
+    if(
+            None in r_elb or
+            None in r_sho or
+            None in r_wri or
+            None in r_hip or
+    """
+    try:
+        x_mean = (neck[2] + r_hip[2] + l_hip[2]) / 3
+    except:
+        print("NO HUMAN POSES DETECTED")
+        return
     delta_r = r_wri[0] - x_mean
     delta_l = l_wri[0] - x_mean
     print(x_mean)
     if delta_r > delta_l:
         print("Right wrist's farest")
+        intersect = intersect_points_ground(
+                r_sho,
+                r_wri
+                )
+        print(intersect)
+        point = Point()
+        pointStamped = PointStamped()
+        point.x = intersect[0]
+        point.y = intersect[1]
+        point.z = intersect[2]
+        pointStamped.point = point
+        h = Header()
+        h.stamp = rospy.Time.now()
+        h.frame_id = 'camera_rgb_optical_frame'
+        pointStamped.header = h
+        point_publisher.publish(pointStamped)
+        print(point)
+        #JuskeshinoHardware.moveHead(-0.5,0, 5)
+        JuskeshinoHardware.moveHead(math.tan(r_wri[1]/r_wri[2]),math.tan(r_wri[0]/r_wri[2]), 5)
+        detected = True
     elif delta_l > delta_r:
         print("Left wrist's farest")
+        intersect = intersect_points_ground(
+                l_sho,
+                l_wri
+                )
+        point = Point()
+        pointStamped = PointStamped()
+        point.x = intersect[0]
+        point.y = intersect[1]
+        point.z = intersect[2]
+        pointStamped.point = point
+        h = Header()
+        h.stamp = rospy.Time.now()
+        h.frame_id = 'camera_rgb_optical_frame'
+        pointStamped.header = h
+        point_publisher.publish(pointStamped)
+        print(point)
+        #JuskeshinoHardware.moveHead(0.5,0, 5)
+        JuskeshinoHardware.moveHead(math.tan(l_wri[1]/l_wri[2]),math.tan(l_wri[0]/l_wri[2]), 5)
+        detected = True
     else:
         print("IDK")
-    """
-    print(
-            [
-                r_elb,
-                r_sho,
-                r_wri,
-                r_hip,
-                l_elb,
-                l_sho,
-                l_wri,
-                l_hip,
-                neck
-                ]
-            )
-    """
 
 def main():
+    global point_publisher
     rospy.init_node("carry_my_luggage")
     rate = rospy.Rate(10)
     rospack = rospkg.RosPack()
@@ -77,7 +135,16 @@ def main():
     JuskeshinoHRI.setNodeHandle()
     JuskeshinoManipulation.setNodeHandle()
     JuskeshinoKnowledge.setNodeHandle()
-    rospy.Subscriber("/vision/human_pose/human_pose_array", HumanCoordinatesArray, human_callback)
+    rospy.Subscriber(
+            "/vision/human_pose/human_pose_array",
+            HumanCoordinatesArray,
+            human_callback
+            )
+    point_publisher = rospy.Publisher(
+            "/newbies/pointing_site",
+            PointStamped,
+            queue_size = 1
+            )
     rospy.spin()
 
 if __name__ == "__main__":

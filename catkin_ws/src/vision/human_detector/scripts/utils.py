@@ -8,7 +8,7 @@ from cv_bridge import CvBridge
 from object_classification.srv import *
 import tf2_ros    
 from segmentation.msg import *
-
+from glob import glob
 import numpy as np
 import ros_numpy
 import os
@@ -17,7 +17,7 @@ import cv2
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from geometry_msgs.msg import TransformStamped, Pose
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
-from utils.misc_utils import *
+#from utils.misc_utils import *
 
 #-----------------------------------------------------------------
 global tf_listener, ptcld_lis, broadcaster , bridge , net
@@ -57,6 +57,7 @@ def write_tf(pose, q, child_frame , parent_frame='map'):
     t.transform.rotation.z = q[2]
     t.transform.rotation.w = q[3]
     return t
+
 #-----------------------------------------------------------------
 def read_tf(t):
     pose=np.asarray((
@@ -74,8 +75,6 @@ def read_tf(t):
     return pose, quat
 
 #-----------------------------------------------------------------
-
-
 def probmap_to_3d_mean(points_data,probMap, thres_prob=0.3):
     ##Prob map to 3d point
 
@@ -101,15 +100,19 @@ def probmap_to_3d_mean(points_data,probMap, thres_prob=0.3):
         cent=np.zeros(3)
     return cent
 
-
-def detect_human(points_msg):
+#-----------------------------------------------------------------
+def detect_human(points_msg,dist = 6):
     points_data = ros_numpy.numpify(points_msg)    
-    image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
-    image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+
+    image, masked_image = removeBackground(points_msg, dist)
     #image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
     #rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    #data = len(glob(os.path.join(os.path.expanduser( '~' )+"/Documentos","*"))) # cambiar a Documents si esta en ingles 
+    #cv2.imwrite(os.path.expanduser( '~' )+"/Documentos/maskedImage_"+str(data + 1)+".jpg",masked_image)
+    
+
     print (image.shape)
-    frame=image
+    frame=masked_image
     inHeight = frame.shape[0]
     inWidth = frame.shape[1]
 
@@ -137,8 +140,8 @@ def detect_human(points_msg):
     
     return res    
 
-
-def detect_pointing(points_msg):
+#-----------------------------------------------------------------
+def detect_pointing(points_msg,dist = 6):
     points_data = ros_numpy.numpify(points_msg)    
     image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
     image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
@@ -176,13 +179,13 @@ def detect_pointing(points_msg):
     # left wrist
     res=Human_detectorResponse()
     ##############################
-    tf_man.pub_static_tf(pos=poses[0],point_name='right_elbow', ref='head_rgbd_sensor_rgb_frame')
+    tf_man.pub_static_tf(pos=poses[0],point_name='right_elbow', ref='camera_rgb_optical_frame')
     tf_man.change_ref_frame_tf(point_name='right_elbow')
-    tf_man.pub_static_tf(pos=poses[1],point_name='right_wrist', ref='head_rgbd_sensor_rgb_frame')
+    tf_man.pub_static_tf(pos=poses[1],point_name='right_wrist', ref='camera_rgb_optical_frame')
     tf_man.change_ref_frame_tf(point_name='right_wrist')
-    tf_man.pub_static_tf(pos=poses[2],point_name='left_elbow', ref='head_rgbd_sensor_rgb_frame')
+    tf_man.pub_static_tf(pos=poses[2],point_name='left_elbow', ref='camera_rgb_optical_frame')
     tf_man.change_ref_frame_tf(point_name='left_elbow')
-    tf_man.pub_static_tf(pos=poses[3],point_name='left_wrist', ref='head_rgbd_sensor_rgb_frame')
+    tf_man.pub_static_tf(pos=poses[3],point_name='left_wrist', ref='camera_rgb_optical_frame')
     tf_man.change_ref_frame_tf(point_name='left_wrist')
     wrist_xyz=tf_man.getTF(target_frame='right_wrist')
     elbow_xyz=tf_man.getTF(target_frame='right_elbow')
@@ -210,29 +213,7 @@ def detect_pointing(points_msg):
 
     return res    
 
-
-
-
-#><>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-    i = 0 #Face
-    #i = 1# Neck
-    probMap = output[0, i, :, :]
-    probMap = cv2.resize(probMap, (inWidth, inHeight))
-    cent= probmap_to_3d_mean(points_data,probMap)
-    print (cent)
-    if np.isnan(cent.any()):return Human_detectorResponse()
-    print (cent)
-    if np.isnan(cent.any()):cent=np.zeros(3)
-    res=Human_detectorResponse()
-    res.x= cent[0]
-    res.y= cent[1]
-    res.z= cent[2]
-    
-    return res    
-
-
+#-----------------------------------------------------------------
 def get_points(frame,inHeight,inWidth,output,threshold=0.1):
     
     h=output.shape[2]
@@ -258,7 +239,7 @@ def get_points(frame,inHeight,inWidth,output,threshold=0.1):
 
     return points
 
-
+#-----------------------------------------------------------------
 # IN PROGRESS
 def detect_all(points_msg):
     direct=os.getcwd()
@@ -310,3 +291,23 @@ def detect_all(points_msg):
     cv2.destroyAllWindows()
 
     return Human_detectorResponse() 
+
+#-----------------------------------------------------------------
+# para quitar fondo, es necesario rgbd de la camara del robot
+def removeBackground(points_msg,distance = 2):
+    # Obtengo rgb
+    points_data = ros_numpy.numpify(points_msg)
+    image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
+    rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)    
+
+    # Quito todos los pixeles que esten a una distancia mayor y/o a una distancia menor
+    # Para poder obtener una mascara con ceros y unos
+    zs_no_nans=np.where(~np.isnan(points_data['z']),points_data['z'],10)
+    img_corrected = np.where((zs_no_nans < distance + 0.3),zs_no_nans,0)
+    #img_corrected = np.where((img_corrected >1.5),img_corrected,0)
+    img_corrected = np.where((img_corrected == 0),img_corrected,1)
+
+    # operacion AND entre la imagen original y la mascara para quitar fondo (background)
+    #img_corrected = img_corrected.astype(np.uint8)
+    masked_image = cv2.bitwise_and(rgb_image, rgb_image, mask=img_corrected.astype(np.uint8))
+    return rgb_image, masked_image

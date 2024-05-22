@@ -414,10 +414,10 @@ class TF():
 
 # 3
 class OMNIBASE():
-    def __init__(self, cmd_vel_topic = '/cmd_vel'):  #'/hsrb/command_velocity'):
+    def __init__(self, cmd_vel_topic = '/hardware/mobile_base/cmd_vel'):  #'/hsrb/command_velocity'):    old->cmd_vel
 
-        if robot_real:
-            cmd_vel_topic = '/hardware/mobile_base/cmd_vel'
+        # if robot_real:
+        #     cmd_vel_topic = '/hardware/mobile_base/cmd_vel'
 
         self.timeout = 0.5
         self._base_vel_pub = rospy.Publisher(
@@ -669,7 +669,7 @@ global segmentation_server, tf_man, voice, head, party, tfBuffer, listener
 global robot_real, human_detect_server
 rospy.init_node('smach_justina_tune_vision')
 
-robot_real = True
+robot_real = False
 vosk_enable = False
 bridge = CvBridge()
 rgbd = RGBD()

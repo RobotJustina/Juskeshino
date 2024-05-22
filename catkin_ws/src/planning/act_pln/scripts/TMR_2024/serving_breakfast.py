@@ -11,6 +11,7 @@ from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
 from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
 from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 
+
 # Left arm
 HOME              = [0,0,0,0,0,0,0]
 PREPARE           = [-0.69, 0.2, 0.0, 1.55, 0.0, 1.16, 0.0]
@@ -25,7 +26,7 @@ LEAVE_BOWL        = [0.6,  0.6, -0.8, 1.7, 0, 0.2, 0]
 PREPARE_RA    = [-0.8, -0.1, 0.0, 1.3, 1.3,0, 0.0]
 
 
-MESA_INGREDIENTES ="desk_justina" 
+MESA_INGREDIENTES = "desk_justina" 
 MESA_COMER        = "kitchen"   #desk_takeshi" #"eat_table"
 
 # Gripper_aperture
@@ -88,7 +89,7 @@ def main():
         print("ACT-PLN.->Door never opened")
         return
     
-    pila = ["bowl", "milk", "cereal"] 
+    pila = ["milk", "milk", "cereal"] 
 
     #Inician acciones
     count = 0
@@ -97,6 +98,7 @@ def main():
         print("OBJECT ACTUAL", pila[count])
         actual_obj = pila[count]
         # Ir a locacion de ingredientes
+        
         JuskeshinoHRI.say("I'm going to the "+MESA_INGREDIENTES+" position.")
         print("I'm going to the "+MESA_INGREDIENTES+" position.")
 
@@ -119,7 +121,7 @@ def main():
             print("SB-PLN.->Cannot align with table")
             
         j=0 
-        while j < 1:    
+        while j < 2:    
             # Busqueda y reconocimiento del objeto
             JuskeshinoHRI.say("Trying to detect the object")
             [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj)   #**************************
@@ -135,7 +137,7 @@ def main():
 
             if (obj.pose.position.z > 0.72) and (actual_obj == "bowl"):
                 try:
-                    JuskeshinoHardware.moveTorso(np.linalg.norm(obj.pose.position.z - 0.72) , 5.0)
+                    JuskeshinoHardware.moveTorso(np.linalg.norm(obj.pose.position.z - 0.70) , 5.0)
                     time.sleep(0.5)
                 except:
                     print("Cannot move torso")
@@ -176,11 +178,13 @@ def main():
             else:
                 JuskeshinoHRI.say("No possible poses found")
                 print("SB-PLN.->No possible poses found")
+
+            j = j+1
         
         # Despues de que agarro el objeto va a la mesa del desayuno
         try:
             JuskeshinoHardware.moveTorso(0.02 , 5.0)
-            time.sleep(0.5)
+            time.sleep(1)
         except:
                 print("Cannot move torso")
         print("SB-PLN.->Moving base backwards")     # Se mueve hacia atras para planear la ruta a la mesa del desayuno
@@ -197,7 +201,9 @@ def main():
         JuskeshinoHRI.say("I'm going to the" + MESA_COMER + "location")
         if not JuskeshinoNavigation.getClose(MESA_COMER, 100):  
             print("SB-PLN.->Cannot get close to " + MESA_COMER +" position")
-        JuskeshinoNavigation.moveDist(0.28, 5.0)
+
+        time.sleep(1)
+        JuskeshinoNavigation.moveDist(0.34, 5.0)
         JuskeshinoHRI.say("I have arrived at the" + MESA_COMER + " location")
         time.sleep(1)
         # Se alinea con la mesa
@@ -207,9 +213,9 @@ def main():
             time.sleep(0.5)
             JuskeshinoHardware.moveHead(0,-1, 5)
         time.sleep(1)
-        JuskeshinoHRI.say("Aligning with table")
-        print("SB-PLN.->Aligning with table")
-        JuskeshinoSimpleTasks.alignWithTable()
+        #JuskeshinoHRI.say("Aligning with table")
+        #print("SB-PLN.->Aligning with table")
+        #JuskeshinoSimpleTasks.alignWithTable()
     
         # Coloca objeto sobre la mesa
         print("SB-PLN.->Moving left arm to deliver position")
