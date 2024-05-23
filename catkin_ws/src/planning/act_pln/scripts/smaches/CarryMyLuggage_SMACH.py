@@ -89,7 +89,7 @@ class FindHuman(smach.State):
             print("h_detect:\n", h_detect)
             print("p_h:", p_h)
         else:  # Use catkin_extras version
-            human_pose = detect_human_to_tf()
+            human_pose = detect_human_to_tf(3)
             print("human_pose", human_pose)
 
             if human_pose:

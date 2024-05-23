@@ -58,7 +58,7 @@ def descarte_forced_poses(obj_pose):
     origen = [obj_pose.position.x, obj_pose.position.y, obj_pose.position.z]
     final = [RM[0][2] , RM[1][2], RM[2][2]]
 
-    publish_arow_marker(origen ,final ,"shoulders_left_link" , "VECTOR_Z")
+    #publish_arow_marker(origen ,final ,"shoulders_left_link" , "VECTOR_Z")
 
     # Angulo entre vector z obj y eje x
     angle_z_obj = np.rad2deg(math.atan2(vector_z_obj[1] , vector_z_obj[0]))
@@ -678,8 +678,8 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
             ik_msg.roll = pose_xyzrpy[3]
             ik_msg.pitch = pose_xyzrpy[4]
             ik_msg.yaw = pose_xyzrpy[5]
-            ik_msg.duration = 4
-            ik_msg.time_step = 0.09
+            ik_msg.duration = 5
+            ik_msg.time_step = 0.05
             try:
                 resp_ik_srv = ik_srv(ik_msg)
                 print("Best_Grasp_Node.-> Suitable pose for vertical object found.....................")

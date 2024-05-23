@@ -141,6 +141,7 @@ def detect_human(points_msg,dist = 6):
     image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
     print (image.shape)
     frame=image
+    cv2.imwrite("/home/devan/Documents/"+"borra.jpg",frame)
     inHeight = frame.shape[0]
     inWidth = frame.shape[1]
 

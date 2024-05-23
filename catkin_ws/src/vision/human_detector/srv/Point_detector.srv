@@ -1,4 +1,4 @@
-std_msgs/Empty  Empty
+float64 dist
 ---
 float64 x_r		#World coords w.r.t. map  poiting with right hand
 float64 y_r
