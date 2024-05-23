@@ -346,8 +346,13 @@ void MainWindow::navBtnCalcPath_pressed()
     }
     else
     {
-	this->ui->navTxtStartPose->setText("Invalid format");
-	return;
+	//this->ui->navTxtStartPose->setText("Invalid format");
+	//return;
+        if(!qtRosNode->call_known_location(this->ui->navTxtStartPose->text().toStdString(), startX, startY, startA))
+        {
+            this->ui->navTxtStartPose->setText("Unknown location");
+            return;
+        }
     }
 	
     str = this->ui->navTxtGoalPose->text().toStdString();
@@ -362,35 +367,7 @@ void MainWindow::navBtnCalcPath_pressed()
             this->ui->navTxtGoalPose->setText("Invalid format");
             return;
         }
-    }
-    else
-    {
-	this->ui->navTxtGoalPose->setText("Invalid format");
-	return;
-    }
-
-
-}
-
-void MainWindow::navBtnExecPath_pressed()
-{
-    float goalX = 0;
-    float goalY = 0;
-    float goalA = 0;
-    std::vector<std::string> parts;
-    std::string str = this->ui->navTxtGoalPose->text().toStdString();
-    boost::algorithm::to_lower(str);
-    boost::split(parts, str, boost::is_any_of(" ,\t\r\n"), boost::token_compress_on);
-    if(parts.size() >= 2)
-    {
-        std::stringstream ssGoalX(parts[0]);
-        std::stringstream ssGoalY(parts[1]);
-        if(!(ssGoalX >> goalX) || !(ssGoalY >> goalY))
-        {
-            this->ui->navTxtGoalPose->setText("Invalid format");
-            return;
-        }
-	if(parts.size() >= 3)
+        if(parts.size() >= 3)
 	{
 	    std::stringstream ssGoalA(parts[2]);
 	    if(!(ssGoalA >> goalA))
@@ -402,9 +379,20 @@ void MainWindow::navBtnExecPath_pressed()
     }
     else
     {
-	this->ui->navTxtGoalPose->setText("Invalid format");
-	return;
+	//this->ui->navTxtGoalPose->setText("Invalid format");
+	//return;
+        if(!qtRosNode->call_known_location(this->ui->navTxtGoalPose->text().toStdString(), goalX, goalY, goalA))
+        {
+            this->ui->navTxtGoalPose->setText("Unknown location");
+            return;
+        }
     }
+    qtRosNode->publish_goal_location(goalX, goalY, goalA);
+}
+
+void MainWindow::navBtnExecPath_pressed()
+{
+    this->navBtnCalcPath_pressed();
 }
 
 void MainWindow::torSbPosValueChanged(double d)
@@ -885,28 +873,10 @@ void MainWindow::visRecognizeObjectsClicked()
     qtRosNode->call_recognize_objects();
 }
 
-
-
-
-
-
 void MainWindow::visTakeObjectReturnPressed()
 {
     qtRosNode->call_take_object(ui->tksTxtTakeObject->text().toStdString());
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 void MainWindow::visGetPointsAbovePlaneClicked()

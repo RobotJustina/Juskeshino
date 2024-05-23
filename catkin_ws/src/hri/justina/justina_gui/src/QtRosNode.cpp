@@ -38,6 +38,8 @@ void QtRosNode::run()
 {    
     ros::Rate loop(30);
     pubCmdVel     = n->advertise<geometry_msgs::Twist>("/cmd_vel", 1);
+    pubGoalLoc    = n->advertise<geometry_msgs::PoseStamped>("/move_base_simple/goal", 1);
+    cltKnownLoc   = n->serviceClient<planning_msgs::GetLocation>("/planning/get_known_location");
     
     pubTorso      = n->advertise<std_msgs::Float64>("/hardware/torso/goal_pose", 1);
     pubLaGoalQ    = n->advertise<std_msgs::Float64MultiArray>("/hardware/left_arm/goal_pose", 1);
@@ -107,6 +109,28 @@ void QtRosNode::publish_cmd_vel(float linear_frontal, float linear_lateral, floa
     cmd_vel.linear.y = linear_lateral;
     cmd_vel.angular.z = angular;
     pubCmdVel.publish(cmd_vel);
+}
+
+void QtRosNode::publish_goal_location(float x, float y, float a)
+{
+    geometry_msgs::PoseStamped msg;
+    msg.pose.position.x = x;
+    msg.pose.position.y = y;
+    msg.pose.orientation.w = cos(a/2);
+    msg.pose.orientation.z = sin(a/2);
+    pubGoalLoc.publish(msg);
+}
+
+bool QtRosNode::call_known_location(std::string location, float& x, float& y, float& a)
+{
+    planning_msgs::GetLocation srv;
+    srv.request.name = location;
+    if(!cltKnownLoc.call(srv))
+        return false;
+    x = srv.response.location.pose.position.x;
+    y = srv.response.location.pose.position.y;
+    a = atan2(srv.response.location.pose.orientation.z, srv.response.location.pose.orientation.w)*2;
+    return true;
 }
 
 void QtRosNode::start_publishing_cmd_vel(float linear_frontal, float linear_lateral, float angular)

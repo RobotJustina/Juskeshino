@@ -27,6 +27,7 @@
 #include "vision_msgs/RecognizeObject.h"
 #include "vision_msgs/PreprocessPointCloud.h"
 #include "hri_msgs/RecognizedSpeech.h"
+#include "planning_msgs/GetLocation.h"
 
 class QtRosNode : public QThread
 {
@@ -37,6 +38,9 @@ public:
 
     ros::NodeHandle* n;
     ros::Publisher pubCmdVel;
+    ros::Publisher pubGoalLoc;
+    ros::ServiceClient cltKnownLoc;
+    
     ros::Publisher pubTorso;
     ros::Publisher pubLaGoalQ;
     ros::Publisher pubRaGoalQ;
@@ -89,6 +93,8 @@ public:
     void setNodeHandle(ros::NodeHandle* nh);
 
     void publish_cmd_vel(float linear_frontal, float linear_lateral, float angular);
+    void publish_goal_location(float x, float y, float a);
+    bool call_known_location(std::string location, float& x, float& y, float& a);
     void start_publishing_cmd_vel(float linear_frontal, float linear_lateral, float angular);
     void stop_publishing_cmd_vel();
     void get_robot_pose(float& robot_x, float& robot_y, float& robot_a);

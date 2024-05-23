@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   vision_msgs
   trajectory_msgs
   hri_msgs
+  planning_msgs
 )
 
 find_package(Qt5Widgets REQUIRED)
