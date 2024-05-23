@@ -70,7 +70,18 @@ class JuskeshinoManipulation:
         resp = JuskeshinoManipulation.cltIkRaPose(req)      # Pasa la peticion al servicio de manipulacion y retorna la respuesta
         return resp#.points[-1]
     
-
+    def laIk(cartesian_pose):
+        req = InverseKinematicsPose2TrajRequest()
+        req.x = cartesian_pose[0]
+        req.y = cartesian_pose[1]
+        req.z = cartesian_pose[2]
+        req.roll = cartesian_pose[3]
+        req.pitch = cartesian_pose[4]
+        req.yaw = cartesian_pose[5]
+        req.duration = 7
+        req.time_step = 0.2
+        resp = JuskeshinoManipulation.cltIkLaPose(req)      # Pasa la peticion al servicio de manipulacion y retorna la respuesta
+        return resp#.points[-1]
     
 
     

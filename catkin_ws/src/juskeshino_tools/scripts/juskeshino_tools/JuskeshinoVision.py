@@ -88,6 +88,20 @@ class JuskeshinoVision:
             print("JuskeshinoVision.->Cannot detect and recognize object '" + name + "'")
             return [None, None]
 
+    def getObjectOrientation(obj): #A vision object is expected
+        reqObjPose = RecognizeObjectRequest()
+        reqObjPose.point_cloud = obj.point_cloud
+        reqObjPose.image       = obj.image
+        reqObjPose.obj_mask    = obj.obj_mask
+        respObjPose = JuskeshinoVision.cltGetObjectPose(reqObjPose)
+        newObj = obj;
+        newObj.object_state = respObjPose.recog_object.object_state
+        newObj.category = respObjPose.recog_object.category
+        newObj.graspable = respObjPose.recog_object.graspable
+        newObj.size = respObjPose.recog_object.size
+        newObj.pose = respObjPose.recog_object.pose
+        return newObj
+        
 
     def detectAndRecognizeObjectWithoutOrientation(name):
         req = RecognizeObjectRequest()

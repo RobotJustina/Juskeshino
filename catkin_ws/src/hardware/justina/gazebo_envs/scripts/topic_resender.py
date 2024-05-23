@@ -26,6 +26,8 @@ def callback_joint_state(msg):
     pubHdCurrentPose.publish(hd_msg)
     pubLaCurrentPose.publish(la_msg)
     pubRaCurrentPose.publish(ra_msg)
+    pubLaCurrentGrip.publish(la_current_gripper)
+    pubRaCurrentGrip.publish(ra_current_gripper)
     hd_current_pose = numpy.asarray(hd_msg.data)
     la_current_pose = numpy.asarray(la_msg.data)
     ra_current_pose = numpy.asarray(ra_msg.data)
