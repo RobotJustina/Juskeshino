@@ -424,7 +424,7 @@ int main(int argc, char **argv)
         joint_states.header.stamp = ros::Time::now();
         for(int i=0; i<servo_arm_ids.size(); i++) msg_current_pose.data[i] = joint_states.position[i];
         msg_current_gripper.data  = joint_states.position[servo_arm_ids.size()    ] * servo_gripper_directions[0];
-        msg_current_gripper.data += joint_states.position[servo_arm_ids.size() + 1] * servo_gripper_directions[1];
+        //msg_current_gripper.data += joint_states.position[servo_arm_ids.size() + 1] * servo_gripper_directions[1];
         pub_joint_state.publish(joint_states);
         pub_current_pose.publish(msg_current_pose);
         pub_current_gripper.publish(msg_current_gripper);

@@ -10,19 +10,20 @@ HEAD_TOLERANCE = 0.1
 LEFT_ARM_TOLERANCE  = 0.2
 RIGHT_ARM_TOLERANCE = 0.2
 TORSO_TOLERANCE = 0.1
+LEFT_ARM_GRIPPER_TOLERANCE = 0.02
 
 class JuskeshinoHardware:
     def setNodeHandle():
         print("JuskeshinoHardware.->Setting ros node...")
         JuskeshinoHardware.pubCmdVel     = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
         JuskeshinoHardware.pubTorso      = rospy.Publisher("/hardware/torso/goal_pose", Float64, queue_size=1)
-        JuskeshinoHardware.pubLaGoalQ    = rospy.Publisher("/hardware/left_arm/goal_pose", Float64MultiArray, queue_size=10)
-        JuskeshinoHardware.pubRaGoalQ    = rospy.Publisher("/hardware/right_arm/goal_pose", Float64MultiArray, queue_size=10)
-        JuskeshinoHardware.pubLaGoalTraj = rospy.Publisher("/manipulation/la_q_trajectory", JointTrajectory, queue_size=10)
-        JuskeshinoHardware.pubRaGoalTraj = rospy.Publisher("/manipulation/ra_q_trajectory", JointTrajectory, queue_size=10)
-        JuskeshinoHardware.pubHdGoalQ    = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=10)
-        JuskeshinoHardware.pubLaGoalGrip = rospy.Publisher("/hardware/left_arm/goal_gripper", Float64, queue_size=10)
-        JuskeshinoHardware.pubRaGoalGrip = rospy.Publisher("/hardware/right_arm/goal_gripper", Float64, queue_size=10)
+        JuskeshinoHardware.pubLaGoalQ    = rospy.Publisher("/hardware/left_arm/goal_pose", Float64MultiArray, queue_size=1)
+        JuskeshinoHardware.pubRaGoalQ    = rospy.Publisher("/hardware/right_arm/goal_pose", Float64MultiArray, queue_size=1)
+        JuskeshinoHardware.pubLaGoalTraj = rospy.Publisher("/manipulation/la_q_trajectory", JointTrajectory, queue_size=1)
+        JuskeshinoHardware.pubRaGoalTraj = rospy.Publisher("/manipulation/ra_q_trajectory", JointTrajectory, queue_size=1)
+        JuskeshinoHardware.pubHdGoalQ    = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=1)
+        JuskeshinoHardware.pubLaGoalGrip = rospy.Publisher("/hardware/left_arm/goal_gripper", Float64, queue_size=1)
+        JuskeshinoHardware.pubRaGoalGrip = rospy.Publisher("/hardware/right_arm/goal_gripper", Float64, queue_size=1)
         JuskeshinoHardware.cltPolyTraj   = rospy.ServiceProxy("/manipulation/polynomial_trajectory", GetPolynomialTrajectory)
         loop = rospy.Rate(10)
         counter = 3
@@ -111,7 +112,7 @@ class JuskeshinoHardware:
 
     def moveRightArm(q, timeout):
         JuskeshinoHardware.startMoveRightArm(q)
-        return JuskeshinoHardware.waitForLaGoalReached(timeout)
+        return JuskeshinoHardware.waitForRaGoalReached(timeout)
 
     def moveLeftArmWithTrajectory(q, timeout):
         JuskeshinoHardware.startMoveLeftArmWithTrajectory(q)
@@ -124,14 +125,13 @@ class JuskeshinoHardware:
     def moveLeftGripper(q, timeout):
         msg = Float64()
         msg.data = q
+        JuskeshinoHardware.laGoalGripperPose = q
         JuskeshinoHardware.pubLaGoalGrip.publish(msg)
-        JuskeshinoHardware.pubLaGoalGrip.publish(msg)
-        rospy.sleep(timeout)
+        return JuskeshinoHardware.waitForLaGoalGripperReached(timeout)
 
     def moveRightGripper(q, timeout):
         msg = Float64()
         msg.data = q
-        JuskeshinoHardware.pubRaGoalGrip.publish(msg)
         JuskeshinoHardware.pubRaGoalGrip.publish(msg)
         rospy.sleep(timeout)
 
@@ -172,6 +172,19 @@ class JuskeshinoHardware:
             e = numpy.linalg.norm(current - JuskeshinoHardware.laGoalPose)
             attempts -= 1
         return e <= LEFT_ARM_TOLERANCE
+
+
+    def waitForLaGoalGripperReached(timeout):
+        current = numpy.asarray(rospy.wait_for_message("/hardware/left_arm/current_gripper", Float64, timeout=1.0).data)
+        e = numpy.linalg.norm(current - JuskeshinoHardware.laGoalGripperPose)
+        attempts = int(timeout/0.1)
+        loop = rospy.Rate(10)
+        while (not rospy.is_shutdown() and e > LEFT_ARM_GRIPPER_TOLERANCE and attempts > 0):
+            loop.sleep()
+            current = numpy.asarray(rospy.wait_for_message("/hardware/left_arm/current_gripper", Float64, timeout=1.0).data)
+            e = numpy.linalg.norm(current - JuskeshinoHardware.laGoalGripperPose)
+            attempts -= 1
+        return e <= LEFT_ARM_GRIPPER_TOLERANCE
     
 
     def waitForRaGoalReached(timeout):

@@ -93,7 +93,16 @@ def main():
     JuskeshinoKnowledge.setNodeHandle()
 
     
-    JuskeshinoHRI.say("I'm ready for the test")
+    #JuskeshinoHRI.say("I'm ready for the test")
+    #JuskeshinoHRI.say("I'm waiting for the door to be open")
+
+
+
+
+
+
+
+
     # Esperar a que se abra la puerta
     JuskeshinoHRI.say("I'm waiting for the door to be open")
     print(("I'm waiting for door open"))
@@ -122,16 +131,21 @@ def main():
         # Apunta camara a la mesa
         print("SB-PLN.->move head")
         if not JuskeshinoHardware.moveHead(0,-1, 5):
-            print("SB-PLN.->Cannot move head")
-            time.sleep(1.0)
-            JuskeshinoHardware.moveHead(0,-1, 5)
-            time.sleep(1.0)
-            JuskeshinoHardware.moveHead(0,-1, 5)
+            try:
+                print("SB-PLN.->Cannot move head")
+                time.sleep(1.0)
+                JuskeshinoHardware.moveHead(0,-1, 5)
+                time.sleep(1.0)
+                JuskeshinoHardware.moveHead(0,-1, 5)
+            except:
+                JuskeshinoHRI.say("Cannot move head")
+
         JuskeshinoHRI.say("Align With the Table")
         time.sleep(1)
         # Alinearse con la mesa
         if not JuskeshinoSimpleTasks.alignWithTable():
             print("SB-PLN.->Cannot align with table")
+            JuskeshinoHRI.say("Cannot move head")
             
         j=0 
         while j < 2:    
@@ -177,11 +191,16 @@ def main():
                 print("SB-PLN.->object position", obj.pose.position)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(resp.articular_trajectory,15)
                 print("SB-PLN.->Closing gripper")
+                
                 if (actual_obj == "bowl"):
+                    JuskeshinoHRI.say("close gripper")
+                    time.sleep(0.2)
                     JuskeshinoHardware.moveLeftGripper(GRIP_BOWL , 3.0) 
                 if (actual_obj == "milk"):
+                    time.sleep(0.2)
                     JuskeshinoHardware.moveLeftGripper(GRIP_MILK , 3.0) 
                 if (actual_obj == "cereal"):
+                    time.sleep(0.2)
                     JuskeshinoHardware.moveLeftGripper(GRIP_CEREAL , 3.0) 
 
                 time.sleep(0.5)
