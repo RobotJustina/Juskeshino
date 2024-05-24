@@ -1,6 +1,7 @@
 <launch>
   <arg name="debug" default="False"/>
   <arg name="use_yolo" default="False"/>
+  <arg name="use_vosk" default="False"/>
   
   <param name="base_link_name" value="base_link"/>
   <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
@@ -54,16 +55,15 @@
 
   <include file="$(find surge_et_ambula)/launch/justina/manipulation.launch"/>
 
-  
-
-
   <include file="$(find surge_et_ambula)/launch/justina/vision.launch"> 
     <arg name="debug"         value="$(arg debug)"/> 
     <arg name="training_dir"  value="$(find obj_reco)/training_dir"/>
     <arg name="use_yolo"      value="$(arg use_yolo)"/>
   </include> 
   
-  <include file="$(find surge_et_ambula)/launch/justina/hri.launch"/>
+  <include file="$(find surge_et_ambula)/launch/justina/hri.launch">
+    <arg name="use_vosk" value="$(arg use_vosk)"/>
+  </include>
 
   <include file="$(find surge_et_ambula)/launch/justina/planning.launch">
     <arg name="known_locations" value="$(find config_files)/navigation/known_locations_lab.yaml"/>

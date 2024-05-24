@@ -1,18 +1,21 @@
 <launch>
+  <arg name="use_vosk" default="False"/>
   <node name="sound_play" pkg="sound_play" type="soundplay_node.py" output="screen">
     <remap from="/robotsound" to="/hri/speech_generator"/>
   </node>
 
-  <node name="speech_recog" pkg="sprec_pocketsphinx" type="asr.py" output="screen">
+  <node unless="$(arg use_vosk)" name="speech_recog" pkg="sprec_pocketsphinx" type="asr.py" output="screen">
     <remap from="jsgf_audio" to="sphinx_audio" />
     <param name="gram_file" value="$(find sprec_pocketsphinx)/vocab/gpsr.gram"/>
     <param name="dict_file" value="$(find sprec_pocketsphinx)/vocab/gpsr.dic"/>
     <param name="grammar_name" value="gpsr"/>
     <param name="rule_name" value="receptionist_commands"/>
   </node>
-  <node name="audio_control" pkg="sprec_pocketsphinx" type="send_audio.py" output="screen">
+  <node unless="$(arg use_vosk)" name="audio_control" pkg="sprec_pocketsphinx" type="send_audio.py" output="screen">
     <param name="input" value=":default"/>
   </node>
+
+  <node if="$(arg use_vosk)" name="speech_recog" pkg="ros_whisper_vosk" type="vosk_node.py" output="screen"/>
 
   <node name="leg_finder" pkg="leg_finder" type="leg_finder_node" output="screen">
     <param name="scan_downsampling" value="1"/>

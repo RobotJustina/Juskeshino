@@ -1,5 +1,0 @@
-<launch>
-
-  <node name="vosk_engine" pkg="ros_whisper_vosk" type="vosk_service.py" respawn="true" output="screen" />
-
-</launch>
