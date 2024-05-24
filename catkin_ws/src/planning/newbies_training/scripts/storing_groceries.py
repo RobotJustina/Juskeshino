@@ -99,18 +99,7 @@ class Find_table(smach.State):
                 self.tries = 0
                 return 'failed'
             return'succed'
-class Aligne_wobject(smach.State):
-    def __init__(self):
-        smach.State.__init__(self, 
-                            outcomes=['succed', 'failed'])
-        self.tries = 0
 
-        # The input and output data of a state is called 'userdata'
-    def execute(self,userdata):
-        self.tries += 1
-        if self.tries==1:
-            mov = JuskeshinoSimpleTasks.handling_location(obj, "la")
-            return'succed'
 
 
 class Recognize_objects(smach.State):
@@ -150,6 +139,23 @@ class Recognize_objects(smach.State):
         else:
             print('After 3 tries, I could not detect objects')
             return 'tries'
+class Aligne_wobject(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, 
+                            outcomes=['succed', 'failed'],
+                            input_keys=['object_output','object'])
+        self.tries = 0
+
+        # The input and output data of a state is called 'userdata'
+    def execute(self,userdata):
+        self.tries += 1
+        if self.tries < 4:
+            rospy.logwarn('\n--> STATE 5 <: Picking up the target object, attempt: ' + str(self.tries))
+            obj=userdata.object
+            mov = JuskeshinoSimpleTasks.handling_location(obj, "la")
+            return'succed'
+        print("Cannot aligne robot with object :(")
+        return 'failed'
 
 class Grasp_object(smach.State):
     def __init__(self):
@@ -162,7 +168,7 @@ class Grasp_object(smach.State):
     def execute(self,userdata):
         self.tries += 1
         if self.tries < 4:
-            rospy.logwarn('\n--> STATE 5 <: Picking up the target object, attempt: ' + str(self.tries))
+            rospy.logwarn('\n--> STATE 6 <: Picking up the target object, attempt: ' + str(self.tries))
             obj=userdata.object
             print('Trying to pick: ', obj.id)
             x,y,z=userdata.object_output
@@ -178,7 +184,8 @@ class Grasp_object(smach.State):
                 print("Object position: ", obj.pose.position)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(response.articular_trajectory,10)
                 print("Closing gripper")
-                JuskeshinoHardware.moveLeftGripper(0.3 , 2.0) 
+                JuskeshinoHardware.moveLeftGripper(-0.1 , 3.0) 
+                JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
                 time.sleep(0.5)     
                 return 'succed'
       
@@ -253,10 +260,14 @@ def main():
                      'tries':'RECOGNIZE_OBJ',
                      'None':'RECOGNIZE_OBJ'})
 
+        smach.StateMachine.add('ALIGNE_WITH_OBJ',Aligne_wobject(), 
+        transitions={'failed':'ALIGNE_WITH_OBJ',
+                     'succed':'GRASP_OBJ'})
+
         smach.StateMachine.add('GRASP_OBJ',Grasp_object(), 
         transitions={'failed':'RECOGNIZE_OBJ',
                      'succed':'END',
-                     'None':'RECOGNIZE_OBJ'})
+                     'None':'ALIGNE_WITH_OBJ'})
         
         # smach.StateMachine.add('PICK_OBJ',Pick_object(), 
         # transitions={'failed':'RECOGNIZE_OBJ',
