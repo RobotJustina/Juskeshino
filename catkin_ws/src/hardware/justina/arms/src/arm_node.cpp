@@ -17,7 +17,7 @@
 #define MX_MAX_TORQUE       14
 #define MX_TORQUE_LIMIT     34
 
-#define TORQUE_LIMIT_PERCENTAGE 0.9f
+#define TORQUE_LIMIT_PERCENTAGE 0.7f
 
 #define SM_INIT                      10
 #define SM_WRITE_ARM_POSITION        20 
