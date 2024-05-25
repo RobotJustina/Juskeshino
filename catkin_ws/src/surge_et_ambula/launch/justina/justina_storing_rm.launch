@@ -47,6 +47,7 @@
     <arg name="debug"         value="$(arg debug)"/>
     <arg name="training_dir"  value="$(find obj_reco)/training_simul"/>
   </include>
+
   <include file="$(find surge_et_ambula)/launch/justina/hri.launch"/>
   <include file="$(find surge_et_ambula)/launch/justina/planning.launch">
       <arg name="known_locations" value="$(find config_files)/navigation/known_locations_lab.yaml"/>
