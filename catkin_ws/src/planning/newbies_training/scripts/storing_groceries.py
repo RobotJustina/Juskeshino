@@ -32,7 +32,7 @@ PREPARE_TOP_GRIP  = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
                 #     print("Cannot find the table")
                 # else:
                 # print(response)
-class Wait_for_the_door(smach.State):
+class WaitForTheDoor(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                             outcomes=['succed', 'failed'])
@@ -60,7 +60,7 @@ class Wait_for_the_door(smach.State):
             print("The door is opened")
             return 'succed'
 
-class Navigate_to_table(smach.State):
+class NavigateToTable(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                             outcomes=['succed', 'failed'])
@@ -77,7 +77,7 @@ class Navigate_to_table(smach.State):
             JuskeshinoHRI.say(" I am moving to the table")
             return 'succed'
             #JuskeshinoNavigation.
-class Find_table(smach.State):
+class FindTable(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                             outcomes=['succed', 'failed'])
@@ -102,7 +102,7 @@ class Find_table(smach.State):
 
 
 
-class Recognize_objects(smach.State):
+class RecognizeObjects(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                             outcomes=['succed', 'failed','tries','None'],
@@ -117,10 +117,11 @@ class Recognize_objects(smach.State):
             recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
             rospy.sleep(2.5)
             i=0
-            if not recog_objects == None:        
+            if recog_objects is not None:        
                 #object_id=target_object.id
                 for obj in recog_objects:
-                    target_object=recog_objects[i]
+                    target_object=recog_objects [i]
+                    JuskeshinoHRI.say("Moving arm to prepare")+[i]
                     #i =+ 1
                     print(target_object.id)
                     print(target_object.pose.position)
@@ -139,7 +140,7 @@ class Recognize_objects(smach.State):
         else:
             print('After 3 tries, I could not detect objects')
             return 'tries'
-class Aligne_wobject(smach.State):
+class AlignWithObject(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                             outcomes=['succed', 'failed'],
@@ -157,7 +158,7 @@ class Aligne_wobject(smach.State):
         print("Cannot aligne robot with object :(")
         return 'failed'
 
-class Grasp_object(smach.State):
+class GraspObject(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                             outcomes=['succed', 'failed','None'],
@@ -242,29 +243,29 @@ def main():
 
     with sm:
         # Add states to the container
-        smach.StateMachine.add('WAIT_FOR_THE_DOOR', Wait_for_the_door(), 
+        smach.StateMachine.add('WAIT_FOR_THE_DOOR', WaitForTheDoor(), 
         transitions={'failed':'WAIT_FOR_THE_DOOR', 
                      'succed':'NAVIGATE_TO_TABLE'})
 
-        smach.StateMachine.add('NAVIGATE_TO_TABLE', Navigate_to_table(), 
+        smach.StateMachine.add('NAVIGATE_TO_TABLE', NavigateToTable(), 
         transitions={'failed':'NAVIGATE_TO_TABLE', 
                      'succed':'FIND_TABLE'})
 
-        smach.StateMachine.add('FIND_TABLE',Find_table(), 
+        smach.StateMachine.add('FIND_TABLE',FindTable(), 
         transitions={'failed':'NAVIGATE_TO_TABLE', 
                      'succed':'RECOGNIZE_OBJ'})   
 
-        smach.StateMachine.add('RECOGNIZE_OBJ',Recognize_objects(), 
+        smach.StateMachine.add('RECOGNIZE_OBJ',RecognizeObjects(), 
         transitions={'failed':'FIND_TABLE',
                      'succed':'GRASP_OBJ', 
                      'tries':'RECOGNIZE_OBJ',
                      'None':'RECOGNIZE_OBJ'})
 
-        smach.StateMachine.add('ALIGNE_WITH_OBJ',Aligne_wobject(), 
+        smach.StateMachine.add('ALIGNE_WITH_OBJ',AlignWithObject(), 
         transitions={'failed':'ALIGNE_WITH_OBJ',
                      'succed':'GRASP_OBJ'})
 
-        smach.StateMachine.add('GRASP_OBJ',Grasp_object(), 
+        smach.StateMachine.add('GRASP_OBJ',GraspObject(), 
         transitions={'failed':'RECOGNIZE_OBJ',
                      'succed':'END',
                      'None':'ALIGNE_WITH_OBJ'})
