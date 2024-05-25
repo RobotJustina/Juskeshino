@@ -9,11 +9,15 @@
 #include "tf/transform_broadcaster.h"
 
 #define MX_CURRENT_POSITION 36
-#define MX_GOAL_POSITION 30
-#define MX_MOVING_SPEED 32
-#define MX_TORQUE_ENABLE 24
+#define MX_GOAL_POSITION    30
+#define MX_MOVING_SPEED     32
+#define MX_TORQUE_ENABLE    24
 //#define MX_BITS_PER_RADIAN 651.739491961 //=4095/360*180/PI
-#define MX_CURRENT_VOLTAGE 42
+#define MX_CURRENT_VOLTAGE  42
+#define MX_MAX_TORQUE       14
+#define MX_TORQUE_LIMIT     34
+
+#define TORQUE_LIMIT_PERCENTAGE 0.9f
 
 #define SM_INIT                      10
 #define SM_WRITE_ARM_POSITION        20 
@@ -40,6 +44,8 @@ std::vector<int> servo_directions;                  // = arm directions +  gripp
 std::vector<int> goal_pose_arm_bits;
 std::vector<int> goal_pose_gripper_bits;
 std::vector<int> goal_torque_gripper_bits;
+std::vector<int> torque_limit_arm_bits;
+std::vector<int> torque_limit_gripper_bits;
 std::vector<std::vector<int> >   goal_trajectory_bits;
 trajectory_msgs::JointTrajectory goal_trajectory;
 bool new_arm_pose       = false;
@@ -122,6 +128,20 @@ bool get_current_voltage_bits(dynamixel::GroupBulkRead& groupBulkReadVoltages, s
     current_voltage/= 10*(ids.size());
     return true;
 }
+
+bool get_current_max_torque_bits(dynamixel::GroupBulkRead& groupBulkReadMaxTorque, std::vector<int>& ids, std::vector<int>& current_max_torque)
+{
+    if(groupBulkReadMaxTorque.txRxPacket() != COMM_SUCCESS)
+        return false;
+    for(int i=0; i < ids.size(); i++)
+        if(groupBulkReadMaxTorque.isAvailable(ids[i], MX_MAX_TORQUE, 2))
+            current_max_torque[i] += groupBulkReadMaxTorque.getData(ids[i], MX_MAX_TORQUE, 2);
+        else
+            return false;
+    return true;
+}
+
+
 bool write_goal_position_bits(dynamixel::PortHandler* port, dynamixel::PacketHandler* packet, std::vector<int>& ids, std::vector<int> positions)
 {
     for(int i=0; i < ids.size(); i++)
@@ -134,6 +154,14 @@ bool write_moving_speed_bits(dynamixel::PortHandler* port, dynamixel::PacketHand
 {
     for(int i=0; i < ids.size(); i++)
         if(packet->write2ByteTxOnly(port, ids[i], MX_MOVING_SPEED, moving_speed) != COMM_SUCCESS)
+            return false;
+    return true;
+}
+
+bool write_torque_limit_bits(dynamixel::PortHandler* port, dynamixel::PacketHandler* packet, std::vector<int>& ids, std::vector<int> torque_limit)
+{
+    for(int i = 0; i < ids.size(); i++)
+        if(packet->write2ByteTxOnly(port, ids[i], MX_TORQUE_LIMIT, torque_limit[i]) != COMM_SUCCESS)
             return false;
     return true;
 }
@@ -257,6 +285,7 @@ int main(int argc, char **argv)
     dynamixel::PacketHandler *packetHandler = dynamixel::PacketHandler::getPacketHandler(1.0);
     dynamixel::GroupBulkRead groupBulkReadPosition(portHandler, packetHandler);
     dynamixel::GroupBulkRead groupBulkReadVoltages(portHandler, packetHandler);
+    dynamixel::GroupBulkRead groupBulkReadMaxTorque(portHandler, packetHandler);
     portHandler->setBaudRate(baudrate);
     //Joint arm and gripper servo parameters in one array
     servo_ids        = servo_arm_ids;
@@ -281,6 +310,13 @@ int main(int argc, char **argv)
             std::cout<<prompt <<"Cannot add bulk read voltage param for id=" << servo_ids[i] << std::endl;
             return -1;
         }
+    //Setting parameters for bulk reading current max torque
+    for(int i=0; i < servo_ids.size(); i++)
+        if(!groupBulkReadMaxTorque.addParam(servo_ids[i], MX_MAX_TORQUE, 2))
+        {
+            std::cout << prompt << "Cannot add bulk read max_torque param for id=" << servo_ids[i] << std::endl;
+            return -1;
+        }
     //Reading startup servo positions and setting them as a goal position
     std::vector<int>    current_position_bits;
     current_position_bits.resize(servo_ids.size());
@@ -296,11 +332,24 @@ int main(int argc, char **argv)
         for(int i=0; i<current_position_bits.size(); i++) std::cout << current_position_bits[i] << "  ";
         std::cout << std::endl;
     }
+    std::vector<int> current_max_torque_bits;
+    current_max_torque_bits.resize(servo_ids.size());
+    if(!get_current_max_torque_bits(groupBulkReadMaxTorque, servo_ids, current_max_torque_bits))
+    {
+        std::cout << prompt << "Cannot get max torque from servos..." << std::endl;
+        return -1;
+    }
     goal_pose_arm_bits.resize(servo_arm_ids.size());
     goal_pose_gripper_bits.resize(servo_gripper_ids.size());
     goal_torque_gripper_bits.resize(servo_gripper_ids.size());
-    for(int i=0; i< servo_arm_ids.size(); i++) goal_pose_arm_bits[i] = current_position_bits[i];
-    for(int i=0; i< servo_gripper_ids.size(); i++) goal_pose_gripper_bits[i] = current_position_bits[servo_arm_ids.size() + i];
+
+    torque_limit_arm_bits.resize(servo_arm_ids.size());
+    torque_limit_gripper_bits.resize(servo_gripper_ids.size());
+
+    for(int i=0; i < servo_arm_ids.size(); i++)     goal_pose_arm_bits[i]     = current_position_bits[i];
+    for(int i=0; i < servo_gripper_ids.size(); i++) goal_pose_gripper_bits[i] = current_position_bits[servo_arm_ids.size() + i];
+    for(int i=0; i < servo_arm_ids.size(); i++)     torque_limit_arm_bits[i]  = current_max_torque_bits[i]*TORQUE_LIMIT_PERCENTAGE;
+    for(int i=0; i < servo_gripper_ids.size(); i++) torque_limit_gripper_bits[i]  = current_max_torque_bits[servo_arm_ids.size() + i]*TORQUE_LIMIT_PERCENTAGE; 
     //If torque is enabled, send current position as servo goal position
     if(torque_enable)
     {
@@ -319,6 +368,17 @@ int main(int argc, char **argv)
     {
         std::cout << prompt << "Cannot write moving speed to arms servos" << std::endl;
         return -1;
+    }
+
+    if(!write_torque_limit_bits(portHandler, packetHandler, servo_arm_ids, torque_limit_arm_bits))
+    {
+        std::cout << prompt << "Cannot set arms torque limit on startup" << std::endl;
+        return -1;    
+    }
+    if(!write_torque_limit_bits(portHandler, packetHandler, servo_gripper_ids, torque_limit_arm_bits))
+    {
+        std::cout << prompt << "Cannot set gripper torque limit on startup" << std::endl;
+        return -1;    
     }
     
 
