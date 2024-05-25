@@ -511,7 +511,7 @@ def prism(obj_pose, obj_state):
     else:
         print("Best_Grasp_Node.-> Vertical grip.................")
         for i in range( num_points):   # generación de puntos alrededor del objeto
-            point = np.asarray([ 0, epsilon*np.sin(theta), epsilon*np.cos(theta)  ])
+            point = np.asarray([ 0.02, epsilon*np.sin(theta), epsilon*np.cos(theta)  ])
             #point = points_actual_to_points_target(point, 'object', 'base_link')
             points.append(point)
 

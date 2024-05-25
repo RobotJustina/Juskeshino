@@ -170,14 +170,16 @@ class JuskeshinoSimpleTasks:
                     print("distancia desplazada", mov_izq)
                     mov_izq = mov_izq/2
                     JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
-                    time.sleep(0.5)
+                    time.sleep(0.2)
                     JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
                     return True
                 
                 if position_obj.y < r_threshold_la:
-                    mov_der = position_obj.y - l_threshold_la
-                    print("distancia desplazada", mov_der)
+                    mov_der = position_obj.y - r_threshold_la
+                    print("distancia desplazada*******", mov_der)
                     mov_der = mov_der/2
+                    JuskeshinoNavigation.moveLateral(mov_der , 5.0)
+                    time.sleep(0.2)
                     JuskeshinoNavigation.moveLateral(mov_der , 5.0)
                     return True
                 return False
