@@ -117,7 +117,7 @@ class RecognizeObjects(smach.State):
         # The input and output data of a state is called 'userdata'
     def execute(self,userdata):
         self.tries += 1
-        if self.tries < 4:
+        if self.tries < 20:
             rospy.logwarn('\n--> STATE 4 <: Recognizing objects')
             JuskeshinoHRI.say("Looking for an object")
             recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
@@ -145,7 +145,7 @@ class RecognizeObjects(smach.State):
             print('Cannot detect objects, I will try again...')
             return 'failed'    
         
-        print('After 3 tries, I could not detect objects')
+        print('After a lot of tries, I could not detect objects')
         return 'tries'
     
 class Aligne_wobject(smach.State):
@@ -221,8 +221,8 @@ class TransportObject(smach.State):
             rospy.logwarn('\n--> STATE 7 <: Transporting object to cabinet')
             JuskeshinoHRI.say(" I am moving to the cabinet")
             JuskeshinoHardware.moveHead(0,-1, 5)
-            JuskeshinoNavigation.getClose('cabinet', 120)#real
-            #JuskeshinoNavigation.getClose('simul_desk', 120) #simul
+            JuskeshinoNavigation.getClose('scan_cabinet', 120)#real
+            JuskeshinoHRI.say("Scanning cabinet")
             
             return 'succed'
 
