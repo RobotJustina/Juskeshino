@@ -1,4 +1,4 @@
-import math
+#!/usr/bin/env python3
 import rospy
 import tf
 import numpy as np
@@ -176,8 +176,12 @@ class JuskeshinoSimpleTasks:
                 
                 if position_obj.y < r_threshold_la:
                     mov_der = position_obj.y - r_threshold_la
-                    print("distancia desplazada*******", mov_der)
-                    mov_der = mov_der/2
+                    print("position object:__", position_obj.y)
+                    print("r_threshold_la:___", r_threshold_la)
+                    print("distancia position_obj.y - r_threshold_la", mov_der)
+                    mov_der = mov_der/3
+                    JuskeshinoNavigation.moveLateral(mov_der , 5.0)
+                    time.sleep(0.2)
                     JuskeshinoNavigation.moveLateral(mov_der , 5.0)
                     time.sleep(0.2)
                     JuskeshinoNavigation.moveLateral(mov_der , 5.0)
@@ -218,4 +222,3 @@ class JuskeshinoSimpleTasks:
 
 
         
-

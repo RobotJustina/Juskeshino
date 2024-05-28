@@ -29,14 +29,14 @@ door:
   theta: 0.0
   parent: home
 desk_justina:
-  x: 5.48
+  x: 5.44
   y: 2.15
   theta: 1.5
   parent: home
 desk_takeshi:
- x: 7.05
- y: 1.77
- theta: -0.4
+ x: 6.84
+ y: 1.80
+ theta: -0.1
  parent: home
 desk_backyard:
  x: 9.97

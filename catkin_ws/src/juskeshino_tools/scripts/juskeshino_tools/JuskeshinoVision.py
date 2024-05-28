@@ -109,12 +109,7 @@ class JuskeshinoVision:
         req.name = name
         try:
             resp = JuskeshinoVision.cltDetectRecogObject(req)
-            reqObjPose = RecognizeObjectRequest()
-            reqObjPose.point_cloud = resp.recog_object.point_cloud
-            reqObjPose.image       = resp.recog_object.image
-            reqObjPose.obj_mask    = resp.recog_object.obj_mask
-            respObjPose = JuskeshinoVision.cltGetObjectPoseWithoutOrientation(reqObjPose)
-            return [respObjPose.recog_object, resp.image]
+            return [resp.recog_object, resp.image]
         except:
             print("JuskeshinoVision.->Cannot detect and recognize object '" + name + "'")
             return [None, None]
