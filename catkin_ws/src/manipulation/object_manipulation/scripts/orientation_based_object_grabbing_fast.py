@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import rospy
 import numpy as np
 import tf.transformations as tft
@@ -15,33 +14,8 @@ import geometry_msgs.msg
 MAXIMUM_GRIP_LENGTH = 0.14
 MINIMUM_HEIGHT_PRISM = 0.13
 MAXIMUM_CUBE_SIZE = 0.13
-Z_OFFSET = 0.13
-    
-
-def publish_arow_marker(origen ,final ,frame_id, ns):  
-    p0 = PointStamped()
-    p0.header.frame_id = frame_id
-    p0.point.x , p0.point.y, p0.point.z = origen[0], origen[1], origen[2]
-    p1 = PointStamped()
-    p1.header.frame_id = frame_id
-    p1.point.x , p1.point.y, p1.point.z = final[0], final[1], final[2]
-    frame = frame_id
-    marker = Marker()
-    marker.header.frame_id = frame
-    marker.type = Marker.ARROW
-    marker.ns = ns
-    marker.header.stamp = rospy.Time.now()
-    marker.action = marker.ADD
-    marker.id = 1#+10
-    # body radius, Head radius, hight head
-    marker.scale.x, marker.scale.y, marker.scale.z = 0.02, 0.1, 0.04 
-    marker.color.r , marker.color.g , marker.color.b, marker.color.a = 20, 0.0, 100.0, 1.0
-    point = Point()
-    point.x, point.y, point.z = p0.point.x + p1.x , p0.point.y + p1.y , p0.point.z + p1.z
-    marker.lifetime = rospy.Duration(10.0)
-    marker.points = [p0.point, point]
-    marker.pose.orientation.w = 1.0
-    marker_pub.publish(marker)
+Z_OFFSET = 0.16
+Z_OFFSET_BOWL = 0.22
 
 
 
@@ -61,16 +35,17 @@ def descarte_forced_poses(obj_pose):
     #publish_arow_marker(origen ,final ,"shoulders_left_link" , "VECTOR_Z")
 
     # Angulo entre vector z obj y eje x
-    angle_z_obj = np.rad2deg(math.atan2(vector_z_obj[1] , vector_z_obj[0]))
+    angle_z_obj = abs(np.rad2deg(math.atan2(vector_z_obj[1] , vector_z_obj[0])))
     print("angulo de Z_OBJECT:___",  angle_z_obj)
 
-
-
-    if (angle_z_obj > 140) or (angle_z_obj < -140): 
-        descarte = False
-    else:
+    if (angle_z_obj < 130.0): 
         descarte = True
         print("GraspLa.-> Forced pose discarded")
+        print("DECARTED*****: ", descarte)
+    else:
+        descarte = False
+        print("DECARTED: ", descarte)
+        
 
     return descarte
 
@@ -133,7 +108,7 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
         grip_point_bl = points_actual_to_points_target(grip_point, 'object', 'base_link')
 
         if type_obj == "BOWL":
-            grip_point_bl[2] = grip_point_bl[2] + 0.19
+            grip_point_bl[2] = grip_point_bl[2] + Z_OFFSET_BOWL
 
         else:grip_point_bl[2] = grip_point_bl[2] + Z_OFFSET
 
@@ -784,7 +759,7 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
                     # Ultimo punto de la segunda trayectoria
                     ik_msg.x = pose1[0] 
                     ik_msg.y = pose1[1]
-                    ik_msg.z = pose1[2] - 0.09
+                    ik_msg.z = pose1[2] - 0.03
                     ik_msg.roll = pose1[3]
                     ik_msg.pitch = pose1[4]
                     ik_msg.yaw = pose1[5]
@@ -829,13 +804,10 @@ def callback(req):
     resp = BestGraspTrajResponse()              
     obj_state = req.recog_object.object_state    
 
-    print("Best_Grasp_Node.-> CENTROID:_____ ")
-    print(req.recog_object.pose.position)
-    print("Best_Grasp_Node.-> BB CATEGORY:_____ ")
-    print(req.recog_object.category)  
+    print("Best_Grasp_Node.-> CENTROID:___",req.recog_object.pose.position)
+    print("Best_Grasp_Node.-> BB CATEGORY:___",req.recog_object.category)  
     print("Best_Grasp_Node.-> STATE:_____ ", req.recog_object.object_state)
-    print("Best_Grasp_Node.-> SIZE:_____ ") 
-    print(req.recog_object.size)
+    print("Best_Grasp_Node.-> SIZE:___",req.recog_object.size)
 
     grip_point = [req.recog_object.pose.position.x, req.recog_object.pose.position.y, req.recog_object.pose.position.z]
 
