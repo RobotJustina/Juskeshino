@@ -1,0 +1,6 @@
+<launch>
+
+        <node pkg="newbies_training" type="storing_groceries.py" name="storing_groceries">
+                <param name="categories" value="$(roscd config_files)/groceries_classification_rm.yaml" />
+        </node>
+</launch>

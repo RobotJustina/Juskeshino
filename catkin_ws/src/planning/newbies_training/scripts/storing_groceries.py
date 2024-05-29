@@ -28,7 +28,7 @@ def load_yaml(yaml_file:str):
     return categories
 
 def matching_objects(obj):
-    obj_yaml = load_yaml("/src/config_files/groceries_classification_rm.yaml")
+    obj_yaml = load_yaml(rospy.get_param("~categories"))
     for category, items in obj_yaml.items():
         for item in items:
             if obj.id.lower() == item.lower():
