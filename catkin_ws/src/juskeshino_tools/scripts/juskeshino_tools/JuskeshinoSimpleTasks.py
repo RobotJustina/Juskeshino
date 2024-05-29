@@ -148,7 +148,7 @@ class JuskeshinoSimpleTasks:
         l_threshold_la       = 0.25
         r_threshold_la       = 0.14
         
-        if position_obj.y > l_threshold_la:  s   # Objeto a la izquierda
+        if position_obj.y > l_threshold_la:     # Objeto a la izquierda
             mov_izq = position_obj.y - l_threshold_la
             
             if (abs(mov_izq) <= 0.15):  # desplazamiento lateral
