@@ -1,0 +1,39 @@
+Fruits: 
+  - banana 
+  - apple 
+  - pear
+  - lemon
+  - orange
+  - peach
+  - strawberries
+  - plum
+Drinks:
+  - soda
+  - milk
+Groceries:
+  - pringles
+  - cereal
+  - mustard
+  - tomato_soup
+  - tuna_can
+Kitchen_items:
+  - plate
+  - bleach
+  - mug
+  - spatula
+  - spoon
+  - knife
+  - fork
+  - bowl
+  - cup
+Tool_items:
+  - scissors
+  - keys
+  - hammer
+  - markers
+  - clamp
+Shape_items:
+  - softball
+  - baseball
+  - tennis_ball
+  
