@@ -18,23 +18,20 @@ DESK = "desk_justina"
 SIMUL_DESK = 'simul_desk' 
 PREPARE_TOP_GRIP  = [-0.8, 0.2, 0, 1.55, 0, 1.24, 0]
 
-def load_yaml(yaml_file:str):
-    try:
-        f = open(yaml_file,'r')
-        categories = yaml.safe_load(f)
-    except:
-        categories = {}
-        print("KnownLocations.->Cannot load locations from file " + yaml_file)
-    return categories
 
 def matching_objects(obj):
-    obj_yaml = load_yaml(rospy.get_param("~categories"))
-    for category, items in obj_yaml.items():
-        for item in items:
-            if obj.id.lower() == item.lower():
-                print(f"Detected {obj.id} matches an item in the '{category}' category.")
-                # Do something with the matched object
-            return category    
+    obj_yaml =rospy.get_param("~categories")
+    try:
+        f = open(obj_yaml,'r')
+        data = yaml.safe_load(f)
+    except:
+        data = {}
+        print("KnownLocations.->Cannot load locations from file " + yaml_file)
+    for category, items in data.items():
+        if obj.lower() in [item.lower() for item in items]:
+            rospy.loginfo(f"--->>> Detected {obj} matches an item in the '{category}' category.")
+            # Do something with the matched object
+            return category  
     return False
 # TODO
     # 1. WAIT FOR THE DOOR TO OPEN         
@@ -90,7 +87,7 @@ class NavigateToTable(smach.State):
         # The input and output data of a state is called 'userdata'
     def execute(self,userdata):
         self.tries += 1
-        if self.tries==1:
+        if self.tries<20:
             rospy.logwarn('\n--> STATE 2 <: Reaching the table')
             JuskeshinoHRI.say(" I am moving to the table")
             JuskeshinoHardware.moveHead(0,-1, 5)
@@ -98,6 +95,7 @@ class NavigateToTable(smach.State):
             #JuskeshinoNavigation.getClose('simul_desk', 120) #simul
             
             return 'succed'
+        return 'failed'
             #JuskeshinoNavigation.
 class FindTable(smach.State):
     def __init__(self):
@@ -204,7 +202,7 @@ class AlignWithObject(smach.State):
             rospy.logwarn('\n--> STATE 6 <: I am going to aligne with the object')
             obj=userdata.object
             JuskeshinoHRI.say("I am ready to pick the ",obj.id)
-            JuskeshinoSimpleTasks.handling_location(obj, "la")
+            JuskeshinoSimpleTasks.handling_location_la(obj)
             return'succed'
         print("Cannot aligne robot with object :(")
         return 'failed'
