@@ -156,9 +156,11 @@ class JuskeshinoSimpleTasks:
                 time.sleep(0.2)
                 return True
             else:
-                moveDist(-0.15 , 5.0)
+                JuskeshinoNavigation.moveDist(-0.15 , 5.0)
                 JuskeshinoNavigation.moveDistAngle(0.0 , 1.57, 7.0)
-                moveDist(abs(mov_izq) , 5.0)
+                JuskeshinoNavigation.moveDist(abs(mov_izq) , 5.0)
+                JuskeshinoNavigation.moveDistAngle(0.0 , -1.57, 7.0)
+                JuskeshinoNavigation.moveDist(0.15 , 5.0)
                 return True
 
         if position_obj.y < r_threshold_la:     # Objeto a la derecha
@@ -169,9 +171,11 @@ class JuskeshinoSimpleTasks:
                 time.sleep(0.2)
                 return True
             else:
-                moveDist(-0.15 , 5.0)
+                JuskeshinoNavigation.moveDist(-0.15 , 5.0)
                 JuskeshinoNavigation.moveDistAngle(0.0 , -1.57, 7.0)
-                moveDist(abs(mov_der) , 5.0)
+                JuskeshinoNavigation.moveDist(abs(mov_der) , 5.0)
+                JuskeshinoNavigation.moveDistAngle(0.0 , 1.57, 7.0)
+                JuskeshinoNavigation.moveDist(0.15 , 5.0)
                 return True
             
         return False
