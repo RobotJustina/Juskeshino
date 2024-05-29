@@ -185,8 +185,8 @@ class Classification(smach.State):
             if category:
                 prompt = "I found" + obj.id + " which is part of the category " + category
                 JuskeshinoHRI.say(prompt)
+                print("---------------------I found:", obj.id, "which is part of the category: ", category)
                 return'succed'
-        print("Cannot aligne robot with object :(")
         return 'failed'
     
 class AlignWithObject(smach.State):
@@ -220,7 +220,7 @@ class GraspObject(smach.State):
     def execute(self,userdata):
         self.tries += 1
         if self.tries < 4:
-            rospy.logwarn('\n--> STATE 6 <: Picking up the target object, attempt: ' + str(self.tries))
+            rospy.logwarn('\n--> STATE 7 <: Picking up the target object, attempt: ' + str(self.tries))
             obj=userdata.object
             JuskeshinoHRI.say("I am going to pick the "+ obj.id)
             
@@ -259,7 +259,7 @@ class TransportObject(smach.State):
     def execute(self,userdata):
         self.tries += 1
         if self.tries==1:
-            rospy.logwarn('\n--> STATE 7 <: Transporting object to cabinet')
+            rospy.logwarn('\n--> STATE 8 <: Transporting object to cabinet')
             JuskeshinoHRI.say(" I am moving to the cabinet")
             JuskeshinoHardware.moveHead(0,-1, 5)
             JuskeshinoNavigation.getClose('scan_cabinet', 120)#real
@@ -329,11 +329,15 @@ def main():
 
         smach.StateMachine.add('RECOGNIZE_OBJ',RecognizeObjects(), 
         transitions={'failed':'FIND_TABLE',
-                     'succed':'GRASP_OBJ', 
+                     'succed':'CLASSIFICATION', 
                      'tries':'RECOGNIZE_OBJ'})
+        
+        smach.StateMachine.add('CLASSIFICATION',Classification(), 
+        transitions={'failed':'RECOGNIZE_OBJ',
+                     'succed':'ALIGNE_WITH_OBJ'})
 
         smach.StateMachine.add('ALIGNE_WITH_OBJ',AlignWithObject(), 
-        transitions={'failed':'ALIGNE_WITH_OBJ',
+        transitions={'failed':'FIND_TABLE',
                      'succed':'GRASP_OBJ'})
 
         smach.StateMachine.add('GRASP_OBJ',GraspObject(), 
