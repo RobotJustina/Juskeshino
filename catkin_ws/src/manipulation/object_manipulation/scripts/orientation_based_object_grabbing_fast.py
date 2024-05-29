@@ -15,12 +15,12 @@ MAXIMUM_GRIP_LENGTH = 0.14
 MINIMUM_HEIGHT_PRISM = 0.13
 MAXIMUM_CUBE_SIZE = 0.13
 Z_OFFSET = 0.16
-Z_OFFSET_BOWL = 0.22
+Z_OFFSET_BOWL  = 0.22
+LATERAL_OFFSET = 0.06
 
 
 
 def descarte_forced_poses(obj_pose):   
-    #vector_z_obj = [obj_pose.position.x, obj_pose.position.y]
 
     R, P, Y = tft.euler_from_quaternion([obj_pose.orientation.x ,  # pose expresada en RPY para realizar rotaciones
                                              obj_pose.orientation.y ,
@@ -31,8 +31,6 @@ def descarte_forced_poses(obj_pose):
     
     origen = [obj_pose.position.x, obj_pose.position.y, obj_pose.position.z]
     final = [RM[0][2] , RM[1][2], RM[2][2]]
-
-    #publish_arow_marker(origen ,final ,"shoulders_left_link" , "VECTOR_Z")
 
     # Angulo entre vector z obj y eje x
     angle_z_obj = abs(np.rad2deg(math.atan2(vector_z_obj[1] , vector_z_obj[0])))
@@ -467,10 +465,10 @@ def prism(obj_pose, obj_state):
     obj_centroid = [0,0,0]#np.asarray([obj_pose.position.x , obj_pose.position.y, obj_pose.position.z]) # origen de la circunferencia
     axis_x_candidate = [1,0,0]#np.asarray( [MT[0,0], MT[1,0], MT[2,0]])   # eje x del objeto vector normal al plano que corta al objet
     
-    step_size = np.deg2rad(15)
+    step_size = np.deg2rad(10)
     range_points = np.deg2rad(360)          # rango dentro del cual se generan los candidatos 360 grados
     num_points = int(range_points / step_size) 
-    theta_offset = np.deg2rad(-10)
+    theta_offset = np.deg2rad(0)
     theta = theta_offset
     count = 0
     id = 0
@@ -486,7 +484,7 @@ def prism(obj_pose, obj_state):
     else:
         print("Best_Grasp_Node.-> Vertical grip.................")
         for i in range( num_points):   # generación de puntos alrededor del objeto
-            point = np.asarray([ 0.02, epsilon*np.sin(theta), epsilon*np.cos(theta)  ])
+            point = np.asarray([ 0.0, epsilon*np.sin(theta), epsilon*np.cos(theta)  ])
             #point = points_actual_to_points_target(point, 'object', 'base_link')
             points.append(point)
 
@@ -521,7 +519,7 @@ def prism(obj_pose, obj_state):
             
             grasp_candidates_quaternion.append(candidate_grasp) 
             if debug:
-                #print("vertical_prism"+str(j))
+                print("vertical_prism"+str(j))
                 broadcaster_frame_object('object', 'vertical_prism'+str(j) , candidate_grasp ) 
             j += 1
         print("Best_Grasp_Node.-> number of candidates vertical grip prism", len(grasp_candidates_quaternion))
@@ -602,6 +600,26 @@ def pose_for_ik_service(pose_in_frame_object):
 
 
 
+def trajectory_generator(obj_category, obj_state ,offset_point):
+    print("lll")
+
+
+def ik_msg_response(array_xyzRPY, offsets, initial_guess):
+    ik_msg = InverseKinematicsPose2TrajRequest()
+    ik_msg.x         = array_xyzRPY[0] + offsets[0]
+    ik_msg.y         = array_xyzRPY[1] + offsets[1]
+    ik_msg.z         = array_xyzRPY[2] + offsets[2]
+    ik_msg.roll      = array_xyzRPY[3] + offsets[3]
+    ik_msg.pitch     = array_xyzRPY[4] + offsets[4]
+    ik_msg.yaw       = array_xyzRPY[5] + offsets[5]
+    ik_msg.duration  = 5
+    ik_msg.time_step = 0.05
+    ik_msg.initial_guess = initial_guess
+
+    return ik_msg
+
+
+
     
 def evaluating_possibility_grip(candidate_q_list, obj_state, category):
     """
@@ -610,59 +628,72 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
     """
     global ik_srv
     ik_msg = InverseKinematicsPose2TrajRequest()
+    ik_msg_2 = InverseKinematicsPose2TrajRequest()
     ik_msg_3 = InverseKinematicsPose2TrajRequest()
-
+    first_trajectory  = []
+    second_trajectory = []
 
     if(category == "BOWL"):
-        first_trajectory  = []
-        second_trajectory = []
         second_trajectory  = list(candidate_q_list)
-        first_trajectory = list(reversed(candidate_q_list))
-        candidate_quaternion_list = list(first_trajectory)
-
-        print("tray 1")
-        print(first_trajectory)
-        print("TRAY 2")
-        print(second_trajectory)
+        first_trajectory   = list(reversed(candidate_q_list))
+        candidate_q_list   = list(first_trajectory)
 
     if(category == "CUBIC"):
-        first_trajectory  = []
-        second_trajectory = []
-        second_trajectory  = list(candidate_q_list)
-        first_trajectory = list(candidate_q_list)
-        candidate_quaternion_list = list(first_trajectory)
-
-        print("tray 1")
-        print(first_trajectory)
-        print("TRAY 2")
-        print(second_trajectory)
+        second_trajectory  = list(reversed(candidate_q_list))
+        first_trajectory   = list(reversed(candidate_q_list))
+        candidate_q_list   = list(first_trajectory)
     
         
     print("Best_Grasp_Node.-> evaluating_possibility_grip()")
     i = 0
     for pose1 in candidate_q_list:  # rellena el mensaje para el servicio IK
         if obj_state == "vertical":
-            pose_xyzrpy, new_pos = pose_for_ik_service(pose1)
-            if new_pos == -1: continue
-            descarte =  descarte_forced_poses(new_pos)
-            if descarte: continue
+            if category == "PRISM":
+                pose_xyzrpy, new_pos = pose_for_ik_service(pose1)
+                if new_pos == -1: continue
+                descarte =  descarte_forced_poses(new_pos)
+                if descarte: continue
 
-            ik_msg.x = pose_xyzrpy[0] 
-            ik_msg.y = pose_xyzrpy[1]
-            ik_msg.z = pose_xyzrpy[2]
-            ik_msg.roll = pose_xyzrpy[3]
-            ik_msg.pitch = pose_xyzrpy[4]
-            ik_msg.yaw = pose_xyzrpy[5]
-            ik_msg.duration = 5
-            ik_msg.time_step = 0.05
-            try:
-                resp_ik_srv = ik_srv(ik_msg)
-                print("Best_Grasp_Node.-> Suitable pose for vertical object found.....................")
-                return resp_ik_srv.articular_trajectory , candidate_q_list[i] , pose_xyzrpy, True
-            except:
-                i = i + 1 
-                print("Best_Grasp_Node.-> Discarded candidate")  
-                continue
+                ik_msg.x = pose_xyzrpy[0] 
+                ik_msg.y = pose_xyzrpy[1]
+                ik_msg.z = pose_xyzrpy[2]
+                ik_msg.roll = pose_xyzrpy[3]
+                ik_msg.pitch = pose_xyzrpy[4]
+                ik_msg.yaw = pose_xyzrpy[5]
+                ik_msg.duration = 5
+                ik_msg.time_step = 0.05
+                try:
+                    resp_ik_srv = ik_srv(ik_msg)
+                    print("Best_Grasp_Node.-> Suitable pose for vertical object found.....................")
+                    return resp_ik_srv.articular_trajectory , candidate_q_list[i] , pose_xyzrpy, True
+                except:
+                    i = i + 1 
+                    print("Best_Grasp_Node.-> Discarded candidate")  
+                    continue
+
+            if category == "BOX":
+                pose_xyzRPY , new_pos_box = pose_for_ik_service(pose1)
+                if new_pos_box == -1: continue
+
+                ik_msg_2.x = pose_xyzRPY[0] 
+                ik_msg_2.y = pose_xyzRPY[1]
+                ik_msg_2.z = pose_xyzRPY[2]
+                ik_msg_2.roll = pose_xyzRPY[3]
+                ik_msg_2.pitch = pose_xyzRPY[4]
+                ik_msg_2.yaw = pose_xyzRPY[5]
+                ik_msg_2.duration = 5
+                ik_msg_2.time_step = 0.05
+    
+                try:
+                    resp_ik_srv = ik_srv(ik_msg_2)
+                    print("Best_Grasp_Node.-> Suitable pose for vertical box found.....................")
+                    return resp_ik_srv.articular_trajectory , candidate_q_list[i] , pose_xyzrpy, True
+                except:
+                    i = i + 1 
+                    print("Best_Grasp_Node.-> Discarded candidate")  
+                    continue
+
+
 
         #***********************************************************************************************************************
 
@@ -759,7 +790,7 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
                     # Ultimo punto de la segunda trayectoria
                     ik_msg.x = pose1[0] 
                     ik_msg.y = pose1[1]
-                    ik_msg.z = pose1[2] - 0.03
+                    ik_msg.z = pose1[2] - Z_OFFSET
                     ik_msg.roll = pose1[3]
                     ik_msg.pitch = pose1[4]
                     ik_msg.yaw = pose1[5]

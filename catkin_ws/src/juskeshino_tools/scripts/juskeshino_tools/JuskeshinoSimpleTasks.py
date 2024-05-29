@@ -3,6 +3,7 @@ import rospy
 import tf
 import numpy as np
 import time
+import math
 from vision_msgs.msg import *
 from geometry_msgs.msg import *
 from juskeshino_tools.JuskeshinoHardware import JuskeshinoHardware
@@ -143,51 +144,37 @@ class JuskeshinoSimpleTasks:
         return [obj_p.point.x, obj_p.point.y, obj_p.point.z]
     
 
-    def handling_location(vision_obj, arm ):
-        position_obj = vision_obj.pose.position
+    def handling_location_la(position_obj):
         l_threshold_la       = 0.25
         r_threshold_la       = 0.14
-
-        l_threshold_ra       = -0.14
-        r_threshold_ra       = -0.32
-
-        if (arm == "ra"):
-            if position_obj.y > l_threshold_ra:
-                JuskeshinoNavigation.moveLateral( l_threshold_ra - position_obj.y , 5.0)
-
-                return True
-            if position_obj.y < r_threshold_ra:
-                JuskeshinoNavigation.moveLateral(r_threshold_ra - position_obj.y , 5.0)
-                return True
-            return False
         
-        else:     # Lado izq del robot
-            if (arm == "la"):
-                if position_obj.y > l_threshold_la:
-                    mov_izq = position_obj.y - l_threshold_la
-                    print("position object:__", position_obj.y)
-                    print("l_threshold_la:___", l_threshold_la)
-                    print("distancia desplazada", mov_izq)
-                    mov_izq = mov_izq/2
-                    JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
-                    time.sleep(0.2)
-                    JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
-                    return True
-                
-                if position_obj.y < r_threshold_la:
-                    mov_der = position_obj.y - r_threshold_la
-                    print("position object:__", position_obj.y)
-                    print("r_threshold_la:___", r_threshold_la)
-                    print("distancia position_obj.y - r_threshold_la", mov_der)
-                    mov_der = mov_der/3
-                    JuskeshinoNavigation.moveLateral(mov_der , 5.0)
-                    time.sleep(0.2)
-                    JuskeshinoNavigation.moveLateral(mov_der , 5.0)
-                    time.sleep(0.2)
-                    JuskeshinoNavigation.moveLateral(mov_der , 5.0)
-                    return True
-                return False
-        return
+        if position_obj.y > l_threshold_la:  s   # Objeto a la izquierda
+            mov_izq = position_obj.y - l_threshold_la
+            
+            if (abs(mov_izq) <= 0.15):  # desplazamiento lateral
+                JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
+                time.sleep(0.2)
+                return True
+            else:
+                moveDist(-0.15 , 5.0)
+                JuskeshinoNavigation.moveDistAngle(0.0 , 1.57, 7.0)
+                moveDist(abs(mov_izq) , 5.0)
+                return True
+
+        if position_obj.y < r_threshold_la:     # Objeto a la derecha
+            mov_der = position_obj.y - r_threshold_la
+
+            if ((abs(mov_der)) <= 0.15):
+                JuskeshinoNavigation.moveLateral(mov_der , 5.0)
+                time.sleep(0.2)
+                return True
+            else:
+                moveDist(-0.15 , 5.0)
+                JuskeshinoNavigation.moveDistAngle(0.0 , -1.57, 7.0)
+                moveDist(abs(mov_der) , 5.0)
+                return True
+            
+        return False
 
 
 

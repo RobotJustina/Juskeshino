@@ -3,6 +3,7 @@ import rospy
 import rospkg
 import time
 import numpy as np
+import math
 from juskeshino_tools.JuskeshinoNavigation import JuskeshinoNavigation
 from juskeshino_tools.JuskeshinoVision import JuskeshinoVision
 from juskeshino_tools.JuskeshinoHardware import JuskeshinoHardware
@@ -14,7 +15,7 @@ from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 
 # Left arm
 HOME              = [0,0,0,0,0,0,0]
-PREPARE           = [-0.69, 0.2, 0.0, 1.55, 0.0, 1.16, 0.0]
+PREPARE           = [-0.8, 0.2, 0.0, 1.55, 0.0, 1.24, 0.0]#[-0.69, 0.2, 0.0, 1.55, 0.0, 1.16, 0.0]
 PREPARE_TOP_GRIP  = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
 PREPARE_SERVING   = [0.91, 0.4, -0.5, 1.45, 0, 0.16, 0.5]
 SERVING           = [0.91, 0.4, -0.5, 1.45, 0, 0.16, -1.6]
@@ -90,6 +91,16 @@ def approach_to_table():
             break
         i = i+1
 
+def obj_approach_criteria(obj_position):
+    if (abs(dist_obj) < 0.15):
+        JuskeshinoSimpleTasks.handling_location(obj, "la")
+        # only aligne with table
+    else:
+        mov_2_obj(dist_obj)
+        
+
+
+def mov_2_obj(dist_obj):
 
 
 
@@ -169,8 +180,10 @@ def main():
             print("SB-PLN.-> RECOGNITION RESULT POSITION OBJECT : " ,obj.pose.position)
 
                 
+
+
             # El robot se mueve a la mejor mejor ubicacion de agarre ,Toma objeto con brazo izquierdo
-            mov = JuskeshinoSimpleTasks.handling_location(obj, "la")
+            mov = JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
 
             # Ajusta altura de torso para mejor agarre
             if (obj.pose.position.z > 0.70) and (actual_obj == "bowl"):
@@ -179,6 +192,20 @@ def main():
                     time.sleep(1.3)
                 except:
                     JuskeshinoHRI.say("Cannot move torso")
+            if (actual_obj == "milk"):
+                try:
+                    JuskeshinoHardware.moveTorso(0.05 , 5.0)
+                    time.sleep(1.3)
+                except:
+                    JuskeshinoHRI.say("Cannot move torso")
+            if ((actual_obj == "small_cereal")):
+                try:
+                    JuskeshinoHardware.moveTorso(0.06 , 5.0)
+                    time.sleep(1.3)
+                except:
+                    JuskeshinoHRI.say("Cannot move torso")
+
+
 
 
             # En la mejor ubicacion de agarre realiza de nuevo un reconocimiento del objeto***********************
@@ -190,14 +217,17 @@ def main():
             except:
                 JuskeshinoHRI.say("I couldn't find the object")                        
             
+
             
-            # Tomar objeto                                             
-            JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)  # prepare 
-            JuskeshinoHRI.say("Open gripper")
-            time.sleep(0.2)
-            if actual_obj == "bowl": 
+            
+            # Tomar objeto   
+            if (actual_obj == "bowl") or (actual_obj == "small_cereal"): 
+                JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)  # prepare 
+                JuskeshinoHRI.say("Open gripper")
                 JuskeshinoHardware.moveLeftGripper(0.4 , 2.0)
             else: 
+                JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE, 10)  # prepare 
+                JuskeshinoHRI.say("Open gripper")
                 JuskeshinoHardware.moveLeftGripper(0.9, 1.0)
 
             JuskeshinoHRI.say("looking for proper grip")
@@ -219,7 +249,7 @@ def main():
                 if (actual_obj == "milk"):
                     time.sleep(0.2)
                     JuskeshinoHardware.moveLeftGripper(GRIP_MILK , 3.0) 
-                if (actual_obj == "cereal"):
+                if (actual_obj == "small_cereal"):
                     time.sleep(0.2)
                     JuskeshinoHardware.moveLeftGripper(GRIP_CEREAL , 3.0) 
 
