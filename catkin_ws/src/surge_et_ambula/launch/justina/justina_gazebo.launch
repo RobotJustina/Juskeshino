@@ -2,13 +2,14 @@
   <arg name="debug" default="False"/>
   <arg name="use_yolo" default="True"/>
   <arg name="use_vosk" default="False"/>
+  <arg name="world" default="appartment"/>
   
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
     <arg name="posx"  value="10.61"/>
     <arg name="posy"  value="11.24"/>
     <arg name="posz"  value="0.05"/>
     <arg name="yaw"   value="3.14"/>
-    <arg name="world" value="appartment"/>
+    <arg name="world" value="$(arg world)"/>
   </include>
   
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_gazebo.rviz"/>
