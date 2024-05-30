@@ -13,6 +13,9 @@ from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
 from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
 from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 from sensor_msgs.msg import LaserScan
+from segmentation.srv import *
+global segmentation_server
+segmentation_server = rospy.ServiceProxy('/segment', Segmentation)
 
 DESK = "desk_justina"
 SIMUL_DESK = 'simul_desk' 
@@ -26,7 +29,7 @@ def matching_objects(obj):
         data = yaml.safe_load(f)
     except:
         data = {}
-        print("KnownLocations.->Cannot load locations from file " + yaml_file)
+        print("KnownLocations.->Cannot load locations from file " + obj_yaml)
     for category, items in data.items():
         if obj.lower() in [item.lower() for item in items]:
             rospy.loginfo(f"--->>> Detected {obj} matches an item in the '{category}' category.")
@@ -92,6 +95,7 @@ class NavigateToTable(smach.State):
             JuskeshinoHRI.say(" I am moving to the table")
             JuskeshinoHardware.moveHead(0,-1, 5)
             JuskeshinoNavigation.getClose(DESK, 120)#real
+            time.sleep(0.5)
             #JuskeshinoNavigation.getClose('simul_desk', 120) #simul
             
             return 'succed'
@@ -113,6 +117,7 @@ class FindTable(smach.State):
             if(not JuskeshinoHardware.moveHead(0, -1, 100.0)):
                 JuskeshinoHardware.moveHead(0, -1, 100.0)
             #response = JuskeshinoVision.findTableEdge()
+            time.sleep(0.5)
             response = JuskeshinoSimpleTasks.alignWithTable()
             if response is None:
                 JuskeshinoHRI.say("Cannot find the table")
@@ -143,13 +148,13 @@ class RecognizeObjects(smach.State):
             if recog_objects is not None:        
                 #object_id=target_object.id
                 for obj in recog_objects:
-                    target_object=recog_objects [i]
+                    obj=recog_objects [i]
                     JuskeshinoHRI.say("Moving arm to prepare")
                     #i =+ 1
-                    print(target_object.id)
-                    print(target_object.pose.position)
-                    print(target_object.header.frame_id)
-                    x,y,z = target_object.pose.position.x, target_object.pose.position.y, target_object.pose.position.z
+                    print(obj.id)
+                    print(obj.pose.position)
+                    print(obj.header.frame_id)
+                    x,y,z = obj.pose.position.x, obj.pose.position.y, obj.pose.position.z
                     x,y,z = JuskeshinoSimpleTasks.transformPoint(x,y,z, "shoulders_left_link", "base_link")
                     print(x,y,z)
                     obj_oriented = JuskeshinoVision.getObjectOrientation(obj)
@@ -226,19 +231,20 @@ class GraspObject(smach.State):
             x,y,z=userdata.object_output
             JuskeshinoHRI.say("Moving arm to prepare")
             print("Moving arm to prepare")
+            JuskeshinoHardware.moveTorso(0.08 , 5.0)
             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
             JuskeshinoHardware.moveLeftGripper(0.9, 100.0)
             print("Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))   
             print('------------>>>',x,y,z)                    
             #response=JuskeshinoManipulation.laIk([x,y,z,0,-1.5,0])
             [response, success] = JuskeshinoManipulation.GripLa(obj)
-            print(response)
+            #print(response)
             if success:
                 JuskeshinoHRI.say("Object found correctly")
                 print("Object position: ",obj.pose.position)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(response.articular_trajectory,10)
                 print("Closing gripper")
-                JuskeshinoHardware.moveLeftGripper(0.2 , 3.0) 
+                JuskeshinoHardware.moveLeftGripper(0.15 , 3.0) 
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
                 time.sleep(0.5)     
                 return 'succed'
@@ -264,6 +270,47 @@ class TransportObject(smach.State):
             JuskeshinoHRI.say("Scanning cabinet")
             
             return 'succed'
+class ScanCabinet(smach.State):
+    def __init__(self):
+        smach.State.__init__(
+            self, outcomes=['succ', 'failed', 'tries'])
+        self.tries = 0
+
+    def execute(self, userdata):
+        JuskeshinoHRI.say('Scanning shelf')
+        print('Scanning shelf')
+        # request = segmentation_server.request_class()
+        self.tries += 1
+        if self.tries < 3:
+            rospy.loginfo('\n--> STATE 9 <: Scanning cabinet')
+            JuskeshinoHRI.say("Scanning cabinet")
+            recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
+            rospy.sleep(2.5)
+            if recog_objects is not None:        
+                #object_id=target_object.id
+                for obj in recog_objects:
+                    print("------->",obj.id)
+                    print(obj.pose.position)
+                    print(obj.header.frame_id)
+                    x,y,z = obj.pose.position.x, obj.pose.position.y, obj.pose.position.z
+                    x,y,z = JuskeshinoSimpleTasks.transformPoint(x,y,z, "shoulders_left_link", "base_link")
+                    #print(x,y,z)
+                    obj_oriented = JuskeshinoVision.getObjectOrientation(obj)
+                    userdata.object_output=[x,y,z]
+                    userdata.object=obj_oriented
+                    print('Object found------>>', obj_oriented.id, obj_oriented.pose, obj_oriented.object_state, obj_oriented.size, obj_oriented.graspable)
+                    return 'succed'
+            #Check for the position of each object and start from that 
+            print('Cannot detect objects, I will try again...')
+            JuskeshinoHRI.say('Cannot detect objects, I will try again...')
+            return 'failed'    
+        
+        print('After a lot of tries, I could not detect objects')
+        return 'tries'
+    
+                
+
+
 
 
 # class Pick_object(smach.State):
@@ -332,7 +379,7 @@ def main():
         
         smach.StateMachine.add('CLASSIFICATION',Classification(), 
         transitions={'failed':'RECOGNIZE_OBJ',
-                     'succed':'ALIGNE_WITH_OBJ'})
+                     'succed':'GRASP_OBJ'})
 
         smach.StateMachine.add('ALIGNE_WITH_OBJ',AlignWithObject(), 
         transitions={'failed':'FIND_TABLE',
