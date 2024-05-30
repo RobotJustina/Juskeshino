@@ -58,19 +58,4 @@ cabinet:
  y: 0.18
  theta: -1.57
  parent: home
-milk:
-  x: 0
-  y: 0
-  theta: 0.0
-  parent: home
-cereal:
- x: 0.0
- y: 0.0
- theta: 0.0
- parent: home 
-bowl:
- x: 0.0
- y: 0.0
- theta: 0.0
- parent: home
  

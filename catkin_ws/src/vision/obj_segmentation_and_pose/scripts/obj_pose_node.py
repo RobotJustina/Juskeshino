@@ -395,6 +395,7 @@ def main():
     obj_pose.orientation.y = 0
     obj_pose.orientation.z = 0
     obj_pose.orientation.w = 1.0
+    
     broadcaster_frame_object("base_link", "object", obj_pose)
 
     loop = rospy.Rate(30)

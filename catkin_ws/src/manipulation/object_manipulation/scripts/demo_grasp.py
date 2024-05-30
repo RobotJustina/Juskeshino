@@ -91,7 +91,7 @@ def main():
             if (obj.pose.position.y >= 0): 
                 la = True
                 print("the object is taken with the left arm")
-                JuskeshinoSimpleTasks.handling_location(obj, "la")
+                JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
                 try:
                     [obj, img] = JuskeshinoVision.detectAndRecognizeObject(actual_obj) #**************************
                     print("SB-PLN.->Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))

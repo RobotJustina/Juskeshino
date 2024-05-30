@@ -145,7 +145,7 @@ class JuskeshinoNavigation:
         msg.pose.orientation.y = 0
         msg.pose.orientation.z = math.sin(angle/2)
         msg.pose.orientation.w = math.cos(angle/2)
-        JuskeshinoNavigation._navigation_status.status = GoalStatus.PENDING;
+        JuskeshinoNavigation._navigation_status.status = GoalStatus.PENDING
         JuskeshinoNavigation.pubMvnPlnGetCloseXYA.publish(msg)
         rospy.sleep(0.1)
 

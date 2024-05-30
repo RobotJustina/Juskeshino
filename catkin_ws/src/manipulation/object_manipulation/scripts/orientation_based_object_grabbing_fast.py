@@ -115,8 +115,6 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
             marker_array_publish(grip_point, 'object', 59, 56)
 
 
-    #obj_pose_frame_object = Pose()
-    #obj_pose_frame_object = obj_pose
     grasp_candidates_quaternion = []
     q_gripper = []
 
@@ -700,6 +698,7 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
         else:
             if(category == "BOWL") or (category == "CUBIC"):
                 print("HORIZONTAL GRIP")
+                print("CATEGORY:__", category)
                 pose1, new_pos = pose_for_ik_service(pose1)
 
                 if new_pos == -1: continue
@@ -735,7 +734,11 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
 
                         ik_msg_3.x             = cartesian_pose_shoulder[0] 
                         ik_msg_3.y             = cartesian_pose_shoulder[1]
-                        ik_msg_3.z             = cartesian_pose_shoulder[2] #- 0.08
+                        if(category == "CUBIC"):
+                            ik_msg_3.z = cartesian_pose_shoulder[2] - Z_OFFSET
+                        else:
+                            ik_msg_3.z = cartesian_pose_shoulder[2] - Z_OFFSET_BOWL
+
                         ik_msg_3.roll          = cartesian_pose_shoulder[3]      
                         ik_msg_3.pitch         = cartesian_pose_shoulder[4]
                         ik_msg_3.yaw           = cartesian_pose_shoulder[5]

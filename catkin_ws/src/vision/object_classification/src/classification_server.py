@@ -40,7 +40,7 @@ def callback(req):
         points= ros_numpy.numpify(points_msg)
         for  det in pred:
             for *xyxy, conf, cls in (det):# Model Result is bounding box  confidence  and class
-                if conf.cpu().tolist() > 0.5:
+                if conf.cpu().tolist() > 0.8:
                     num_preds+=1
                     pt_min=[int(xyxy[0].cpu().tolist()),int(xyxy[1].cpu().tolist())]
                     pt_max=[int(xyxy[2].cpu().tolist()),int(xyxy[3].cpu().tolist())]

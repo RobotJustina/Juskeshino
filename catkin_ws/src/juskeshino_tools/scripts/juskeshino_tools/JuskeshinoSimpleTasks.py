@@ -150,8 +150,12 @@ class JuskeshinoSimpleTasks:
         
         if position_obj.y > l_threshold_la:     # Objeto a la izquierda
             mov_izq = position_obj.y - l_threshold_la
-            
-            if (abs(mov_izq) <= 0.15):  # desplazamiento lateral
+
+            JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
+            time.sleep(0.2)
+            return True
+            """
+            if (abs(mov_izq) <= 0.20):  # desplazamiento lateral
                 JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
                 time.sleep(0.2)
                 return True
@@ -162,11 +166,15 @@ class JuskeshinoSimpleTasks:
                 JuskeshinoNavigation.moveDistAngle(0.0 , -1.57, 7.0)
                 JuskeshinoNavigation.moveDist(0.15 , 5.0)
                 return True
+            """
 
         if position_obj.y < r_threshold_la:     # Objeto a la derecha
             mov_der = position_obj.y - r_threshold_la
 
-            if ((abs(mov_der)) <= 0.15):
+            JuskeshinoNavigation.moveLateral(mov_der , 5.0)
+            time.sleep(0.2)
+            """
+            if ((abs(mov_der)) <= 0.20):
                 JuskeshinoNavigation.moveLateral(mov_der , 5.0)
                 time.sleep(0.2)
                 return True
@@ -176,7 +184,8 @@ class JuskeshinoSimpleTasks:
                 JuskeshinoNavigation.moveDist(abs(mov_der) , 5.0)
                 JuskeshinoNavigation.moveDistAngle(0.0 , 1.57, 7.0)
                 JuskeshinoNavigation.moveDist(0.15 , 5.0)
-                return True
+            """
+            return True
             
         return False
 
@@ -211,5 +220,3 @@ class JuskeshinoSimpleTasks:
 
 
 
-
-        

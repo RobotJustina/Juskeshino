@@ -4,6 +4,7 @@ import rospkg
 import time
 import numpy as np
 import math
+import yaml
 from juskeshino_tools.JuskeshinoNavigation import JuskeshinoNavigation
 from juskeshino_tools.JuskeshinoVision import JuskeshinoVision
 from juskeshino_tools.JuskeshinoHardware import JuskeshinoHardware
@@ -95,7 +96,7 @@ def approach_to_table():
 
 
 
-def broadcaster_frame_object(frame, child_frame, pose):   # Emite la transformacion en el frame base_link,
+def broadcaster_frame_object(frame, child_frame, pose):  
     #br = tf2_ros.TransformBroadcaster()
     br =  tf2_ros.StaticTransformBroadcaster()
     t = geometry_msgs.msg.TransformStamped()
@@ -116,14 +117,14 @@ def broadcaster_frame_object(frame, child_frame, pose):   # Emite la transformac
 def pose_actual_to_pose_target(pose, f_actual, f_target):
     global listener
     poseStamped_msg = PoseStamped()  
-    poseStamped_msg.header.frame_id = "object"   # frame de origen
+    poseStamped_msg.header.frame_id = f_actual   # frame de origen
     poseStamped_msg.header.stamp = rospy.Time()  # la ultima transformacion
     poseStamped_msg.pose = pose
 
     try:
-        listener.waitForTransform("object", "shoulders_left_link", rospy.Time(0), rospy.Duration(10.0))
+        listener.waitForTransform(f_actual , target_frame, rospy.Time(0), rospy.Duration(10.0))
         print("waitfor ..despues")
-        new_poseStamped = listener.transformPose('shoulders_left_link', poseStamped_msg)
+        new_poseStamped = listener.transformPose(f_target , poseStamped_msg)
         new_pose = new_poseStamped.pose
         return new_pose
     
@@ -131,8 +132,7 @@ def pose_actual_to_pose_target(pose, f_actual, f_target):
         print("Best_Grasp_Node.-> Could not get the pose in the desired frame")
         return -1
 
-
-    
+ 
 
 def points_actual_to_points_target(point_in, f_actual, f_target):
     global listener
@@ -148,7 +148,28 @@ def points_actual_to_points_target(point_in, f_actual, f_target):
     new_point = point_target_frame.point
     return [ new_point.x , new_point.y , new_point.z ]
 
+def modify_location(pose_obj, location):  # position_obj is in frame 'base_link'
+    pose_obj = pose_actual_to_pose_target(pose_obj , "base_link" , "map")
+    pos_obj.position.x
 
+
+
+def categorize_object(obj_id):      # Recibe un string que indica el nombre del objeto encontrado
+    with open('Juskeshino/catkin_ws/src/config_files/groceries_classification_rm.yaml', 'r') as file:
+    print("In categories")
+    try:
+        f = open(obj_yaml,'r')
+        data = yaml.safe_load(f)
+    except:
+        data = {}
+        print("KnownLocations.->Cannot load locations from file ")
+
+    for category, items in data.items():
+        if obj_id.lower() in [item.lower() for item in items]:
+            rospy.loginfo(f"--->>> Detected {obj_id} matches an item in the '{category}' category.")
+            # Do something with the matched object
+            return category  
+    return False
 
 
 
@@ -166,14 +187,16 @@ def main():
     JuskeshinoSimpleTasks.setNodeHandle()
     JuskeshinoHRI.setNodeHandle()
     JuskeshinoKnowledge.setNodeHandle()
-    pila = ["bowl", "milk", "small_cereal"]
+
+
+    pila = ["banana","bowl", "milk", "small_cereal"]                             
     count = 0
     j = 0
 
     # START************************************************************************************
     JuskeshinoHRI.say("I'm ready for the test")
 
-    # Waiting for the door to be open
+    # Waiting for the door to be open 
     JuskeshinoHRI.say("I'm waiting for the door to be open")
     if not JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(1000):
         print("ACT-PLN.->Door never opened")
@@ -205,26 +228,27 @@ def main():
             
         j=0 # atemps
         while j < 2:    
-
             # Busqueda y reconocimiento del objeto 2 veces
             JuskeshinoHRI.say("Trying to detect the object")
-            try:
-                [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj)   
-                print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
-                JuskeshinoHRI.say("I found" + actual_obj)
-            except:
+            
+            [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj)   
+                #JuskeshinoHRI.say("I found" + actual_obj)
+            if (obj == None):
                 JuskeshinoHRI.say("I couldn't find the object")
-                try:
-                    [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj)   
-                    print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
-                    JuskeshinoHRI.say("I found" + actual_obj)
-                except:
+                
+                [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj)   
+                #print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
+                #JuskeshinoHRI.say("I found" + actual_obj)
+                #categorize_object(obj.id)
+
+                if (obj == None):
                     JuskeshinoHRI.say("I couldn't find the object")
 
+            print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
+            categorize_object(obj.id)
             print("SB-PLN.-> RECOGNITION RESULT POSITION OBJECT : " ,obj.pose.position)
 
                 
-
 
             # El robot se mueve a la mejor mejor ubicacion de agarre ,Toma objeto con brazo izquierdo
             mov = JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
@@ -258,6 +282,12 @@ def main():
                 [obj, img] = JuskeshinoVision.detectAndRecognizeObject(actual_obj)   
                 print("SB-PLN.->RECOGNITION WITH POSE : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))
                 JuskeshinoHRI.say("I found" + actual_obj)
+                category = categorize_object(obj.id)
+                if category:
+                    prompt = "I found" + obj.id + " which is part of the category " + category
+                    JuskeshinoHRI.say(prompt)
+                    print("---------------------I found:", obj.id, "which is part of the category: ", category)
+
             except:
                 JuskeshinoHRI.say("I couldn't find the object")                        
             
