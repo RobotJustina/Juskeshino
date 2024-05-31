@@ -4,12 +4,15 @@ from smach_utils_justina import *
 
 ##### Define state INITIAL #####
 
+def food_name(message):
+    print("call function")  # TODO: names similar to foods
+
 
 # --------------------------------------------------
 class Initial(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'],
-                             output_keys = ['l_arm_home', 'confirm_list'], input_keys=['l_arm_home'] )
+                             output_keys = ['l_arm_home', 'confirm_list', 'negation_list'], input_keys=['l_arm_home', 'confirm_list', 'negation_list'] )
         self.tries = 0
         global camera_enable
         if robot_real:
@@ -24,11 +27,13 @@ class Initial(smach.State):
         print('\n> STATE <: INITIAL')
         global vosk_enable
         if vosk_enable:
-            userdata.confirm_list = ['yes', 'jack', 'juice', 'justina yes', 'yeah']
-            #negation_list = ['no', 'robot no','not','now','nope','justina no'] 
+            print("VOSK ENABLE -->")
+            userdata.confirm_list = ['yes', 'robot yes', 'jack', 'juice', 'justina yes', 'yeah', 'correct', 'affirmative']
+            userdata.negation_list = ['no', 'robot no','not','now','nope','justina no', 'incorrect', 'negative']
+            # TODO: prefixes to drinks
         else:
             userdata.confirm_list = ["YES", "YEAH", "ROBOT YES", "JUSTINA YES", "JUICE"]
-            #negation_list = ['NO', 'ROBOT NO','NOPE','JUSTINA NO']
+            userdata.negation_list = ['NO', 'ROBOT NO','NOPE','JUSTINA NO']
 
         self.tries += 1
         print(f'Try {self.tries}')
@@ -44,12 +49,18 @@ class Initial(smach.State):
         # -----Use with get_keywords_speech()
         # -----------SPEECH REC
         drinks = ['coke','juice','milk', 'water', 'soda', 'wine', 
-                  'i want a', 'i would like a', 'tea', 'icedtea', 'cola', 'redwine', 'orangejuice', 'tropicaljuice']
+                  'I want a', 'I would like a', 'tea', 'iced tea', 'cola', 'red wine', 'orange juice', 'tropical juice']
        
         names = [' my name is' , 'i am','adel', 'angel', 'axel', 
                  'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone', 'jack']
-        confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah', 'justina yes', 'justina no']                     
-        gram = drinks + names + confirmation   
+        #confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah', 'justina yes', 'justina no']                     
+        gram = drinks + names + userdata.confirm_list + userdata.negation_list
+
+        print("** confirmation list: ") 
+        print(userdata.confirm_list)  
+        print("** negation list: ") 
+        print(userdata.negation_list)  
+
 
         head.publish_tfs()
         
@@ -200,7 +211,7 @@ class Decide_face(smach.State):
             else: 
                 JuskeshinoHRI.getLastRecognizedSentence()
                 rospy.sleep(0.3)
-                confirmation = JuskeshinoHRI.waitForNewSentence(10)
+                confirmation = JuskeshinoHRI.waitForNewSentence(8) # 10 is to much?
             
             print(confirmation)
             if confirmation not in userdata.confirm_list:
@@ -251,7 +262,7 @@ class New_face(smach.State):
             rospy.sleep(0.3)
             speech = JuskeshinoHRI.waitForNewSentence(10)
             speech.lower()
-
+        food_name(speech)
 
         # in case thinks like I am , my name is . etc
         if len(speech.split(' ')) > 1: 
@@ -275,7 +286,7 @@ class New_face(smach.State):
             rospy.sleep(0.3)
             confirmation = JuskeshinoHRI.waitForNewSentence(10)
 
-        print (confirmation)
+        print(confirmation)
 
         confirmation = confirmation.split(' ')
         confirm = match_speech(confirmation, userdata.confirm_list)
@@ -323,17 +334,17 @@ class Get_drink(smach.State):
         #Asking for drink
         print('What would you like to drink?')
         voice.talk('What would you like to drink?')
+        rospy.sleep(0.3)
 
         # TODO: TEST VOICE BEFORE START
         if vosk_enable:
             drink = get_keywords_speech(8)
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
-            rospy.sleep(0.3)
             drink = JuskeshinoHRI.waitForNewSentence(10)
             drink.lower()
 
-        if len(drink.split(' '))>1: drink=(drink.split(' ')[-1])
+        #if len(drink.split(' '))>1: drink=(drink.split(' ')[-1])  # TODO: Prefix to drinks?
         print(drink)
         rospy.sleep(0.5)
 
@@ -343,16 +354,17 @@ class Get_drink(smach.State):
             return 'tries'
         print(f'Did you say {drink}?')
         voice.talk(f'Did you say {drink}?')
-
+        
+        rospy.sleep(0.3)
         # TODO: TEST VOICE BEFORE START
         if vosk_enable:
             confirmation = get_keywords_speech(8)
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
-            rospy.sleep(0.3)
             confirmation = JuskeshinoHRI.waitForNewSentence(10)
 
-        confirmation = confirmation.split(' ')
+        # confirmation = confirmation.split(' ')  # TODO: delete?
+        print(confirmation)
         confirm = match_speech(confirmation, userdata.confirm_list)
         if not confirm: 
             return 'tries' 
@@ -591,7 +603,7 @@ if __name__ == '__main__':
         # State machine for Receptionist task
         # Initial states routine
         smach.StateMachine.add("INITIAL", Initial(),              
-                               transitions={'failed':'INITIAL', 'succ':'WAIT_DOOR_OPENED'})
+                               transitions={'failed':'INITIAL', 'succ':'SCAN_FACE'}) #TODO: WAIT_DOOR_OPENED
         
         # smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(),       
         #                        transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'GOTO_DOOR'})
@@ -613,7 +625,7 @@ if __name__ == '__main__':
                                transitions={'failed':'NEW_FACE', 'succ':'GET_DRINK'})
         
         smach.StateMachine.add("GET_DRINK", Get_drink(),    
-                               transitions={'tries':'GET_DRINK', 'failed':'LEAD_TO_LIVING_ROOM', 'succ':'LEAD_TO_LIVING_ROOM'})
+                               transitions={'tries':'GET_DRINK', 'failed':'LEAD_TO_LIVING_ROOM', 'succ':'SCAN_FACE'}) #TODO: LEAD_TO_LIVING_ROOM
 
         # Final states
         smach.StateMachine.add("LEAD_TO_LIVING_ROOM", Lead_to_living_room(),  

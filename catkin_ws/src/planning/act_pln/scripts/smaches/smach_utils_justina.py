@@ -673,8 +673,8 @@ global segmentation_server, tf_man, voice, head, party, tfBuffer, listener
 global robot_real, human_detect_server
 rospy.init_node('smach_justina_tune_vision')
 
-robot_real = False
-vosk_enable = False
+robot_real = True
+vosk_enable = True
 bridge = CvBridge()
 rgbd = RGBD()
 rgb = RGB()  # WEB CAM DEBUG
