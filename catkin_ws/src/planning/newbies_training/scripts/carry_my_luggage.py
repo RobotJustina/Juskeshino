@@ -77,6 +77,7 @@ def human_callback(data):
     delta_r = r_wri[0] - x_mean
     delta_l = l_wri[0] - x_mean
     print(x_mean)
+    side = 'c'
     if delta_r > delta_l:
         print("Right wrist's farest")
         intersect = intersect_points_ground(
@@ -99,6 +100,10 @@ def human_callback(data):
         #JuskeshinoHardware.moveHead(-0.5,0, 5)
         JuskeshinoHardware.moveHead(math.tan(r_wri[1]/r_wri[2]),math.tan(r_wri[0]/r_wri[2]), 5)
         detected = True
+        side = 'r'
+        JuskeshinoHRI.say("Coul you put the right bag on mi arm please?")
+        first = [0, 0, 0, 0, 2, 0, 1]
+        JuskeshinoHardware.moveLeftArmWithTrajectory(first, 10)
     elif delta_l > delta_r:
         print("Left wrist's farest")
         intersect = intersect_points_ground(
@@ -120,6 +125,7 @@ def human_callback(data):
         #JuskeshinoHardware.moveHead(0.5,0, 5)
         JuskeshinoHardware.moveHead(math.tan(l_wri[1]/l_wri[2]),math.tan(l_wri[0]/l_wri[2]), 5)
         detected = True
+        JuskeshinoHRI.say("Coul you put the left bag on my arm please?")
     else:
         print("IDK")
 
