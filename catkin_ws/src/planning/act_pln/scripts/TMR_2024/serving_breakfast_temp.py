@@ -79,7 +79,6 @@ def serving_breakfast(object):
         JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
 
 
-
 def approach_to_table():
     JuskeshinoHRI.say("I will try to align with table")
     i = 0
@@ -92,47 +91,10 @@ def approach_to_table():
         else:
             JuskeshinoHRI.say("Align with table")
             break
+        
         i = i+1
 
 
-
-def broadcaster_frame_object(frame, child_frame, pose):  
-    #br = tf2_ros.TransformBroadcaster()
-    br =  tf2_ros.StaticTransformBroadcaster()
-    t = geometry_msgs.msg.TransformStamped()
-    t.header.frame_id = frame
-    t.child_frame_id = child_frame 
-    t.header.stamp = rospy.Time.now()
-    t.transform.translation.x = pose.position.x
-    t.transform.translation.y = pose.position.y
-    t.transform.translation.z = pose.position.z
-    t.transform.rotation.x = pose.orientation.x
-    t.transform.rotation.y = pose.orientation.y
-    t.transform.rotation.z = pose.orientation.z
-    t.transform.rotation.w = pose.orientation.w
-    br.sendTransform(t)
-
-
-
-def pose_actual_to_pose_target(pose, f_actual, f_target):
-    global listener
-    poseStamped_msg = PoseStamped()  
-    poseStamped_msg.header.frame_id = f_actual   # frame de origen
-    poseStamped_msg.header.stamp = rospy.Time()  # la ultima transformacion
-    poseStamped_msg.pose = pose
-
-    try:
-        listener.waitForTransform(f_actual , target_frame, rospy.Time(0), rospy.Duration(10.0))
-        print("waitfor ..despues")
-        new_poseStamped = listener.transformPose(f_target , poseStamped_msg)
-        new_pose = new_poseStamped.pose
-        return new_pose
-    
-    except:
-        print("Best_Grasp_Node.-> Could not get the pose in the desired frame")
-        return -1
-
- 
 
 def points_actual_to_points_target(point_in, f_actual, f_target):
     global listener
@@ -155,10 +117,10 @@ def modify_location(pose_obj, location):  # position_obj is in frame 'base_link'
 
 
 def categorize_object(obj_id):      # Recibe un string que indica el nombre del objeto encontrado
-    with open('Juskeshino/catkin_ws/src/config_files/groceries_classification_rm.yaml', 'r') as file:
+
     print("In categories")
     try:
-        f = open(obj_yaml,'r')
+        f = open('Juskeshino/catkin_ws/src/config_files/groceries_classification_rm.yaml' ,'r')
         data = yaml.safe_load(f)
     except:
         data = {}
@@ -189,7 +151,8 @@ def main():
     JuskeshinoKnowledge.setNodeHandle()
 
 
-    pila = ["banana","bowl", "milk", "small_cereal"]                             
+    pila = ["banana","bowl", "milk", "small_cereal"] 
+    objs = []                            
     count = 0
     j = 0
 
@@ -228,27 +191,25 @@ def main():
             
         j=0 # atemps
         while j < 2:    
-            # Busqueda y reconocimiento del objeto 2 veces
+
             JuskeshinoHRI.say("Trying to detect the object")
-            
             [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj)   
-                #JuskeshinoHRI.say("I found" + actual_obj)
+                JuskeshinoHRI.say("I found" + actual_obj)
             if (obj == None):
                 JuskeshinoHRI.say("I couldn't find the object")
                 
                 [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj)   
-                #print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
-                #JuskeshinoHRI.say("I found" + actual_obj)
-                #categorize_object(obj.id)
 
                 if (obj == None):
                     JuskeshinoHRI.say("I couldn't find the object")
 
-            print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
-            categorize_object(obj.id)
-            print("SB-PLN.-> RECOGNITION RESULT POSITION OBJECT : " ,obj.pose.position)
+            else:
+                print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
+                categorize_object(obj.id)
+                print("SB-PLN.-> RECOGNITION RESULT POSITION OBJECT : " ,obj.pose.position)
+                objs.add(obj)
 
-                
+                    
 
             # El robot se mueve a la mejor mejor ubicacion de agarre ,Toma objeto con brazo izquierdo
             mov = JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)

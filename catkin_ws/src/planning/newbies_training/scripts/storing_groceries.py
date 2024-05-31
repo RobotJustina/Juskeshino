@@ -21,7 +21,19 @@ DESK = "desk_justina"
 SIMUL_DESK = 'simul_desk' 
 PREPARE_TOP_GRIP  = [-0.8, 0.2, 0, 1.55, 0, 1.24, 0]
 
-
+def approach_to_table():
+    JuskeshinoHRI.say("I will try to align with table")
+    i = 0
+    while i <4:
+        if (not JuskeshinoSimpleTasks.alignWithTable()):
+            JuskeshinoHRI.say("Cannot align with table")
+            time.sleep(0.3)
+            JuskeshinoNavigation.moveDist(0.10, 10)
+        else:
+            JuskeshinoHRI.say("Align with table")
+            return True
+        i = i+1
+    return False
 def matching_objects(obj):
     obj_yaml =rospy.get_param("~categories")
     try:
@@ -72,11 +84,11 @@ class WaitForTheDoor(smach.State):
             JuskeshinoHRI.say("The door is closed")
             print("The door is closed")
             self.tries = 0
-            print(msg)
+            #print(msg)
             return 'failed'
         if numpy.mean(msg.ranges[(int)(len(msg.ranges)*0.5 - 10):(int)(len(msg.ranges)*0.5 + 10)]) >= 1.0:
             JuskeshinoHRI.say("The door is opened")
-            print(msg)
+            #print(msg)
             print("The door is opened")
             return 'succed'
         return 'failed'
@@ -110,7 +122,7 @@ class FindTable(smach.State):
         # The input and output data of a state is called 'userdata'
     def execute(self,userdata):
         self.tries += 1
-        if self.tries==1:
+        if self.tries<10:
             JuskeshinoHRI.say(" I am trying to localize the table")
             rospy.logwarn('\n--> STATE 3 <: Finding table')
             #Findin bounding table
@@ -118,13 +130,8 @@ class FindTable(smach.State):
                 JuskeshinoHardware.moveHead(0, -1, 100.0)
             #response = JuskeshinoVision.findTableEdge()
             time.sleep(0.5)
-            response = JuskeshinoSimpleTasks.alignWithTable()
-            if response is None:
-                JuskeshinoHRI.say("Cannot find the table")
-                print("Cannot find the table")
-                self.tries = 0
-                return 'failed'
-            return'succed'
+            if approach_to_table():
+                return'succed'
         return'tries'
 
 
@@ -204,10 +211,10 @@ class AlignWithObject(smach.State):
         self.tries += 1
         if self.tries < 4:
             
-            rospy.logwarn('\n--> STATE 6 <: I am going to aligne with the object')
+            rospy.logwarn('\n--> STATE 6 <: I am going to align with the object')
             obj=userdata.object
             JuskeshinoHRI.say("I am ready to pick the ",obj.id)
-            JuskeshinoSimpleTasks.handling_location_la(obj)
+            JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
             return'succed'
         print("Cannot aligne robot with object :(")
         return 'failed'
@@ -231,9 +238,9 @@ class GraspObject(smach.State):
             x,y,z=userdata.object_output
             JuskeshinoHRI.say("Moving arm to prepare")
             print("Moving arm to prepare")
-            JuskeshinoHardware.moveTorso(0.08 , 5.0)
+            JuskeshinoHardware.moveTorso(0.09 , 5.0)
             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
-            JuskeshinoHardware.moveLeftGripper(0.9, 100.0)
+            JuskeshinoHardware.moveLeftGripper(0.7, 100.0)
             print("Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))   
             print('------------>>>',x,y,z)                    
             #response=JuskeshinoManipulation.laIk([x,y,z,0,-1.5,0])
@@ -244,7 +251,7 @@ class GraspObject(smach.State):
                 print("Object position: ",obj.pose.position)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(response.articular_trajectory,10)
                 print("Closing gripper")
-                JuskeshinoHardware.moveLeftGripper(0.15 , 3.0) 
+                JuskeshinoHardware.moveLeftGripper(0.05 , 3.0) 
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
                 time.sleep(0.5)     
                 return 'succed'
@@ -379,7 +386,7 @@ def main():
         
         smach.StateMachine.add('CLASSIFICATION',Classification(), 
         transitions={'failed':'RECOGNIZE_OBJ',
-                     'succed':'GRASP_OBJ'})
+                     'succed':'ALIGNE_WITH_OBJ'})
 
         smach.StateMachine.add('ALIGNE_WITH_OBJ',AlignWithObject(), 
         transitions={'failed':'FIND_TABLE',
