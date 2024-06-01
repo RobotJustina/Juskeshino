@@ -264,10 +264,10 @@ int main(int argc, char** argv)
     ros::NodeHandle n;
     ros::ServiceServer srvFindLines       = n.advertiseService("/vision/line_finder/find_table_edge", callback_find_table_edge);
     ros::ServiceServer srvFindPlanes      = n.advertiseService("/vision/line_finder/find_horizontal_plane_ransac", callback_find_planes);
-    ros::ServiceServer srvDetectRecogObjs = n.advertiseService("/vision/obj_reco/detect_and_recognize_objects", callback_detect_and_recog_objs);
-    ros::ServiceServer srvDetectRecogObj  = n.advertiseService("/vision/obj_reco/detect_and_recognize_object" , callback_detect_and_recog_obj );
-    ros::ServiceServer srvRecogObj        = n.advertiseService("/vision/obj_reco/recognize_object" , callback_recog_obj );
-    ros::ServiceServer srvDetectTrainObj  = n.advertiseService("/vision/obj_reco/detect_and_train_object", callback_detect_and_train_object);
+    //ros::ServiceServer srvDetectRecogObjs = n.advertiseService("/vision/obj_reco/detect_and_recognize_objects", callback_detect_and_recog_objs);
+    //ros::ServiceServer srvDetectRecogObj  = n.advertiseService("/vision/obj_reco/detect_and_recognize_object" , callback_detect_and_recog_obj );
+    //ros::ServiceServer srvRecogObj        = n.advertiseService("/vision/obj_reco/recognize_object" , callback_recog_obj );
+    //ros::ServiceServer srvDetectTrainObj  = n.advertiseService("/vision/obj_reco/detect_and_train_object", callback_detect_and_train_object);
     ros::ServiceServer srvProcessCloud    = n.advertiseService("/vision/get_points_above_plane", callback_get_points_above_plane);
     cltRecogYolo       = n.serviceClient<vision_msgs::RecognizeObjects>("/vision/obj_reco/recognize_objects_yolo");
     pubMarkers     = n.advertise<visualization_msgs::Marker>("/vision/obj_reco/markers", 1);

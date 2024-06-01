@@ -1,6 +1,5 @@
 <launch>
   <arg name="debug" default="False"/>
-  <arg name="use_yolo" default="True"/>
   <arg name="use_vosk" default="False"/>
   
   <param name="base_link_name" value="base_link"/>
@@ -58,7 +57,6 @@
   <include file="$(find surge_et_ambula)/launch/justina/vision.launch"> 
     <arg name="debug"         value="$(arg debug)"/> 
     <arg name="training_dir"  value="$(find obj_reco)/training_dir"/>
-    <arg name="use_yolo"      value="$(arg use_yolo)"/>
   </include> 
   
   <include file="$(find surge_et_ambula)/launch/justina/hri.launch">

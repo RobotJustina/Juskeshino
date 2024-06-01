@@ -5,7 +5,6 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /TF1/Frames1
-        - /LocalMap1/Status1
       Splitter Ratio: 0.6521739363670349
     Tree Height: 346
   - Class: rviz/Selection
@@ -403,11 +402,17 @@ Visualization Manager:
           Value: false
         left_wheel_link:
           Value: true
+        location_cabinet:
+          Value: true
         location_computer:
+          Value: true
+        location_desk_backyard:
           Value: true
         location_desk_justina:
           Value: true
         location_desk_takeshi:
+          Value: true
+        location_desk_takeshi_front:
           Value: true
         location_door:
           Value: true
@@ -418,6 +423,8 @@ Visualization Manager:
         location_ingredients_table:
           Value: true
         location_kitchen:
+          Value: true
+        location_scan_cabinet:
           Value: true
         map:
           Value: false
@@ -465,11 +472,17 @@ Visualization Manager:
       Show Names: false
       Tree:
         map:
+          location_cabinet:
+            {}
           location_computer:
+            {}
+          location_desk_backyard:
             {}
           location_desk_justina:
             {}
           location_desk_takeshi:
+            {}
+          location_desk_takeshi_front:
             {}
           location_door:
             {}
@@ -480,6 +493,8 @@ Visualization Manager:
           location_ingredients_table:
             {}
           location_kitchen:
+            {}
+          location_scan_cabinet:
             {}
           odom:
             base_link:
@@ -555,7 +570,7 @@ Visualization Manager:
       Class: rviz/PointCloud2
       Color: 255; 255; 255
       Color Transformer: RGB8
-      Decay Time: 0
+      Decay Time: 10
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
@@ -566,7 +581,7 @@ Visualization Manager:
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.009999999776482582
-      Style: Flat Squares
+      Style: Points
       Topic: /vision/obj_reco/resulting_cloud
       Unreliable: false
       Use Fixed Frame: true
@@ -653,7 +668,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 13.224332809448242
+      Distance: 11.081683158874512
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -661,17 +676,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 5.258768081665039
-        Y: 3.6324191093444824
-        Z: -0.940290093421936
+        X: 5.290267467498779
+        Y: 3.062619924545288
+        Z: -0.7353920936584473
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.1547952890396118
+      Pitch: 0.7797955274581909
       Target Frame: <Fixed Frame>
-      Yaw: 3.1404056549072266
+      Yaw: 3.1604082584381104
     Saved: ~
 Window Geometry:
   Displays:

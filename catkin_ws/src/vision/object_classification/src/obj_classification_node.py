@@ -2,31 +2,126 @@
 import rospy
 import cv2
 import numpy
-from vision_msgs.srv import RecognizeObject, RecognizeObjects, RecognizeObjectsResponse
+import ros_numpy
+from vision_msgs.srv import RecognizeObject, RecognizeObjects, RecognizeObjectsResponse, RecognizeObjectResponse
 from vision_msgs.msg import VisionObject
+from sensor_msgs.msg import PointCloud2
 from cv_bridge import CvBridge
 from yolov5.utils.torch_utils import select_device
 from yolov5.models.experimental import attempt_load
 from yolov5.utils.general import *
 import torch
 
+def get_vision_object(img, label, confidence, frame_id, x0, y0, x1, y1, cloud):
+    mask = numpy.zeros(img.shape, dtype=numpy.uint8)
+    mask[y0:y1, x0:x1] = 255
+
+    gray  = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    canny = cv2.Canny(gray, 50, 180)
+    canny = cv2.bitwise_and(canny,mask[:,:,0])
+    kernel = np.ones((7, 7), np.uint8)
+    dilated = cv2.dilate(canny,kernel)
+    eroded = cv2.erode(dilated,kernel)
+    contours, hierarchy = cv2.findContours(eroded, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    mask = numpy.zeros(eroded.shape, dtype=numpy.uint8)
+    mask = cv2.bitwise_or(eroded, mask)
+    for i in range(len(contours)):
+        cv2.drawContours(mask, contours, i, 255, -1)
+    mask = cv2.erode(mask,kernel)
+
+    display_img = cv2.bitwise_and(img, cv2.cvtColor(mask,cv2.COLOR_GRAY2BGR))
+    bridge = CvBridge()
+    msg = VisionObject()
+    msg.header.frame_id = frame_id
+    msg.header.stamp = rospy.Time.now()
+    msg.id = label
+    msg.confidence = confidence
+    msg.image = bridge.cv2_to_imgmsg(cv2.bitwise_and(img,cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)), encoding="passthrough")
+    msg.obj_mask = bridge.cv2_to_imgmsg(mask, encoding="passthrough")
+    obj_cloud = numpy.copy(cloud)
+    obj_cloud = obj_cloud[mask != 0]
+    centroid_x = numpy.mean(obj_cloud['x'])
+    centroid_y = numpy.mean(obj_cloud['y'])
+    centroid_z = numpy.mean(obj_cloud['z'])
+    min_x = numpy.min(obj_cloud['x'])
+    min_y = numpy.min(obj_cloud['y'])
+    min_z = numpy.min(obj_cloud['z'])
+    max_x = numpy.max(obj_cloud['x'])
+    max_y = numpy.max(obj_cloud['y'])
+    max_z = numpy.max(obj_cloud['z'])
+    size_x = max_x - min_x
+    size_y = max_y - min_y
+    size_z = max_z - min_z
+    obj_cloud = ros_numpy.point_cloud2.merge_rgb_fields(obj_cloud)
+    msg.point_cloud = ros_numpy.point_cloud2.array_to_pointcloud2(obj_cloud, stamp=rospy.Time.now(), frame_id=frame_id)
+    msg.size.x = size_x
+    msg.size.y = size_y
+    msg.size.z = size_z
+    msg.pose.position.x = centroid_x
+    msg.pose.position.y = centroid_y
+    msg.pose.position.z = centroid_z
+    msg.pose.orientation.w = 1.0
+    msg.x = min(x0, x1)
+    msg.y = min(y0, y1)
+    msg.width = abs(x1 - x0)
+    msg.height = abs(y1 - x1)
+    return msg, display_img
+
+def callback_recognize_object(req):
+    global device, model, min_confidence, result_img, pub_obj
+    print("ObjRecoYolo.->Requested recognize object: " + req.name)
+    cloud = ros_numpy.point_cloud2.pointcloud2_to_array(req.point_cloud)
+    cloud = ros_numpy.point_cloud2.split_rgb_field(cloud)
+    yolo_img = cv2.merge((cloud['r'], cloud['g'], cloud['b']))
+    cv_img = cv2.merge((cloud['b'], cloud['g'], cloud['r']))
+    
+    yolo_img = torch.from_numpy(yolo_img).to(device) # RGB IMAGE TENSOR (TORCH)
+    yolo_img = yolo_img / 255.0                      # NORMALIZE
+    yolo_img = yolo_img.unsqueeze(0)                 # ADD DIMENSION FOR TENSOR ( BATCH)
+    yolo_img = torch.moveaxis(yolo_img,3,1)          # Channel order for YOLO
+    pred = model(yolo_img, augment=False)[0]
+    pred = non_max_suppression(pred)                 # IOU
+
+    bridge = CvBridge()
+    resp = RecognizeObjectResponse()
+    for det in pred:
+        for x0,y0,x1,y1, conf, cls in (det):         # Model Result is bounding box  confidence  and class
+            confidence = conf.cpu().tolist()
+            if confidence > min_confidence:
+                x0 = int(x0.cpu().tolist())
+                y0 = int(y0.cpu().tolist())
+                x1 = int(x1.cpu().tolist())
+                y1 = int(y1.cpu().tolist())
+                name = model.names[int(cls.cpu().tolist())]
+                if req.name == name:
+                    msg, obj_img = get_vision_object(cv_img, name, confidence, req.point_cloud.header.frame_id,x0, y0, x1, y1, cloud)
+                    result_img = obj_img
+                    result_img = cv2.putText(result_img, name+" "+str(confidence)[:4],(x0,y0-2),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),1)
+                    resp.recog_object = msg
+                    resp.image = bridge.cv2_to_imgmsg(obj_img, encoding="passthrough")
+                    pub_obj.publish(msg.point_cloud)
+                    return resp
+    return False
+
 def callback_recognize_objects(req):
     global device, model, min_confidence, result_img
-    print("Received request img encodeing " + req.image.encoding)
-    bridge = CvBridge()
-    img = bridge.imgmsg_to_cv2(req.image)
-    result_img = numpy.copy(img)
-    img = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
-    img = torch.from_numpy(img).to(device) # RGB IMAGE TENSOR (TORCH)
-    img = img / 255.0                              #NORMALIZE
-    img = img.unsqueeze(0)                        # ADD DIMENSION FOR TENSOR ( BATCH)
-    img = torch.moveaxis(img,3,1)                  #Channel order for YOLO
-    pred = model(img, augment=False)[0]
-    pred = non_max_suppression(pred)  # IOU
+    print("ObjRecoYolo.->Requested recognize objects...")
+    cloud = ros_numpy.point_cloud2.pointcloud2_to_array(req.point_cloud)
+    cloud = ros_numpy.point_cloud2.split_rgb_field(cloud)
+    yolo_img = cv2.merge((cloud['r'], cloud['g'], cloud['b']))
+    cv_img = cv2.merge((cloud['b'], cloud['g'], cloud['r']))
+    result_img   = numpy.zeros(cv_img.shape, dtype=numpy.uint8)
+    
+    yolo_img = torch.from_numpy(yolo_img).to(device) # RGB IMAGE TENSOR (TORCH)
+    yolo_img = yolo_img / 255.0                      # NORMALIZE
+    yolo_img = yolo_img.unsqueeze(0)                 # ADD DIMENSION FOR TENSOR ( BATCH)
+    yolo_img = torch.moveaxis(yolo_img,3,1)          # Channel order for YOLO
+    pred = model(yolo_img, augment=False)[0]
+    pred = non_max_suppression(pred)                 # IOU
 
     resp = RecognizeObjectsResponse()
     for det in pred:
-        for x0,y0,x1,y1, conf, cls in (det):# Model Result is bounding box  confidence  and class
+        for x0,y0,x1,y1, conf, cls in (det):         # Model Result is bounding box  confidence  and class
             confidence = conf.cpu().tolist()
             if confidence > min_confidence:
                 x0 = int(x0.cpu().tolist())
@@ -34,17 +129,14 @@ def callback_recognize_objects(req):
                 x1 = int(x1.cpu().tolist())
                 y1 = int(y1.cpu().tolist())
                 name = model.names[int(cls.cpu().tolist())] 
-                result_img=cv2.rectangle(result_img ,(x0,y0), (x1,y1),  (0, 255, 0), 2)
-                result_img= cv2.putText(result_img, name+" "+str(confidence),(x0,y0-2),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),1)
-                visobj = VisionObject()
-                visobj.id = name
-                visobj.confidence = confidence
-                resp.recog_objects.append(visobj)
+                msg, obj_img = get_vision_object(cv_img, name, confidence, req.point_cloud.header.frame_id,x0, y0, x1, y1, cloud)
+                result_img = cv2.bitwise_or(obj_img, result_img)
+                result_img = cv2.putText(result_img, name+" "+str(confidence)[:4],(x0,y0-2),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),1)
+                resp.recog_objects.append(msg)
     return resp
-    
 
 def main():
-    global device, model, min_confidence, result_img
+    global device, model, min_confidence, result_img, pub_obj
     print("INITIALIZING OBJECT CLASSIFICATION in an Oscarly manner...")
     rospy.init_node("object_classification")
     model_name = rospy.get_param("~model", "ycb.pt")
@@ -56,8 +148,10 @@ def main():
     model  = attempt_load(model_name, device)
     print("ObjClassification.->Loaded model")
     result_img = numpy.zeros((512, 512, 3), numpy.uint8)
-
-    rospy.Service("/vision/obj_reco/recognize_objects_yolo", RecognizeObjects, callback_recognize_objects)
+    
+    rospy.Service("/vision/obj_reco/detect_and_recognize_objects", RecognizeObjects, callback_recognize_objects)
+    rospy.Service("/vision/obj_reco/detect_and_recognize_object" , RecognizeObject , callback_recognize_object)
+    pub_obj = rospy.Publisher("/vision/obj_reco/resulting_cloud", PointCloud2, queue_size=30)
     while not rospy.is_shutdown():
         cv2.imshow("YOLO - Recognition Result", result_img)
         cv2.waitKey(10)
