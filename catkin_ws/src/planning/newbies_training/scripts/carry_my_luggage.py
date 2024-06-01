@@ -14,7 +14,11 @@ from vision_msgs.msg import HumanCoordinatesArray
 from geometry_msgs.msg import Point, PointStamped
 import math 
 
-detected = False
+detected = True
+PREPARE_TOP_GRIP  = [0, -0.4, 0.3, 1.3, 1, 0, 0]
+delta_r = None
+delta_l = None
+side = None
 
 def get_by_name(data, goal):
     for human in data.coordinates_array:
@@ -49,8 +53,28 @@ def intersect_points_ground(p1, p2):
             ]
     return intersection
 
+def automate():
+    global steps
+    #print("waiting to human derector")
+    result = False
+    for step in steps:
+        while not result:
+            result = step()
+            if result:
+                result = False
+                break
+    steps = []
+
+def meet():
+    JuskeshinoHRI.say("Hello")
+    return True
+
+def bye():
+    JuskeshinoHRI.say("Bye")
+    return True
+
 def human_callback(data):
-    global point_publisher, detected
+    global point_publisher, detected, delta_r, delta_l
     if detected:
         return data
     r_elb = get_by_name(data, "r_elb")
@@ -62,13 +86,6 @@ def human_callback(data):
     l_wri = get_by_name(data, "l_wri")
     l_hip = get_by_name(data, "l_hip")
     neck = get_by_name(data, "neck")
-    """
-    if(
-            None in r_elb or
-            None in r_sho or
-            None in r_wri or
-            None in r_hip or
-    """
     try:
         x_mean = (neck[2] + r_hip[2] + l_hip[2]) / 3
     except:
@@ -76,15 +93,20 @@ def human_callback(data):
         return
     delta_r = r_wri[0] - x_mean
     delta_l = l_wri[0] - x_mean
-    print(x_mean)
-    side = 'c'
+    print([delta_l, delta_r])
+
+def detect_human():
+    global delta_r, delta_l
+    if delta_r == None or delta_l == None:
+        JuskeshinoHRI.say("I can not see you, I'm sorry")
+        time.sleep(1)
+        return False
     if delta_r > delta_l:
         print("Right wrist's farest")
         intersect = intersect_points_ground(
                 r_sho,
                 r_wri
                 )
-        print(intersect)
         point = Point()
         pointStamped = PointStamped()
         point.x = intersect[0]
@@ -97,13 +119,10 @@ def human_callback(data):
         pointStamped.header = h
         point_publisher.publish(pointStamped)
         print(point)
-        #JuskeshinoHardware.moveHead(-0.5,0, 5)
         JuskeshinoHardware.moveHead(math.tan(r_wri[1]/r_wri[2]),math.tan(r_wri[0]/r_wri[2]), 5)
         detected = True
-        side = 'r'
-        JuskeshinoHRI.say("Coul you put the right bag on mi arm please?")
-        first = [0, 0, 0, 0, 2, 0, 1]
-        JuskeshinoHardware.moveLeftArmWithTrajectory(first, 10)
+        side = 'right'
+        return True
     elif delta_l > delta_r:
         print("Left wrist's farest")
         intersect = intersect_points_ground(
@@ -122,15 +141,31 @@ def human_callback(data):
         pointStamped.header = h
         point_publisher.publish(pointStamped)
         print(point)
-        #JuskeshinoHardware.moveHead(0.5,0, 5)
         JuskeshinoHardware.moveHead(math.tan(l_wri[1]/l_wri[2]),math.tan(l_wri[0]/l_wri[2]), 5)
         detected = True
-        JuskeshinoHRI.say("Coul you put the left bag on my arm please?")
+        side = 'left'
+        return True
     else:
-        print("IDK")
+        return False
+
+def ask4bag():
+    global side
+    JuskeshinoHardware.moveLeftGripper(0.05 , 3.0)
+    JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
+    time.sleep(1)
+    ask = "Could you put the bag you are pointing with your "
+    if side == None:
+        side = "viri"
+    ask += side
+    ask += " hand on my grip please?"
+    JuskeshinoHRI.say(ask)
+    time.sleep(10)
+    JuskeshinoHRI.say("Thank you, I'll follow you")
+    return True
+
 
 def main():
-    global point_publisher
+    global point_publisher, steps
     rospy.init_node("carry_my_luggage")
     rate = rospy.Rate(10)
     rospack = rospkg.RosPack()
@@ -142,7 +177,7 @@ def main():
     JuskeshinoManipulation.setNodeHandle()
     JuskeshinoKnowledge.setNodeHandle()
     rospy.Subscriber(
-            "/vision/human_pose/human_pose_array",
+            "/vision/human_pose/human_pose_marker",
             HumanCoordinatesArray,
             human_callback
             )
@@ -151,7 +186,19 @@ def main():
             PointStamped,
             queue_size = 1
             )
-    rospy.spin()
+    steps = [
+            meet,
+            #detect_human,
+            ask4bag,
+            #follow_human,
+            #return_home,
+            bye
+            ]
+    while not rospy.is_shutdown():
+        automate()
+        rate.sleep()
+        if len(steps) == 0:
+            break
 
 if __name__ == "__main__":
     main()
