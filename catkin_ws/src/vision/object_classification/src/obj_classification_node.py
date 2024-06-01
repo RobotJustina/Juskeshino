@@ -39,16 +39,16 @@ def get_vision_object(img, label, confidence, frame_id, x0, y0, x1, y1, cloud):
     msg.image = bridge.cv2_to_imgmsg(cv2.bitwise_and(img,cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)), encoding="passthrough")
     msg.obj_mask = bridge.cv2_to_imgmsg(mask, encoding="passthrough")
     obj_cloud = numpy.copy(cloud)
-    obj_cloud = obj_cloud[mask != 0]
-    centroid_x = numpy.mean(obj_cloud['x'])
-    centroid_y = numpy.mean(obj_cloud['y'])
-    centroid_z = numpy.mean(obj_cloud['z'])
-    min_x = numpy.min(obj_cloud['x'])
-    min_y = numpy.min(obj_cloud['y'])
-    min_z = numpy.min(obj_cloud['z'])
-    max_x = numpy.max(obj_cloud['x'])
-    max_y = numpy.max(obj_cloud['y'])
-    max_z = numpy.max(obj_cloud['z'])
+    obj_cloud[mask == 0] = 0
+    centroid_x = numpy.mean(obj_cloud['x'][mask != 0])
+    centroid_y = numpy.mean(obj_cloud['y'][mask != 0])
+    centroid_z = numpy.mean(obj_cloud['z'][mask != 0])
+    min_x = numpy.min(obj_cloud['x'][mask != 0])
+    min_y = numpy.min(obj_cloud['y'][mask != 0])
+    min_z = numpy.min(obj_cloud['z'][mask != 0])
+    max_x = numpy.max(obj_cloud['x'][mask != 0])
+    max_y = numpy.max(obj_cloud['y'][mask != 0])
+    max_z = numpy.max(obj_cloud['z'][mask != 0])
     size_x = max_x - min_x
     size_y = max_y - min_y
     size_z = max_z - min_z
@@ -133,6 +133,7 @@ def callback_recognize_objects(req):
                 result_img = cv2.bitwise_or(obj_img, result_img)
                 result_img = cv2.putText(result_img, name+" "+str(confidence)[:4],(x0,y0-2),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),1)
                 resp.recog_objects.append(msg)
+                print("Cloud size: ", [msg.point_cloud.width, msg.point_cloud.height])
     return resp
 
 def main():
