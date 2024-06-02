@@ -99,7 +99,7 @@ def callback_recognize_object(req):
                 y1 = int(y1.cpu().tolist())
                 name = model.names[int(cls.cpu().tolist())]
                 if req.name == name:
-                    msg, obj_img = get_vision_object(cv_img, name, confidence, req.point_cloud.header.frame_id,x0, y0, x1, y1, cloud)
+                    msg, obj_img = get_vision_object(cv_img, name, confidence, "base_link", x0, y0, x1, y1, cloud)
                     result_img = obj_img
                     result_img = cv2.putText(result_img, name+" "+str(confidence)[:4],(x0,y0-2),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),1)
                     resp.recog_object = msg
@@ -139,7 +139,7 @@ def callback_recognize_objects(req):
                 x1 = int(x1.cpu().tolist())
                 y1 = int(y1.cpu().tolist())
                 name = model.names[int(cls.cpu().tolist())] 
-                msg, obj_img = get_vision_object(cv_img, name, confidence, req.point_cloud.header.frame_id,x0, y0, x1, y1, cloud)
+                msg, obj_img = get_vision_object(cv_img, name, confidence, "base_link",x0, y0, x1, y1, cloud)
                 result_img = cv2.bitwise_or(obj_img, result_img)
                 result_img = cv2.putText(result_img, name+" "+str(confidence)[:4],(x0,y0-2),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),1)
                 resp.recog_objects.append(msg)
