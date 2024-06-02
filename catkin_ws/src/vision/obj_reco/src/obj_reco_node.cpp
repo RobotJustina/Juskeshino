@@ -257,6 +257,17 @@ bool callback_get_points_above_plane(vision_msgs::PreprocessPointCloud::Request&
     return true;
 }
 
+bool callback_transform_cloud_to_base_link(vision_msgs::PreprocessPointCloud::Request& req, vision_msgs::PreprocessPointCloud::Response& resp)
+{
+    if(req.input_cloud.header.frame_id != "base_link")
+    {
+        std::cout << "ObjReco.->Transforming point cloud to base link reference" << std::endl;
+        return pcl_ros::transformPointCloud("base_link", req.input_cloud, resp.output_cloud, *tf_listener);
+    }
+    resp.output_cloud = req.input_cloud;
+    return true;
+}
+
 int main(int argc, char** argv)
 {
     std::cout << "INITIALIZING OBJECT RECOGNIZER BY MR. YISUS (CORRECTED AND IMPROVED BY MARCOSOFT)" << std::endl;
@@ -269,6 +280,7 @@ int main(int argc, char** argv)
     //ros::ServiceServer srvRecogObj        = n.advertiseService("/vision/obj_reco/recognize_object" , callback_recog_obj );
     //ros::ServiceServer srvDetectTrainObj  = n.advertiseService("/vision/obj_reco/detect_and_train_object", callback_detect_and_train_object);
     ros::ServiceServer srvProcessCloud    = n.advertiseService("/vision/get_points_above_plane", callback_get_points_above_plane);
+    ros::ServiceServer srvTransformCloud  = n.advertiseService("/vision/point_cloud_to_base_link", callback_transform_cloud_to_base_link);
     cltRecogYolo       = n.serviceClient<vision_msgs::RecognizeObjects>("/vision/obj_reco/recognize_objects_yolo");
     pubMarkers     = n.advertise<visualization_msgs::Marker>("/vision/obj_reco/markers", 1);
     pubMarkerArray = n.advertise<visualization_msgs::MarkerArray>("/vision/obj_reco/marker_array", 1);

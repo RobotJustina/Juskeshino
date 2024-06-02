@@ -3,7 +3,7 @@ import rospy
 import cv2
 import numpy
 import ros_numpy
-from vision_msgs.srv import RecognizeObject, RecognizeObjects, RecognizeObjectsResponse, RecognizeObjectResponse
+from vision_msgs.srv import *
 from vision_msgs.msg import VisionObject
 from sensor_msgs.msg import PointCloud2
 from cv_bridge import CvBridge
@@ -70,7 +70,12 @@ def get_vision_object(img, label, confidence, frame_id, x0, y0, x1, y1, cloud):
 def callback_recognize_object(req):
     global device, model, min_confidence, result_img, pub_obj
     print("ObjRecoYolo.->Requested recognize object: " + req.name)
-    cloud = ros_numpy.point_cloud2.pointcloud2_to_array(req.point_cloud)
+    clt_transform = rospy.ServiceProxy("/vision/point_cloud_to_base_link", PreprocessPointCloud)
+    req_trans = PreprocessPointCloudRequest()
+    req_trans.input_cloud = req.point_cloud
+    resp_trans = clt_transform(req_trans)
+    cloud = resp_trans.output_cloud
+    cloud = ros_numpy.point_cloud2.pointcloud2_to_array(cloud)
     cloud = ros_numpy.point_cloud2.split_rgb_field(cloud)
     yolo_img = cv2.merge((cloud['r'], cloud['g'], cloud['b']))
     cv_img = cv2.merge((cloud['b'], cloud['g'], cloud['r']))
@@ -106,7 +111,12 @@ def callback_recognize_object(req):
 def callback_recognize_objects(req):
     global device, model, min_confidence, result_img
     print("ObjRecoYolo.->Requested recognize objects...")
-    cloud = ros_numpy.point_cloud2.pointcloud2_to_array(req.point_cloud)
+    clt_transform = rospy.ServiceProxy("/vision/point_cloud_to_base_link", PreprocessPointCloud)
+    req_trans = PreprocessPointCloudRequest()
+    req_trans.input_cloud = req.point_cloud
+    resp_trans = clt_transform(req_trans)
+    cloud = resp_trans.output_cloud
+    cloud = ros_numpy.point_cloud2.pointcloud2_to_array(cloud)
     cloud = ros_numpy.point_cloud2.split_rgb_field(cloud)
     yolo_img = cv2.merge((cloud['r'], cloud['g'], cloud['b']))
     cv_img = cv2.merge((cloud['b'], cloud['g'], cloud['r']))
