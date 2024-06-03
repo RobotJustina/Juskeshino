@@ -12,7 +12,8 @@ def food_name(message):
 class Initial(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'],
-                             output_keys = ['l_arm_home', 'confirm_list', 'negation_list'], input_keys=['l_arm_home', 'confirm_list', 'negation_list'] )
+                             output_keys = ['l_arm_home', 'confirm_list', 'negation_list', 'speech_time'], 
+                             input_keys=['l_arm_home', 'confirm_list', 'negation_list', 'speech_time'] )
         self.tries = 0
         global camera_enable
         if robot_real:
@@ -30,6 +31,8 @@ class Initial(smach.State):
             print("VOSK ENABLE -->")
             userdata.confirm_list = ['yes', 'robot yes', 'jack', 'juice', 'justina yes', 'yeah', 'correct', 'affirmative']
             userdata.negation_list = ['no', 'robot no','not','now','nope','justina no', 'incorrect', 'negative']
+            userdata.speech_time = 6
+            print("speech timeout: ", userdata.speech_time)
             # TODO: prefixes to drinks
         else:
             userdata.confirm_list = ["YES", "YEAH", "ROBOT YES", "JUSTINA YES", "JUICE"]
@@ -160,7 +163,7 @@ class Scan_face(smach.State):
             print("\n")
             rospy.logwarn('--> STATE <: Scan face')
 
-        head.set_joint_values([0.0, -0.1])  # TODO: ensure head is up before scan 
+        head.set_joint_values([0.0, -0.1])  # Ensure head is up before scan 
         rospy.sleep(0.3)
         head.set_joint_values([0.0, -0.1])
 
@@ -182,7 +185,7 @@ class Decide_face(smach.State):
         smach.State.__init__(self, 
                              outcomes=['succ', 'failed', 'unknown'], 
                              input_keys=['name', 'face_img', 'confirm_list'],
-                             output_keys=['name', 'face_img'])
+                             output_keys=['name', 'face_img', 'speech_time'])
         self.tries = 0
     def execute(self, userdata):
         print("\n")
@@ -206,7 +209,7 @@ class Decide_face(smach.State):
 
             # TODO: TEST VOICE BEFORE START
             if vosk_enable:
-                confirmation = get_keywords_speech(8)
+                confirmation = get_keywords_speech(userdata.speech_time)
 
             else: 
                 JuskeshinoHRI.getLastRecognizedSentence()
@@ -231,7 +234,7 @@ class New_face(smach.State):
         smach.State.__init__(self, 
                              outcomes=['succ', 'failed'],
                              input_keys=['name', 'face_img', 'confirm_list'],
-                             output_keys=['name', 'face_img'])
+                             output_keys=['name', 'face_img', 'speech_time'])
         self.tries = 0
 
     def execute(self, userdata):
@@ -256,7 +259,7 @@ class New_face(smach.State):
 
         # TODO: TEST VOICE BEFORE START
         if vosk_enable:
-            speech = get_keywords_speech(8)
+            speech = get_keywords_speech(userdata.speech_time)
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
             rospy.sleep(0.3)
@@ -280,7 +283,7 @@ class New_face(smach.State):
 
         # TODO: TEST VOICE BEFORE START
         if vosk_enable:
-            confirmation = get_keywords_speech(8)
+            confirmation = get_keywords_speech(userdata.speech_time)
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
             rospy.sleep(0.3)
@@ -309,7 +312,7 @@ class Get_drink(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                              outcomes=['succ', 'failed', 'tries'],
-                             input_keys=['name', 'face_img', 'confirm_list'])
+                             input_keys=['name', 'face_img', 'confirm_list', 'speech_time'])
         self.tries = 0
         self.attempts = 3
 
@@ -338,7 +341,7 @@ class Get_drink(smach.State):
 
         # TODO: TEST VOICE BEFORE START
         if vosk_enable:
-            drink = get_keywords_speech(8)
+            drink = get_keywords_speech(userdata.speech_time)
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
             drink = JuskeshinoHRI.waitForNewSentence(10)
@@ -358,7 +361,7 @@ class Get_drink(smach.State):
         rospy.sleep(0.3)
         # TODO: TEST VOICE BEFORE START
         if vosk_enable:
-            confirmation = get_keywords_speech(8)
+            confirmation = get_keywords_speech(userdata.speech_time)
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
             confirmation = JuskeshinoHRI.waitForNewSentence(10)
