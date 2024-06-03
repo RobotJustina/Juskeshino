@@ -11,11 +11,12 @@ Drinks:
   - soda
   - milk
 Groceries:
+  - chips_can
   - pringles
   - cereal
   - mustard
   - tomato_soup
-  - tuna_can
+  - tuna_fish_can
 Kitchen_items:
   - plate
   - bleach

@@ -40,15 +40,15 @@ def get_vision_object(img, label, confidence, frame_id, x0, y0, x1, y1, cloud):
     msg.obj_mask = bridge.cv2_to_imgmsg(mask, encoding="passthrough")
     obj_cloud = numpy.copy(cloud)
     obj_cloud[mask == 0] = 0
-    centroid_x = numpy.mean(obj_cloud['x'][mask != 0])
-    centroid_y = numpy.mean(obj_cloud['y'][mask != 0])
-    centroid_z = numpy.mean(obj_cloud['z'][mask != 0])
-    min_x = numpy.min(obj_cloud['x'][mask != 0])
-    min_y = numpy.min(obj_cloud['y'][mask != 0])
-    min_z = numpy.min(obj_cloud['z'][mask != 0])
-    max_x = numpy.max(obj_cloud['x'][mask != 0])
-    max_y = numpy.max(obj_cloud['y'][mask != 0])
-    max_z = numpy.max(obj_cloud['z'][mask != 0])
+    centroid_x = numpy.nanmean(obj_cloud['x'][mask != 0])
+    centroid_y = numpy.nanmean(obj_cloud['y'][mask != 0])
+    centroid_z = numpy.nanmean(obj_cloud['z'][mask != 0])
+    min_x = numpy.nanmin(obj_cloud['x'][mask != 0])
+    min_y = numpy.nanmin(obj_cloud['y'][mask != 0])
+    min_z = numpy.nanmin(obj_cloud['z'][mask != 0])
+    max_x = numpy.nanmax(obj_cloud['x'][mask != 0])
+    max_y = numpy.nanmax(obj_cloud['y'][mask != 0])
+    max_z = numpy.nanmax(obj_cloud['z'][mask != 0])
     size_x = max_x - min_x
     size_y = max_y - min_y
     size_z = max_z - min_z

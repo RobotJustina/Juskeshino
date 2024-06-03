@@ -39,7 +39,7 @@ def get_object_xyz(cloud_xyz, mask):
     mask = imgmsg_to_cv2(mask)
     th, mask = cv2.threshold(mask, 0, 255, cv2.THRESH_BINARY)
     # Take xyz points only in mask and remove points with zero X
-    obj_xyz = cloud_xyz[(mask == 255) & (cloud_xyz[:,:,0] > 0.1)].copy()
+    obj_xyz = cloud_xyz[(mask == 255) & (cloud_xyz[:,:,2] > 0.1)].copy()
     
     return obj_xyz
 
@@ -60,6 +60,7 @@ def get_centroid(img_bgr):
 
 
 def pca(xyz_points):    # pc del contorno mas cercano
+    print("xyz_point shape: ", xyz_points.shape)
     eig_val, eig_vect = np.linalg.eig(np.cov(np.transpose(xyz_points))) # Eigenvalues and eigenvectors from Point Cloud Cov Matrix
     idx = eig_val.argsort()
     eig_val  = eig_val[idx]
@@ -342,7 +343,8 @@ def callbackPoseObjectOrientation(req):  # Request is a PointCloud2
     print("******************************")
     print("**    OBJECT INFORMATION    **")
     print("******************************")
-
+    print("CvMats shape: " , cv_mats.shape)
+    print("Objxyz shape:", obj_xyz.shape)
     centroid = np.mean(obj_xyz, axis=0)
     pca_vectors, eig_val, size_obj = pca(obj_xyz)
     obj_pose, axis_x_obj, obj_state = object_pose(centroid, pca_vectors[0], pca_vectors[1], size_obj )

@@ -1,6 +1,6 @@
 <launch>
   <group ns="hardware">
-    <node name="left_arm" pkg="arms" type="arm_node" output="screen" respawn="false">
+    <node name="left_arm" pkg="arms" type="arm_node" respawn="false">
       <rosparam command="load" file="$(find config_files)/justina/arms/left_arm_params.yaml"/>
       <remap from="/hardware/arm/goal_pose"      to="/hardware/left_arm/goal_pose"     />
       <remap from="/hardware/arm/goal_gripper"   to="/hardware/left_arm/goal_gripper"  />
@@ -30,10 +30,10 @@
     </node> 
     -->
 
-    <node name="head" pkg="head" type="head_node" output="screen">
+    <node name="head" pkg="head" type="head_node">
       <rosparam command="load" file="$(find config_files)/justina/head/head_params.yaml"/>
     </node>
-    <node name="torso" pkg="torso" type="torso_node_pololu" output="screen" required="true">
+    <node name="torso" pkg="torso" type="torso_node_pololu" required="true">
       <param name="simul" value="false"/>
       <param name="port" value="/dev/serial/by-id/usb-Pololu_Corporation_Pololu_Jrk_12v12_Motor_Controller_00191339-if00"/>
       <param name="baud" value="9600"/>
