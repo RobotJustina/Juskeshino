@@ -138,7 +138,7 @@ def points_actual_to_points_target(point_in, f_actual, f_target):
 
 
 
-def location_obj():
+def location_obj(table_loc):
     objs, img = JuskeshinoVision.detectAndRecognizeObjects()
     loc_objs = list([])
         
@@ -146,15 +146,16 @@ def location_obj():
         if (obj.id == "bowl"):
             JuskeshinoHRI.say("I found: " + obj.id )
             print(obj.pose.position)
-            loc_objs.insert(0, obj)
+            x_bowl, y_bowl, z_bowl = obj.pose.position.x, obj.pose.position.y, obj.pose.position.z
         if (obj.id == "milk"):
             JuskeshinoHRI.say("I found: " + obj.id )
             print(obj.pose.position)
-            loc_objs.insert(1, obj)
+            x_milk, y_milk, z_milk = obj.pose.position.x, obj.pose.position.y, obj.pose.position.z
         if (obj.id == "cereal"):
             JuskeshinoHRI.say("I found: " + obj.id )
             print(obj.pose.position)
-            loc_objs.insert(2, obj)
+            x_cereal, y_cereal, z_cereal = obj.pose.position.x, obj.pose.position.y , obj.pose.position.z
+
         if objs == None:
             print('Cannot detect objects, I will try again...')
             JuskeshinoHRI.say('Cannot detect objects, I will try again...')
@@ -162,7 +163,15 @@ def location_obj():
         if len(loc_objs) > 3:
             break
 
-    return loc_objs
+    xb, yb, zb = points_actual_to_points_target( [x_bowl, y_bowl, z_bowl] , 'base_link' , 'map' )
+    xm, ym, zm = points_actual_to_points_target( [x_milk, y_milk, z_milk] , 'base_link' , 'map' )
+    xc, yc, zc = points_actual_to_points_target( [ x_cereal, y_cereal, z_cereal] , 'base_link' , 'map' )
+    
+    loc_bowl = [x_bowl, y_bowl, theta]
+    loc_milk = [x_bowl, y_bowl, theta]
+    loc_bowl = [x_bowl, y_bowl, theta]
+
+
 
 
 
