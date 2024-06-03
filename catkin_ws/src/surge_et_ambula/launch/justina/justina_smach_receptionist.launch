@@ -1,6 +1,6 @@
 <launch>
     <!-- <include file="$(find speech_recog)/launch/ros_vosk.launch"/> -->
-    <include file="$(find ros_whisper_vosk)/launch/ros_vosk.launch"/>
+    <!-- <include file="$(find ros_whisper_vosk)/launch/ros_vosk.launch"/> -->
     <node pkg="face_recog"  name="face_recog" type="face_recog_server.py"/>
     <node pkg="face_recog"  name="face_recog_deep" type="face_recog_server_deep.py"/>
     <node pkg="face_recog"  name="analyze_face_backgnd" type="analyze_face_backgnd_node"/>
