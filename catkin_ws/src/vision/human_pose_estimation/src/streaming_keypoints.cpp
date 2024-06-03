@@ -33,7 +33,7 @@
 #include "vision_msgs/HumanCoordinates.h"
 #include "vision_msgs/HumanCoordinatesArray.h"
 
-std::string pcl_topic = "/camera/depth_registered/points";
+std::string pcl_topic = "/camera/depth_registered/points"; 
 
 const std::vector<std::string> kpt_names{"nose", "neck", 
 	"r_sho", "r_elb", "r_wri", "l_sho", "l_elb", "l_wri",
@@ -54,7 +54,7 @@ class HumanDetector{
     ros::Subscriber subEnable;
   public:
     HumanDetector();
-    void pclCallback(const sensor_msgs::PointCloud2ConstPtr& pcl_topic);
+    void pclCallback(const sensor_msgs::PointCloud2::ConstPtr& pcl_topic);
     void enableCallback(const std_msgs::Bool::ConstPtr& msg);
     visualization_msgs::Marker getHumanPoseMarkers(vision_msgs::HumanCoordinatesArray& msg);
 };
@@ -66,7 +66,8 @@ HumanDetector::HumanDetector(){
   subEnable = nh.subscribe("/vision/human_pose/enable", 1, &HumanDetector::enableCallback, this);
 }
 
-void HumanDetector::pclCallback(const sensor_msgs::PointCloud2ConstPtr& pcl_topic){
+void HumanDetector::pclCallback(const sensor_msgs::PointCloud2::ConstPtr& pcl_topic){
+    std::cout << "Received point cloud..." << std::endl;
   pcl::PCLPointCloud2 pcl_pc2;
   pcl_conversions::toPCL(*pcl_topic, pcl_pc2);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud2xyz(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -202,7 +203,7 @@ int main(int argc,char **argv){
     ptrack = new poseEstimation::poseTracker();
     
     ros::init (argc, argv,"human_pose_detector");
-    ros::param::param<std::string>("~point_cloud_topic", pcl_topic, "/points");
+    ros::param::param<std::string>("~point_cloud_topic", pcl_topic, "/camera/depth_registered/points");
     HumanDetector human_detector;
     ros::spin();
     return 0;

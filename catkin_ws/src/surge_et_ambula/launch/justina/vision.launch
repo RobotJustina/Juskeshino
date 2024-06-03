@@ -28,10 +28,11 @@
    
   <node name="object_pose" pkg="obj_segmentation_and_pose" type="obj_pose_node.py" output="screen"/>
   
-  <node name="human_pose_estimator" pkg="human_pose_estimation" type="pose_estimator_srv"/>
+  <node name="human_pose_estimator" pkg="human_pose_estimation" type="streaming_keypoints" output="screen"/>
 
   <node name="object_classification" pkg="object_classification" type="obj_classification_node.py" output="screen">
     <param name="model" value="$(find object_classification)/src/weights/TaRJustv3_ycb.pt"/>
+    <param name="min_confidence" value="0.7"/>
   </node>
 
 </launch>
