@@ -280,7 +280,8 @@ class TransportObject(smach.State):
 class ScanCabinet(smach.State):
     def __init__(self):
         smach.State.__init__(
-            self, outcomes=['succ', 'failed', 'tries'])
+            self, outcomes=['succed', 'failed', 'tries'],
+                    input_keys=['object_output','object'])
         self.tries = 0
 
     def execute(self, userdata):
@@ -288,7 +289,8 @@ class ScanCabinet(smach.State):
         print('Scanning shelf')
         # request = segmentation_server.request_class()
         self.tries += 1
-        if self.tries < 3:
+        if self.tries < 10:
+            tar_obj=userdata.object
             rospy.loginfo('\n--> STATE 9 <: Scanning cabinet')
             JuskeshinoHRI.say("Scanning cabinet")
             recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
@@ -298,18 +300,13 @@ class ScanCabinet(smach.State):
                 for obj in recog_objects:
                     print("------->",obj.id)
                     print(obj.pose.position)
-                    print(obj.header.frame_id)
-                    x,y,z = obj.pose.position.x, obj.pose.position.y, obj.pose.position.z
-                    x,y,z = JuskeshinoSimpleTasks.transformPoint(x,y,z, "shoulders_left_link", "base_link")
-                    #print(x,y,z)
-                    obj_oriented = JuskeshinoVision.getObjectOrientation(obj)
-                    userdata.object_output=[x,y,z]
-                    userdata.object=obj_oriented
-                    print('Object found------>>', obj_oriented.id, obj_oriented.pose, obj_oriented.object_state, obj_oriented.size, obj_oriented.graspable)
-                    return 'succed'
+                    if tar_obj.id and obj.id:
+                        #centroid maths
+                        return 'succed'
             #Check for the position of each object and start from that 
             print('Cannot detect objects, I will try again...')
             JuskeshinoHRI.say('Cannot detect objects, I will try again...')
+            JuskeshinoNavigation.moveDist(0.3, 10)
             return 'failed'    
         
         print('After a lot of tries, I could not detect objects')
