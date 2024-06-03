@@ -12,8 +12,8 @@ from visualization_msgs.msg import Marker, MarkerArray
 import geometry_msgs.msg
 
 MAXIMUM_GRIP_LENGTH = 0.14
-MINIMUM_HEIGHT_PRISM = 0.13
-MAXIMUM_CUBE_SIZE = 0.13
+MINIMUM_HEIGHT_PRISM = 0.16
+MAXIMUM_CUBE_SIZE = 0.15
 Z_OFFSET = 0.16
 Z_OFFSET_BOWL  = 0.22
 LATERAL_OFFSET = 0.06
@@ -617,6 +617,11 @@ def ik_msg_response(array_xyzRPY, offsets, initial_guess):
     return ik_msg
 
 
+def grip_no_orientation(position_obj):
+    
+
+
+
 
     
 def evaluating_possibility_grip(candidate_q_list, obj_state, category):
@@ -638,6 +643,8 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
 
     if(category == "CUBIC"):
         second_trajectory  = list(reversed(candidate_q_list))
+        second_trajectory.pop(0)
+        second_trajectory.pop(1)
         first_trajectory   = list(reversed(candidate_q_list))
         candidate_q_list   = list(first_trajectory)
     
