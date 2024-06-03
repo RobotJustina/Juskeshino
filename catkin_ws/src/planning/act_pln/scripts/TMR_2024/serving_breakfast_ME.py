@@ -167,10 +167,11 @@ def location_obj(table_loc):
     xm, ym, zm = points_actual_to_points_target( [x_milk, y_milk, z_milk] , 'base_link' , 'map' )
     xc, yc, zc = points_actual_to_points_target( [ x_cereal, y_cereal, z_cereal] , 'base_link' , 'map' )
     
-    loc_bowl = [x_bowl, y_bowl, theta]
-    loc_milk = [x_bowl, y_bowl, theta]
-    loc_bowl = [x_bowl, y_bowl, theta]
+    loc_bowl = [xb , table_loc[1], table_loc[2]]
+    loc_milk = [xm , table_loc[1], table_loc[2]]
+    loc_cereal = [xc , table_loc[1], table_loc[2]]
 
+    return loc_bowl, loc_milk, loc_cereal
 
 
 
@@ -213,6 +214,7 @@ def main():
 
 
         elif(current_state == CONFIG_BY_CYCLE):
+
             current_state = -1
 
 

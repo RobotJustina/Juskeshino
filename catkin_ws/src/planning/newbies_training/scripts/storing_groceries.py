@@ -402,7 +402,8 @@ def main():
   
         smach.StateMachine.add('SCAN_CABINET',ScanCabinet(), 
         transitions={'failed':'SCAN_CABINET',
-                     'succed':'SCAN_CABINET'})
+                     'succed':'SCAN_CABINET',
+                     'tries':'SCAN_CABINET'})
     # Execute SMACH plan
     outcome = sm.execute()
     
