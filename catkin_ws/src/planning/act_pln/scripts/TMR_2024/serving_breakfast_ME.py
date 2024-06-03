@@ -32,6 +32,8 @@ PREPARE_RA    = [-0.8, -0.1, 0.0, 1.3, 1.3,0, 0.0]
 OBJECTS_TABLE = "desk_justina"
 EAT_TABLE     = "desk_takeshi" 
 
+OBJECTS_TABLE_X_Y_THETA = [5.44 ,2.15, 1.5]
+
 # Gripper_aperture
 GRIP_MILK   = 0.3
 GRIP_BOWL   = -0.1
@@ -57,6 +59,8 @@ APROACH_TO_TABLE_2 = 15
 CYCLE_END = 16
 CONFIG_BY_CYCLE = 17
 END = 18
+
+
 
 
 def serving_breakfast(object):
@@ -116,44 +120,6 @@ def approach_to_table():
         i = i+1
 
 
-
-def broadcaster_frame_object(frame, child_frame, pose):   # Emite la transformacion en el frame base_link,
-    #br = tf2_ros.TransformBroadcaster()
-    br =  tf2_ros.StaticTransformBroadcaster()
-    t = geometry_msgs.msg.TransformStamped()
-    t.header.frame_id = frame
-    t.child_frame_id = child_frame 
-    t.header.stamp = rospy.Time.now()
-    t.transform.translation.x = pose.position.x
-    t.transform.translation.y = pose.position.y
-    t.transform.translation.z = pose.position.z
-    t.transform.rotation.x = pose.orientation.x
-    t.transform.rotation.y = pose.orientation.y
-    t.transform.rotation.z = pose.orientation.z
-    t.transform.rotation.w = pose.orientation.w
-    br.sendTransform(t)
-
-
-
-def pose_actual_to_pose_target(pose, f_actual, f_target):
-    global listener
-    poseStamped_msg = PoseStamped()  
-    poseStamped_msg.header.frame_id = "object"   # frame de origen
-    poseStamped_msg.header.stamp = rospy.Time()  # la ultima transformacion
-    poseStamped_msg.pose = pose
-
-    try:
-        listener.waitForTransform("object", "shoulders_left_link", rospy.Time(0), rospy.Duration(10.0))
-        print("waitfor ..despues")
-        new_poseStamped = listener.transformPose('shoulders_left_link', poseStamped_msg)
-        new_pose = new_poseStamped.pose
-        return new_pose
-    
-    except:
-        print("Best_Grasp_Node.-> Could not get the pose in the desired frame")
-        return -1
-
-
     
 
 def points_actual_to_points_target(point_in, f_actual, f_target):
@@ -171,6 +137,32 @@ def points_actual_to_points_target(point_in, f_actual, f_target):
     return [ new_point.x , new_point.y , new_point.z ]
 
 
+
+def location_obj():
+    objs, img = JuskeshinoVision.detectAndRecognizeObjects()
+    loc_objs = list([])
+        
+    for obj in objs:
+        if (obj.id == "bowl"):
+            JuskeshinoHRI.say("I found: " + obj.id )
+            print(obj.pose.position)
+            loc_objs.insert(0, obj)
+        if (obj.id == "milk"):
+            JuskeshinoHRI.say("I found: " + obj.id )
+            print(obj.pose.position)
+            loc_objs.insert(1, obj)
+        if (obj.id == "cereal"):
+            JuskeshinoHRI.say("I found: " + obj.id )
+            print(obj.pose.position)
+            loc_objs.insert(2, obj)
+        if objs == None:
+            print('Cannot detect objects, I will try again...')
+            JuskeshinoHRI.say('Cannot detect objects, I will try again...')
+            return None
+        if len(loc_objs) > 3:
+            break
+
+    return loc_objs
 
 
 
