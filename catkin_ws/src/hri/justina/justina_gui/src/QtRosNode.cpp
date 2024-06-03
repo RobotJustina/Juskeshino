@@ -451,7 +451,15 @@ bool QtRosNode::call_recognize_objects()
     // else
     //     srv.request.image = *ptrImg;
     
-    return cltRecogObjects.call(srv);
+    bool success = cltRecogObjects.call(srv);
+    if(success)
+    {
+        std::cout << "JustinaGUI.->Found objects:" << std::endl;
+        for(int i=0; i < srv.response.recog_objects.size(); i++)
+            std::cout << "JustinaGUI.->" << srv.response.recog_objects[i].id << "  " << srv.response.recog_objects[i].pose << std::endl;
+    }else
+        std::cout << "JustinaGUI.->Cannot find any objects ':(" << std::endl;
+    return success;
 }
 
 bool QtRosNode::call_recognize_object(std::string name)
@@ -466,11 +474,13 @@ bool QtRosNode::call_recognize_object(std::string name)
     }
     srv.request.point_cloud = *ptr;
     srv.request.name = name;
-    return cltRecogObject.call(srv);
+    bool success = cltRecogObject.call(srv);
+    if(success)
+        std::cout << "JustinaGUI.->Found " << srv.response.recog_object.id << " at " << srv.response.recog_object.pose << std::endl;
+    else
+        std::cout << "JustinaGUI.->Cannot find " << srv.request.name << std::endl;
+    return success;
 }
-
-
-
 
 
 void QtRosNode::call_take_object(std::string name)
@@ -497,24 +507,6 @@ void QtRosNode::call_take_object(std::string name)
     msg.data = " ";
     pubTakeObject.publish(msg);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 bool QtRosNode::call_get_points_above_plane()
 {
