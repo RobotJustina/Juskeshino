@@ -13,8 +13,8 @@ import geometry_msgs.msg
 from cv_bridge import CvBridge
 
 
-MAXIMUM_GRIP_LENGTH = 0.16
-MAXIMIUN_CUBE_SIZE  = 0.15
+MAXIMUM_GRIP_LENGTH = 0.17
+MAXIMIUN_CUBE_SIZE  = 0.16
 
 
 def get_cv_mats_from_cloud_message(cloud_msg):
@@ -307,7 +307,7 @@ def get_obj_pose_response(obj_state, c_obj, size_obj, obj_pose, graspable):
 
 def object_category(size_obj, obj_state):  # estima la forma geometrica del objeto. (x,z,y)
 
-    if (size_obj.z <= MAXIMUM_GRIP_LENGTH) and (size_obj.y <= MAXIMUM_GRIP_LENGTH) and (size_obj.x >= 0.13):
+    if (size_obj.z <= MAXIMUM_GRIP_LENGTH) and (size_obj.y <= MAXIMUM_GRIP_LENGTH): #and (size_obj.x >= 0.13):
 
         if((size_obj.x /size_obj.z) < 1.4) and (obj_state == 'horizontal'):
             print("The object is a bowl")
@@ -318,7 +318,7 @@ def object_category(size_obj, obj_state):  # estima la forma geometrica del obje
 
 
     else:
-        if(size_obj.z <= MAXIMUM_GRIP_LENGTH) and (size_obj.y <= MAXIMUM_GRIP_LENGTH) and (size_obj.x < MAXIMIUN_CUBE_SIZE) and (size_obj.x > 0.07):
+        if(size_obj.z <= MAXIMUM_GRIP_LENGTH) and (size_obj.y <= MAXIMUM_GRIP_LENGTH) and (size_obj.x < MAXIMIUN_CUBE_SIZE):# and (size_obj.x > 0.07):
             print("Object spheric or cubic SMALL, SUPERIOR GRIP will be made")
             return "CUBIC", True
             
@@ -328,7 +328,7 @@ def object_category(size_obj, obj_state):  # estima la forma geometrica del obje
                 return "BOWL", True
             else:
                 if (size_obj.z >= MAXIMUM_GRIP_LENGTH) and (size_obj.y >= MAXIMUM_GRIP_LENGTH) and (size_obj.x >= MAXIMUM_GRIP_LENGTH):
-                    return "BOX", True#"BIG", False
+                    return "CUBIC", True#return "BOX", True
                 
                 print("size object > MAX LENGHT GRIP")
                 print("The object will be GRABBED as BOX....................")

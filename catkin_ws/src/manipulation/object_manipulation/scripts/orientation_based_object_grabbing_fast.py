@@ -12,13 +12,17 @@ from visualization_msgs.msg import Marker, MarkerArray
 import geometry_msgs.msg
 
 MAXIMUM_GRIP_LENGTH = 0.14
-MINIMUM_HEIGHT_PRISM = 0.16
-MAXIMUM_CUBE_SIZE = 0.15
-Z_OFFSET = 0.16
-Z_OFFSET_BOWL  = 0.22
+MINIMUM_HEIGHT_PRISM = 0.17
+MAXIMUM_CUBE_SIZE = 0.16
+Z_OFFSET = 0.12
+Z_OFFSET_BOWL  = 0.18
+Z_OFFSET_2 = 0.02
+Z_OFFSET_BOWL_2  = 0.06
+
 LATERAL_OFFSET = 0.06
 
-
+TAKE_OBJECT_X_1 = [-0.1, 0.1 , 0.0, 1.55, 0.0, 0.36, 0.0]
+TAKE_OBJECT_X_2 = [0.3 , 0.1 , 0.0, 1.15, 0.0, 0.36, 0.0]
 
 def descarte_forced_poses(obj_pose):   
 
@@ -616,9 +620,7 @@ def ik_msg_response(array_xyzRPY, offsets, initial_guess):
 
     return ik_msg
 
-
-def grip_no_orientation(position_obj):
-    
+#def grip_no_orientation(position_obj):
 
 
 
@@ -642,40 +644,41 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
         candidate_q_list   = list(first_trajectory)
 
     if(category == "CUBIC"):
+        first_trajectory   = list(reversed(candidate_q_list))
         second_trajectory  = list(reversed(candidate_q_list))
         second_trajectory.pop(0)
-        second_trajectory.pop(1)
-        first_trajectory   = list(reversed(candidate_q_list))
+        #second_trajectory.pop(1)
         candidate_q_list   = list(first_trajectory)
     
         
     print("Best_Grasp_Node.-> evaluating_possibility_grip()")
     i = 0
     for pose1 in candidate_q_list:  # rellena el mensaje para el servicio IK
-        if obj_state == "vertical":
-            if category == "PRISM":
-                pose_xyzrpy, new_pos = pose_for_ik_service(pose1)
-                if new_pos == -1: continue
-                descarte =  descarte_forced_poses(new_pos)
-                if descarte: continue
+        #if (obj_state == "vertical") 
+        if (category == "PRISM") and (obj_state == "vertical"):
+            pose_xyzrpy, new_pos = pose_for_ik_service(pose1)
+            if new_pos == -1: continue
+            descarte =  descarte_forced_poses(new_pos)
+            if descarte: continue
 
-                ik_msg.x = pose_xyzrpy[0] 
-                ik_msg.y = pose_xyzrpy[1]
-                ik_msg.z = pose_xyzrpy[2]
-                ik_msg.roll = pose_xyzrpy[3]
-                ik_msg.pitch = pose_xyzrpy[4]
-                ik_msg.yaw = pose_xyzrpy[5]
-                ik_msg.duration = 5
-                ik_msg.time_step = 0.05
-                try:
-                    resp_ik_srv = ik_srv(ik_msg)
-                    print("Best_Grasp_Node.-> Suitable pose for vertical object found.....................")
-                    return resp_ik_srv.articular_trajectory , candidate_q_list[i] , pose_xyzrpy, True
-                except:
-                    i = i + 1 
-                    print("Best_Grasp_Node.-> Discarded candidate")  
-                    continue
+            ik_msg.x = pose_xyzrpy[0] 
+            ik_msg.y = pose_xyzrpy[1]
+            ik_msg.z = pose_xyzrpy[2]
+            ik_msg.roll = pose_xyzrpy[3]
+            ik_msg.pitch = pose_xyzrpy[4]
+            ik_msg.yaw = pose_xyzrpy[5]
+            ik_msg.duration = 5
+            ik_msg.time_step = 0.05
+            try:
+                resp_ik_srv = ik_srv(ik_msg)
+                print("Best_Grasp_Node.-> Suitable pose for vertical object found.....................")
+                return resp_ik_srv.articular_trajectory , candidate_q_list[i] , pose_xyzrpy, True
+            except:
+                i = i + 1 
+                print("Best_Grasp_Node.-> Discarded candidate")  
+                continue
 
+            """
             if category == "BOX":
                 pose_xyzRPY , new_pos_box = pose_for_ik_service(pose1)
                 if new_pos_box == -1: continue
@@ -697,13 +700,14 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
                     i = i + 1 
                     print("Best_Grasp_Node.-> Discarded candidate")  
                     continue
+            """
 
 
 
         #***********************************************************************************************************************
 
         else:
-            if(category == "BOWL") or (category == "CUBIC"):
+            if(category == "BOWL") or (category == "CUBIC") or (category == "BOX"):
                 print("HORIZONTAL GRIP")
                 print("CATEGORY:__", category)
                 pose1, new_pos = pose_for_ik_service(pose1)
@@ -742,9 +746,9 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
                         ik_msg_3.x             = cartesian_pose_shoulder[0] 
                         ik_msg_3.y             = cartesian_pose_shoulder[1]
                         if(category == "CUBIC"):
-                            ik_msg_3.z = cartesian_pose_shoulder[2] - Z_OFFSET
+                            ik_msg_3.z = cartesian_pose_shoulder[2] - Z_OFFSET_2
                         else:
-                            ik_msg_3.z = cartesian_pose_shoulder[2] - Z_OFFSET_BOWL
+                            ik_msg_3.z = cartesian_pose_shoulder[2] - Z_OFFSET_BOWL_2
 
                         ik_msg_3.roll          = cartesian_pose_shoulder[3]      
                         ik_msg_3.pitch         = cartesian_pose_shoulder[4]
@@ -800,7 +804,7 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
                     # Ultimo punto de la segunda trayectoria
                     ik_msg.x = pose1[0] 
                     ik_msg.y = pose1[1]
-                    ik_msg.z = pose1[2] - Z_OFFSET
+                    ik_msg.z = pose1[2] - Z_OFFSET_2
                     ik_msg.roll = pose1[3]
                     ik_msg.pitch = pose1[4]
                     ik_msg.yaw = pose1[5]
@@ -873,6 +877,7 @@ def callback(req):
     else: 
         print("Best_Grasp_Node.-> No possible poses found :'(...................")
         resp.graspable = False
+        resp.q = TAKE_OBJECT_X_2
         return resp
 
 

@@ -8,5 +8,4 @@ float64 z_gripper
 float64 roll_gripper
 float64 pitch_gripper
 float64 yaw_gripper
-
-
+float64[] q	# Send generic trajectory

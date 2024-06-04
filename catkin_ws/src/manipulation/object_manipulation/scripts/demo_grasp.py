@@ -167,6 +167,13 @@ def main():
                 
             else:
                 JuskeshinoHRI.say("No possible poses found")
+                if la:
+                    JuskeshinoHardware.moveLeftArmWithTrajectory(resp.q ,10)
+                    print("SB-PLN.->Closing gripper")
+                    time.sleep(0.5)
+                    JuskeshinoHardware.moveLeftGripper(0, 2.0) 
+                    time.sleep(0.5)
+
                 print("SB-PLN.->No possible poses found")
                 j = j+1 # Actualiza intentos de agarre
             
