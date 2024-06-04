@@ -52,11 +52,8 @@ class Talker():
         
         JuskeshinoHRI.say(sentence)
         now = time.time()
-        print(">>> time: ", now - st_time)
         # while st_time - now < timeout:  # Uncomment if time out is needed
         #     now = time.time()
-
-
 
 
 class Head:  # known as Gaze on Takeshi grasp_utils.py
@@ -677,7 +674,7 @@ global segmentation_server, tf_man, voice, head, party, tfBuffer, listener
 global robot_real, human_detect_server
 rospy.init_node('smach_justina_tune_vision')
 
-robot_real = False
+robot_real = True
 vosk_enable = True
 bridge = CvBridge()
 rgbd = RGBD()

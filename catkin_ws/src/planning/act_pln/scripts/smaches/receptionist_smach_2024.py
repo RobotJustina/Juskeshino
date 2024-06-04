@@ -11,9 +11,9 @@ def food_name(message):
 # --------------------------------------------------
 class Initial(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed'],
-                             output_keys = ['l_arm_home', 'confirm_list', 'negation_list', 'speech_time'], 
-                             input_keys=['l_arm_home', 'confirm_list', 'negation_list', 'speech_time'] )
+        smach.State.__init__(self, outcomes=['succ', 'failed'], 
+                             input_keys=['l_arm_home', 'confirm_list', 'negation_list', 'speech_time'],
+                             output_keys = ['l_arm_home', 'confirm_list', 'negation_list', 'speech_time'] )
         self.tries = 0
         global camera_enable
         if robot_real:
@@ -184,8 +184,8 @@ class Decide_face(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                              outcomes=['succ', 'failed', 'unknown'], 
-                             input_keys=['name', 'face_img', 'confirm_list'],
-                             output_keys=['name', 'face_img', 'speech_time'])
+                             input_keys=['name', 'face_img', 'confirm_list', 'speech_time'],
+                             output_keys=['name', 'face_img'])
         self.tries = 0
     def execute(self, userdata):
         print("\n")
@@ -209,6 +209,7 @@ class Decide_face(smach.State):
 
             # TODO: TEST VOICE BEFORE START
             if vosk_enable:
+                rospy.logwarn('Listening *))')
                 confirmation = get_keywords_speech(userdata.speech_time)
 
             else: 
@@ -233,8 +234,8 @@ class New_face(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                              outcomes=['succ', 'failed'],
-                             input_keys=['name', 'face_img', 'confirm_list'],
-                             output_keys=['name', 'face_img', 'speech_time'])
+                             input_keys=['name', 'face_img', 'confirm_list', 'speech_time'],
+                             output_keys=['name', 'face_img'])
         self.tries = 0
 
     def execute(self, userdata):
@@ -259,6 +260,7 @@ class New_face(smach.State):
 
         # TODO: TEST VOICE BEFORE START
         if vosk_enable:
+            rospy.logwarn('Listening *))')
             speech = get_keywords_speech(userdata.speech_time)
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
@@ -283,6 +285,7 @@ class New_face(smach.State):
 
         # TODO: TEST VOICE BEFORE START
         if vosk_enable:
+            rospy.logwarn('Listening *))')
             confirmation = get_keywords_speech(userdata.speech_time)
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
@@ -341,6 +344,7 @@ class Get_drink(smach.State):
 
         # TODO: TEST VOICE BEFORE START
         if vosk_enable:
+            rospy.logwarn('Listening *))')
             drink = get_keywords_speech(userdata.speech_time)
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
@@ -361,6 +365,7 @@ class Get_drink(smach.State):
         rospy.sleep(0.3)
         # TODO: TEST VOICE BEFORE START
         if vosk_enable:
+            rospy.logwarn('Listening *))')
             confirmation = get_keywords_speech(userdata.speech_time)
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
