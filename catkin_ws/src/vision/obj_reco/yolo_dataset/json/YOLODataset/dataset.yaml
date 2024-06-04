@@ -1,0 +1,4 @@
+train: /home/biorobotics-lab/Juskeshino/catkin_ws/src/vision/obj_reco/yolo_dataset/json/YOLODataset/images/train/
+val: /home/biorobotics-lab/Juskeshino/catkin_ws/src/vision/obj_reco/yolo_dataset/json/YOLODataset/images/val/
+nc: 29
+names: ["strawberry", "campbells", "baseball", "red_bowl", "pear", "red_cup", "tuna_can", "apple", "pringles", "apple_juice", "orange", "mango_juice", "banana", "meat_can", "spatula", "mustard", "yogurt", "tennis_ball", "spoon", "adjustable_wrench", "fork", "soft_ball", "jelly", "rubics_cub", "sponge", "lemon", "screw_driver", "knife", "red_dish"]
