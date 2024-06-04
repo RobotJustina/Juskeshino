@@ -21,7 +21,7 @@ def rotationMatrixToEulerAngles(R):
         x = math.atan2(-R[1,2], R[1,1])
         y = math.atan2(-R[2,0], sy)
         z = 0
-        
+
     return numpy.array([x, y, z])
 
 def get_dist_angle_to_marker(img, intrinsic_matrix):
@@ -67,8 +67,11 @@ def callback_img(msg):
     bridge = CvBridge()
     img  = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
     dist,theta = get_dist_angle_to_marker(img, camera_calibration_matrix)
+    dist_angle_array = Float32MultiArray()
+    dist_angle_array.data = [dist, theta]
+    pub_dist_angle.publish(dist_angle_array)
     print([dist, theta])
-    
+
 
 def main():
     global camera_calibration_matrix, pub_dist_angle, debug
@@ -76,8 +79,8 @@ def main():
     rospy.init_node("april_tags")
     debug = rospy.get_param("~debug", True)
     rospy.Subscriber("/camera/depth_registered/rgb/image_raw", Image, callback_img)
-    
-    
+    pub_dist_angle = rospy.Publisher("vision/fiducial_markers/april_tag_dist_angle", Float32MultiArray, queue_size = 1)
+
     camera_info = rospy.wait_for_message("/camera/depth_registered/rgb/camera_info", CameraInfo)
     cp = camera_info.P
     camera_calibration_matrix = numpy.asarray([[cp[0], cp[1], cp[2]], [cp[4], cp[5], cp[6]], [cp[8], cp[9], cp[10]]])
@@ -87,4 +90,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
