@@ -1,0 +1,4 @@
+<launch>
+	<include file="$(find surge_et_ambula)/launch/justina/justina.launch" />
+        <node pkg="newbies_training" type="carry_my_luggage.py" name="carry_my_luggage" output="screen" />
+</launch>

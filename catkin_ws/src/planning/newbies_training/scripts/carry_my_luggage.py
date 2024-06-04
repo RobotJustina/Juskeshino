@@ -58,6 +58,7 @@ def automate():
     #print("waiting to human derector")
     result = False
     for step in steps:
+        print(step.__name__)
         while not result:
             result = step()
             if result:
@@ -166,6 +167,7 @@ def ask4bag():
 
 def main():
     global point_publisher, steps
+    time.sleep(5)
     rospy.init_node("carry_my_luggage")
     rate = rospy.Rate(10)
     rospack = rospkg.RosPack()
@@ -188,7 +190,7 @@ def main():
             )
     steps = [
             meet,
-            #detect_human,
+            detect_human,
             ask4bag,
             #follow_human,
             #return_home,
