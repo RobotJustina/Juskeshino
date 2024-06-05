@@ -16,7 +16,8 @@ Groceries:
   - cereal
   - mustard
   - tomato_soup
-  - tuna_fish_can
+  - tuna_can
+  - campbells
 Kitchen_items:
   - plate
   - bleach

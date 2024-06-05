@@ -30,7 +30,7 @@ def approach_to_table():
             time.sleep(0.3)
             JuskeshinoNavigation.moveDist(0.10, 10)
         else:
-            JuskeshinoHRI.say("Align with table")
+            print("Align with table")
             return True
         i = i+1
     return False
@@ -246,10 +246,11 @@ class GraspObject(smach.State):
             if success:
                 JuskeshinoHRI.say("Object found correctly")
                 print("Object position: ",obj.pose.position)
-                JuskeshinoHardware.moveTorso(0.12 , 5.0)
+                JuskeshinoHardware.moveTorso(0.14 , 5.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(response.articular_trajectory,10)
                 print("Closing gripper")
                 JuskeshinoHardware.moveLeftGripper(0.05 , 3.0) 
+                JuskeshinoHardware.moveLeftArmWithTrajectory(HOLD_OBJ, 10)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
                 time.sleep(0.5)     
                 return 'succed'
@@ -301,23 +302,26 @@ class ScanCabinet(smach.State):
     def __init__(self):
         smach.State.__init__(
             self, outcomes=['succed', 'failed', 'tries'],
-                    input_keys=['object_output','object'])
+                    input_keys=['object_output','object'],
+                    output_keys=['object_shelf'])
         self.tries = 0
 
     def execute(self, userdata):
         # request = segmentation_server.request_class()
         self.tries += 1
-        if recog_objects is None:
-            if self.tries < 10:
-                JuskeshinoHardware.moveHead(-0,35, 5)
-                print('Scanning shelf')
-                tar_obj=userdata.object
-                rospy.loginfo('\n--> STATE 9 <: Scanning cabinet')
-                JuskeshinoHRI.say("Scanning cabinet")
-                recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
-                rospy.sleep(2.5)       
-                #object_id=target_object.id
+        if self.tries < 10:
+            JuskeshinoHardware.moveHead(0,-0.35, 5)
+            rospy.sleep(2.5)
+            print('Scanning shelf')
+            tar_obj=userdata.object
+            rospy.logwarn('\n--> STATE 9 <: Scanning cabinet')
+            JuskeshinoHRI.say("Scanning cabinet")
+            recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
+            rospy.sleep(2.5)       
+            #object_id=target_object.id
+            if recog_objects is not None:
                 for obj in recog_objects:
+                    userdata.object_shelf=obj
                     print("------->",obj.id)
                     print(obj.pose.position)
                     category1=matching_objects(obj.id)
@@ -325,72 +329,52 @@ class ScanCabinet(smach.State):
                     JuskeshinoHRI.say('Matching with shelf...')
                     print("*******",category1)
                     print(category2)
-                    if category1 and category1 == category2:
-                        #centroid maths
-                        JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
-                        if obj.pose.position[2]>1.3:
-                            JuskeshinoHRI.say("The object is part of the top shelf")
-                            print("The object is part of the top shelf")
-                        if 1.3 > obj.pose.position[2] > 0.8:
-                            JuskeshinoHRI.say("The object is part of the middle shelf")
-                            print("The object is part of the middle shelf")
-                        if 0.8 > obj.pose.position[2] > 0.2:
-                            JuskeshinoHRI.say("The object is part of the low shelf")
-                            print("The object is part of the low shelf")    
-                            return 'succed'
-                    else:
-                        #Check for the position of each object and start from that 
-                        print('Cannot match objects, I will try again...')
-                        #JuskeshinoNavigation.moveDist(0.1, 10)
-                        return 'failed'    
+                    
+                    for recog_obj in recog_objects:  # Iterate over all objects to find matching categories
+                        recog_category = matching_objects(recog_obj.id)
+                        if recog_category and category2 == recog_category:
+                            category1 = category2  # Set category1 to match category2
+                            obj = recog_obj  # Set obj to the matching object
+                            #centroid maths
+                            JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
+                            userdata.object_shelf=obj
+                            if obj.pose.position[2]>1.3:
+                                JuskeshinoHRI.say("The object is part of the top shelf")
+                                print("The object is part of the top shelf")
+                                #variable shared with the next state giving q for left arm to leave the object 'object_shelf'
+                            if 1.3 > obj.pose.position[2] > 0.8:
+                                JuskeshinoHRI.say("The object is part of the middle shelf")
+                                print("The object is part of the middle shelf")
+                            if 0.8 > obj.pose.position[2] > 0.2:
+                                JuskeshinoHRI.say("The object is part of the low shelf")
+                                print("The object is part of the low shelf")    
+                                return 'succed'
+                        else:
+                            #Check for the position of each object and start from that 
+                            print('Cannot match objects, I will try again...')
+                            #JuskeshinoNavigation.moveDist(0.1, 10)
+                            return 'failed'    
             
-        print('After a lot of tries, I could not detect objects')
+        print('I could not detect objects')
         return 'tries'
     
 class LeaveObject(smach.State):
     def __init__(self):
         smach.State.__init__(
             self, outcomes=['succed', 'failed', 'tries'],
-                    input_keys=['object_output','object'])
+                    input_keys=['object_shelf'])
         self.tries = 0
 
     def execute(self, userdata):
         # request = segmentation_server.request_class()
         self.tries += 1
-        if self.tries < 3:
+        if self.tries < 8:
             JuskeshinoHardware.moveHead(-0,35, 5)
             print('Scanning shelf')
-            tar_obj=userdata.object
-            rospy.loginfo('\n--> STATE 9 <: Scanning cabinet')
-            JuskeshinoHRI.say("Scanning cabinet")
-            recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
-            rospy.sleep(2.5)       
-            #object_id=target_object.id
-            for obj in recog_objects:
-                print("------->",obj.id)
-                print(obj.pose.position)
-                category1=matching_objects(obj.id)
-                category2=matching_objects(tar_obj.id)
-                JuskeshinoHRI.say('Matching with shelf...')
-                print("*******",category1)
-                print(category2)
-                if category1 and category1 == category2:
-                    #centroid maths
-                    if obj.pose.position>1.3:
-                        print("The object is part of the top shelf")
-                    if 1.3 > obj.pose.position > 0.8:
-                        print("The object is part of the middle shelf")
-                    if 0.8 > obj.pose.position > 0.2:
-                        print("The object is part of the low shelf")    
-                    return 'succed'
-                else:
-                    #Check for the position of each object and start from that 
-                    print('Cannot match objects, I will try again...')
-                    #JuskeshinoNavigation.moveDist(0.1, 10)
-                    return 'failed'    
-        
-        print('I could not detect objects')
-        return 'tries'    
+            obj_shelf=userdata.object_shelf
+            rospy.logwarn('\n--> STATE 10 <: Leaving object')
+            JuskeshinoHRI.say("Leaving object")
+            
                 
 
 
