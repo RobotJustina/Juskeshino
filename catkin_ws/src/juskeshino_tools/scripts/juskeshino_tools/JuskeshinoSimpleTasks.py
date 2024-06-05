@@ -79,7 +79,7 @@ class JuskeshinoSimpleTasks:
         B = edge[1].x - edge[0].x
         error_a = math.pi/2 - math.atan2(A,B)%math.pi
         error_a = 0 if abs(error_a) < 0.03 else error_a
-        error_d = abs(A*edge[0].x + B*edge[0].y)/math.sqrt(A**2 + B**2) - 0.35
+        error_d = abs(A*edge[0].x + B*edge[0].y)/math.sqrt(A**2 + B**2) - 0.3
         error_d = 0 if error_d < 0.07 else error_d
         timeout = ((abs(error_a) + abs(error_d))/0.5 + 1)
         print("JuskeshinoSimpleTasks.->Moving to align with table d="+str(error_d) + " and theta="+str(error_a))
@@ -150,43 +150,30 @@ class JuskeshinoSimpleTasks:
         
         if position_obj.y > l_threshold_la:     # Objeto a la izquierda
             mov_izq = position_obj.y - l_threshold_la
-
-            JuskeshinoNavigation.moveDist(-0.8, 5.0)
-            JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
-            time.sleep(0.2)
-            return True
-            """
-            if (abs(mov_izq) <= 0.20):  # desplazamiento lateral
+            if mov_izq > 0.1:
+                JuskeshinoNavigation.moveDist(-0.8, 5.0)
                 JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
-                time.sleep(0.2)
+                time.sleep(0.4)
+                #self.alignWithTable()
                 return True
             else:
-                JuskeshinoNavigation.moveDist(-0.15 , 5.0)
-                JuskeshinoNavigation.moveDistAngle(0.0 , 1.57, 7.0)
-                JuskeshinoNavigation.moveDist(abs(mov_izq) , 5.0)
-                JuskeshinoNavigation.moveDistAngle(0.0 , -1.57, 7.0)
-                JuskeshinoNavigation.moveDist(0.15 , 5.0)
-                return True
-            """
+                JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
+                time.sleep(0.2)
+                return False
 
         if position_obj.y < r_threshold_la:     # Objeto a la derecha
             mov_der = position_obj.y - r_threshold_la
-            JuskeshinoNavigation.moveDist(-0.08, 5.0)
-            JuskeshinoNavigation.moveLateral(mov_der , 5.0)
-            time.sleep(0.2)
-            """
-            if ((abs(mov_der)) <= 0.20):
+            if mov_der > 0.1:
+                JuskeshinoNavigation.moveDist(-0.08, 5.0)
+                JuskeshinoNavigation.moveLateral(mov_der , 5.0)
+                time.sleep(0.4)
+                #self.alignWithTable()
+                return True
+                
+            else:
                 JuskeshinoNavigation.moveLateral(mov_der , 5.0)
                 time.sleep(0.2)
-                return True
-            else:
-                JuskeshinoNavigation.moveDist(-0.15 , 5.0)
-                JuskeshinoNavigation.moveDistAngle(0.0 , -1.57, 7.0)
-                JuskeshinoNavigation.moveDist(abs(mov_der) , 5.0)
-                JuskeshinoNavigation.moveDistAngle(0.0 , 1.57, 7.0)
-                JuskeshinoNavigation.moveDist(0.15 , 5.0)
-            """
-            return True
+                return False
             
         return False
 
@@ -194,19 +181,20 @@ class JuskeshinoSimpleTasks:
 
     def object_search(name_obj):
         JuskeshinoHardware.moveHead(0,-1, 5)
+         print("JuskeshinoSimpleTask.->Primer intento")
         [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(name_obj)
 
         if obj == None: # si no reconocio el objeto
-            JuskeshinoHardware.moveHead(-0.5,-1, 5) #move head to the right 
-            time.sleep(1.5)
+            JuskeshinoHardware.moveHead(-0.3,-1, 5) #move head to the right 
+            time.sleep(1)
             [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(name_obj)
-            print("JuskeshinoSimpleTask.->Primer intento")
+            print("JuskeshinoSimpleTask.->Segundo intento")
 
             if obj == None: # si no reconocio el objeto
-                JuskeshinoHardware.moveHead(0.5,-1, 5) #move head to the left
-                time.sleep(1.5)
+                JuskeshinoHardware.moveHead(0.3,-1, 5) #move head to the left
+                time.sleep(1)
                 [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(name_obj)
-                print("JuskeshinoSimpleTask.->Segundo intento")
+                print("JuskeshinoSimpleTask.->tercer intento")
 
                 if obj == None: # si no reconocio el objeto
                     print("JuskeshinoSimpleTask.->NO se encontro el objeto")

@@ -27,7 +27,7 @@ PREPARE_SERVING   = [0.91, 0.4, -0.5, 1.45, 0, 0.16, 0.5]
 SERVING           = [0.91, 0.4, -0.5, 1.45, 0, 0.16, -1.6]
 LEAVE_CEREAL      = [0.54, 0.28, -0.13, 1.45, 0, 0, 0]
 LEAVE_MILK        = [0.44, 0.18, -0.03, 1.45, 0, 0, 0]
-LEAVE_BOWL        = [0.6,  0.6, -0.8, 1.7, 0, 0.2, 0]
+LEAVE_BOWL        = [0.6,  0.6, -0.8, 1.7, 0, -0.1, 0]
 
 POST_GRIP         = [0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ]
 
@@ -409,11 +409,15 @@ def main():
                     current_state = DETECT_OBJECT
             """
             try:
-                time.sleep(0.3)
-                [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj)   
+                [obj, img] = JuskeshinoSimpleTasks.object_search(actual_obj)
+                """
+                time.sleep(0.2)
+                [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj)
+                """   
                 time.sleep(0.2)
                 print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
                     #JuskeshinoHRI.say("I found" + actual_obj)
+                
                 current_state = HANDLING_LOCATION
 
             except:
@@ -433,15 +437,17 @@ def main():
         elif(current_state == HANDLING_LOCATION):
             print("ESTADO:___HANDLING_LOCATION..................")
             mov = JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
-            JuskeshinoHRI.say("Aligne with table")
-            JuskeshinoSimpleTasks.alignWithTable()
+            
+            if mov:
+                JuskeshinoHRI.say("Aligne with table")
+                JuskeshinoSimpleTasks.alignWithTable()
+                time.sleep(0.3)
             
             # Ajusta altura de torso para mejor agarre
             if (actual_obj == BOWL):
                 JuskeshinoHardware.moveTorso(0.07 , 5.0)
-
             if (actual_obj == MILK):
-                    JuskeshinoHardware.moveTorso(0.07 , 5.0) 
+                JuskeshinoHardware.moveTorso(0.07 , 5.0) 
             if (actual_obj == CEREAL):
                 JuskeshinoHardware.moveTorso(0.08 , 5.0)
 
@@ -457,17 +463,6 @@ def main():
             
             JuskeshinoHRI.say("Trying to detect the object")
             print("Trying to detect the object:__", actual_obj)
-
-            """
-            obj = detect_obj_function(actual_obj)
-
-            if obj == None:
-                current_state = DETECT_OBJECT_ORIENTATION
-            else:
-                print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
-                JuskeshinoHRI.say("I found" + actual_obj)
-                current_state = PREPARE_ARM
-            """
 
             time.sleep(0.2)
             try:
@@ -545,6 +540,7 @@ def main():
                 JuskeshinoHardware.moveLeftGripper(0.2 , 3.0)
                 JuskeshinoHardware.moveLeftGripper(0.1 , 3.0)
                 JuskeshinoHardware.moveLeftGripper(0.0 , 3.0)
+                JuskeshinoHardware.moveLeftGripper(-0.1 , 3.0)
                 """
                 if(JuskeshinoHardware.moveLeftGripper(GRIP_BOWL , 3.0) ):
                     JuskeshinoHRI.say("gripper close")
@@ -574,7 +570,8 @@ def main():
             print("ESTADO:___POST_GRASP..................")
             print("ACT-PLN.->Moving arm to prepare***")
             time.sleep(0.6)
-            JuskeshinoHardware.moveTorso(0.13 , 5.0)
+            JuskeshinoHardware.moveTorso(0.17 , 5.0)
+            time.sleep(0.3)
             #JuskeshinoHardware.moveLeftArmWithTrajectory(POST_GRIP, 10)  # prepare    
             time.sleep(0.3)
             JuskeshinoHRI.say("lift object")
@@ -652,6 +649,8 @@ def main():
             JuskeshinoNavigation.moveDist(-0.50, 7)
             time.sleep(0.5)
             JuskeshinoHardware.moveLeftArmWithTrajectory(HOME , 10)
+            time.sleep(0.2)
+            JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
 
             current_state = CONFIG_BY_CYCLE
 
