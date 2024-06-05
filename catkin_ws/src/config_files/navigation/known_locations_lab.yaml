@@ -60,7 +60,7 @@ cabinet:
  parent: home
 simu_desk_1:
  x: 3.26
- y: 5.72
+ y: 5.8
  theta: -1.57
  parent: home
 simu_desk_2:
