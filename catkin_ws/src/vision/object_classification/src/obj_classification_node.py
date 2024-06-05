@@ -14,13 +14,13 @@ import torch
 
 def get_vision_object(img, label, confidence, frame_id, x0, y0, x1, y1, cloud):
     global remove_background, threshold1, threshold2
-    mask = numpy.zeros(img.shape, dtype=numpy.uint8)
+    mask = numpy.zeros((img.shape[0], img.shape[1]), dtype=numpy.uint8)
     mask[y0:y1, x0:x1] = 255
     if remove_background:
         print("Not removing bg")
         gray  = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         canny = cv2.Canny(gray, threshold1, threshold2)
-        canny = cv2.bitwise_and(canny,mask[:,:,0])
+        canny = cv2.bitwise_and(canny,mask)
         kernel = np.ones((7, 7), np.uint8)
         dilated = cv2.dilate(canny,kernel)
         eroded = cv2.erode(dilated,kernel)
@@ -154,29 +154,11 @@ def main():
     rospy.init_node("object_classification")
     model_name = rospy.get_param("~model", "ycb.pt")
     min_confidence = rospy.get_param("~min_confidence", 0.5)
-    remove_background = rospy.get_param("~rm_bg", 0.5)
-    if rospy.has_param('~remove_background'):
-        if rospy.get_param('~remove_background') == 1:
-            remove_background = True
-        else:
-            remove_background = False
-    else:
-        remove_background = True
-    if rospy.has_param('~threshold1'):
-        threshold1 = rospy.get_param('~threshold1')
-    else:
-        threshold1 = 50
-    if rospy.has_param('~threshold2'):
-        threshold2 = rospy.get_param('~threshold2')
-    else:
-        threshold2 = 180
+    remove_background = rospy.get_param("~rm_bg", True)
+    threshold1 = rospy.get_param('~threshold1', 50)
+    threshold2 = rospy.get_param('~threshold2', 180)
     loop = rospy.Rate(10)
-    print("remove_background: ", end="")
-    print(remove_background)
-    print("threshold1: ", end="")
-    print(threshold1)
-    print("threshold2: ", end="")
-    print(threshold2)
+    print("ObjClassification.->Try to remove background: ", remove_background, " canny th1: ", threshold1, "  cannyh th2: ", threshold2)
     device = select_device('')
     print("ObjClassification.->Loading model: " + model_name)
     model  = attempt_load(model_name, device)
