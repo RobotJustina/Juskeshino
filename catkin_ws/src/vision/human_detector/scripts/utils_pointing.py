@@ -141,7 +141,6 @@ def detect_human(points_msg,dist = 6):
     image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
     print (image.shape)
     frame=image
-    cv2.imwrite("/home/devan/Documents/"+"borra.jpg",frame)
     inHeight = frame.shape[0]
     inWidth = frame.shape[1]
 
@@ -222,7 +221,7 @@ def detect_pointing(points_msg,dist = 6):
     # left wrist
     ##############################
     try:
-            tt = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
+            tt = tfBuffer.lookup_transform('map', 'camera_rgb_optical_frame', rospy.Time())
                         
             trans,rot=read_tf(tt)
             #print ("############head",trans,rot)
