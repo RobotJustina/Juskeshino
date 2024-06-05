@@ -155,8 +155,8 @@ def main():
     model_name = rospy.get_param("~model", "ycb.pt")
     min_confidence = rospy.get_param("~min_confidence", 0.5)
     remove_background = rospy.get_param("~rm_bg", 0.5)
-    if rospy.has_param('~rm_bg'):
-        if rospy.get_param('~rm_bg') == 1:
+    if rospy.has_param('~remove_background'):
+        if rospy.get_param('~remove_background') == 1:
             remove_background = True
         else:
             remove_background = False
