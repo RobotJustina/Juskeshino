@@ -156,6 +156,7 @@ def points_actual_to_points_target(point_in, f_actual, f_target):
 
 def location_obj():
     global listener
+    detect = 0
     table_loc = OBJECTS_TABLE_X_Y_THETA
     print("In function")
     try:
@@ -204,21 +205,16 @@ def location_obj():
             print(obj.pose.position)
             x_cereal, y_cereal, z_cereal = obj.pose.position.x, obj.pose.position.y , obj.pose.position.z
             detected = detect + 1
-
-        else 
         
 
     if detected < 2:
-        return None
+        return None, None, None
 
-        if objs == None:
-            print('Cannot detect objects, I will try again...')
-            JuskeshinoHRI.say('Cannot detect objects, I will try again...')
-            return None
-        #if len(loc_objs) > 3:
-            #break
+    if objs == None:
+        print('Cannot detect objects, I will try again...')
+        JuskeshinoHRI.say('Cannot detect objects, I will try again...')
+        return None, None, None
 
-    
     xb, yb, zb = points_actual_to_points_target( [x_bowl, y_bowl, z_bowl] , 'base_link' , 'map' )
     xm, ym, zm = points_actual_to_points_target( [x_milk, y_milk, z_milk] , 'base_link' , 'map' )
     xc, yc, zc = points_actual_to_points_target( [ x_cereal, y_cereal, z_cereal] , 'base_link' , 'map' )
@@ -226,7 +222,7 @@ def location_obj():
     loc_milk = [xm , table_loc[1], table_loc[2]]
     loc_cereal = [xc , table_loc[1], table_loc[2]]
 
-    return [loc_bowl, loc_milk, loc_cereal]
+    return loc_bowl, loc_milk, loc_cereal
 
 
 
@@ -262,6 +258,7 @@ def main():
             pila = [BOWL, MILK, CEREAL]
             count = 0
             j = 0
+            #actual_loc = list([])
             actual_obj = pila[j]
             first_detection = False
             second_detection = False
@@ -304,18 +301,27 @@ def main():
         elif(current_state == MOVE_TO_LOCATION):
             print("ESTADO:___MOVE_TO_LOCATION..................")
             JuskeshinoHRI.say("I'm going to the "+ location_actual)
-            
-            if not JuskeshinoNavigation.getClose(location_actual , 120): 
-                JuskeshinoHRI.say("SB-PLN.->Cannot get close to the "+ location_actual +" position")
-                #tries = tries + 1
-                #print("Intentos:___", tries)
-                current_state =  MOVE_HEAD#MOVE_TO_LOCATION
-
+            loc_bowl, loc_milk, loc_cereal = location_obj()
+            if (loc_bowl == None):
+                if not JuskeshinoNavigation.getClose(location_actual , 120): 
+                    JuskeshinoHRI.say("SB-PLN.->Cannot get close to the "+ location_actual +" position")
+                    current_state =  -1#MOVE_HEAD
+                else:
+                    tries = 0
+                    print("SERVING BREAKFAST-> Se llego con exito a la locacion solicitada")
+                    current_state = -1#MOVE_HEAD
+                time.sleep(0.5)
             else:
-                tries = 0
-                print("SERVING BREAKFAST-> Se llego con exito a la locacion solicitada")
-                current_state = MOVE_HEAD
-            time.sleep(0.5)
+                if cycle == 0:
+                    JuskeshinoNavigation.getCloseXYA(loc_bowl[0]   , loc_bowl[1],   loc_bowl[2]  , 300)
+                if cycle == 1:
+                    JuskeshinoNavigation.getCloseXYA(loc_milk[0]   , loc_milk[1],   loc_milk[2]  , 300)
+                if cycle == 2:
+                    JuskeshinoNavigation.getCloseXYA(loc_cereal[0] , loc_cereal[1], loc_cereal[2], 300)
+            
+                current_state = -1#MOVE_HEAD
+
+            
 
 
 
