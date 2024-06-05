@@ -30,7 +30,7 @@ door:
   parent: home
 desk_justina:
   x: 5.44
-  y: 2.15
+  y: 2.08
   theta: 1.5
   parent: home
 desk_takeshi:
@@ -45,8 +45,8 @@ desk_backyard:
  parent: home
 desk_takeshi_front:
   x: 8.39
-  y: 1.76
-  theta: 3.0
+  y: 1.76                                                                                                 
+  theta: 3.0                                                                                              
   parent: home
 scan_cabinet:
  x: 9.21
@@ -58,4 +58,13 @@ cabinet:
  y: 0.18
  theta: -1.57
  parent: home
- 
+simu_desk_1:
+ x: 3.26
+ y: 5.8
+ theta: -1.57
+ parent: home
+simu_desk_2:
+ x: 3.17
+ y: 7.32
+ theta: 1.57
+ parent: home

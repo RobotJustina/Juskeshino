@@ -40,12 +40,15 @@ EAT_TABLE     = "desk_takeshi"
 OBJECTS_TABLE_X_Y_THETA = [5.44 ,2.15, 1.5]
 
 # Locations_simu
+OBJECTS_TABLE_SIMU = "desk_justina"
+EAT_TABLE_SIMU     = "desk_takeshi" 
+OBJECTS_TABLE_X_Y_THETA_SIMU = [5.44 ,2.15, 1.5]
 
 
 # Objects
-BOWL   = "f_cups"
-MILK   = "milk"
-CEREAL = "potted_meat_can"
+BOWL   = "red_bowl"
+MILK   = "yogurt"
+CEREAL = "mango_juice"
 
 
 # Gripper_aperture
@@ -75,6 +78,7 @@ CONFIG_BY_CYCLE = 17
 END = 18
 DETECT_OBJECT_ORIENTATION = 18
 BEGIN_CYCLE = 19
+MOVE_TO_LOCATION_OBJECTS = 20
 
 
 
@@ -105,8 +109,7 @@ def serving_breakfast(object):
         time.sleep(0.5)
         JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_MILK, 10)
         #JuskeshinoNavigation.moveDist(0.3, 7)
-        JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
-        
+        JuskeshinoHardware.moveLeftGripper(0.7, 2.0) 
     else:
         JuskeshinoHRI.say("move right")
         time.sleep(0.5)
@@ -118,6 +121,7 @@ def serving_breakfast(object):
         #JuskeshinoNavigation.moveDist(0.3, 7)
         #time.sleep(0.2)#
         JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
+
 
 
 
@@ -134,6 +138,7 @@ def approach_to_table():
             JuskeshinoHRI.say("Align with table")
             break
         i = i+1
+
 
 
     
@@ -154,80 +159,102 @@ def points_actual_to_points_target(point_in, f_actual, f_target):
 
 
 
+
+def detect_obj_function(actual_obj):
+    print("in function")
+    count = 0
+    while(count < 13):
+        time.sleep(0.2)
+        try:
+            [obj, img] = JuskeshinoVision.detectAndRecognizeObject()
+            print("(*B*)")
+            if obj.id == actual_obj:
+                print("ID:___", obj.od)
+                return obj
+            else:
+                continue
+        except:
+            print("I cannot find the objects")
+            JuskeshinoHRI.say("I cannot find the objects")
+            count = count + 1
+    return None
+
+
+
+
 def location_obj():
     global listener
     table_loc = OBJECTS_TABLE_X_Y_THETA
     print("In function")
-    try:
-        objs, img = JuskeshinoVision.detectAndRecognizeObjects()
-        print("(*B*)")
-    except:
-        print("I cannot find the objects")
-        JuskeshinoHRI.say("I cannot find the objects")
+    detect = 0
+    dist_obj = list([])
+    JuskeshinoHardware.moveTorso(0.02 , 5.0)
+
+    count = 0
+    while(count < 13):
+        #time.sleep(0.2)
         try:
             objs, img = JuskeshinoVision.detectAndRecognizeObjects()
+            print("(*B*)")
+            if len(objs) < 3:
+                print("len menor a 3")
+                count = count + 1
+                continue
+            else:
+                print("len(objs):___", len(objs))
+                break
         except:
+            print("I cannot find the objects")
             JuskeshinoHRI.say("I cannot find the objects")
-            try:
-                objs, img = JuskeshinoVision.detectAndRecognizeObjects()
-            except:
-                JuskeshinoHRI.say("I cannot find the objects")
+            count = count + 1
 
     print("tamano lista objectos:___", len(objs))
-    loc_objs = list([])
-    dist_obj = list([])
     x_bowl, y_bowl, z_bowl = 0,0,0
     x_milk, y_milk, z_milk = 0,0,0
     x_cereal, y_cereal, z_cereal = 0,0,0
     detected = 0
 
-    if len(loc_objs) < 3:
-        return None
+    if len(objs) < 3:
+        print('Cannot detect objects, I will try again...')
+        JuskeshinoHRI.say('Cannot detect objects, I will try again...')
+        return [],[],[]
         
     for obj in objs:
         print("Objeto:___", obj.id)
-
+        print("Position:___", obj.pose.position.x, obj.pose.position.y, obj.pose.position.z)
         if (obj.id == BOWL ):
-            JuskeshinoHRI.say("I found: " + obj.id )
-            print("Objeto:___", obj.id)
-            print(obj.pose.position)
+            #JuskeshinoHRI.say("I found: " + obj.id )
+            #print("Objeto:___", obj.id)
+            #print(obj.pose.position)
             x_bowl, y_bowl, z_bowl = obj.pose.position.x, obj.pose.position.y, obj.pose.position.z
-            print("x_bowl, y_bowl, z_bowl",x_bowl, y_bowl, z_bowl)
+            #print("x_bowl, y_bowl, z_bowl",x_bowl, y_bowl, z_bowl)
             detected = detect + 1
         if (obj.id == MILK ):
-            JuskeshinoHRI.say("I found: " + obj.id )
-            print(obj.pose.position)
+            #JuskeshinoHRI.say("I found: " + obj.id )
+            #print(obj.pose.position)
             x_milk, y_milk, z_milk = obj.pose.position.x, obj.pose.position.y, obj.pose.position.z
             detected = detect + 1
         if (obj.id == CEREAL ):
-            JuskeshinoHRI.say("I found: " + obj.id )
-            print(obj.pose.position)
+            #JuskeshinoHRI.say("I found: " + obj.id )
+            #print(obj.pose.position)
             x_cereal, y_cereal, z_cereal = obj.pose.position.x, obj.pose.position.y , obj.pose.position.z
             detected = detect + 1
-
-        else 
-        
-
-    if detected < 2:
-        return None
-
-        if objs == None:
-            print('Cannot detect objects, I will try again...')
-            JuskeshinoHRI.say('Cannot detect objects, I will try again...')
-            return None
-        #if len(loc_objs) > 3:
-            #break
-
     
     xb, yb, zb = points_actual_to_points_target( [x_bowl, y_bowl, z_bowl] , 'base_link' , 'map' )
+    print("new point bowl", xb, yb, zb)
     xm, ym, zm = points_actual_to_points_target( [x_milk, y_milk, z_milk] , 'base_link' , 'map' )
-    xc, yc, zc = points_actual_to_points_target( [ x_cereal, y_cereal, z_cereal] , 'base_link' , 'map' )
+    print("new point milk", xm, ym, zm)
+    xc, yc, zc = points_actual_to_points_target( [x_cereal, y_cereal, z_cereal] , 'base_link' , 'map' )
+    print("new point cereal", xc, yc, zc)
     loc_bowl = [xb , table_loc[1], table_loc[2]]
     loc_milk = [xm , table_loc[1], table_loc[2]]
     loc_cereal = [xc , table_loc[1], table_loc[2]]
+    print("LOC BOWL:______", loc_bowl)
+    print("LOC MILK:______", loc_milk)
+    print("LOC CEREAL:____", loc_cereal)
+    print("LOC TABLE INGREDIENTS:___", OBJECTS_TABLE_X_Y_THETA)
 
-    return [loc_bowl, loc_milk, loc_cereal]
-
+    return loc_bowl, loc_milk, loc_cereal
 
 
 
@@ -235,11 +262,11 @@ def location_obj():
 def main():
     rospy.init_node("serve_breakfast_test")
     rate = rospy.Rate(10)
-    global listener
+    global listener, simu
     listener = tf.TransformListener()
+    simu = False
 
     current_state = INITIAL
-
     while not rospy.is_shutdown():
 
         if(current_state == INITIAL):
@@ -265,10 +292,14 @@ def main():
             actual_obj = pila[j]
             first_detection = False
             second_detection = False
+            loc_objects = False
             tries = 0
             grip_attempts = 0
             cycle = 0
-            current_state = DETECT_OBJECT#START
+            loc_bowl, loc_milk, loc_cereal = [],[],[]
+            flag_loc_objs = True
+            print("cycle:___", cycle)
+            current_state = START
 
 
 
@@ -276,13 +307,13 @@ def main():
         elif(current_state == START):
             print("ESTADO:___CONFIG..................")
             JuskeshinoHRI.say("I'm ready for the test")
-            JuskeshinoHRI.say("I'm waiting for the door to be open")
+            #JuskeshinoHRI.say("I'm waiting for the door to be open")
             if not JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(10):
                 print("SERVING BREAKFAST-> Puerta cerrada")
                 current_state = START
             else: 
                 print("SERVING BREAKFAST-> Puerta abierta")
-                JuskeshinoHRI.say("SERVING BREAKFAST->I can see now that the door is open")
+                JuskeshinoHRI.say("The door is open")
                 location_actual = OBJECTS_TABLE
                 current_state = BEGIN_CYCLE
 
@@ -295,7 +326,15 @@ def main():
             print("cycle:___", cycle)
             print("j:___", j)
             print("Actual object", pila[j])
+
             current_state = MOVE_TO_LOCATION
+
+            """
+            if (len(loc_bowl) < 1 and (len(loc_milk) < 1) and (len(loc_cereal) < 1)):
+                current_state = MOVE_TO_LOCATION
+            else:
+                current_state = MOVE_TO_LOCATION_OBJECTS
+            """
 
 
 
@@ -303,19 +342,19 @@ def main():
 
         elif(current_state == MOVE_TO_LOCATION):
             print("ESTADO:___MOVE_TO_LOCATION..................")
-            JuskeshinoHRI.say("I'm going to the "+ location_actual)
+            #JuskeshinoHRI.say("I'm going to the "+ location_actual)
             
-            if not JuskeshinoNavigation.getClose(location_actual , 120): 
+            if not JuskeshinoNavigation.getClose(location_actual , 300): 
                 JuskeshinoHRI.say("SB-PLN.->Cannot get close to the "+ location_actual +" position")
-                #tries = tries + 1
-                #print("Intentos:___", tries)
-                current_state =  MOVE_HEAD#MOVE_TO_LOCATION
+
+                current_state =  MOVE_HEAD
 
             else:
                 tries = 0
                 print("SERVING BREAKFAST-> Se llego con exito a la locacion solicitada")
                 current_state = MOVE_HEAD
             time.sleep(0.5)
+
 
 
 
@@ -328,13 +367,17 @@ def main():
                 current_state = APROACH_TO_TABLE
             except:
                 JuskeshinoHRI.say("Cannot move head")
-                tries = tries + 1
-                current_state = MOVE_HEAD
+                JuskeshinoHardware.moveHead(0,-1, 5)
+                current_state = APROACH_TO_TABLE
+                #tries = tries + 1
+                #current_state = MOVE_HEAD
+
+            """   
             if tries > 3:
                 JuskeshinoHRI.say("Cannot move head")
                 current_state = APROACH_TO_TABLE
             time.sleep(0.3)
-
+            """
 
 
 
@@ -344,7 +387,7 @@ def main():
             approach_to_table()
             time.sleep(0.3)
             tries = 0
-
+            
             current_state = DETECT_OBJECT
             
 
@@ -353,21 +396,25 @@ def main():
 
         elif(current_state == DETECT_OBJECT):
             print("ESTADO:___DETECT_OBJECT..................")
-            #print("Tries:____", tries)
-            #tries = 0
+        
+            """
             JuskeshinoHRI.say("Trying to detect the object")
-            loc_milk_bowl = location_obj()
-
-            print(loc_milk_bowl)
-
-
+            if (cycle < 1) and (flag_loc_objs == True):
+                loc_bowl, loc_milk, loc_cereal = location_obj()
+                if ((len(loc_bowl) > 0) and (len(loc_milk) > 0) and (len(loc_cereal) > 0)):
+                    JuskeshinoNavigation.moveDist(-0.33, 10)
+                    current_state = MOVE_TO_LOCATION_OBJECTS
+                else:
+                    flag_loc_objs = False
+                    current_state = DETECT_OBJECT
+            """
             try:
                 time.sleep(0.3)
                 [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj)   
                 time.sleep(0.2)
                 print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
-                JuskeshinoHRI.say("I found" + actual_obj)
-                current_state = -1#HANDLING_LOCATION
+                    #JuskeshinoHRI.say("I found" + actual_obj)
+                current_state = HANDLING_LOCATION
 
             except:
                 JuskeshinoHRI.say("I couldn't find the object")
@@ -376,7 +423,8 @@ def main():
                 if tries > 3:
                     JuskeshinoHRI.say("Cannot move head")
                     print("SB-PLN.-> Se excedió el numero de intentos")
-                    current_state = -1#HANDLING_LOCATION
+                    current_state = HANDLING_LOCATION
+            #cycle = cycle + 1
 
                 
 
@@ -385,6 +433,8 @@ def main():
         elif(current_state == HANDLING_LOCATION):
             print("ESTADO:___HANDLING_LOCATION..................")
             mov = JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
+            JuskeshinoHRI.say("Aligne with table")
+            JuskeshinoSimpleTasks.alignWithTable()
             
             # Ajusta altura de torso para mejor agarre
             if (actual_obj == BOWL):
@@ -407,6 +457,19 @@ def main():
             
             JuskeshinoHRI.say("Trying to detect the object")
             print("Trying to detect the object:__", actual_obj)
+
+            """
+            obj = detect_obj_function(actual_obj)
+
+            if obj == None:
+                current_state = DETECT_OBJECT_ORIENTATION
+            else:
+                print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
+                JuskeshinoHRI.say("I found" + actual_obj)
+                current_state = PREPARE_ARM
+            """
+
+            time.sleep(0.2)
             try:
                 [obj, img] = JuskeshinoVision.detectAndRecognizeObject(actual_obj)   
                 print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
@@ -415,14 +478,14 @@ def main():
 
             except:
                 JuskeshinoHRI.say("I couldn't find the object")
+                print("tries", tries)
                 tries = tries + 1
                 current_state = DETECT_OBJECT_ORIENTATION
                 if tries > 2:
                     JuskeshinoHRI.say("Cannot move head")
                     print("SB-PLN.-> Se excedió el numero de intentos")
                     current_state = PREPARE_ARM
-
-            print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
+            #print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
                       
             
 
@@ -481,7 +544,7 @@ def main():
                 JuskeshinoHardware.moveLeftGripper(0.3 , 3.0)
                 JuskeshinoHardware.moveLeftGripper(0.2 , 3.0)
                 JuskeshinoHardware.moveLeftGripper(0.1 , 3.0)
-                #JuskeshinoHardware.moveLeftGripper(0.0 , 3.0)
+                JuskeshinoHardware.moveLeftGripper(0.0 , 3.0)
                 """
                 if(JuskeshinoHardware.moveLeftGripper(GRIP_BOWL , 3.0) ):
                     JuskeshinoHRI.say("gripper close")
@@ -511,8 +574,9 @@ def main():
             print("ESTADO:___POST_GRASP..................")
             print("ACT-PLN.->Moving arm to prepare***")
             time.sleep(0.6)
-            JuskeshinoHardware.moveLeftArmWithTrajectory(POST_GRIP, 10)  # prepare    
-            time.sleep(0.2)
+            JuskeshinoHardware.moveTorso(0.13 , 5.0)
+            #JuskeshinoHardware.moveLeftArmWithTrajectory(POST_GRIP, 10)  # prepare    
+            time.sleep(0.3)
             JuskeshinoHRI.say("lift object")
             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
             try:
@@ -523,8 +587,6 @@ def main():
 
             print("SB-PLN.->Moving base backwards")    
             JuskeshinoNavigation.moveDist(-0.33, 10)
-            #time.sleep(0.3)
-            #JuskeshinoHardware.moveLeftArmWithTrajectory(HOME, 10)  # prepare  
             tries = 0  
             time.sleep(0.3)
 
