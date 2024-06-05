@@ -36,7 +36,7 @@ PREPARE_RA    = [-0.8, -0.1, 0.0, 1.3, 1.3,0, 0.0]
 
 # Locations
 OBJECTS_TABLE = "desk_justina"
-EAT_TABLE     = "entrance_desk"#"desk_takeshi" 
+EAT_TABLE     = "desk_takeshi" 
 OBJECTS_TABLE_X_Y_THETA = [5.44 ,2.15, 1.5]
 
 # Locations_simu
@@ -47,8 +47,8 @@ OBJECTS_TABLE_X_Y_THETA_SIMU = [5.44 ,2.15, 1.5]
 
 # Objects
 BOWL   = "red_bowl"
-MILK   = "pringles"
-CEREAL = "apple_juice"
+MILK   = "yogurt"
+CEREAL = "mango_juice"
 
 
 # Gripper_aperture
@@ -297,6 +297,7 @@ def main():
             grip_attempts = 0
             cycle = 0
             loc_bowl, loc_milk, loc_cereal = [],[],[]
+            flag_loc_objs = True
             print("cycle:___", cycle)
             current_state = START
 
@@ -326,10 +327,14 @@ def main():
             print("j:___", j)
             print("Actual object", pila[j])
 
+            current_state = MOVE_TO_LOCATION
+
+            """
             if (len(loc_bowl) < 1 and (len(loc_milk) < 1) and (len(loc_cereal) < 1)):
                 current_state = MOVE_TO_LOCATION
             else:
                 current_state = MOVE_TO_LOCATION_OBJECTS
+            """
 
 
 
@@ -354,19 +359,6 @@ def main():
 
 
 
-        elif(current_state == MOVE_TO_LOCATION_OBJECTS):
-            print("ESTADO:____MOVE_TO_LOCATION_OBJECTS..................")
-            loc_bowl, loc_milk, loc_cereal
-            if actual_obj == BOWL:
-                JuskeshinoNavigation.getCloseXYA(loc_bowl[0], loc_bowl[1], loc_bowl[2], 300)
-            if actual_obj == MILK:
-                JuskeshinoNavigation.getCloseXYA(loc_milk[0], loc_milk[1], loc_milk[2], 300)
-            if actual_obj == CEREAL:
-                JuskeshinoNavigation.getCloseXYA(loc_cereal[0], loc_cereal[1], loc_cereal[2], 300)
-
-            current_state = MOVE_HEAD
-
-
      
         elif(current_state == MOVE_HEAD):
             print("ESTADO:___MOVE_HEAD..................")
@@ -375,8 +367,10 @@ def main():
                 current_state = APROACH_TO_TABLE
             except:
                 JuskeshinoHRI.say("Cannot move head")
+                JuskeshinoHardware.moveHead(0,-1, 5)
+                current_state = APROACH_TO_TABLE
                 #tries = tries + 1
-                current_state = MOVE_HEAD
+                #current_state = MOVE_HEAD
 
             """   
             if tries > 3:
@@ -393,7 +387,7 @@ def main():
             approach_to_table()
             time.sleep(0.3)
             tries = 0
-
+            
             current_state = DETECT_OBJECT
             
 
@@ -402,8 +396,8 @@ def main():
 
         elif(current_state == DETECT_OBJECT):
             print("ESTADO:___DETECT_OBJECT..................")
-            flag_loc_objs = True
-
+        
+            """
             JuskeshinoHRI.say("Trying to detect the object")
             if (cycle < 1) and (flag_loc_objs == True):
                 loc_bowl, loc_milk, loc_cereal = location_obj()
@@ -413,27 +407,24 @@ def main():
                 else:
                     flag_loc_objs = False
                     current_state = DETECT_OBJECT
-
-                
-
-            else:
-                try:
-                    time.sleep(0.3)
-                    [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj)   
-                    time.sleep(0.2)
-                    print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
+            """
+            try:
+                time.sleep(0.3)
+                [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj)   
+                time.sleep(0.2)
+                print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
                     #JuskeshinoHRI.say("I found" + actual_obj)
-                    current_state = HANDLING_LOCATION
+                current_state = HANDLING_LOCATION
 
-                except:
-                    JuskeshinoHRI.say("I couldn't find the object")
-                    tries = tries + 1
-                    current_state = DETECT_OBJECT
-                    if tries > 3:
-                        JuskeshinoHRI.say("Cannot move head")
-                        print("SB-PLN.-> Se excedió el numero de intentos")
-                        current_state = HANDLING_LOCATION
-            cycle = cycle + 1
+            except:
+                JuskeshinoHRI.say("I couldn't find the object")
+                tries = tries + 1
+                current_state = DETECT_OBJECT
+                if tries > 3:
+                    JuskeshinoHRI.say("Cannot move head")
+                    print("SB-PLN.-> Se excedió el numero de intentos")
+                    current_state = HANDLING_LOCATION
+            #cycle = cycle + 1
 
                 
 
@@ -442,6 +433,8 @@ def main():
         elif(current_state == HANDLING_LOCATION):
             print("ESTADO:___HANDLING_LOCATION..................")
             mov = JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
+            JuskeshinoHRI.say("Aligne with table")
+            JuskeshinoSimpleTasks.alignWithTable()
             
             # Ajusta altura de torso para mejor agarre
             if (actual_obj == BOWL):
@@ -581,8 +574,9 @@ def main():
             print("ESTADO:___POST_GRASP..................")
             print("ACT-PLN.->Moving arm to prepare***")
             time.sleep(0.6)
-            JuskeshinoHardware.moveLeftArmWithTrajectory(POST_GRIP, 10)  # prepare    
-            time.sleep(0.2)
+            JuskeshinoHardware.moveTorso(0.13 , 5.0)
+            #JuskeshinoHardware.moveLeftArmWithTrajectory(POST_GRIP, 10)  # prepare    
+            time.sleep(0.3)
             JuskeshinoHRI.say("lift object")
             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
             try:
@@ -593,8 +587,6 @@ def main():
 
             print("SB-PLN.->Moving base backwards")    
             JuskeshinoNavigation.moveDist(-0.33, 10)
-            #time.sleep(0.3)
-            #JuskeshinoHardware.moveLeftArmWithTrajectory(HOME, 10)  # prepare  
             tries = 0  
             time.sleep(0.3)
 
@@ -669,7 +661,7 @@ def main():
 
         elif(current_state == CONFIG_BY_CYCLE):
             print("ESTADO:___CONFIG_BY_CYCLE")
-            #cycle = cycle + 1
+            cycle = cycle + 1
             print("CYCLE:_____", cycle)
             if cycle > 2:
                 current_state = END

@@ -30,7 +30,7 @@ door:
   parent: home
 desk_justina:
   x: 5.44
-  y: 2.15
+  y: 2.08
   theta: 1.5
   parent: home
 desk_takeshi:

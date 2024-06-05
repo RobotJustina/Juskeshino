@@ -79,7 +79,7 @@ class JuskeshinoSimpleTasks:
         B = edge[1].x - edge[0].x
         error_a = math.pi/2 - math.atan2(A,B)%math.pi
         error_a = 0 if abs(error_a) < 0.03 else error_a
-        error_d = abs(A*edge[0].x + B*edge[0].y)/math.sqrt(A**2 + B**2) - 0.25
+        error_d = abs(A*edge[0].x + B*edge[0].y)/math.sqrt(A**2 + B**2) - 0.35
         error_d = 0 if error_d < 0.07 else error_d
         timeout = ((abs(error_a) + abs(error_d))/0.5 + 1)
         print("JuskeshinoSimpleTasks.->Moving to align with table d="+str(error_d) + " and theta="+str(error_a))
@@ -151,6 +151,7 @@ class JuskeshinoSimpleTasks:
         if position_obj.y > l_threshold_la:     # Objeto a la izquierda
             mov_izq = position_obj.y - l_threshold_la
 
+            JuskeshinoNavigation.moveDist(-0.8, 5.0)
             JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
             time.sleep(0.2)
             return True
@@ -170,7 +171,7 @@ class JuskeshinoSimpleTasks:
 
         if position_obj.y < r_threshold_la:     # Objeto a la derecha
             mov_der = position_obj.y - r_threshold_la
-
+            JuskeshinoNavigation.moveDist(-0.08, 5.0)
             JuskeshinoNavigation.moveLateral(mov_der , 5.0)
             time.sleep(0.2)
             """
