@@ -1,6 +1,6 @@
 <launch>
   <param name="file_name" value="/known_locations.yaml"/>
-  <include file="$(find speech_recog)/launch/ros_vosk.launch"/>
+  <include file="$(find ros_whisper_vosk)/launch/ros_vosk.launch"/>
   
    <!--  VISION-->
   <!-- <node name="human_detector" pkg="human_pose_estimation" type="human_detector"/>
@@ -17,14 +17,14 @@
   <node pkg="segmentation"  name="segmentation" type="segment_node.py"  />  
   <includenode pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"/>
   
-  <node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py"/>
+  <node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py" output="screen"/>
   
-  <node name="leg_finder" pkg="leg_finder" type="leg_finder_node" output="screen">
+  <!-- <node name="leg_finder" pkg="leg_finder" type="leg_finder_node" output="screen">
     <param name="scan_downsampling" value="1"/>
     <param name="laser_scan_frame" value="laser_link"/>
     <param name="laser_scan_topic" value="/hardware/scan"/>
     <param name="show_hypothesis" value="False"/>
-  </node>
+  </node> -->
   
   <!--node pkg="human_follower"  name="human_follower_node" type="human_follower_node"/--> 
   
