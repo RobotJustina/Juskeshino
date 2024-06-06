@@ -48,7 +48,7 @@ servo_gripper_ids:
   - 8
 servo_gripper_zeros:
   - 2187
-  - 2360
+  - 2500
 servo_gripper_directions:
   - 1
   - -1
