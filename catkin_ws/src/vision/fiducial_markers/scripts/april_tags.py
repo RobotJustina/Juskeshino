@@ -32,6 +32,7 @@ def get_dist_angle_to_marker(img, intrinsic_matrix):
     if len(results) < 1:
         return [None, None]
     r = results[0]
+    (cX, cY) = (int(r.center[0]), int(r.center[1]))
     if debug:
         (ptA, ptB, ptC, ptD) = r.corners
         ptB = (int(ptB[0]), int(ptB[1]))
@@ -61,16 +62,16 @@ def get_dist_angle_to_marker(img, intrinsic_matrix):
     R = numpy.reshape(R, (3, 3))
     euler = rotationMatrixToEulerAngles(R)
     theta = -euler[1]
-    return numpy.linalg.norm(T), theta
+    return numpy.linalg.norm(T), theta, (cX, cY)
 
 def callback_img(msg):
     bridge = CvBridge()
     img  = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
-    dist,theta = get_dist_angle_to_marker(img, camera_calibration_matrix)
+    dist,theta, center = get_dist_angle_to_marker(img, camera_calibration_matrix)
     dist_angle_array = Float32MultiArray()
-    dist_angle_array.data = [dist, theta]
+    dist_angle_array.data = [dist, theta, center[0], center[1]]
     pub_dist_angle.publish(dist_angle_array)
-    print([dist, theta])
+    # print([dist, theta])
 
 
 def main():

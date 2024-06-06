@@ -6,59 +6,44 @@ from std_msgs.msg import Float32MultiArray, Int8
 
 SAFE_DIST = 1
 moving = False
-moving_angular = True
+moving_angular = False
+moving_towards = False
+moving_lateral = False
 
-def move_base(linear, angular):
+def move_base(linear_x, linear_y, angular):
     cmd = Twist()
-    cmd.linear.x = linear
+    cmd.linear.x = linear_x
+    cmd.linear.y = linear_y
     cmd.angular.z = angular
     pub_cmd_vel.publish(cmd)
 
 def callback_april_tag(msg):
-    global moving
-    dist, angle = msg.data
-    if (angle > 0.05) or (angle < -0.05):
+    dist, angle, cX, cY = msg.data
+    if abs(angle) > 0.05:
         print(f"Moving angularly: {msg.data}")
-        moving_angular = True
         sign = 1 if angle < 0 else -1
-        move_base(0, sign * 0.1)
+        move_base(0, 0, sign * 0.08)
+        return None
     else:
         print("Stopping angular movement")
-        moving_angular = False
         pub_cmd_vel.publish(Twist())
 
-    if moving_angular:
+    if cX < 310:
+        move_base(0, 0.2, 0)
         return None
+    elif cX > 330:
+        move_base(0, -0.2, 0)
+        return None
+    else:
+        print("Stopping lateral movement")
+        pub_cmd_vel.publish(Twist())
 
     if dist > SAFE_DIST:
         print(f"Moving linearly: {msg.data}")
-        move_base(0.1, 0)
+        move_base(0.1, 0, 0)
     else:
         print("Stopping linear movement")
         pub_cmd_vel.publish(Twist())
-    
-    print() 
-
-    # global moving_angular
-    # global moving
-
-    # if moving:
-    #     return None
-
-    # dist, angle = msg.data
-    # if ((angle > 0.1) or (angle < -0.1)) and moving_angular:
-    #     sign = 1 if angle < 0 else -1
-    #     moving = True
-    #     move_base(0, sign * 0.03, 0.1)
-    #     moving = False
-    # else:
-    #     moving_angular = False
-    #     print(f"Stop moving at angular: {angle}")
-    #     # if dist > SAFE_DIST:
-    #     #     move_base(0.1, 0, 0.1)
-
-# def callback_approach(msg):
-#     move_base(0.1, 0, 1)
 
 def main():
     global pub_cmd_vel
