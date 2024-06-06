@@ -437,9 +437,9 @@ def main():
         elif(current_state == HANDLING_LOCATION):
             print("ESTADO:___HANDLING_LOCATION..................")
             mov = JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
-            
             if mov:
                 JuskeshinoHRI.say("Aligne with table")
+                time.sleep(0.2)
                 JuskeshinoSimpleTasks.alignWithTable()
                 time.sleep(0.3)
             
