@@ -151,7 +151,7 @@ class JuskeshinoSimpleTasks:
         if position_obj.y > l_threshold_la:     # Objeto a la izquierda
             mov_izq = position_obj.y - l_threshold_la
             if mov_izq > 0.1:
-                JuskeshinoNavigation.moveDist(-0.08, 5.0)
+                JuskeshinoNavigation.moveDist(-0.1, 5.0)
                 time.sleep(0.3)
                 JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
                 time.sleep(0.4)
@@ -165,7 +165,7 @@ class JuskeshinoSimpleTasks:
         if position_obj.y < r_threshold_la:     # Objeto a la derecha
             mov_der = position_obj.y - r_threshold_la
             if mov_der > 0.1:
-                JuskeshinoNavigation.moveDist(-0.08, 5.0)
+                JuskeshinoNavigation.moveDist(-0.1, 5.0)
                 time.sleep(0.2)
                 JuskeshinoNavigation.moveLateral(mov_der , 5.0)
                 time.sleep(0.4)
