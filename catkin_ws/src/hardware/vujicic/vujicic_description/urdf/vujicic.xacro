@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<robot name="vujicic" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find vujicic_description)/urdf/macros.xacro"/>
+  <xacro:include filename="$(find vujicic_description)/urdf/materials.xacro"/>
+  <xacro:include filename="$(find vujicic_description)/urdf/vujicic_base_omni.xacro"/>
+  <xacro:include filename="$(find vujicic_description)/urdf/vujicic_head.xacro"/>
+  
+  <joint name="spine_head_connect" type="fixed">
+    <origin xyz="0 0 0.75" rpy="0 0 0"/>
+    <parent link="base_torso_support"/>
+    <child link="head_link1"/>
+  </joint>
+
+
+</robot>
