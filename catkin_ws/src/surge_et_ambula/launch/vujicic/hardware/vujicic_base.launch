@@ -1,0 +1,20 @@
+<launch>
+  <group ns="hardware">
+    <node name="hexa_base" pkg="hexa_base" type="hexa_base_node">
+      <param name="port1" value="/dev/vujicicRC30"/>
+      <param name="port2" value="/dev/vujicicRC15"/>
+    </node>
+    <node name="urg_node" pkg="urg_node" type="urg_node">
+      <param name="serial_port" type="string" value="/dev/vujicicHokuyo_H1314094" />
+      <param name="frame_id" type="string" value="laser_link" />
+    </node>
+    <node name="joy" pkg="joy" type="joy_node"/>
+    <node name="joystick_teleop" pkg="joystick_teleop" type="joystick_teleop_node.py"/>
+  </group>
+  <node name="tf_wheel_front_connect_x" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 base_link wheel_front_x 30"/>
+  <node name="tf_wheel_front_connect_y" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 wheel_front_x wheel_front_y 30"/>
+  <node name="tf_wheel_front_connect_z" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 wheel_front_y wheel_front_z 30"/>
+  <node name="tf_wheel_back_connect_x"  pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 base_link wheel_back_x 30"/>
+  <node name="tf_wheel_back_connect_y"  pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 wheel_back_x wheel_back_y 30"/>
+  <node name="tf_wheel_back_connect_z"  pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 wheel_back_y wheel_back_z 30"/>
+</launch>
