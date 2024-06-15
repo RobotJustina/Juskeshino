@@ -309,12 +309,14 @@ def object_category(size_obj, obj_state):  # estima la forma geometrica del obje
 
     if (size_obj.z <= MAXIMUM_GRIP_LENGTH) and (size_obj.y <= MAXIMUM_GRIP_LENGTH): #and (size_obj.x >= 0.13):
 
-        if((size_obj.x /size_obj.z) < 1.4) and (obj_state == 'horizontal'):
+        #if((size_obj.x /size_obj.z) < 1.4) and (obj_state == 'horizontal'):     
+        if((size_obj.x /size_obj.z) < 2.5) and (obj_state == 'horizontal'):
+            # si el tamanio en z no es mucho menor al tamanio en x y la mayor componente es horizontal
             print("The object is a bowl")
             return "BOWL", True
         else:
-            print("The object will be GRABBED AS PRISM..................")
-            return "PRISM", True
+            print("The object will be GRABBED AS CUBE..................")
+            return "CUBIC", True
 
 
     else:

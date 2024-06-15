@@ -29,7 +29,7 @@ LEAVE_CEREAL      = [0.54, 0.28, -0.13, 1.45, 0, 0, 0]
 LEAVE_MILK        = [0.44, 0.18, -0.03, 1.45, 0, 0, 0]
 LEAVE_BOWL        = [0.6,  0.6, -0.8, 1.7, 0, -0.1, 0]
 
-POST_GRIP         = [0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ]
+POST_GRIP         = [0.38, 0.19, -0.01, 1.57, 0 , 0.35, 0.0 ]
 
 # RIght arm
 PREPARE_RA    = [-0.8, -0.1, 0.0, 1.3, 1.3,0, 0.0]
@@ -541,24 +541,19 @@ def main():
                 JuskeshinoHardware.moveLeftGripper(0.1 , 3.0)
                 JuskeshinoHardware.moveLeftGripper(0.0 , 3.0)
                 JuskeshinoHardware.moveLeftGripper(-0.1 , 3.0)
-                """
-                if(JuskeshinoHardware.moveLeftGripper(GRIP_BOWL , 3.0) ):
-                    JuskeshinoHRI.say("gripper close")
-                else: 
-                    JuskeshinoHRI.say("Cannot close gripper")
-                    JuskeshinoHardware.moveLeftGripper(0.1 , 1.0)
-                """
 
             if (actual_obj == MILK):
                 JuskeshinoHardware.moveLeftGripper(0.7 , 3.0)
                 JuskeshinoHardware.moveLeftGripper(0.6 , 3.0)
                 JuskeshinoHardware.moveLeftGripper(0.5 , 3.0)
                 JuskeshinoHardware.moveLeftGripper(0.4 , 3.0)
+                JuskeshinoHardware.moveLeftGripper(0.2 , 3.0)
+                JuskeshinoHardware.moveLeftGripper(0.0 , 3.0)
             if (actual_obj == CEREAL):
                 JuskeshinoHardware.moveLeftGripper(0.7 , 3.0)
                 JuskeshinoHardware.moveLeftGripper(0.5 , 3.0)
                 JuskeshinoHardware.moveLeftGripper(0.3 , 3.0)
-                JuskeshinoHardware.moveLeftGripper(0.1 , 3.0)
+                JuskeshinoHardware.moveLeftGripper(0.0 , 3.0)
 
             current_state = POST_GRASP
 
@@ -572,7 +567,7 @@ def main():
             time.sleep(0.6)
             JuskeshinoHardware.moveTorso(0.17 , 5.0)
             time.sleep(0.3)
-            #JuskeshinoHardware.moveLeftArmWithTrajectory(POST_GRIP, 10)  # prepare    
+            JuskeshinoHardware.moveLeftArmWithTrajectory(POST_GRIP, 10)  # prepare    
             time.sleep(0.3)
             JuskeshinoHRI.say("lift object")
             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
@@ -663,7 +658,8 @@ def main():
             cycle = cycle + 1
             print("CYCLE:_____", cycle)
             if cycle > 2:
-                current_state = END
+                JuskeshinoHRI.say("Breakfast is served. I finish the test")
+                exit()
             else:
                 j = j + 1
                 first_detection = False

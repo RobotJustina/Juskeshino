@@ -338,14 +338,14 @@ class ScanCabinet(smach.State):
                             #centroid maths
                             JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
                             userdata.object_shelf=obj
-                            if obj.pose.position[2]>1.3:
+                            if obj.pose.position.z>1.3:
                                 JuskeshinoHRI.say("The object is part of the top shelf")
                                 print("The object is part of the top shelf")
                                 #variable shared with the next state giving q for left arm to leave the object 'object_shelf'
-                            if 1.3 > obj.pose.position[2] > 0.8:
+                            if 1.3 > obj.pose.position.z > 0.8:
                                 JuskeshinoHRI.say("The object is part of the middle shelf")
                                 print("The object is part of the middle shelf")
-                            if 0.8 > obj.pose.position[2] > 0.2:
+                            if 0.8 > obj.pose.position.z > 0.2:
                                 JuskeshinoHRI.say("The object is part of the low shelf")
                                 print("The object is part of the low shelf")    
                                 return 'succed'

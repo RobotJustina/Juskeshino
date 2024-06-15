@@ -1,5 +1,6 @@
 <launch>
   <arg name="debug" default="False"/>
+  <arg name="use_vosk" default="False"/>
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
     <arg name="posx"  value="-5.34"/>
     <arg name="posy"  value="-1.17"/>
@@ -49,7 +50,9 @@
     <arg name="training_dir"  value="$(find obj_reco)/training_simul"/>
   </include>
 
-  <include file="$(find surge_et_ambula)/launch/justina/hri.launch"/>
+   <include file="$(find surge_et_ambula)/launch/justina/hri.launch">
+    <arg name="use_vosk" value="$(arg use_vosk)"/>
+  </include>
   <include file="$(find surge_et_ambula)/launch/justina/planning.launch">
       <arg name="known_locations" value="$(find config_files)/navigation/known_locations_lab.yaml"/>
     </include>

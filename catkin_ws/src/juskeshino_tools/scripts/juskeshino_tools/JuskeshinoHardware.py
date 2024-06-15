@@ -32,21 +32,23 @@ class JuskeshinoHardware:
             loop.sleep()
         return True
 
+
     def getPolynomialTrajectory(p1,p2):
         req = GetPolynomialTrajectoryRequest()
         req.p1 = p1
         req.p2 = p2
         req.time_step  = 0.05
-        max_delta = -1;
+        max_delta = -1
         for i in range(len(p1)):
             if abs(p1[i] - p2[i]) > max_delta:
                 max_delta = abs(p1[i] - p2[i])
-        req.duration = max_delta / 0.7 + 0.5
+        req.duration = max_delta / 0.3 + 0.5
         try:
             resp = JuskeshinoHardware.cltPolyTraj(req)
             return resp.trajectory
         except:
             return None
+            
 
     def startMoveHead(pan, tilt):
         msg = Float64MultiArray()
