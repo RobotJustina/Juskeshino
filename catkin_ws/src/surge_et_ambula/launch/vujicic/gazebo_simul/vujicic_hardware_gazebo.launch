@@ -34,6 +34,7 @@
   </node>
   <!-- <node name="tf_camera_connect" pkg="tf" type="static_transform_publisher" args="0 0 0 -1.5708 0 -1.5708 camera_link camera_rgb_optical_frame 30"/> -->
   <!--realsense_link-->
-
+  <node name="joy" pkg="joy" type="joy_node"/>
+  <node name="joystick_teleop" pkg="joystick_teleop" type="dualshock_teleop_node.py" output="screen"/>
 
 </launch>
