@@ -1,5 +1,6 @@
 <launch>
   <include file="$(find surge_et_ambula)/launch/vujicic/hardware/vujicic_base.launch"/>
+  <include file="$(find surge_et_ambula)/launch/vujicic/hardware/vujicic_upper_actuators.launch"/>
   <include file="$(find freenect_launch)/launch/examples/freenect-registered-xyzrgb.launch">
   </include>
   

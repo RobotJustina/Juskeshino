@@ -1,0 +1,16 @@
+#uppper actuators in /hardware
+port: /dev/vujicicHead
+baudrate: 1000000
+servo_ids:
+  - 0
+  - 2
+servo_zeros:
+  - 2335
+  - 2038
+servo_directions:
+  - -1
+  - -1
+joint_names:
+  - "head_pan"
+  - "head_tilt"
+max_speed: 60
