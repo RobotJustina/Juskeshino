@@ -14,7 +14,7 @@ import geometry_msgs.msg
 MAXIMUM_GRIP_LENGTH = 0.14
 MINIMUM_HEIGHT_PRISM = 0.17
 MAXIMUM_CUBE_SIZE = 0.16
-Z_OFFSET = 0.13# real 0.12
+Z_OFFSET = 0.15# real 0.12
 Z_OFFSET_BOWL  = 0.22#0.19
 Z_OFFSET_2 = 0.01
 Z_OFFSET_BOWL_2  = -0.05#-0.03
@@ -106,19 +106,13 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
     global debug 
     j = 0
 
-    if (obj_state == "horizontal") or (type_obj == "BOWL") or (type_obj == "BOX"):   # 13 cm por encima del objeto (z_base_link)
+    if obj_state == "horizontal":   # 13 cm por encima del objeto (z_base_link)
         grip_point_bl = points_actual_to_points_target(grip_point, 'object', 'base_link')
 
         if type_obj == "BOWL":
             grip_point_bl[2] = grip_point_bl[2] + Z_OFFSET_BOWL
 
-        else:
-            if type_obj == "BOX":
-                grip_point_bl[2] = grip_point_bl[2] + 0.03
-            else:
-                grip_point_bl[2] = grip_point_bl[2] + Z_OFFSET
-
-        print("PUNTO CENTROIDE", grip_point_bl)
+        else:grip_point_bl[2] = grip_point_bl[2] + Z_OFFSET
 
         grip_point = points_actual_to_points_target(grip_point_bl, 'base_link', 'object')
         if debug:
@@ -147,10 +141,13 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
         obj_pose_frame_object.orientation.y = q_gripper[1]
         obj_pose_frame_object.orientation.z = q_gripper[2]
         obj_pose_frame_object.orientation.w = q_gripper[3]
+
+    
         
         if rotacion == "P": 
             P = P + np.deg2rad(step) #horizontal grip
             print("Best_Grasp_Node.-> Rotacion en Pitch", np.rad2deg(P))
+
         else:
             if rotacion == "R": R = R + np.deg2rad(step)  #vertical grip
             print("Best_Grasp_Node.-> Rotacion en Roll", np.rad2deg(R))
@@ -648,13 +645,12 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
         first_trajectory   = list(reversed(candidate_q_list))
         candidate_q_list   = list(first_trajectory)
 
-    
-    if(category == "BOX"):
+    if(category == "CUBIC"):
         first_trajectory   = list(reversed(candidate_q_list))
-        first_trajectory.pop
-        first_trajectory.pop
+        second_trajectory  = list(reversed(candidate_q_list))
+        second_trajectory.pop(0)
+        #second_trajectory.pop(1)
         candidate_q_list   = list(first_trajectory)
-
     
         
     print("Best_Grasp_Node.-> evaluating_possibility_grip()")
@@ -731,9 +727,8 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
                 try:    # intenta obtener la primera trayectoria en el espacio articular
                     resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
                     print("Best_Grasp_Node.-> Suitable pose 1 for horizontal object found.....................")
-
-                    if((category == "CUBIC") or (category == "BOX")):
-                        print("Only 1 trajectory ")
+                    if(category == "CUBIC") or (category == "BOX"):
+                        print("Only 1 trajectory")
                         return resp_ik_srv.articular_trajectory , pose1 , new_pos, True
                     
                     print("Generating second trajectory to take the object")

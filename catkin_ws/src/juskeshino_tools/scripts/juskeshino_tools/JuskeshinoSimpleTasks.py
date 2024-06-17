@@ -84,6 +84,7 @@ class JuskeshinoSimpleTasks:
         timeout = ((abs(error_a) + abs(error_d))/0.5 + 1)
         print("JuskeshinoSimpleTasks.->Moving to align with table d="+str(error_d) + " and theta="+str(error_a))
         return JuskeshinoNavigation.moveDistAngle(error_d, error_a, timeout)
+    
 
     def findHumanAndApproach(timeout):
         head_poses = [[0.0, 0.0], [0.3, 0], [-0.3,0], [0.6, 0], [-0.6,0], [0.9,0], [-0.9, 0], [1.2,0], [-1.2,0], [1.5,0], [-1.5,0]]
@@ -144,17 +145,20 @@ class JuskeshinoSimpleTasks:
         return [obj_p.point.x, obj_p.point.y, obj_p.point.z]
     
 
-    def handling_location_la(position_obj):
+    def handling_location_la(position_obj):     # Recibe un  objeto de tipo position extraido de un mensaje pose de ROS
         l_threshold_la       = 0.25
         r_threshold_la       = 0.14
         
         if position_obj.y > l_threshold_la:     # Objeto a la izquierda
             mov_izq = position_obj.y - l_threshold_la
-            if mov_izq > 0.1:
-                JuskeshinoNavigation.moveDist(-0.1, 5.0)
+            print("mov izq", mov_izq)
+            if abs(mov_izq) > 0.18:
+                print("2 move")
+                JuskeshinoNavigation.moveDist(-0.2, 5.0)
                 time.sleep(0.3)
                 JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
                 time.sleep(0.4)
+                JuskeshinoNavigation.moveDist(0.2, 5.0)
                 
                 return True
             else:
@@ -164,12 +168,14 @@ class JuskeshinoSimpleTasks:
 
         if position_obj.y < r_threshold_la:     # Objeto a la derecha
             mov_der = position_obj.y - r_threshold_la
-            if mov_der > 0.1:
-                JuskeshinoNavigation.moveDist(-0.1, 5.0)
+            print("mov der", mov_der)
+            if abs(mov_der) > 0.18:
+                print("22 move")
+                JuskeshinoNavigation.moveDist(-0.2, 5.0)
                 time.sleep(0.2)
                 JuskeshinoNavigation.moveLateral(mov_der , 5.0)
                 time.sleep(0.4)
-                
+                JuskeshinoNavigation.moveDist(0.2, 5.0)
                 return True
                 
             else:

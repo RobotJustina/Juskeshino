@@ -82,6 +82,7 @@ class JuskeshinoVision:
             reqObjPose.point_cloud = resp.recog_object.point_cloud
             reqObjPose.image       = resp.recog_object.image
             reqObjPose.obj_mask    = resp.recog_object.obj_mask
+            reqObjPose.name        = resp.recog_object.id
             respObjPose = JuskeshinoVision.cltGetObjectPose(reqObjPose)
             return [respObjPose.recog_object, resp.image]
         except:
