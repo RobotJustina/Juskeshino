@@ -13,7 +13,12 @@ from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
 from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
 from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 from sensor_msgs.msg import LaserScan
-
+#TO DO :
+# Veify if the object was succesfully graspped
+# State for asking someone to take the object if point above is True **
+# Not print all the categories, only the one the target category
+# State for align with cabinet **
+# State for leave the object **
 
 DESK = "desk_justina"
 SIMUL_DESK = 'simul_desk' 
@@ -235,7 +240,7 @@ class GraspObject(smach.State):
             x,y,z=userdata.object_output
             JuskeshinoHRI.say("Moving arm to prepare")
             print("Moving arm to prepare")
-            JuskeshinoHardware.moveTorso(0.09 , 5.0)
+            #JuskeshinoHardware.moveTorso(0.09 , 5.0)
             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
             JuskeshinoHardware.moveLeftGripper(0.7, 100.0)
             print("Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))   
@@ -246,7 +251,7 @@ class GraspObject(smach.State):
             if success:
                 JuskeshinoHRI.say("Object found correctly")
                 print("Object position: ",obj.pose.position)
-                JuskeshinoHardware.moveTorso(0.14 , 5.0)
+                #JuskeshinoHardware.moveTorso(0.14 , 5.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(response.articular_trajectory,10)
                 print("Closing gripper")
                 JuskeshinoHardware.moveLeftGripper(0.05 , 3.0) 
