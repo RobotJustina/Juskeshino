@@ -35,7 +35,7 @@ def callbackTorque(msg):
         
         # dynMan1.GetRegistersValues(5)
         # dynMan1.GetRegistersValues(1)
-        print "HardwareHead.->Mode Torque...   "
+        print( "HardwareHead.->Mode Torque...   ")
         modeTorque = 0
 
     if msg.data[0] < 0:
@@ -50,7 +50,7 @@ def callbackTorque(msg):
     else:
         torqueTilt = int(100*msg.data[1])
 
-    print "HardwareHead.->Torque.... " + str(torquePan) + "   " + str(torqueTilt)
+    print ("HardwareHead.->Torque.... " + str(torquePan) + "   " + str(torqueTilt))
 
     ## Send 0-1023 magnitude torque, and the torquePanCCW means the turn direction 
     dynMan1.SetTorqueVale(5, torquePan, torquePanCCW)
@@ -116,24 +116,24 @@ def callbackPosHeadSimul(msg):
 
 
 def printHelp():
-    print "HEAD NODE. Options:"
-    print "\t --port \t Serial port name. If not provided, the default value is \"/dev/ttyACM0\""
-    print "\t --simul\t Simulation mode."
-    print " - Head can be moved by publishing either head/goal_pose or"
-    print " - head/torque. Torque must be values in [-1, 1] where a value of 1 "
-    print " - represents the maximum torque that each motor can generate."
-    print " - Positions (both current and goal) are in [rad]"
-    print "PLEASE DON'T TRY TO OPERATE JUSTINA IF YOU ARE NOT QUALIFIED ENOUGH."
+    print ("HEAD NODE. Options:")
+    print ("\t --port \t Serial port name. If not provided, the default value is \"/dev/ttyACM0\"")
+    print ("\t --simul\t Simulation mode.")
+    print( " - Head can be moved by publishing either head/goal_pose or")
+    print (" - head/torque. Torque must be values in [-1, 1] where a value of 1 ")
+    print (" - represents the maximum torque that each motor can generate.")
+    print (" - Positions (both current and goal) are in [rad]")
+    print ("PLEASE DON'T TRY TO OPERATE JUSTINA IF YOU ARE NOT QUALIFIED ENOUGH.")
 
 
 def main(portName, portBaud):
-    print "HardwareHead.->INITIALIZING HEAD NODE..."
+    print( "HardwareHead.->INITIALIZING HEAD NODE...")
 
     ###Communication with dynamixels:
     global dynMan1
     global goalPan;
     global goalTilt;
-    print "HardwareHead.->Trying to open port on " + portName + " at " + str(portBaud)
+    print( "HardwareHead.->Trying to open port on " + portName + " at " + str(portBaud))
     dynMan1 = Dynamixel.DynamixelMan(portName, portBaud)
     pan = 0;
     tilt = 0;
@@ -249,7 +249,7 @@ def main(portName, portBaud):
         loop.sleep()
 
 def mainSimul():
-    print "INITIALIZING HEAD NODE IN SIMULATION MODE BY MARCOSOFT..."
+    print( "INITIALIZING HEAD NODE IN SIMULATION MODE BY MARCOSOFT...")
     ###Connection with ROS
     rospy.init_node("head")
     br = tf.TransformBroadcaster()

@@ -3,12 +3,28 @@ import rospy
 import math
 from sensor_msgs.msg import Joy
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Float64MultiArray
+
 
 def callbackJoy(msg):
     global speedX
     global speedY
     global yaw
+    global panPos
+    global tiltPos
 
+
+    ### Control of head with left Stick 
+    leftStickX = msg.axes[0]
+    leftStickY = msg.axes[1]
+    
+    magnitudLeft = math.sqrt(leftStickX*leftStickX + leftStickY*leftStickY)
+    if magnitudLeft > 0.1:
+        panPos = leftStickX
+        tiltPos = leftStickY
+    else:
+        panPos = 0
+        tiltPos = 0
     ### Control of mobile-base with right Stick
     rightStickX = msg.axes[3]
     rightStickY = msg.axes[4]
@@ -52,18 +68,23 @@ def main():
     global speedX
     global speedY
     global yaw
-    
+    global panPos
+    global tiltPos
     speedY = 0
     speedX = 0
     yaw = 0
-    
+    panPos = 0
+    tiltPos = 0
+
     msgTwist = Twist()
+    msgHeadPos = Float64MultiArray()
 
     #print("INITIALIZING JOYSTICK TELEOP BY MARCOSOFT... :)")
     rospy.init_node("dualshock_teleop")
 
-    rospy.Subscriber("/joy", Joy, callbackJoy)
+    rospy.Subscriber("/hardware/joy", Joy, callbackJoy)
     pubTwist = rospy.Publisher("/hardware/mobile_base/cmd_vel", Twist, queue_size =1)
+    pubHeadPos = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=1)
 
 
     
@@ -76,6 +97,10 @@ def main():
             msgTwist.angular.z = yaw
             print("x: " + str(msgTwist.linear.x) + "  y: " + str(msgTwist.linear.y) + " yaw: " + str(msgTwist.angular.z))
             pubTwist.publish(msgTwist)
+        if math.fabs(panPos) > 0 or math.fabs(tiltPos) > 0:
+            msgHeadPos.data = [panPos, tiltPos]
+            pubHeadPos.publish(msgHeadPos)
+            
         loop.sleep()
 
 if __name__ == '__main__':

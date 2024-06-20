@@ -156,7 +156,7 @@ def ask4bag():
     time.sleep(1)
     ask = "Could you put the bag you are pointing with your "
     if side == None:
-        side = "viri"
+        side = "unknown"
     ask += side
     ask += " hand on my grip please?"
     JuskeshinoHRI.say(ask)
