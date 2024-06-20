@@ -5,11 +5,11 @@ servo_ids:
   - 0
   - 2
 servo_zeros:
-  - 2335
-  - 2038
+  - 2009
+  - 2365
 servo_directions:
-  - -1
-  - -1
+  - 1
+  - 1
 joint_names:
   - "head_pan"
   - "head_tilt"

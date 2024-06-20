@@ -35,12 +35,12 @@
     </inertial>
     <visual>
       <origin xyz="0 0 0.375" rpy="0 0 0"/>
-      <geometry> <box size="0.04 0.04 0.74"/></geometry>
+      <geometry> <box size="0.04 0.04 0.9"/></geometry>
       <material name="black"/>
     </visual>
     <collision>
       <origin xyz="0 0 0.375" rpy="0 0 0"/>
-      <geometry> <box size="0.04 0.04 0.74"/></geometry>
+      <geometry> <box size="0.04 0.04 0.9"/></geometry>
     </collision>
   </link>
   <joint name="base_joint" type="fixed">
@@ -51,7 +51,7 @@
   <joint name="base_torso_support_joint" type="fixed">
     <parent link="base_center" />
     <child link="base_torso_support" />
-    <origin xyz="0.09 0 0.105"/>
+    <origin xyz="0.09 0 0.121"/>
   </joint>
 
   <!-- LEFT WHEEL ACTUATOR-->

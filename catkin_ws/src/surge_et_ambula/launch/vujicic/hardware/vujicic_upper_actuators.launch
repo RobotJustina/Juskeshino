@@ -1,6 +1,8 @@
 <launch>
   <group ns="hardware">
-    <node name="left_arm" pkg="arms" type="arm_node" respawn="false">
+    <!-- <node name="left_arm" pkg="arms" type="arm_node" respawn="false">
+
+    
       <rosparam command="load" file="$(find config_files)/justina/arms/left_arm_params.yaml"/>
       <remap from="/hardware/arm/goal_pose"      to="/hardware/left_arm/goal_pose"     />
       <remap from="/hardware/arm/goal_gripper"   to="/hardware/left_arm/goal_gripper"  />
@@ -14,7 +16,6 @@
       <remap from="/hardware/arm_voltage"             to="/hardware/left_arm_voltage"/>
     </node>
 
-    <!-- 
     <node name="right_arm" pkg="arms" type="arm_node" output="screen" respawn="false"> 
       <rosparam command="load" file="$(find config_files)/justina/arms/right_arm_params.yaml"/> 
       <remap from="/hardware/arm/goal_pose"      to="/hardware/right_arm/goal_pose"     /> 
@@ -27,10 +28,10 @@
       <remap from="/manipulation/q_trajectory"        to="/manipulation/ra_q_trajectory"/> 
       <remap from="/manipulation/arm/goal_reached"    to="/manipulation/right_arm/goal_reached"/> 
       <remap from="/hardware/arm_voltage"             to="/hardware/right_arm_voltage"/> 
-    </node> 
-    -->
+    </node>  -->
+   
 
-    <node name="head" pkg="head" type="head_node">
+    <node name="head" pkg="head" type="head_node" output="screen">
       <rosparam command="load" file="$(find config_files)/vujicic/head/head_params.yaml"/>
     </node>
     <!-- <node name="torso" pkg="torso" type="torso_node_pololu" required="true">
