@@ -8,4 +8,5 @@ sudo apt install festvox-us-slt-hts
 sudo pip3 install pyserial
 sudo pip3 install numpy==1.22.2
 sudo apt-get install freenect
-
+sudo apt-get install ros-noetic-usb-cam
+sudo pip install deepface
