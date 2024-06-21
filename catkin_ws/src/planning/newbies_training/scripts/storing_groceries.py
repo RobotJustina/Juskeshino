@@ -21,8 +21,9 @@ from sensor_msgs.msg import LaserScan
 # State for leave the object **
 
 DESK = "desk_justina"
-SIMUL_DESK = 'simul_desk' 
-PREPARE_GRIP  = [-0.8, 0.2, 0, 1.55, 0, 1.24, 0]
+SIMUL_DESK = 'simul_desk'
+PREPARE_GRIP  = [-1.3, 0.2, 0, 2.2, 0, 1.24, 0]
+# PREPARE_GRIP  = [-0.8, 0.2, 0, 1.55, 0, 1.24, 0]
 PREPARE_TOP_GRIP=[-1.25, 0.3, 0, 2.4, 0, 0.7,0] #TINY OBJ
 HOLD_OBJ = [0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ]
 
@@ -241,20 +242,24 @@ class GraspObject(smach.State):
             JuskeshinoHRI.say("Moving arm to prepare")
             print("Moving arm to prepare")
             #JuskeshinoHardware.moveTorso(0.09 , 5.0)
-            JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
+            if obj.category == 'CUBIC':
+                JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
+            else:
+                JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
             JuskeshinoHardware.moveLeftGripper(0.7, 100.0)
             print("Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))   
             print('------------>>>',x,y,z)                    
-            #response=JuskeshinoManipulation.laIk([x,y,z,0,-1.5,0])
             [response, success] = JuskeshinoManipulation.GripLa(obj)
-            #print(response)
             if success:
                 JuskeshinoHRI.say("Object found correctly")
                 print("Object position: ",obj.pose.position)
                 #JuskeshinoHardware.moveTorso(0.14 , 5.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(response.articular_trajectory,10)
                 print("Closing gripper")
-                JuskeshinoHardware.moveLeftGripper(0.05 , 3.0) 
+                if obj.category == 'CUBIC':
+                    JuskeshinoHardware.moveLeftGripper(0.0 , 3.0)
+                else:
+                    JuskeshinoHardware.moveLeftGripper(0.05 , 3.0) 
                 JuskeshinoHardware.moveLeftArmWithTrajectory(HOLD_OBJ, 10)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
                 time.sleep(0.5)     
@@ -274,17 +279,22 @@ class FailedGrasp(smach.State):
     def execute(self,userdata):
         self.tries += 1
         if self.tries<4:
-            obj=userdata.object
+            objc=userdata.object
             JuskeshinoHRI.say("Object found")
-            [response, success] = JuskeshinoManipulation.GripLa(obj)
+            [response, success] = JuskeshinoManipulation.GripLa(objc)
             JuskeshinoHardware.moveLeftGripper(0.9, 100.0)
             JuskeshinoHardware.moveLeftArmWithTrajectory(response.q,10)
             print("Closing gripper")
             JuskeshinoHardware.moveLeftGripper(0.05 , 3.0) 
             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
-            time.sleep(0.5) 
+            time.sleep(0.5)
+            recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
+            for obj in recog_objects:
+                if obj and objc:
+                    JuskeshinoHRI.say("I couldn't grasp the object, a human is going to take the "+ obj.id )
+                    return 'failed'
             return 'succed'
-        return 'failed'
+        
     
 class TransportObject(smach.State):
     def __init__(self):
@@ -362,7 +372,7 @@ class ScanCabinet(smach.State):
             
         print('I could not detect objects')
         return 'tries'
-    
+    #check the centroid of shelf obj and leave the object on the side
 class LeaveObject(smach.State):
     def __init__(self):
         smach.State.__init__(
@@ -379,7 +389,15 @@ class LeaveObject(smach.State):
             obj_shelf=userdata.object_shelf
             rospy.logwarn('\n--> STATE 10 <: Leaving object')
             JuskeshinoHRI.say("Leaving object")
-            
+            [response, success] = JuskeshinoManipulation.GripLa(obj_shelf)
+            if success :
+                print("Object position: ",obj_shelf.pose.position)
+                #JuskeshinoHardware.moveTorso(0.14 , 5.0)
+                JuskeshinoHardware.moveLeftArmWithTrajectory(response.articular_trajectory,10)
+                print("Opening gripper")
+                JuskeshinoHardware.moveLeftGripper(0.9, 100.0)
+                return 'succed'
+            return 'failed'
                 
 
 
@@ -462,7 +480,7 @@ def main():
                      'succed':'TRANSPORT_OBJECT'})
         
         smach.StateMachine.add('FAILED_GRASP',FailedGrasp(), 
-        transitions={'failed':'GRASP_OBJ',
+        transitions={'failed':'TRANSPORT_OBJECT',
                      'succed':'TRANSPORT_OBJECT'})
         
         smach.StateMachine.add('TRANSPORT_OBJECT',TransportObject(), 
@@ -475,22 +493,6 @@ def main():
                      'tries':'SCAN_CABINET'})
     # Execute SMACH plan
     outcome = sm.execute()
-    
-    # recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
-    # for obj in recog_objects:
-    #     print(obj.id)
-    #     print(obj.pose.position)
-    #     print(obj.header.frame_id)
-    #     x,y,z = obj.pose.position.x, obj.pose.position.y, obj.pose.position.z
-    #     x,y,z = JuskeshinoSimpleTasks.transformPoint(x,y,z, "shoulders_left_link", "base_link")
-    #     print(x,y,z)
-    #     PREPARE_TOP_GRIP = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
-    #     JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)  # prepare 
-    #     response=JuskeshinoManipulation.laIk([x,y,z,0,-1.5,0])
-
-    #     [response, success] = JuskeshinoManipulation.GripLa(obj)
-    #     print(response)
-    
     
 if __name__ == "__main__":
     main()
