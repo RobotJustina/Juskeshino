@@ -13,7 +13,7 @@ import geometry_msgs.msg
 from cv_bridge import CvBridge
 
 
-MAXIMUM_GRIP_LENGTH = 0.17
+MAXIMUM_GRIP_LENGTH = 0.16
 MAXIMIUN_CUBE_SIZE  = 0.16
 
 
@@ -115,6 +115,7 @@ def object_pose(centroid, principal_component, second_component, size_obj, name_
     Construction of the coordinate system of the object,the construction of the frame depends on the coordinate system of the robot gripper 
     Ademas se imponen restricciones para que la pose sea realizable por el gripper
     """
+    global PCA_vertical
     principal_component = np.asarray(principal_component)
     if principal_component[2] < 0: 
         principal_component = -1 * principal_component
@@ -172,6 +173,9 @@ def object_pose(centroid, principal_component, second_component, size_obj, name_
         
         else:   # Sie el objeto es vertical
             # Si el objeto es pequenio se construye un frame que permita el agarre superior
+            obj_state = 'horizontal'
+            c_obj, graspable = object_category(size_obj, obj_state, name_obj)
+
             print("se construye un frame que permita el agarre superior")
             obj_state = 'horizontal'
             eje_x_obj = np.asarray([1, 0, 0], dtype=np.float64)
@@ -210,18 +214,17 @@ def object_pose(centroid, principal_component, second_component, size_obj, name_
                     eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
         """
         if (c_obj == "PRISM"):
-            # Asignacion de ejes del objeto
-            eje_z_obj = second_component 
-            eje_x_obj = principal_component 
-            eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
-
-            """
-            else:
+            if (PCA_vertical == True):
                 # Asignacion de ejes del objeto
                 eje_z_obj = second_component 
                 eje_x_obj = principal_component 
                 eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
-            """
+                print("COnstruccion de frame con PCA")
+            else:
+                eje_x_obj = np.asarray([0, 0, 1], dtype=np.float64)
+                eje_z_obj = np.asarray([1, 0, 0], dtype=np.float64)
+                eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+            
 
         else:
             # Si el objeto es pequenio se construye un frame que permita el agarre superior
@@ -245,7 +248,13 @@ def object_pose(centroid, principal_component, second_component, size_obj, name_
     r,p,y = tft.euler_from_matrix(np.asarray(TM))
     quaternion_obj = tft.quaternion_from_euler(r, p, y)
     obj_pose = Pose()
-    obj_pose.position.x, obj_pose.position.y, obj_pose.position.z = centroid[0], centroid[1], centroid[2]
+    print("centroid before", centroid)
+    if((c_obj == "PRISM") and (obj_state == 'vertical')):
+        obj_pose.position.x, obj_pose.position.y, obj_pose.position.z = centroid[0], centroid[1], centroid[2] + 0.03
+        
+    else:
+        obj_pose.position.x, obj_pose.position.y, obj_pose.position.z = centroid[0], centroid[1], centroid[2]
+    print("centroid ", centroid)
     obj_pose.orientation.x = quaternion_obj[0]
     obj_pose.orientation.y = quaternion_obj[1]
     obj_pose.orientation.z = quaternion_obj[2]
@@ -318,7 +327,7 @@ def object_category(size_obj, obj_state, name_obj):  # estima la forma geometric
             print("H-> BOWL")
             return "BOWL", True
         else:
-            if((size_obj.x /size_obj.z) > 1.4) and ((size_obj.x /size_obj.y) > 1.4) and ((size_obj.y /size_obj.z) < 1.4):   # barra
+            if((size_obj.x /size_obj.z) > 1.4) and ((size_obj.x /size_obj.y) > 1.4) and ((size_obj.y /size_obj.z) < 1.4) or ((size_obj.y < 0.15) and ((size_obj.x /size_obj.y) > 1.4) ):   # barra
                 print("H-> PRISM")
                 return "PRISM", True
             else:
@@ -428,8 +437,9 @@ def main():
     print("Obj_segmentation_and_pose --> obj_pose by Iby *******************(✿◠‿◠)7**")
     rospy.init_node("object_pose")
 
-    global pub_point, marker_pub, debug 
+    global pub_point, marker_pub, debug, PCA_vertical
     debug = False
+    PCA_vertical = False
     rospy.Service("/vision/obj_segmentation/get_obj_pose_with_orientation", RecognizeObject, callbackPoseObjectOrientation) 
     rospy.Service("/vision/obj_segmentation/get_obj_pose_without_orientation", RecognizeObject, callbackPoseObject) 
     pub_point = rospy.Publisher('/vision/detected_object', PointStamped, queue_size=10)
