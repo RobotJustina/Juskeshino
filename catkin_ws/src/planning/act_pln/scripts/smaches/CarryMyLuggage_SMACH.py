@@ -18,7 +18,8 @@ from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 class Initial(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'],
-                             output_keys = ['mode', 'l_arm_home'], input_keys=['bag', 'l_arm_home'] )
+                             output_keys = ['mode', 'l_arm_home', 'confirm_list', 'negation_list', 'speech_time'], 
+                             input_keys=['bag', 'l_arm_home', 'confirm_list', 'negation_list', 'speech_time'] )
         self.tries = 0
         # topic/services subscriptions: manipulation, vision, navigation, else
         JuskeshinoNavigation.setNodeHandle()
@@ -35,10 +36,31 @@ class Initial(smach.State):
         self.tries += 1
         print(f'Try {self.tries}')
 
+        global vosk_enable
+        if vosk_enable:
+            print("VOSK ENABLE -->")
+            userdata.confirm_list = ['yes', 'robot yes', 'jack', 'juice', 'justina yes', 'yeah', 'correct', 'affirmative']
+            userdata.negation_list = ['no', 'robot no','not','now','nope','justina no', 'incorrect', 'negative']
+            userdata.speech_time = 6
+            print("speech timeout: ", userdata.speech_time)
+        else:
+            userdata.confirm_list = ["YES", "YEAH", "ROBOT YES", "JUSTINA YES", "JUICE"]
+            userdata.negation_list = ['NO', 'ROBOT NO','NOPE','JUSTINA NO']
+
+        gram = userdata.confirm_list + userdata.negation_list
+
+        print("** confirmation list: ") 
+        print(userdata.confirm_list)  
+        print("** negation list: ") 
+        print(userdata.negation_list)
+
         # Neutral position
-        userdata.l_arm_home = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        JuskeshinoHardware.moveLeftArmWithTrajectory(userdata.l_arm_home, 6)
-        head.set_named_target('neutral')
+        if self.tries ==1:
+            set_grammar(gram)
+            userdata.l_arm_home = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            JuskeshinoHardware.moveLeftArmWithTrajectory(userdata.l_arm_home, 6)
+            head.set_named_target('neutral')
+
         print('I am ready for carry my luggage task.')
         voice.talk('I am ready for carry my luggage task.')
 
@@ -198,7 +220,8 @@ class GotoLivingRoom(smach.State):
 
 class AskForBag(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'],
+                             input_keys=['speech_time', 'confirm_list'])
         self.tries = 0
         self.offerSit = [0.3, 0.2, -0.4, 1.7, 0.0, -0.4, 1.5]
         self.getBag = [0.3, 0.2, -0.5, 1.7, 0.0, 0.3, 0.0, 0.4]
@@ -215,6 +238,7 @@ class AskForBag(smach.State):
             print("\n")
             rospy.logwarn('--> STATE <: Ask for Bag')
             JuskeshinoHardware.moveLeftArmWithTrajectory(self.offerSit, 6)
+            head.set_named_target('neutral')
             print('Can you put the bag over my hand? Please')
             voice.talk('Can you put the bag over my hand?. Please')
             JuskeshinoHardware.moveLeftGripper(0, 2.0)
@@ -222,19 +246,28 @@ class AskForBag(smach.State):
         
         print('Tell me: Justina yes, when you put the bag')
         voice.talk('Tell me. Justina yes, when you put the bag')
-        answer = JuskeshinoHRI.waitForNewSentence(6)
-        print("voice: ", answer)
-        if "YES" in answer:
+
+        
+        
+        if vosk_enable:
+                rospy.logwarn('Listening *))')
+                confirmation = get_keywords_speech(userdata.speech_time)
+        else: 
+            JuskeshinoHRI.getLastRecognizedSentence()
+            rospy.sleep(0.3)
+            confirmation = JuskeshinoHRI.waitForNewSentence(8) # 10 is to much?
+        
+        print("confirmation:", confirmation)
+        if confirmation  in userdata.confirm_list:
             JuskeshinoHardware.moveLeftArmWithTrajectory(self.carryBag, 6)
             head.set_named_target('face_to_face')
             rospy.sleep(0.3)
             head.set_named_target('face_to_face')
             print("I will start to follow you. Please stand in front of me")
             voice.talk("I will start to follow you. Please stand in front of me")
-
-            return 'succ'
-        
-        return 'tries'
+            return 'succ'            
+        else:
+            return 'tries'
 
 # TODO: DEBUG ------>>>
 class FindLegs(smach.State):
