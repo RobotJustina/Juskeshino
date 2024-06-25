@@ -27,19 +27,6 @@ PREPARE_GRIP  = [-1.3, 0.2, 0, 2.2, 0, 1.24, 0]
 PREPARE_TOP_GRIP=[-1.25, 0.3, 0, 2.4, 0, 0.7,0] #TINY OBJ
 HOLD_OBJ = [0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ]
 
-def approach_to_table():
-    JuskeshinoHRI.say("I will try to align with table")
-    i = 0
-    while i <4:
-        if (not JuskeshinoSimpleTasks.alignWithTable()):
-            JuskeshinoHRI.say("Cannot align with table")
-            time.sleep(0.3)
-            JuskeshinoNavigation.moveDist(0.10, 10)
-        else:
-            print("Align with table")
-            return True
-        i = i+1
-    return False
 def matching_objects(obj):
     obj_yaml =rospy.get_param("~categories")
     try:
@@ -122,7 +109,6 @@ class FindTable(smach.State):
         smach.State.__init__(self, 
                             outcomes=['succed', 'failed','tries'])
         self.tries = 0
-
         # The input and output data of a state is called 'userdata'
     def execute(self,userdata):
         self.tries += 1
@@ -134,8 +120,9 @@ class FindTable(smach.State):
                 JuskeshinoHardware.moveHead(0, -1, 100.0)
             #response = JuskeshinoVision.findTableEdge()
             time.sleep(0.5)
-            if approach_to_table():
-                return'succed'
+            JuskeshinoNavigation.moveDist(0.15, timeout=5)
+
+            return'succed'
         return'tries'
 
 
@@ -219,7 +206,7 @@ class AlignWithObject(smach.State):
             JuskeshinoHRI.say("I am ready to pick the ",obj.id)
             JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
             return'succed'
-        print("Cannot aligne robot with object :(")
+        print("Cannot align robot with object :(")
         return 'failed'
 
 class GraspObject(smach.State):
@@ -263,7 +250,16 @@ class GraspObject(smach.State):
                 JuskeshinoHardware.moveLeftArmWithTrajectory(HOLD_OBJ, 10)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
                 time.sleep(0.5)     
-                return 'succed'
+                JuskeshinoNavigation.getClose(DESK, 10)
+                recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
+                for objc in recog_objects:
+                    if obj and objc:
+                        JuskeshinoHRI.say("I couldn't grasp the object, a human is going to take the "+ obj.id )
+                        time.sleep(2)
+                        return 'succed'
+                    else:
+                        return 'succed'
+                
         
         print("No possible poses found")
         return 'failed'
@@ -356,9 +352,11 @@ class ScanCabinet(smach.State):
                             if obj.pose.position.z>1.3:
                                 JuskeshinoHRI.say("The object is part of the top shelf")
                                 print("The object is part of the top shelf")
+                                return 'succed'
                                 #variable shared with the next state giving q for left arm to leave the object 'object_shelf'
                             if 1.3 > obj.pose.position.z > 0.8:
                                 JuskeshinoHRI.say("The object is part of the middle shelf")
+                                return 'succed'
                                 print("The object is part of the middle shelf")
                             if 0.8 > obj.pose.position.z > 0.2:
                                 JuskeshinoHRI.say("The object is part of the low shelf")
@@ -373,6 +371,8 @@ class ScanCabinet(smach.State):
         print('I could not detect objects')
         return 'tries'
     #check the centroid of shelf obj and leave the object on the side
+    #Align with shelf state
+
 class LeaveObject(smach.State):
     def __init__(self):
         smach.State.__init__(
@@ -385,9 +385,11 @@ class LeaveObject(smach.State):
         self.tries += 1
         if self.tries < 8:
             JuskeshinoHardware.moveHead(-0,35, 5)
-            print('Scanning shelf')
+            
             obj_shelf=userdata.object_shelf
             rospy.logwarn('\n--> STATE 10 <: Leaving object')
+            JuskeshinoNavigation.moveDist(0.3, timeout=5)
+            # JuskeshinoNavigation.getClose('SHELF', 10)
             JuskeshinoHRI.say("Leaving object")
             [response, success] = JuskeshinoManipulation.GripLa(obj_shelf)
             if success :
@@ -398,31 +400,7 @@ class LeaveObject(smach.State):
                 JuskeshinoHardware.moveLeftGripper(0.9, 100.0)
                 return 'succed'
             return 'failed'
-                
-
-
-
-
-# class Pick_object(smach.State):
-#     def __init__(self):
-#         smach.State.__init__(self,
-#                             outcomes=['succed', 'failed'],
-#                             input_keys=['object_output','object'])
-#         self.tries = 0
-
-#         # The input and output data of a state is called 'userdata'
-#     def execute(self,userdata):
-#         self.tries += 1
-#         if self.tries == 1:
-#             x, y, z = userdata.object_output   
-#             obj = userdata.object        
-#             PREPARE_TOP_GRIP = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
-#             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)  # prepare 
-#             response=JuskeshinoManipulation.laIk([x,y,z,0,-1.5,0])
-
-
-#             [response, success] = JuskeshinoManipulation.GripLa(obj)
-            
+                       
 
 def main():
     rospy.init_node("storing_groceries")
@@ -489,8 +467,14 @@ def main():
   
         smach.StateMachine.add('SCAN_CABINET',ScanCabinet(), 
         transitions={'failed':'SCAN_CABINET',
-                     'succed':'SCAN_CABINET',
+                     'succed':'LEAVE_OBJ',
                      'tries':'SCAN_CABINET'})
+
+        smach.StateMachine.add('LEAVE_OBJ',LeaveObject(), 
+        transitions={'failed':'LEAVE_OBJ',
+                     'succed':'END',
+                     'tries':'LEAVE_OBJ'})
+                     
     # Execute SMACH plan
     outcome = sm.execute()
     

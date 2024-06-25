@@ -6,7 +6,7 @@
     <arg name="posy"  value="-1.17"/>
     <arg name="posz"  value="-0.0001"/>
     <arg name="yaw"   value="-0.0137"/>
-    <arg name="world" value="bio_robotics_lab_YCB_objects"/>
+    <arg name="world" value="fruits_storing_groceries"/>
   </include>
   
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_gazebo.rviz"/>
