@@ -605,14 +605,8 @@ def pose_for_ik_service(pose_in_frame_object):
     roll,pitch,yaw = tft.euler_from_quaternion( [new_pose.orientation.x , new_pose.orientation.y , 
                                           new_pose.orientation.z , new_pose.orientation.w ])
     cartesian_pose_shoulder = np.asarray([x ,y ,z , roll, pitch , yaw])
-    candidate = cartesian_pose_shoulder
-
     return cartesian_pose_shoulder, new_pose
 
-
-
-def trajectory_generator(obj_category, obj_state ,offset_point):
-    print("lll")
 
 
 def ik_msg_response(array_xyzRPY, offsets, initial_guess):
@@ -682,7 +676,7 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
             try:
                 resp_ik_srv = ik_srv(ik_msg)
                 print("Best_Grasp_Node.-> Suitable pose for vertical object found.....................")
-                return resp_ik_srv.articular_trajectory , candidate_q_list[i] , pose_xyzrpy, True
+                return resp_ik_srv.articular_trajectory , new_pos , True
             except:
                 i = i + 1 
                 print("Best_Grasp_Node.-> Discarded candidate")  
@@ -738,7 +732,7 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
 
                     if((category == "CUBIC") or (category == "BOX")):
                         print("Only 1 trajectory ")
-                        return resp_ik_srv.articular_trajectory , pose1 , new_pos, True
+                        return resp_ik_srv.articular_trajectory , new_pos , True
                     
                     print("Generating second trajectory to take the object")
 
@@ -777,7 +771,7 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
                             resp_3_ik_srv = ik_srv(ik_msg_3)    # Envia al servicio de IK
                             print("Best_Grasp_Node.-> Suitable pose 2 for horizontal object found.....................")
                             resp_ik_srv.articular_trajectory.points = resp_ik_srv.articular_trajectory.points + resp_3_ik_srv.articular_trajectory.points
-                            return resp_ik_srv.articular_trajectory , pose_obj , new_pos, True
+                            return resp_ik_srv.articular_trajectory , new_pose_shoulder , True
                         except:
                             print("Best_Grasp_Node.-> Candidato de la segunda trayectoria no aprobado")
                             continue
@@ -834,7 +828,7 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
                         
                         approved_pose = cartesian2pose_msg(pose1[0] ,pose1[1] ,pose1[2] ,pose1[3] ,pose1[4] ,pose1[5]) 
 
-                        return resp_ik_srv.articular_trajectory , approved_pose , new_pos, True
+                        return resp_ik_srv.articular_trajectory , new_pos , True
                     except: print("Best_Grasp_Node.-> Second trajectory no found")
    
                 except:
@@ -842,7 +836,7 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
                     print("Best_Grasp_Node.-> Pose no apta........")  
                     continue
             
-    return None, None, None, False
+    return None, None, False
 
 
 
@@ -867,7 +861,7 @@ def callback(req):
     print("Best_Grasp_Node.-> CENTROID:___",req.recog_object.pose.position)
     print("Best_Grasp_Node.-> BB CATEGORY:___",req.recog_object.category)  
     print("Best_Grasp_Node.-> STATE:_____ ", req.recog_object.object_state)
-    print("Best_Grasp_Node.-> SIZE:___",req.recog_object.size)
+    print("Best_Grasp_Node.-> SIZE:___",req.recog_object.size)                              
 
     grip_point = [req.recog_object.pose.position.x, req.recog_object.pose.position.y, req.recog_object.pose.position.z]
 
@@ -878,12 +872,16 @@ def callback(req):
         print("Best_Grasp_Node.-> object is no graspable")
         return resp
     
-    trajectory, pose, rpy_pose, graspable = evaluating_possibility_grip(pose_list_quaternion , obj_state, req.recog_object.category)
+    trajectory, pose, graspable = evaluating_possibility_grip(pose_list_quaternion , obj_state, req.recog_object.category)
    
     if graspable:
         print("Best_Grasp_Node.-> SUITABLE POSE FOR OBJECT MANIPULATION......")
-        #broadcaster_frame_object('object', 'suitable_pose' , pose)
+        broadcaster_frame_object('shoulders_left_link', 'suitable_pose' , pose)
         resp.articular_trajectory = trajectory  # Retorna trayectoria en el espacio articular
+        pose_stamped = PoseStamped()
+        pose_stamped.header.frame_id = 'shoulders_left_link'
+        pose_stamped.pose = pose
+        resp.pose_stamped = pose_stamped
         resp.graspable = True
         return resp
 
