@@ -22,7 +22,7 @@ from sensor_msgs.msg import LaserScan
 
 DESK = "desk_justina"
 SIMUL_DESK = 'simul_desk'
-PREPARE_GRIP  = [-1.3, 0.2, 0, 2.2, 0, 1.24, 0]
+PREPARE_GRIP  = [-0.3, 0.2, 0, 2.2, 0, 1.24, 0]
 # PREPARE_GRIP  = [-0.8, 0.2, 0, 1.55, 0, 1.24, 0]
 PREPARE_TOP_GRIP=[-1.25, 0.3, 0, 2.4, 0, 0.7,0] #TINY OBJ
 HOLD_OBJ = [0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ]
@@ -120,7 +120,8 @@ class FindTable(smach.State):
                 JuskeshinoHardware.moveHead(0, -1, 100.0)
             #response = JuskeshinoVision.findTableEdge()
             time.sleep(0.5)
-            JuskeshinoNavigation.moveDist(0.15, timeout=5)
+            if self.tries<2:
+                JuskeshinoNavigation.moveDist(0.1, timeout=5)
 
             return'succed'
         return'tries'
@@ -246,7 +247,7 @@ class GraspObject(smach.State):
                 if obj.category == 'CUBIC':
                     JuskeshinoHardware.moveLeftGripper(0.0 , 3.0)
                 else:
-                    JuskeshinoHardware.moveLeftGripper(0.05 , 3.0) 
+                    JuskeshinoHardware.moveLeftGripper(0.07 , 3.0) 
                 JuskeshinoHardware.moveLeftArmWithTrajectory(HOLD_OBJ, 10)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
                 time.sleep(0.5)     
@@ -254,7 +255,7 @@ class GraspObject(smach.State):
                 recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
                 for objc in recog_objects:
                     if obj and objc:
-                        JuskeshinoHRI.say("I couldn't grasp the object, a human is going to take the "+ obj.id )
+                        JuskeshinoHRI.say("I couldn't grasp the object, someone is going to take the "+ obj.id )
                         time.sleep(2)
                         return 'succed'
                     else:
