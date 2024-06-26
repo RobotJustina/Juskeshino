@@ -33,9 +33,9 @@ objpoints = np.array([
     (0.0, 0.0, 0.0),             # Nose tip
     (0.0, -80.0, -30),        # Chin
     (-40.0, 40.0, -30),     # Left eye left corner
-                            (40.0, 40.0, -30),      # Right eye right corneq
-                            (-30.0, -30.0, -30.0),    # Left Mouth corner
-                            (30.0, -30.0, -30.0)      # Right mouth corner
+    (40.0, 40.0, -30),      # Right eye right corneq
+    (-30.0, -30.0, -30.0),    # Left Mouth corner
+    (30.0, -30.0, -30.0)      # Right mouth corner
 ])
 
 

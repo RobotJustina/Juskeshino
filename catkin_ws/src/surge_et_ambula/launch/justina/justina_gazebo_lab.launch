@@ -58,4 +58,6 @@
   <include file="$(find surge_et_ambula)/launch/justina/planning.launch">
     <arg name="known_locations" value="$(find config_files)/navigation/known_locations_lab.yaml"/>
   </include>
+
+  <include file="$(find usb_cam)/launch/usb_cam-test.launch"/>
 </launch>

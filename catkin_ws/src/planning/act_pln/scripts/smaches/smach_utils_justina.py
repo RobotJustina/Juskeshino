@@ -666,6 +666,7 @@ def wait_for_face(timeout=10 , name='', lap_camera=False):
                 ds_to_faces=[]
                 return new_res , img
 
+
 def analyze_face_background(img, name=" "):
     name_pub = rospy.Publisher('/name_face', String, queue_size=10)
     img_pub = rospy.Publisher('/image_to_analyze', Image, queue_size=10)
@@ -673,7 +674,7 @@ def analyze_face_background(img, name=" "):
     str_msg.data = name
     rospy.sleep(0.5)
     name_pub.publish(str_msg)
-    img_msg = bridge.cv2_to_imgmsg(img)
+    img_msg = [bridge.cv2_to_imgmsg(img)]
     img_pub.publish(img_msg)
 
 

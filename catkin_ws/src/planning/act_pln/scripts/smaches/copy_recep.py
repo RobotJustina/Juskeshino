@@ -611,7 +611,7 @@ if __name__ == '__main__':
         # State machine for Receptionist task
         # Initial states routine
         smach.StateMachine.add("INITIAL", Initial(),              
-                               transitions={'failed':'INITIAL', 'succ':'WAIT_DOOR_OPENED'}) #TODO: WAIT_DOOR_OPENED
+                               transitions={'failed':'INITIAL', 'succ':'SCAN_FACE'}) #TODO: WAIT_DOOR_OPENED
         
         # smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(),       
         #                        transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'GOTO_DOOR'})
@@ -633,7 +633,7 @@ if __name__ == '__main__':
                                transitions={'failed':'NEW_FACE', 'succ':'GET_DRINK'})
         
         smach.StateMachine.add("GET_DRINK", Get_drink(),    
-                               transitions={'tries':'GET_DRINK', 'failed':'LEAD_TO_LIVING_ROOM', 'succ':'LEAD_TO_LIVING_ROOM'}) #TODO: LEAD_TO_LIVING_ROOM
+                               transitions={'tries':'GET_DRINK', 'failed':'FIND_HOST', 'succ':'FIND_HOST'}) #TODO: LEAD_TO_LIVING_ROOM
 
         # Final states
         smach.StateMachine.add("LEAD_TO_LIVING_ROOM", Lead_to_living_room(),  
@@ -646,6 +646,6 @@ if __name__ == '__main__':
                                transitions={'tries':'FIND_HOST', 'failed':'INTRODUCE_GUEST', 'succ':'INTRODUCE_GUEST'})
         
         smach.StateMachine.add("INTRODUCE_GUEST", Introduce_guest(),
-                               transitions={'failed':'INTRODUCE_GUEST', 'succ':'GOTO_DOOR', 'tries':'END'})
+                               transitions={'failed':'INTRODUCE_GUEST', 'succ':'END', 'tries':'END'})
 
     outcome = sm.execute()
