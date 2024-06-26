@@ -22,7 +22,7 @@ from sensor_msgs.msg import LaserScan
 
 DESK = "desk_takeshi_front"
 SIMUL_DESK = 'simul_desk'
-GET_CLOSE="gc_desk_justina"
+GET_CLOSE="desk_takeshi_closer"
 PREPARE_GRIP  = [-0.69, 0.2, 0, 1.55, 0, 1.16, 0]
 # PREPARE_GRIP  = [-0.8, 0.2, 0, 1.55, 0, 1.24, 0]
 PREPARE_TOP_GRIP=[-1.25, 0.3, 0, 2.4, 0, 0.7,0] #TINY OBJ
@@ -122,8 +122,8 @@ class FindTable(smach.State):
             #response = JuskeshinoVision.findTableEdge()
             time.sleep(0.5)
             if self.tries<2:
-                #JuskeshinoNavigation.getClose(GET_CLOSE, 10)
-                JuskeshinoNavigation.moveDist(0.05, timeout=5)
+                JuskeshinoNavigation.getClose(GET_CLOSE, 10)
+                #JuskeshinoNavigation.moveDist(0.9, timeout=5)
 
             return'succed'
         return'tries'
