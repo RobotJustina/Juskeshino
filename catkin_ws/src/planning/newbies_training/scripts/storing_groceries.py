@@ -20,9 +20,10 @@ from sensor_msgs.msg import LaserScan
 # State for align with cabinet **
 # State for leave the object **
 
-DESK = "desk_justina"
+DESK = "desk_takeshi_front"
 SIMUL_DESK = 'simul_desk'
-PREPARE_GRIP  = [-0.3, 0.2, 0, 2.2, 0, 1.24, 0]
+GET_CLOSE="gc_desk_justina"
+PREPARE_GRIP  = [-0.69, 0.2, 0, 1.55, 0, 1.16, 0]
 # PREPARE_GRIP  = [-0.8, 0.2, 0, 1.55, 0, 1.24, 0]
 PREPARE_TOP_GRIP=[-1.25, 0.3, 0, 2.4, 0, 0.7,0] #TINY OBJ
 HOLD_OBJ = [0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ]
@@ -121,7 +122,8 @@ class FindTable(smach.State):
             #response = JuskeshinoVision.findTableEdge()
             time.sleep(0.5)
             if self.tries<2:
-                JuskeshinoNavigation.moveDist(0.1, timeout=5)
+                #JuskeshinoNavigation.getClose(GET_CLOSE, 10)
+                JuskeshinoNavigation.moveDist(0.05, timeout=5)
 
             return'succed'
         return'tries'
@@ -241,7 +243,7 @@ class GraspObject(smach.State):
             if success:
                 JuskeshinoHRI.say("Object found correctly")
                 print("Object position: ",obj.pose.position)
-                #JuskeshinoHardware.moveTorso(0.14 , 5.0)
+                JuskeshinoHardware.moveTorso(0.14 , 5.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(response.articular_trajectory,10)
                 print("Closing gripper")
                 if obj.category == 'CUBIC':

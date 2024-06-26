@@ -68,3 +68,8 @@ simu_desk_2:
  y: 7.32
  theta: 1.57
  parent: home
+ gc_desk_justina:
+  x: 5.54
+  y: 2.0
+  theta: 1.5
+  parent: home
