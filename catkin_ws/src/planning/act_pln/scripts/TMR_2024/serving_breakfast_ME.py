@@ -35,13 +35,13 @@ POST_GRIP         = [0.38, 0.19, -0.01, 1.57, 0 , 0.35, 0.0 ]
 PREPARE_RA    = [-0.8, -0.1, 0.0, 1.3, 1.3,0, 0.0]
 
 # Locations
-OBJECTS_TABLE = "desk_justina"
+OBJECTS_TABLE = "desk_takeshi_front"
 EAT_TABLE     = "desk_takeshi" 
 OBJECTS_TABLE_THETA = [5.44 ,2.15, 1.5]
 
 
 # Objects
-BOWL   = "mustard"#red_bowl"
+BOWL   = "campbels"#red_bowl"
 MILK   = "mustard"
 CEREAL = "red_bowl"
 
@@ -167,7 +167,7 @@ def main():
     rate = rospy.Rate(10)
     global listener, simu
     listener = tf.TransformListener()
-    simu = True
+    simu = False
     actual_value = 0
 
     current_state = INITIAL
@@ -340,6 +340,7 @@ def main():
 
             
             # Ajusta altura de torso para mejor agarre
+            """
             if not simu:
                 if (actual_obj == BOWL):
                     JuskeshinoHardware.moveTorso(0.07 , 5.0)
@@ -347,6 +348,7 @@ def main():
                     JuskeshinoHardware.moveTorso(0.07 , 5.0) 
                 if (actual_obj == CEREAL):
                     JuskeshinoHardware.moveTorso(0.08 , 5.0)
+            """
 
             tries = 0
             current_state = DETECT_OBJECT_ORIENTATION
@@ -495,13 +497,15 @@ def main():
             #time.sleep(0.3)
             #JuskeshinoHRI.say("lift object")
             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
-
+            
+            """
             if not simu:
                 try:
                     JuskeshinoHardware.moveTorso(0.02 , 5.0)
                     time.sleep(1)
                 except:
                     print("Cannot move torso")
+            """
 
             print("SB-PLN.->Moving base backwards")    
             JuskeshinoNavigation.moveDist(-0.33, 10)
