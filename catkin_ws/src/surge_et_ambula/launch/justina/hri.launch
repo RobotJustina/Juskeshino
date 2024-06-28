@@ -6,10 +6,10 @@
 
   <node unless="$(arg use_vosk)" name="speech_recog" pkg="sprec_pocketsphinx" type="asr.py" output="screen">
     <remap from="jsgf_audio" to="sphinx_audio" />
-    <param name="gram_file" value="$(find sprec_pocketsphinx)/vocab/gpsr.gram"/>
-    <param name="dict_file" value="$(find sprec_pocketsphinx)/vocab/gpsr.dic"/>
+    <param name="gram_file" value="$(find sprec_pocketsphinx)/vocab/gpsr2024.gram"/>
+    <param name="dict_file" value="$(find sprec_pocketsphinx)/vocab/gpsr2024.dic"/>
     <param name="grammar_name" value="gpsr"/>
-    <param name="rule_name" value="receptionist_commands"/>
+    <param name="rule_name" value="command"/>
   </node>
   <node unless="$(arg use_vosk)" name="audio_control" pkg="sprec_pocketsphinx" type="send_audio.py" output="screen">
     <param name="input" value=":default"/>

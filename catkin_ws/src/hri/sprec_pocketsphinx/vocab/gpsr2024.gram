@@ -1,0 +1,63 @@
+#JSGF V1.0;
+grammar gpsr;
+
+public <command> = <goToLoc> | <findPrsInRoom> | <meetPrsAtBeac> | <countPrsInRoom>;
+
+<goToLoc> = <goVerb> <toLocPrep> THE <loc_room> THEN <followUpAtLoc>;
+<findPrsInRoom> = <findVerb> A <gestPers_posePers> <inLocPrep> THE <roomNames> AND <followUpFoundPers>;
+<meetPrsAtBeac> = <meetVerb> <personNames> <inLocPrep> THE <roomNames> AND <followUpFoundPers>;
+<countPrsInRoom> = <countVerb> <gestPersPlur_posePersPlur> ARE <inLocPrep> THE <roomNames>;
+
+<followUpAtLoc> =  <findPrs> | <meetName> | <findObj>;
+<followUpFoundPers> = <foundPers>;
+
+<findPrs> = <findVerb> THE <gestPers_posePers> AND <foundPers>; 
+<meetName> = <meetVerb> <personNames> AND <foundPers>;
+<findObj> = <findVerb> <art>  <obj_singCat> AND <takeVerb> IT AND <hasObj>;
+<foundPers> = <talkInfo> | <answerQuestion> | <followPrs> | <followPrsToRoom> | <guidePrsToBeacon>;
+<hasObj> = <placeObjOnPlcmt> | <deliverObjToMe> | <deliverObjToPrsInRoom> | <deliverObjToNameAtBeac>;
+<placeObjOnPlcmt> = <placeVerb> IT <onLocPrep> THE <placementLocNames>;
+<deliverObjToMe> = <deliverVerb> IT TO ME;
+<deliverObjToPrsInRoom> =  <deliverVerb> IT <deliverPrep> THE <gestPers_posePers> <inLocPrep> THE <roomNames>;
+<deliverObjToNameAtBeac> =  <deliverVerb> IT <deliverPrep> <personNames> <inLocPrep> THE <roomNames>;
+<talkInfo> = <talkVerb> <talkList>;
+<answerQuestion> = <answerVerb> A <questionList>;
+<followPrs> = <followVerb> THEM;
+<followPrsToRoom> = <followVerb> THEM <toLocPrep> THE <loc_room>;
+<guidePrsToBeacon> = <guideVerb> THEM <toLocPrep> THE <loc_room>;
+<gestPers_posePers> = <gesturePersonList> | <posePersonList>;
+<obj_singCat> = <objNames> | <singCategories>;
+<loc_room> = <locationNames> | <roomNames>;
+<gestPersPlur_posePersPlur> = <gesturePersonPluralList> | <posePersonPluralList>;
+
+<takeVerb> = TAKE | GET | GRASP | FETCH;
+<placeVerb> = PUT | PLACE;
+<deliverVerb> = BRING | GIVE | DELIVER;
+<goVerb> = GO | NAVIGATE;
+<findVerb> = FIND | LOCATE | LOOK FOR;
+<talkVerb> = TELL | SAY;
+<answerVerb> = ANSWER;
+<meetVerb> = MEET;
+<countVerb> = TELL ME HOW MANY;
+<followVerb> = FOLLOW;
+<guideVerb> = GUIDE | ESCORT | TAKE | LEAD;
+
+<toLocPrep> = TO;
+<art> = A | AN;
+<onLocPrep> = ON;
+<inLocPrep> = IN;
+<deliverPrep> = TO;
+
+<gesturePersonList> = WAVING PERSON | PERSON RAISING THEIR LEFT ARM | PERSON RAISING THEIR RIGHT ARM | PERSON POINTING TO THE LEFT | PERSON POINTING TO THE RIGHT;
+<posePersonList> = SITTING PERSON | STANDING PERSON | LYING PERSON;
+<gesturePersonPluralList> = WAVING PERSONS | PERSONS RAISING THEIR LEFT ARM | PERSONS RAISING THEIR RIGHT ARM | PERSONS POINTING TO THE LEFT | PERSONS POINTING TO THE RIGHT;
+<posePersonPluralList> = SITTING PERSONS | STANDING PERSONS | LYING PERSONS;
+<talkList> = SOMETHING ABOUT YOURSELF | THE TIME | WHAT DAY IS TODAY | WHAT DAY IS TOMORROW | YOUR TEAMS NAME | YOUR TEAMS COUNTRY | YOUR TEAMS AFFILIATION | THE DAY OF THE WEEK | THE DAY OF THE MONTH;
+<questionList> = QUESTION | QUIZ;
+
+<locationNames> = BED | BEDSIDE TABLE | SHELF | TRASHBIN | DISHWASHER | POTTED PLANT | KITCHEN TABLE | CHAIRS | PANTRY | REFRIGERATOR | SINK | CABINET | COATRACK | DESK | ARMCHAIR | DESK LAMP | WASTE BASKET | TV STAND | STORAGE RACK | LAMP | SIDE TABLES | SOFA | BOOKSHELF | ENTRANCE | EXIT;
+<roomNames> = BEDROOM | KITCHEN | OFFICE | LIVING ROOM | BATHROOM;
+<objNames> = PRINGLES | CHEEZIT | CORNFLAKES | SPONGE | CLEANSER | SUGAR | TOMATO SOUP | CHOCOLATE JELLO | STRAWBERRY JELLO | MUSTARD | TUNA | SPAM | COFFEE GROUNDS | ORANGE | BANANA | STRAWBERRY | PEACH | PEAR | APPLE | PLUM | LEMON | FORK | SPOON | BOWL | KNIFE | PLATE | CUP | MILK | TROPICAL JUICE | ICED TEA | ORANGE JUICE | JUICE PACK | RED WINE | COLA | BASEBALL | TENNIS BALL | DICE | RUBIKS CUBE | SOCCER BALL;
+<singCategories> = SNACK | CLEANING SUPPLY | FOOD | FRUIT | DISH | DRINK | TOY;
+<personNames> = ADEL | ANGEL | AXEL | CHARLIE | JANE | JULES | MORGAN | PARIS | ROBIN | SIMONE;
+<placementLocNames> = BED | BEDSIDE TABLE | SHELF | DISHWASHER | KITCHEN TABLE | PANTRY | REFRIGERATOR | SINK | CABINET | DESK | TV STAND | STORAGE RACK | SIDE TABLES | SOFA | BOOKSHELF;
