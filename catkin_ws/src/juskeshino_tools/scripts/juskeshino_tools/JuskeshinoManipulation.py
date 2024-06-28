@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 import math
 import rospy
+import time
+import numpy as np
+from std_msgs.msg import Float64
 from vision_msgs.srv import *
 from manip_msgs.srv import *
+from juskeshino_tools.JuskeshinoHardware import JuskeshinoHardware
 
 class JuskeshinoManipulation:
     def setNodeHandle():
@@ -32,6 +36,23 @@ class JuskeshinoManipulation:
             loop.sleep()
         return True
     
+    def dynamic_grasp_left_arm(is_thin: bool = False):
+        #Open entirely the gripper
+        msg = Float64()
+        msg.data = 1.0
+        JuskeshinoHardware.pubLaGoalGrip.publish(msg)
+        time.sleep()
+        msg = Float64()
+        for i in np.linspace(start=1.0, stop=0.0, num=20):
+            msg.data = i
+            JuskeshinoHardware.pubLaGoalGrip.publish(msg)
+            current = np.asarray(rospy.wait_for_message("/hardware/left_arm/current_gripper", Float64, timeout=1.0).data)
+            if abs(current-i) > 0.2:
+                msg.data = i + 0.2
+                JuskeshinoHardware.pubLaGoalGrip.publish(msg)
+                return True
+        return is_thin
+
     def GripLa(vision_obj):
         req = BestGraspTrajRequest()
         req.recog_object = vision_obj
