@@ -1,12 +1,15 @@
 #JSGF V1.0;
 grammar gpsr;
 
-public <command> = <goToLoc> | <findPrsInRoom> | <meetPrsAtBeac> | <countPrsInRoom>;
+public <command> = <goToLoc> | <findPrsInRoom> | <meetPrsAtBeac> | <countPrsInRoom> | <countObjOnPlcmt> | <tellObjPropOnPlcmt>;
 
 <goToLoc> = <goVerb> <toLocPrep> THE <loc_room> THEN <followUpAtLoc>;
 <findPrsInRoom> = <findVerb> A <gestPers_posePers> <inLocPrep> THE <roomNames> AND <followUpFoundPers>;
 <meetPrsAtBeac> = <meetVerb> <personNames> <inLocPrep> THE <roomNames> AND <followUpFoundPers>;
 <countPrsInRoom> = <countVerb> <gestPersPlur_posePersPlur> ARE <inLocPrep> THE <roomNames>;
+<tellPrsInfoInLoc> = <tellVerb> ME THE <personInfoList> OF THE PERSON <inRoom_atLoc>;
+<countObjOnPlcmt> = <countVerb> <pluralCategories> THERE ARE <onLocPrep> THE <placementLocNames>;
+<tellObjPropOnPlcmt> = <tellVerb> ME WHAT IS THE <objCompList> OBJECT <onLocPrep> THE <placementLocNames>;
 
 <followUpAtLoc> =  <findPrs> | <meetName> | <findObj>;
 <followUpFoundPers> = <foundPers>;
@@ -29,6 +32,9 @@ public <command> = <goToLoc> | <findPrsInRoom> | <meetPrsAtBeac> | <countPrsInRo
 <obj_singCat> = <objNames> | <singCategories>;
 <loc_room> = <locationNames> | <roomNames>;
 <gestPersPlur_posePersPlur> = <gesturePersonPluralList> | <posePersonPluralList>;
+<inRoom_atLoc> = <inRoom> | <atLoc>;
+<inRoom> = IN THE <roomNames>;
+<atLoc> = AT THE <locationNames>;
 
 <takeVerb> = TAKE | GET | GRASP | FETCH;
 <placeVerb> = PUT | PLACE;
@@ -38,6 +44,7 @@ public <command> = <goToLoc> | <findPrsInRoom> | <meetPrsAtBeac> | <countPrsInRo
 <talkVerb> = TELL | SAY;
 <answerVerb> = ANSWER;
 <meetVerb> = MEET;
+<tellVerb> = TELL;
 <countVerb> = TELL ME HOW MANY;
 <followVerb> = FOLLOW;
 <guideVerb> = GUIDE | ESCORT | TAKE | LEAD;
@@ -52,6 +59,8 @@ public <command> = <goToLoc> | <findPrsInRoom> | <meetPrsAtBeac> | <countPrsInRo
 <posePersonList> = SITTING PERSON | STANDING PERSON | LYING PERSON;
 <gesturePersonPluralList> = WAVING PERSONS | PERSONS RAISING THEIR LEFT ARM | PERSONS RAISING THEIR RIGHT ARM | PERSONS POINTING TO THE LEFT | PERSONS POINTING TO THE RIGHT;
 <posePersonPluralList> = SITTING PERSONS | STANDING PERSONS | LYING PERSONS;
+<personInfoList> = NAME | POSE | GESTURE;
+<objCompList> = BIGGEST | LARGEST | SMALLEST | HEAVIEST | LIGHTEST | THINNEST;
 <talkList> = SOMETHING ABOUT YOURSELF | THE TIME | WHAT DAY IS TODAY | WHAT DAY IS TOMORROW | YOUR TEAMS NAME | YOUR TEAMS COUNTRY | YOUR TEAMS AFFILIATION | THE DAY OF THE WEEK | THE DAY OF THE MONTH;
 <questionList> = QUESTION | QUIZ;
 
@@ -61,3 +70,4 @@ public <command> = <goToLoc> | <findPrsInRoom> | <meetPrsAtBeac> | <countPrsInRo
 <singCategories> = SNACK | CLEANING SUPPLY | FOOD | FRUIT | DISH | DRINK | TOY;
 <personNames> = ADEL | ANGEL | AXEL | CHARLIE | JANE | JULES | MORGAN | PARIS | ROBIN | SIMONE;
 <placementLocNames> = BED | BEDSIDE TABLE | SHELF | DISHWASHER | KITCHEN TABLE | PANTRY | REFRIGERATOR | SINK | CABINET | DESK | TV STAND | STORAGE RACK | SIDE TABLES | SOFA | BOOKSHELF;
+<pluralCategories> = SNACKS | CLEANING SUPPLIES | FOOD | FRUITS | DISHES | DRINKS | TOYS;
