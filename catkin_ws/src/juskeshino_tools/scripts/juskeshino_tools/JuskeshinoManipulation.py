@@ -35,13 +35,14 @@ class JuskeshinoManipulation:
             counter-=1
             loop.sleep()
         return True
+        
     
     def dynamic_grasp_left_arm(is_thin: bool = False):
         #Open entirely the gripper
         msg = Float64()
         msg.data = 1.0
         JuskeshinoHardware.pubLaGoalGrip.publish(msg)
-        time.sleep()
+        time.sleep(1)
         msg = Float64()
         for i in np.linspace(start=1.0, stop=0.0, num=20):
             msg.data = i

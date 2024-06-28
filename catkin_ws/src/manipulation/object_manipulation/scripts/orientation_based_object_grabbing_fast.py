@@ -19,12 +19,14 @@ Z_OFFSET_2 = 0.01
 Z_OFFSET_PRISM = 0.21
 Z_OFFSET_PRISM_2 = 0.07
 Z_OFFSET_BOWL  = 0.22#0.19
-Z_OFFSET_BOWL_2  = -0.05#-0.03
+Z_OFFSET_BOWL_2  = 0.05#-0.03
 
 LATERAL_OFFSET = 0.06
 
 TAKE_OBJECT_X_1 = [-0.1, 0.1 , 0.0, 1.55, 0.0, 0.36, 0.0]
 TAKE_OBJECT_X_2 = [0.3 , 0.1 , 0.0, 1.15, 0.0, 0.36, 0.0]
+
+
 
 def descarte_forced_poses(obj_pose):   
 
@@ -42,7 +44,7 @@ def descarte_forced_poses(obj_pose):
     angle_z_obj = abs(np.rad2deg(math.atan2(vector_z_obj[1] , vector_z_obj[0])))
     print("angulo de Z_OBJECT:___",  angle_z_obj)
 
-    if (angle_z_obj < 130.0): 
+    if (angle_z_obj < 135.0): 
         descarte = True
         print("GraspLa.-> Forced pose discarded")
         print("DECARTED*****: ", descarte)
