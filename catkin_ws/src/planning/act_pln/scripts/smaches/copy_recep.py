@@ -171,7 +171,10 @@ class Scan_face(smach.State):
         voice.talk('Scanning for faces')
         
         # For simulation use camera_enable = True
-        res, userdata.face_img = wait_for_face(lap_camera=camera_enable)  # default 10 secs
+        #res, userdata.face_img = wait_for_face(lap_camera=camera_enable)  # default 10 secs
+        res, imagen = wait_for_face(lap_camera=camera_enable)  # default 10 secs
+        userdata.face_img = imagen
+        print("type", type(imagen), "shape", np.shape(imagen))
         if res != None:
             userdata.name = res.Ids.ids
             return 'succ'
@@ -326,7 +329,8 @@ class Get_drink(smach.State):
             print("\n")
             rospy.logwarn('--> STATE <: get drink')
             # TODO: implement
-            analyze_face_background(userdata.face_img, userdata.name)
+            analyze_face_background(userdata.face_img, party.get_active_guest_name())
+            print(userdata.face_img.shape) # TODO: DELETE
 
         print(f'Try {self.tries} of {self.attempts} attempts')
         if self.tries == 3:
@@ -334,7 +338,7 @@ class Get_drink(smach.State):
             drink = 'something'
             self.tries = 0
             party.add_guest_drink(drink)
-            analyze_face_background(userdata.face_img, userdata.name)
+            #analyze_face_background(userdata.face_img, userdata.name)
             return 'failed'
         
         #Asking for drink
@@ -561,7 +565,7 @@ class Introduce_guest(smach.State):
         self.tries += 1
         if self.tries == 1:
             print("\n")
-            rospy.logwarn('--> STATE <: find host')
+            rospy.logwarn('--> STATE <: Introduce guest')
 
         print('Try', self.tries, 'of 3 attempts')
         print(f'Host like name is {userdata.name_like_host}')
@@ -581,6 +585,8 @@ class Introduce_guest(smach.State):
             speech = f'{userdata.name_like_host}, {justina_line}, {drink_line}'
             timeout = 14.0
         else:
+            rospy.logwarn('Descrition:')
+            rospy.logwarn(justina_line)
             print('No description found')
             speech = f'{userdata.name_like_host}, {active_guest} has arrived, {drink_line}'
             timeout = 7.0
@@ -599,6 +605,18 @@ class Introduce_guest(smach.State):
 # --------------------------------------------------
 # Entry point
 if __name__ == '__main__':
+    #img = rospy.wait_for_message('/camera/depth_registered/rgb/image_raw', ImageMsg , 20)
+    
+    # img = rospy.wait_for_message('/usb_cam/image_raw', ImageMsg , 20)
+    # print("---> Image get")
+    # pb = rospy.Publisher("/image_to_analyze", ImageMsg, queue_size=10)
+    
+    # loop = rospy.Rate(1)
+    # while(not rospy.is_shutdown()):
+    #     pb.publish(img)
+    #     loop.sleep()
+    # exit()
+    
     print("Justina STATE MACHINE...")
     # State machine, final state "END"
     sm = smach.StateMachine(outcomes=['END'])
