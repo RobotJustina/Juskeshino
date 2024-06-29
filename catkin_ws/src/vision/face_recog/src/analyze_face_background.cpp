@@ -6,9 +6,6 @@
 #include <string>
 
 
-#include<cv_bridge/cv_bridge.h>
-#include<opencv2/core/mat.hpp>
-
 #define RATE 30
 
 ros::ServiceClient  analyzeFaceSrv;
@@ -31,8 +28,6 @@ std::string service_caller(const sensor_msgs::Image::ConstPtr& img){
     srv.request.Ids.ids.push_back(str_msg);
     srv.request.in.image_msgs.push_back(*img);
 
-    std::cout << " >>>>>> image encode " << img->encoding << std::endl;
-    
     if(analyzeFaceSrv.call(srv))
     {
         std::cout<<"Analyze face background service called"<<std::endl;

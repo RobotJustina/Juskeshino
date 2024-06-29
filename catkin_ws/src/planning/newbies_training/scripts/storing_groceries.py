@@ -23,6 +23,9 @@ from sensor_msgs.msg import LaserScan
 DESK = "desk_takeshi_front"
 SIMUL_DESK = 'simul_desk'
 GET_CLOSE="desk_takeshi_closer"
+TOP_SHELF=[0.71, 0.2, 0.0, 1.95, 0.0, 0.06, 0.0]
+MIDDLE_SHELF=[0.31, 0.2, -0.2, 1.55, 0.0, 0.16, 0.0]
+LOW_SHELF=[0.31, 0.1, -0.1, 0.35, 0.0, 1.16, 0.0]
 PREPARE_GRIP  = [-0.69, 0.2, 0, 1.55, 0, 1.16, 0]
 # PREPARE_GRIP  = [-0.8, 0.2, 0, 1.55, 0, 1.24, 0]
 PREPARE_TOP_GRIP=[-1.25, 0.3, 0, 2.4, 0, 0.7,0] #TINY OBJ
@@ -202,7 +205,7 @@ class AlignWithObject(smach.State):
         # The input and output data of a state is called 'userdata'
     def execute(self,userdata):
         self.tries += 1
-        if self.tries < 4:
+        if self.tries < 10:
             
             rospy.logwarn('\n--> STATE 6 <: I am going to align with the object')
             obj=userdata.object
@@ -222,7 +225,7 @@ class GraspObject(smach.State):
         # The input and output data of a state is called 'userdata'
     def execute(self,userdata):
         self.tries += 1
-        if self.tries == 1:
+        if self.tries <6:
             rospy.logwarn('\n--> STATE 7 <: Picking up the target object, attempt: ' + str(self.tries))
             obj=userdata.object
             JuskeshinoHRI.say("I am going to pick the "+ obj.id)
@@ -234,7 +237,7 @@ class GraspObject(smach.State):
             if obj.category == 'CUBIC':
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
             else:
-                JuskeshinoHardware.moveTorso(0.09 , 5.0)
+                JuskeshinoHardware.moveTorso(0.03 , 5.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
             JuskeshinoHardware.moveLeftGripper(0.7, 100.0)
             print("Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))   
@@ -289,7 +292,7 @@ class FailedGrasp(smach.State):
         # The input and output data of a state is called 'userdata'
     def execute(self,userdata):
         self.tries += 1
-        if self.tries<4:
+        if self.tries<6:
             objc=userdata.object
             JuskeshinoHRI.say("Object found")
             [response, success] = JuskeshinoManipulation.GripLa(objc)
@@ -329,12 +332,13 @@ class ScanCabinet(smach.State):
         smach.State.__init__(
             self, outcomes=['succed', 'failed', 'tries'],
                     input_keys=['object_output','object'],
-                    output_keys=['object_shelf'])
+                    output_keys=['object_shelf','height'])
         self.tries = 0
 
     def execute(self, userdata):
         # request = segmentation_server.request_class()
         self.tries += 1
+        height=None
         if self.tries < 10:
             JuskeshinoHardware.moveHead(0,-0.35, 5)
             rospy.sleep(2.5)
@@ -364,18 +368,23 @@ class ScanCabinet(smach.State):
                             #centroid maths
                             JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
                             userdata.object_shelf=obj
+                            userdata.height=height
                             if obj.pose.position.z>1.3:
                                 JuskeshinoHRI.say("The object is part of the top shelf")
                                 print("The object is part of the top shelf")
+                                height='top'
+
                                 return 'succed'
                                 #variable shared with the next state giving q for left arm to leave the object 'object_shelf'
                             if 1.3 > obj.pose.position.z > 0.8:
                                 JuskeshinoHRI.say("The object is part of the middle shelf") 
                                 print("The object is part of the middle shelf")
                                 return 'succed'
+                                height='middle'
                             if 0.8 > obj.pose.position.z > 0.2:
                                 JuskeshinoHRI.say("The object is part of the low shelf")
                                 print("The object is part of the low shelf") 
+                                height='low'
                                 return 'succed'
                         else:
                             #Check for the position of each object and start from that 
@@ -392,7 +401,7 @@ class LeaveObject(smach.State):
     def __init__(self):
         smach.State.__init__(
             self, outcomes=['succed', 'failed', 'tries'],
-                    input_keys=['object_shelf'])
+                    input_keys=['object_shelf','height'])
         self.tries = 0
 
     def execute(self, userdata):
@@ -401,21 +410,35 @@ class LeaveObject(smach.State):
             JuskeshinoNavigation.moveDist(0.6, timeout=5)
         if self.tries < 8:
             JuskeshinoHardware.moveHead(0,-0.35, 5)
+            height=userdata.height
+            if height == 'top':
+                JuskeshinoHardware.moveTorso(0.28 , 5.0)
+                JuskeshinoHardware.moveLeftArmWithTrajectory(TOP_SHELF, 10)
+            if height =='middle':
+                JuskeshinoHardware.moveTorso(0.28 , 5.0)
+                JuskeshinoHardware.moveLeftArmWithTrajectory(MIDDLE_SHELF, 10)
+            if height=='low':
+                JuskeshinoHardware.moveTorso(0.02 , 5.0)
+                JuskeshinoHardware.moveLeftArmWithTrajectory(LOW_SHELF, 10)
+            print("Opening gripper")
+            JuskeshinoHardware.moveLeftGripper(0.8, 100.0)
+            return 'succed'
+        return 'failed'   
+            #     JuskeshinoHardware.moveLeftGripper(0.9, 100.0)
+            # obj_shelf=userdata.object_shelf
+            # rospy.logwarn('\n--> STATE 10 <: Leaving object')
             
-            obj_shelf=userdata.object_shelf
-            rospy.logwarn('\n--> STATE 10 <: Leaving object')
-            
-            # JuskeshinoNavigation.getClose('SHELF', 10)
-            JuskeshinoHRI.say("Leaving object")
-            [response, success] = JuskeshinoManipulation.GripLa(obj_shelf)
-            if success :
-                print("Object position: ",obj_shelf.pose.position)
-                #JuskeshinoHardware.moveTorso(0.14 , 5.0)
-                JuskeshinoHardware.moveLeftArmWithTrajectory(response.articular_trajectory,10)
-                print("Opening gripper")
-                JuskeshinoHardware.moveLeftGripper(0.9, 100.0)
-                return 'succed'
-            return 'failed'
+            # # JuskeshinoNavigation.getClose('SHELF', 10)
+            # JuskeshinoHRI.say("Leaving object")
+            # [response, success] = JuskeshinoManipulation.GripLa(obj_shelf)
+            # if success :
+            #     print("Object position: ",obj_shelf.pose.position)
+            #     #JuskeshinoHardware.moveTorso(0.14 , 5.0)
+            #     JuskeshinoHardware.moveLeftArmWithTrajectory(response.articular_trajectory,10)
+            #     print("Opening gripper")
+            #     JuskeshinoHardware.moveLeftGripper(0.9, 100.0)
+            #     return 'succed'
+            # return 'failed'
                        
 
 def main():
@@ -488,7 +511,7 @@ def main():
 
         smach.StateMachine.add('LEAVE_OBJ',LeaveObject(), 
         transitions={'failed':'LEAVE_OBJ',
-                     'succed':'END',
+                     'succed':'NAVIGATE_TO_TABLE',
                      'tries':'LEAVE_OBJ'})
                      
     # Execute SMACH plan
