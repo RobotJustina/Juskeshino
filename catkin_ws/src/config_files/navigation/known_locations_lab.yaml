@@ -36,7 +36,7 @@ desk_justina:
 desk_takeshi:
  x: 6.84
  y: 1.80
- theta: 3.14
+ theta: 0.0
  parent: home
 desk_takeshi_closer:
   x: 8.0

@@ -43,7 +43,7 @@ OBJECTS_TABLE_THETA = [5.44 ,2.15, 1.5]
 # Objects
 BOWL   = "red_bowl"
 MILK   = "jelly"
-CEREAL = "rubics_cube"
+CEREAL = "mango_juice"
 
 
 # Gripper_aperture
@@ -198,7 +198,7 @@ def main():
             grip_attempts = 0
             cycle = 0
             print("cycle:___", cycle)
-            current_state = DETECT_OBJECT#START
+            current_state = START
 
 
 
@@ -226,7 +226,7 @@ def main():
             print("j:___", j)
             print("Actual object", pila[j])
 
-            current_state = DETECT_OBJECT#MOVE_TO_LOCATION
+            current_state = MOVE_TO_LOCATION
 
 
 
