@@ -164,6 +164,52 @@ class JuskeshinoNavigation:
         JuskeshinoNavigation.startGetCloseXYA(p.x, p.y, a)
         return True
     
+
+    def getCloseSuitableGripPositionLa(location, position_object, timeout):
+        # La posición del objeto debe ser una lista [x,y,z] en coordenadas de 'map'
+        l_threshold_la       = 0.26
+        r_threshold_la       = 0.11
+        # Se extrae la orientacion de la locacion
+        req = GetLocationRequest()
+        req.name = location
+        try:
+            resp = JuskeshinoNavigation.cltKnownLocation(req)
+            p_x, p_y = position_object[0], position_object[1]
+            q = resp.location.pose.orientation
+            a = math.atan2(q.z, q.w)*2
+        except:
+            print("JuskeshinoNavigation.->Cannot get position for location " + location)
+
+
+        if position_obj.y > l_threshold_la:     # Objeto a la izquierda
+            mov_izq = position_obj.y - l_threshold_la
+            print("mov izq", mov_izq)
+            if abs(mov_izq) > 0.25:
+                print("2 move")
+                JuskeshinoNavigation.moveDist(-0.2, 5.0)
+                JuskeshinoNavigation.getCloseXYA(p_x, p_y, a, timeout)
+                return True, mov_izq
+            else:
+                JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
+                return False, 0
+
+        if position_obj.y < r_threshold_la:     # Objeto a la derecha
+            mov_der = position_obj.y - r_threshold_la
+            print("mov der", mov_der)
+            if abs(mov_der) > 0.25:
+                print("22 move")
+                JuskeshinoNavigation.moveDist(-0.2, 5.0)
+                JuskeshinoNavigation.getCloseXYA(p_x, p_y, a, timeout)
+                return True, mov_der
+                
+            else:
+                JuskeshinoNavigation.moveLateral(mov_der , 5.0)
+                return False, 0
+            
+        return False, 0
+    
+
+
     def getCloseXYA(x, y, angle, timeout):
         JuskeshinoNavigation.startGetCloseXYA(x,y,angle)
         return JuskeshinoNavigation.waitForGlobalGoalReached(timeout)

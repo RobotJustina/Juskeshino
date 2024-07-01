@@ -144,10 +144,10 @@ class JuskeshinoSimpleTasks:
         obj_p = listener.transformPoint(target_frame, obj_p)
         return [obj_p.point.x, obj_p.point.y, obj_p.point.z]
     
-
+    """
     def handling_location_la(position_obj):     # Recibe un  objeto de tipo position extraido de un mensaje pose de ROS
-        l_threshold_la       = 0.25
-        r_threshold_la       = 0.14
+        l_threshold_la       = 0.26
+        r_threshold_la       = 0.11
         
         if position_obj.y > l_threshold_la:     # Objeto a la izquierda
             mov_izq = position_obj.y - l_threshold_la
@@ -160,11 +160,11 @@ class JuskeshinoSimpleTasks:
                 time.sleep(0.4)
                 JuskeshinoNavigation.moveDist(0.2, 5.0)
                 
-                return True
+                return True, mov_izq
             else:
                 JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
                 time.sleep(0.2)
-                return False
+                return False, 0
 
         if position_obj.y < r_threshold_la:     # Objeto a la derecha
             mov_der = position_obj.y - r_threshold_la
@@ -176,15 +176,15 @@ class JuskeshinoSimpleTasks:
                 JuskeshinoNavigation.moveLateral(mov_der , 5.0)
                 time.sleep(0.4)
                 JuskeshinoNavigation.moveDist(0.2, 5.0)
-                return True
+                return True, mov_der
                 
             else:
                 JuskeshinoNavigation.moveLateral(mov_der , 5.0)
                 time.sleep(0.2)
-                return False
+                return False, 0
             
-        return False
-
+        return False, 0
+    """
 
 
     def object_search(name_obj):
