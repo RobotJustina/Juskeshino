@@ -156,23 +156,6 @@ def detect_obj_function(actual_obj):
 
 
 
-def points_actual_to_points_target(point_in, f_actual, f_target):
-    global listener
-    point_msg = PointStamped()  
-    point_msg.header.frame_id = f_actual   # frame de origen
-    point_msg.header.stamp = rospy.Time() # la ultima transformacion
-    point_msg.point.x = point_in[0]
-    point_msg.point.y = point_in[1]
-    point_msg.point.z = point_in[2]
-
-    listener.waitForTransform(f_actual, f_target, rospy.Time(), rospy.Duration())
-    point_target_frame = listener.transformPoint(f_target, point_msg)
-    new_point = point_target_frame.point
-    return [ new_point.x , new_point.y , new_point.z ]
-
-
-
-
 def main():
     rospy.init_node("serve_breakfast_test")
     rate = rospy.Rate(10)
@@ -322,11 +305,13 @@ def main():
             print("ESTADO:___HANDLING_LOCATION..................")
             #JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
             # Transforma el centroide del objeto de 'base_link' a 'map' e introduce x,y,z en una lista
-            point_in = [obj.pose.position.x, obj.pose.position.y, obj.pose.position.z]
-            pos_obj = points_actual_to_points_target(point_in, f_actual, f_target)
-            JuskeshinoNavigation.getCloseSuitableGripPositionLa(OBJECTS_TABLE , pos_obj, 5.0)
+            pos_obj_bl = [obj.pose.position.x, obj.pose.position.y, obj.pose.position.z]
+            JuskeshinoNavigation.getCloseSuitableGripPositionLa(OBJECTS_TABLE , pos_obj_bl, 100.0)
+            JuskeshinoHardware.moveHead(0,-1, 5)
+            time.sleep(0.2)
+            JuskeshinoNavigation.moveDist(0.1, 5.0)
             # Ajusta altura de torso para mejor agarre
-            if (not simu) or (not torso):
+            if (not simu) or (torso):
                 if (actual_obj == BOWL):
                     JuskeshinoHardware.moveTorso(0.07 , 5.0)
                 if (actual_obj == MILK):
