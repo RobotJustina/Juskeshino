@@ -181,8 +181,8 @@ class JuskeshinoNavigation:
             print("JuskeshinoNavigation.->Cannot get position for location " + location)
 
 
-        if position_obj.y > l_threshold_la:     # Objeto a la izquierda
-            mov_izq = position_obj.y - l_threshold_la
+        if position_object[1] > l_threshold_la:     # Objeto a la izquierda
+            mov_izq = position_object[1] - l_threshold_la
             print("mov izq", mov_izq)
             if abs(mov_izq) > 0.25:
                 print("2 move")
@@ -193,8 +193,8 @@ class JuskeshinoNavigation:
                 JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
                 return False, 0
 
-        if position_obj.y < r_threshold_la:     # Objeto a la derecha
-            mov_der = position_obj.y - r_threshold_la
+        if position_object[1] < r_threshold_la:     # Objeto a la derecha
+            mov_der = position_object[1] - r_threshold_la
             print("mov der", mov_der)
             if abs(mov_der) > 0.25:
                 print("22 move")
