@@ -144,7 +144,7 @@ class JuskeshinoSimpleTasks:
         obj_p = listener.transformPoint(target_frame, obj_p)
         return [obj_p.point.x, obj_p.point.y, obj_p.point.z]
     
-    """
+    
     def handling_location_la(position_obj):     # Recibe un  objeto de tipo position extraido de un mensaje pose de ROS
         l_threshold_la       = 0.26
         r_threshold_la       = 0.11
@@ -184,7 +184,7 @@ class JuskeshinoSimpleTasks:
                 return False, 0
             
         return False, 0
-    """
+    
 
 
     def object_search(name_obj):

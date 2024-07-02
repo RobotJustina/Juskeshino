@@ -42,14 +42,14 @@ class JuskeshinoManipulation:
         msg = Float64()
         msg.data = 1.0
         JuskeshinoHardware.pubLaGoalGrip.publish(msg)
-        time.sleep(1)
+        rospy.sleep(1)
         msg = Float64()
         for i in np.linspace(start=1.0, stop=0.0, num=20):
             msg.data = i
             JuskeshinoHardware.pubLaGoalGrip.publish(msg)
             current = np.asarray(rospy.wait_for_message("/hardware/left_arm/current_gripper", Float64, timeout=1.0).data)
             if abs(current-i) > 0.2:
-                msg.data = i + 0.2
+                msg.data = i + 0.1
                 JuskeshinoHardware.pubLaGoalGrip.publish(msg)
                 return True
         return is_thin
