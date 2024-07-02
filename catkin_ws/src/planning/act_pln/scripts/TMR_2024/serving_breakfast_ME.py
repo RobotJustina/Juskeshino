@@ -287,7 +287,7 @@ def main():
                 print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
                 JuskeshinoHRI.say("I found" + actual_obj)
                 
-                current_state = HANDLING_LOCATION
+                #current_state = HANDLING_LOCATION
 
             except:
                 JuskeshinoHRI.say("I couldn't find the object")
@@ -297,6 +297,15 @@ def main():
                     JuskeshinoHRI.say("I didn't find the object")
                     print("SB-PLN.-> Se excedió el numero de intentos")
                     current_state = DETECT_OBJECT_ORIENTATION
+            
+            l_threshold_la       = 0.26
+            r_threshold_la       = 0.11
+            if(obj.pose.position.y < l_threshold_la) and (obj.pose.position.y > r_threshold_la):
+                current_state = DETECT_OBJECT_ORIENTATION
+            else:
+                current_state = HANDLING_LOCATION
+
+
  
 
 
@@ -321,7 +330,6 @@ def main():
             tries = 0
             current_state = DETECT_OBJECT_ORIENTATION
             
-
 
 
 
