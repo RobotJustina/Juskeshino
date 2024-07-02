@@ -23,10 +23,11 @@ from sensor_msgs.msg import LaserScan
 DESK = "desk_takeshi_front"
 SIMUL_DESK = 'simul_desk'
 GET_CLOSE="desk_takeshi_closer"
-TOP_SHELF=[0.71, 0.2, 0.0, 1.95, 0.0, 0.06, 0.0]
+TOP_SHELF=[0.75, 0.2, 0.0, 1.95, 0.0, 0.06, 0.0]
 MIDDLE_SHELF=[0.31, 0.2, -0.2, 1.55, 0.0, 0.16, 0.0]
 LOW_SHELF=[0.31, 0.1, -0.1, 0.35, 0.0, 1.16, 0.0]
 PREPARE_GRIP  = [-0.69, 0.2, 0, 1.55, 0, 1.16, 0]
+HOME=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 # PREPARE_GRIP  = [-0.8, 0.2, 0, 1.55, 0, 1.24, 0]
 PREPARE_TOP_GRIP=[-1.25, 0.3, 0, 2.4, 0, 0.7,0] #TINY OBJ
 HOLD_OBJ = [0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ]
@@ -124,7 +125,7 @@ class FindTable(smach.State):
                 JuskeshinoHardware.moveHead(0, -1, 100.0)
             #response = JuskeshinoVision.findTableEdge()
             rospy.sleep(0.5)
-            if self.tries<2:
+            if self.tries<6:
                 #JuskeshinoNavigation.getClose(GET_CLOSE, 10)
                 JuskeshinoNavigation.moveDist(0.3, timeout=5)
 
@@ -234,11 +235,9 @@ class GraspObject(smach.State):
             x,y,z=userdata.object_output
             JuskeshinoHRI.say("Moving arm to prepare")
             print("Moving arm to prepare")
-            if obj.category == 'CUBIC':
-                JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
-            else:
-                JuskeshinoHardware.moveTorso(0.03 , 5.0)
-                JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
+            JuskeshinoHardware.moveTorso(0.04 , 5.0)
+            rospy.sleep(1)
+            JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
             JuskeshinoHardware.moveLeftGripper(0.7, 100.0)
             print("Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))   
             print('------------>>>',x,y,z)                    
@@ -249,31 +248,34 @@ class GraspObject(smach.State):
                 #JuskeshinoHardware.moveTorso(0.14 , 5.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(response.articular_trajectory,10)
                 print("Closing gripper")
+                JuskeshinoHardware.moveLeftGripper(0.22, 3.0)
                 # if obj.category == 'CUBIC':
                 #     JuskeshinoHardware.moveLeftGripper(0.0 , 3.0)
                 # else:
                 #     JuskeshinoHardware.moveLeftGripper(0.15 , 3.0) 
-                success=JuskeshinoManipulation.dynamic_grasp_left_arm()
-                print (success)
+                # # # success=JuskeshinoManipulation.dynamic_grasp_left_arm()
+                # # # print (success)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(HOLD_OBJ, 10)
+                JuskeshinoHRI.say("Verifying...")
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
-                rospy.sleep(0.5)     
-                JuskeshinoNavigation.getClose(DESK, 10)
-                # recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
-                # for objc in recog_objects:
-                #     if obj and objc:
-                #         JuskeshinoHRI.say("I couldn't grasp the object, someone is going to take the "+ obj.id )
-                #         rospy.sleep(2)
-                #         return 'succed'
-                #     else:
-                #         return 'succed' 
-                # return 'succed'
-                if not success:
-                    JuskeshinoHRI.say("I couldn't grasp the object, someone is going to take the "+ obj.id )
+                rospy.sleep(1)     
+                recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
+                JuskeshinoHRI.say("Verifying...")
+                for objc in recog_objects:
+                    if obj.id and objc.id:
+                        JuskeshinoHRI.say("Please, help me to take the "+ obj.id )
+                        rospy.sleep(5)
+                        return 'succed'
+                    else:
+                        JuskeshinoHRI.say("I took correctly the "+ obj.id )
+                        return 'succed' 
+                return 'succed'
+                # # # if not success:
+                # # #     JuskeshinoHRI.say("I couldn't grasp the object, someone is going to take the "+ obj.id )
                     
-                    return 'succed'
-                else:
-                    return 'succed'
+                # # #     return 'succed'
+                # # # else:
+                # # #     return 'succed'
                 
             else:
                 print("No possible poses found")
@@ -306,7 +308,7 @@ class FailedGrasp(smach.State):
             recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
             for obj in recog_objects:
                 if obj and objc:
-                    JuskeshinoHRI.say("I couldn't grasp the object, a human is going to take the "+ obj.id )
+                    JuskeshinoHRI.say("Please, help me to take the "+ obj.id)
                     return 'failed'
             return 'succed'
         
@@ -323,6 +325,8 @@ class TransportObject(smach.State):
         if self.tries<20:
             rospy.logwarn('\n--> STATE 8 <: Transporting object to cabinet')
             JuskeshinoHRI.say(" I am moving to the cabinet")
+            JuskeshinoNavigation.moveDist(-0.3, 10)
+            rospy.sleep(2)
             JuskeshinoNavigation.getClose('scan_cabinet', 10)
             
             return 'succed'
@@ -338,20 +342,17 @@ class ScanCabinet(smach.State):
     def execute(self, userdata):
         # request = segmentation_server.request_class()
         self.tries += 1
-        height=None
+        height_d=None
         if self.tries < 10:
-            JuskeshinoHardware.moveHead(0,-0.35, 5)
-            rospy.sleep(2.5)
             print('Scanning shelf')
             tar_obj=userdata.object
             rospy.logwarn('\n--> STATE 9 <: Scanning cabinet')
             JuskeshinoHRI.say("Scanning cabinet")
-            recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
-            rospy.sleep(2.5)       
+            JuskeshinoHardware.moveHead(0,-0.35, 5)
+            recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()     
             #object_id=target_object.id
             if recog_objects is not None:
                 for obj in recog_objects:
-                    userdata.object_shelf=obj
                     print("------->",obj.id)
                     print(obj.pose.position)
                     category1=matching_objects(obj.id)
@@ -368,24 +369,23 @@ class ScanCabinet(smach.State):
                             #centroid maths
                             JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
                             userdata.object_shelf=obj
-                            userdata.height=height
+                            
                             if obj.pose.position.z>1.3:
                                 JuskeshinoHRI.say("The object is part of the top shelf")
                                 print("The object is part of the top shelf")
-                                height='top'
-
-                                return 'succed'
+                                height_d='top'
+                                print (height_d)
                                 #variable shared with the next state giving q for left arm to leave the object 'object_shelf'
                             if 1.3 > obj.pose.position.z > 0.8:
                                 JuskeshinoHRI.say("The object is part of the middle shelf") 
                                 print("The object is part of the middle shelf")
-                                return 'succed'
-                                height='middle'
+                                height_d='middle'
                             if 0.8 > obj.pose.position.z > 0.2:
                                 JuskeshinoHRI.say("The object is part of the low shelf")
                                 print("The object is part of the low shelf") 
-                                height='low'
-                                return 'succed'
+                                height_d='low'
+                            userdata.height=height_d
+                            return 'succed'
                         else:
                             #Check for the position of each object and start from that 
                             print('Cannot match objects, I will try again...')
@@ -406,22 +406,27 @@ class LeaveObject(smach.State):
 
     def execute(self, userdata):
         self.tries += 1
-        if self.tries==1:
-            JuskeshinoNavigation.moveDist(0.6, timeout=5)
+        if self.tries<6:
+            JuskeshinoNavigation.moveDist(0.4, timeout=5)
         if self.tries < 8:
             JuskeshinoHardware.moveHead(0,-0.35, 5)
-            height=userdata.height
-            if height == 'top':
+            shelf=userdata.height
+            print (shelf)
+            if shelf == 'top':
                 JuskeshinoHardware.moveTorso(0.28 , 5.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(TOP_SHELF, 10)
-            if height =='middle':
+            if shelf =='middle':
                 JuskeshinoHardware.moveTorso(0.28 , 5.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(MIDDLE_SHELF, 10)
-            if height=='low':
+            if shelf=='low':
                 JuskeshinoHardware.moveTorso(0.02 , 5.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(LOW_SHELF, 10)
             print("Opening gripper")
             JuskeshinoHardware.moveLeftGripper(0.8, 100.0)
+            JuskeshinoNavigation.moveDist(-0.3, timeout=5)
+            JuskeshinoHardware.moveTorso(0.04 , 5.0)
+            rospy.sleep(1)
+            JuskeshinoHardware.moveLeftArmWithTrajectory(HOME, 10)
             return 'succed'
         return 'failed'   
             #     JuskeshinoHardware.moveLeftGripper(0.9, 100.0)
