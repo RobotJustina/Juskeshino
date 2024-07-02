@@ -54,8 +54,8 @@ desk_takeshi_front:
   theta: 3.0                                                                                              
   parent: home
 scan_cabinet:
- x: 9.65
- y: 0.6
+ x: 9.21
+ y: 0.62
  theta: -1.57
  parent: home 
 cabinet:
