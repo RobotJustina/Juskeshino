@@ -248,34 +248,35 @@ class GraspObject(smach.State):
                 #JuskeshinoHardware.moveTorso(0.14 , 5.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(response.articular_trajectory,10)
                 print("Closing gripper")
-                JuskeshinoHardware.moveLeftGripper(0.22, 3.0)
+                #JuskeshinoHardware.moveLeftGripper(0.22, 3.0)
                 # if obj.category == 'CUBIC':
                 #     JuskeshinoHardware.moveLeftGripper(0.0 , 3.0)
                 # else:
                 #     JuskeshinoHardware.moveLeftGripper(0.15 , 3.0) 
-                # # # success=JuskeshinoManipulation.dynamic_grasp_left_arm()
-                # # # print (success)
+                success=JuskeshinoManipulation.dynamic_grasp_left_arm()
+                print (success)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(HOLD_OBJ, 10)
                 JuskeshinoHRI.say("Verifying...")
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
-                rospy.sleep(1)     
-                recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
-                JuskeshinoHRI.say("Verifying...")
-                for objc in recog_objects:
-                    if obj.id and objc.id:
-                        JuskeshinoHRI.say("Please, help me to take the "+ obj.id )
-                        rospy.sleep(5)
-                        return 'succed'
-                    else:
-                        JuskeshinoHRI.say("I took correctly the "+ obj.id )
-                        return 'succed' 
-                return 'succed'
-                # # # if not success:
-                # # #     JuskeshinoHRI.say("I couldn't grasp the object, someone is going to take the "+ obj.id )
+                rospy.sleep(0.02)     
+                # recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
+                # JuskeshinoHRI.say("Verifying...")
+                # for objc in recog_objects:
+                #     if obj.id and objc.id:
+                #         JuskeshinoHRI.say("Please, help me to take the "+ obj.id )
+                #         rospy.sleep(5)
+                #         return 'succed'
+                #     else:
+                #         JuskeshinoHRI.say("I took correctly the "+ obj.id )
+                #         return 'succed' 
+                # return 'succed'
+                if not success:
+                    JuskeshinoHRI.say("Please, help me to take the "+ obj.id )
                     
-                # # #     return 'succed'
-                # # # else:
-                # # #     return 'succed'
+                    return 'succed'
+                else:
+                    JuskeshinoHRI.say("I took correctly the "+ obj.id )
+                    return 'succed'
                 
             else:
                 print("No possible poses found")
@@ -295,22 +296,34 @@ class FailedGrasp(smach.State):
     def execute(self,userdata):
         self.tries += 1
         if self.tries<6:
-            objc=userdata.object
+            obj=userdata.object
             JuskeshinoHRI.say("Object found")
-            [response, success] = JuskeshinoManipulation.GripLa(objc)
+            [response, success] = JuskeshinoManipulation.GripLa(obj)
             JuskeshinoHardware.moveLeftGripper(0.9, 100.0)
-            JuskeshinoHardware.moveTorso(0.14 , 5.0)
+            # JuskeshinoHardware.moveTorso(0.14 , 5.0)
             JuskeshinoHardware.moveLeftArmWithTrajectory(response.q,10)
             print("Closing gripper")
-            JuskeshinoHardware.moveLeftGripper(0.16 , 3.0) 
+            success=JuskeshinoManipulation.dynamic_grasp_left_arm()
+            print (success)
+            JuskeshinoHardware.moveLeftArmWithTrajectory(HOLD_OBJ, 10)
+            JuskeshinoHRI.say("Verifying...")
             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
-            rospy.sleep(2)
-            recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
-            for obj in recog_objects:
-                if obj and objc:
-                    JuskeshinoHRI.say("Please, help me to take the "+ obj.id)
-                    return 'failed'
-            return 'succed'
+            rospy.sleep(0.02) 
+            # JuskeshinoHardware.moveLeftGripper(0.16 , 3.0) 
+            # JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
+            # rospy.sleep(2)
+            # recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
+            # for obj in recog_objects:
+            #     if obj and objc:
+            #         JuskeshinoHRI.say("Please, help me to take the "+ obj.id)
+            #         return 'failed'
+            if not success:
+                JuskeshinoHRI.say("Please, help me to take the "+ obj.id )
+                
+                return 'succed'
+            else:
+                JuskeshinoHRI.say("I took correctly the "+ obj.id )
+                return 'succed'
         
     
 class TransportObject(smach.State):
