@@ -14,15 +14,11 @@ from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
 from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 from sensor_msgs.msg import LaserScan
 #TO DO :
-# Veify if the object was succesfully graspped
-# State for asking someone to take the object if point above is True **
-# Not print all the categories, only the one the target category
-# State for align with cabinet **
-# State for leave the object **
+# microphone
+# table height
 
-DESK = "desk_takeshi_front"
+DESK = "table"
 SIMUL_DESK = 'simul_desk'
-GET_CLOSE="desk_takeshi_closer"
 TOP_SHELF=[0.75, 0.2, 0.0, 1.95, 0.0, 0.06, 0.0]
 MIDDLE_SHELF=[0.31, 0.2, -0.2, 1.55, 0.0, 0.16, 0.0]
 LOW_SHELF=[0.31, 0.1, -0.1, 0.35, 0.0, 1.16, 0.0]
@@ -30,6 +26,7 @@ PREPARE_GRIP  = [-0.69, 0.2, 0, 1.55, 0, 1.16, 0]
 HOME=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 HOLD_OBJ = [0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ]
 GET_CLOSE_TO_TABLE = 0.3
+TABLE_TORSO_HEIGHT = 0.04
 
 def matching_objects(obj):
     obj_yaml =rospy.get_param("~categories")
@@ -112,7 +109,6 @@ class RecognizeObjects(smach.State):
             recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
 
             if recog_objects is not None:        
-                #object_id=target_object.id
                 for obj in recog_objects:
                     obj=recog_objects [0]
                     print(f"Object of interest is {obj.id}")
@@ -122,12 +118,10 @@ class RecognizeObjects(smach.State):
                     obj_oriented = JuskeshinoVision.getObjectOrientation(obj)
                     userdata.object_output=[x,y,z]
                     userdata.object=obj_oriented
-                    #JuskeshinoHRI.say("I found: " + obj_oriented.id )
                     print('Object found: ', obj_oriented.id, obj_oriented.pose, obj_oriented.object_state, obj_oriented.size, obj_oriented.graspable)
                     return 'succed'
             
-            print('Cannot detect objects, I will try again...')
-            JuskeshinoHRI.say('Cannot detect objects, I will try again...')
+            JuskeshinoHRI.say('I could not detect objects, I will try again')
             return 'tries'    
         
         print('After a lot of tries, I could not detect objects')
@@ -140,7 +134,7 @@ class Classification(smach.State):
                             input_keys=['object_output','object'])
         self.tries = 0
 
-        # The input and output data of a state is called 'userdata'
+    # The input and output data of a state is called 'userdata'
     def execute(self,userdata):
         self.tries += 1
         if self.tries < 20:    
@@ -150,7 +144,6 @@ class Classification(smach.State):
             if category:
                 prompt = "I found" + obj.id + " which is part of the category " + category
                 JuskeshinoHRI.say(prompt)
-                print("---------------------I found:", obj.id, "which is part of the category: ", category)
                 return'succed'
         return 'failed'
     
@@ -165,19 +158,37 @@ class AlignWithObject(smach.State):
     def execute(self,userdata):
         self.tries += 1
         if self.tries < 10:
-            
             rospy.logwarn('\n--> STATE 6 <: I am going to align with the object')
             obj=userdata.object
             JuskeshinoHRI.say("I am ready to pick the ",obj.id)
             JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
             return'succed'
-        print("Cannot align robot with object :(")
+        return 'failed'
+
+class GiveMeDObject(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succed', 'failed']
+                             ,input_keys=['object'])
+        
+        # The input and output data of a state is called 'userdata'
+    def execute(self,userdata):
+        rospy.logwarn('\n--> STATE <: GIVE ME THE OBJECT')
+        obj=userdata.object
+        JuskeshinoHRI.say("Please, help me to take the "+ obj.id )
+        JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
+        JuskeshinoHRI.say("I am ready to pick the ",obj.id )
+        rospy.sleep(4)
+        success=JuskeshinoManipulation.dynamic_grasp_left_arm()
+        rospy.sleep(2)
+        if success:
+            JuskeshinoHRI.say("Thank you")
+            return 'succed'
         return 'failed'
 
 class GraspObject(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                            outcomes=['succed', 'failed'],
+                            outcomes=['succed', 'failed', 'help'],
                             input_keys=['object_output','object'])
         self.tries = 0
 
@@ -186,26 +197,22 @@ class GraspObject(smach.State):
         self.tries += 1
         if self.tries <6:
             rospy.logwarn('\n--> STATE 7 <: Picking up the target object, attempt: ' + str(self.tries))
-            obj=userdata.object
-            JuskeshinoHRI.say("I am going to pick the "+ obj.id)
             
-            print('Trying to pick: '+ obj.id)
+            # GET OBJECT LOCATION AND CALCULATE TRAJECTORY
+            obj=userdata.object
             x,y,z=userdata.object_output
-            JuskeshinoHRI.say("Moving arm to prepare")
-            print("Moving arm to prepare")
-            JuskeshinoHardware.moveTorso(0.04 , 5.0)
+            
+            JuskeshinoHRI.say("I am prepairing to pick the "+ obj.id)
+            JuskeshinoHardware.moveTorso(TABLE_TORSO_HEIGHT , timeout = 5.0)
             rospy.sleep(1)
             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
             JuskeshinoHardware.moveLeftGripper(0.7, 100.0)
-            print("Detected object : " + str([obj.id, obj.category, obj.object_state, obj.pose.position]))   
-            print('------------>>>',x,y,z)                    
+
+            # EXECUTE TRAJECTORY
             [response, success] = JuskeshinoManipulation.GripLa(obj)
             if success:
                 JuskeshinoHRI.say("Object found correctly")
-                print("Object position: ",obj.pose.position)
-                #JuskeshinoHardware.moveTorso(0.14 , 5.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(response.articular_trajectory,10)
-                print("Closing gripper")
                 #JuskeshinoHardware.moveLeftGripper(0.22, 3.0)
                 # if obj.category == 'CUBIC':
                 #     JuskeshinoHardware.moveLeftGripper(0.0 , 3.0)
@@ -216,7 +223,7 @@ class GraspObject(smach.State):
                 JuskeshinoHardware.moveLeftArmWithTrajectory(HOLD_OBJ, 10)
                 JuskeshinoHRI.say("Verifying...")
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
-                rospy.sleep(0.02)     
+                rospy.sleep(0.5)     
                 # recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
                 # JuskeshinoHRI.say("Verifying...")
                 # for objc in recog_objects:
@@ -229,16 +236,15 @@ class GraspObject(smach.State):
                 #         return 'succed' 
                 # return 'succed'
                 if not success:
-                    JuskeshinoHRI.say("Please, help me to take the "+ obj.id )
-                    
-                    return 'succed'
+                    JuskeshinoHRI.say("I couldn't grasp the " + obj.id )
+                    return 'help'
                 else:
-                    JuskeshinoHRI.say("I took correctly the "+ obj.id )
+                    JuskeshinoHRI.say("I took correctly the " + obj.id )
                     return 'succed'
                 
             else:
                 print("No possible poses found")
-                return 'failed'
+                return 'help'
             
         return 'failed'
 
@@ -246,7 +252,7 @@ class GraspObject(smach.State):
 class FailedGrasp(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                            outcomes=['succed', 'failed'],
+                            outcomes=['succed', 'failed', 'help'],
                             input_keys=['object_output','object'])
         self.tries = 0
 
@@ -278,11 +284,11 @@ class FailedGrasp(smach.State):
             if not success:
                 JuskeshinoHRI.say("Please, help me to take the "+ obj.id )
                 
-                return 'succed'
+                return 'help'
             else:
                 JuskeshinoHRI.say("I took correctly the "+ obj.id )
                 return 'succed'
-        
+        return 'failed'
     
 class TransportObject(smach.State):
     def __init__(self):
@@ -299,7 +305,6 @@ class TransportObject(smach.State):
             JuskeshinoNavigation.moveDist(-GET_CLOSE_TO_TABLE, 10)
             rospy.sleep(2)
             JuskeshinoNavigation.getClose('scan_cabinet', 10)
-            
             return 'succed'
         
 class ScanCabinet(smach.State):
@@ -324,12 +329,12 @@ class ScanCabinet(smach.State):
             #object_id=target_object.id
             if recog_objects is not None:
                 for obj in recog_objects:
-                    print("------->",obj.id)
+                    print("",obj.id)
                     print(obj.pose.position)
                     category1=matching_objects(obj.id)
                     category2=matching_objects(tar_obj.id)
                     JuskeshinoHRI.say('Matching with shelf...')
-                    print("*******",category1)
+                    print("",category1)
                     print(category2)
                     
                     for recog_obj in recog_objects:  # Iterate over all objects to find matching categories
@@ -466,16 +471,22 @@ def main():
                      'succed':'ALIGNE_WITH_OBJ'})
 
         smach.StateMachine.add('ALIGNE_WITH_OBJ',AlignWithObject(), 
-        transitions={'failed':'RECOGNIZE_OBJ',
+        transitions={'failed':'TRANSPORT_OBJECT',
                      'succed':'GRASP_OBJ'})
 
+        smach.StateMachine.add('GIVE_ME_D_OBJ',GiveMeDObject(), 
+        transitions={'failed':'GIVE_ME_D_OBJ',
+                     'succed':'TRANSPORT_OBJECT'})
+        
         smach.StateMachine.add('GRASP_OBJ',GraspObject(), 
         transitions={'failed':'FAILED_GRASP',
+                     'help': 'GIVE_ME_D_OBJ',
                      'succed':'TRANSPORT_OBJECT'})
         
         smach.StateMachine.add('FAILED_GRASP',FailedGrasp(), 
-        transitions={'failed':'TRANSPORT_OBJECT',
-                     'succed':'TRANSPORT_OBJECT'})
+        transitions={'failed':'GIVE_ME_D_OBJ',
+                     'succed':'TRANSPORT_OBJECT',
+                     'help': 'GIVE_ME_D_OBJ'})
         
         smach.StateMachine.add('TRANSPORT_OBJECT',TransportObject(), 
         transitions={'failed':'NAVIGATE_TO_TABLE',
