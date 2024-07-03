@@ -203,6 +203,7 @@ class JuskeshinoNavigation:
                 return True, mov_izq
             else:
                 JuskeshinoNavigation.moveLateral(mov_izq + 0.03, 5.0)
+                print("Movimiento lateral", mov_izq + 0.03)
                 return False, mov_izq
 
         if position_object[1] < r_threshold_la:     # Objeto a la derecha
@@ -226,7 +227,7 @@ class JuskeshinoNavigation:
                 JuskeshinoNavigation.getCloseXYA(new_point_nav[0] , new_point_nav[1] , a, timeout)
                 return True, mov_der
             else:
-                JuskeshinoNavigation.moveLateral(mov_der -0.03 , 10.0)
+                JuskeshinoNavigation.moveLateral(mov_der - 0.03 , 10.0)
                 print("Movimiento lateral", mov_der -0.03)
                 return False, mov_der
             

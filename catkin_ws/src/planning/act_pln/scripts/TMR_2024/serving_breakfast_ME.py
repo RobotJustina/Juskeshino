@@ -305,11 +305,12 @@ def main():
                     JuskeshinoHardware.moveTorso(0.07 , 5.0)
 
             tries = 0
-            #current_state = DETECT_OBJECT_ORIENTATION
+            """
             if(mov_flag):
                 current_state = DETECT_OBJECT
             else:
-                current_state = DETECT_OBJECT_ORIENTATION
+            """
+            current_state = DETECT_OBJECT_ORIENTATION
 
             
 
