@@ -260,19 +260,8 @@ def main():
             except:
                 JuskeshinoHRI.say("Cannot move head")
                 JuskeshinoHardware.moveHead(0,-1, 5)
-                current_state = APROACH_TO_TABLE
-
-    
-
-
-        elif(current_state == APROACH_TO_TABLE):
-            print("ESTADO:___APROACH_TO_TABLE..................")
-            if simu:
                 current_state = DETECT_OBJECT
-            else:approach_to_table()
-            time.sleep(0.3)
-            tries = 0
-            current_state = DETECT_OBJECT
+
             
 
 
@@ -490,8 +479,8 @@ def main():
                 time.sleep(0.5)
                 JuskeshinoHardware.moveHead(0,-1, 5)
             time.sleep(0.5)
-            
-            approach_to_table()
+
+            #approach_to_table()
             time.sleep(0.3)
             current_state = PUT_OBJECT
 
