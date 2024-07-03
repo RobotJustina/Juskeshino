@@ -35,7 +35,7 @@ POST_GRIP         = [0.38, 0.19, -0.01, 1.57, 0 , 0.35, 0.0 ]
 PREPARE_RA    = [-0.8, -0.1, 0.0, 1.3, 1.3,0, 0.0]
 
 # Locations
-OBJECTS_TABLE = "desk_justina"
+OBJECTS_TABLE = "simu_desk_1"#"desk_justina"
 EAT_TABLE     = "desk_takeshi" 
 OBJECTS_TABLE_THETA = [5.44 ,2.15, 1.5]
 
@@ -73,6 +73,7 @@ END = 18
 DETECT_OBJECT_ORIENTATION = 19
 BEGIN_CYCLE = 20
 MOVE_TO_LOCATION_OBJECTS = 21
+VERIFY_SUITABLE_LOCATION_GRASP = 22
 
 
 
@@ -162,8 +163,8 @@ def main():
     global listener, simu
 
     listener = tf.TransformListener()
-    simu = False
-    torso = True
+    simu = True
+    torso = False
     actual_value = 0
 
     current_state = INITIAL
@@ -269,14 +270,12 @@ def main():
             else:approach_to_table()
             time.sleep(0.3)
             tries = 0
-            
             current_state = DETECT_OBJECT
             
 
 
-
         elif(current_state == DETECT_OBJECT):
-            print("ESTADO:___DETECT_OBJECT..................")
+            print("ESTADO:____DETECT_OBJECT..................")
             try:
                 [obj, img] = JuskeshinoSimpleTasks.object_search(actual_obj)
                 """
@@ -287,7 +286,7 @@ def main():
                 print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
                 JuskeshinoHRI.say("I found" + actual_obj)
                 
-                #current_state = HANDLING_LOCATION
+                current_state = HANDLING_LOCATION
 
             except:
                 JuskeshinoHRI.say("I couldn't find the object")
@@ -297,25 +296,14 @@ def main():
                     JuskeshinoHRI.say("I didn't find the object")
                     print("SB-PLN.-> Se excedió el numero de intentos")
                     current_state = DETECT_OBJECT_ORIENTATION
-            
-            l_threshold_la       = 0.26
-            r_threshold_la       = 0.11
-            if(obj.pose.position.y < l_threshold_la) and (obj.pose.position.y > r_threshold_la):
-                current_state = DETECT_OBJECT_ORIENTATION
-            else:
-                current_state = HANDLING_LOCATION
-
-
  
 
 
 
         elif(current_state == HANDLING_LOCATION):
-            print("ESTADO:___HANDLING_LOCATION..................")
-            #JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
-            # Transforma el centroide del objeto de 'base_link' a 'map' e introduce x,y,z en una lista
+            print("ESTADO:____HANDLING_LOCATION..................")
             pos_obj_bl = [obj.pose.position.x, obj.pose.position.y, obj.pose.position.z]
-            JuskeshinoNavigation.getCloseSuitableGripPositionLa(OBJECTS_TABLE , pos_obj_bl, 100.0)
+            mov_flag, dist = JuskeshinoNavigation.getCloseSuitableGripPositionLa(OBJECTS_TABLE , pos_obj_bl, 100.0)
             JuskeshinoHardware.moveHead(0,-1, 5)
             time.sleep(0.2)
             JuskeshinoNavigation.moveDist(0.1, 5.0)
@@ -328,9 +316,13 @@ def main():
                 if (actual_obj == CEREAL):
                     JuskeshinoHardware.moveTorso(0.08 , 5.0)
             tries = 0
-            current_state = DETECT_OBJECT_ORIENTATION
-            
+            #current_state = DETECT_OBJECT_ORIENTATION
+            if(mov_flag):
+                current_state = DETECT_OBJECT
+            else:
+                current_state = DETECT_OBJECT_ORIENTATION
 
+            
 
 
         elif(current_state == DETECT_OBJECT_ORIENTATION):
