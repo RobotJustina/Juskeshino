@@ -197,6 +197,8 @@ def main():
             grip_attempts = 0
             cycle = 0
             print("cycle:___", cycle)
+            mesa_alta = True
+            align_with_table = True
             current_state = START
 
 
@@ -221,6 +223,7 @@ def main():
 
         elif(current_state == BEGIN_CYCLE):
             print("ESTADO:__________BEGIN CYCLE.............")
+            print("mesa alta", mesa_alta)
             print("cycle:___", cycle)
             print("j:___", j)
             print("Actual object", pila[j])
@@ -244,7 +247,6 @@ def main():
                 print("SERVING BREAKFAST-> Se llego con exito a la locacion solicitada")
                 current_state = MOVE_HEAD
             time.sleep(0.5)
-
 
 
 
@@ -307,15 +309,12 @@ def main():
             JuskeshinoHardware.moveHead(0,-1, 5)
             time.sleep(0.2)
             if mov_flag:
-                JuskeshinoNavigation.moveDist(0.14, 5.0)
+                JuskeshinoNavigation.moveDist(0.18, 7.0)
             # Ajusta altura de torso para mejor agarre
             if (not simu) or (torso):
-                if (actual_obj == BOWL):
+                if(mesa_alta):
                     JuskeshinoHardware.moveTorso(0.07 , 5.0)
-                if (actual_obj == MILK):
-                    JuskeshinoHardware.moveTorso(0.07 , 5.0) 
-                if (actual_obj == CEREAL):
-                    JuskeshinoHardware.moveTorso(0.08 , 5.0)
+
             tries = 0
             #current_state = DETECT_OBJECT_ORIENTATION
             if(mov_flag):
@@ -327,7 +326,7 @@ def main():
 
 
         elif(current_state == DETECT_OBJECT_ORIENTATION):
-            print("ESTADO:___DETECT_OBJECT_ORIENTATION..................")
+            print("ESTADO:____DETECT_OBJECT_ORIENTATION..................")
             
             JuskeshinoHRI.say("Trying to detect the object")
             print("Trying to detect the object:__", actual_obj)
@@ -491,6 +490,7 @@ def main():
                 time.sleep(0.5)
                 JuskeshinoHardware.moveHead(0,-1, 5)
             time.sleep(0.5)
+            
             approach_to_table()
             time.sleep(0.3)
             current_state = PUT_OBJECT
