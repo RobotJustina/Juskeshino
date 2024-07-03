@@ -1,3 +1,7 @@
+class Command:
+    def __init__(self):
+        self.sentence = ''
+        self.actions = []
 
 _takeVerb = ['TAKE', 'GET', 'GRASP', 'FETCH']
 _placeVerb = ['PUT', 'PLACE']
@@ -43,11 +47,11 @@ _personNames = ['ADEL', 'ANGEL', 'AXEL', 'CHARLIE', 'JANE', 'JULES', 'MORGAN', '
 _placementLocNames = ['BED', 'BEDSIDE TABLE', 'SHELF', 'DISHWASHER', 'KITCHEN TABLE', 'PANTRY', 'REFRIGERATOR', 'SINK', 'CABINET', 'DESK', 'TV STAND', 'STORAGE RACK', 'SIDE TABLES', 'SOFA', 'BOOKSHELF']
 _pluralCategories = ['SNACKS', 'CLEANING SUPPLIES', 'FOOD', 'FRUITS', 'DISHES', 'DRINKS', 'TOYS']
 
-def has_pattern(command, word_list):
-    cmd = command
+def has_pattern(cmd, word_list):
     for w in word_list:
-        if w in cmd:
-            return True#, cmd.replace(w, '')
+        if w in cmd.sentence:
+            cmd.sentence = cmd.sentence.replace(w,'', 1)
+            return True
     return False
 
 def takeVerb(command):
@@ -176,10 +180,10 @@ def pluralCategories(command):
 
 
 def atLoc(cmd):
-    return 'AT THE' in cmd and locationNames(cmd);
+    return 'AT THE' in cmd.sentence and locationNames(cmd);
 
 def inRoom(cmd):
-    return 'IN THE' and roomNames(cmd);
+    return 'IN THE' in cmd.sentence and roomNames(cmd);
 
 def inRoom_atLoc(cmd):
     return inRoom(cmd) or atLoc(cmd)
@@ -197,31 +201,32 @@ def gestPers_posePers(cmd):
     return gesturePersonList(cmd) or posePersonList(cmd)
 
 def guidePrsToBeacon(cmd):
-    return guideVerb(cmd) and 'THEM' in cmd and toLocPrep(cmd) and 'THE' in cmd and loc_room(cmd)
+    return guideVerb(cmd) and 'THEM' in cmd.sentence and toLocPrep(cmd) and 'THE' in cmd.sentence and loc_room(cmd)
 
 def followPrsToRoom(cmd):
-    return followVerb(cmd) and 'THEM' in cmd and toLocPrep(cmd) and 'THE' in cmd and loc_room(cmd)
+    return followVerb(cmd) and 'THEM' in cmd.sentence and toLocPrep(cmd) and 'THE' in cmd.sentence and loc_room(cmd)
 
 def followPrs(cmd):
-    return followVerb(cmd) and 'THEM' in cmd
+    return followVerb(cmd) and 'THEM' in cmd.sentence
 
 def answerQuestion(cmd):
-    return answerVerb(cmd)  and 'A' in cmd and questionList(cmd)
+    return answerVerb(cmd)  and 'A' in cmd.sentence and questionList(cmd)
 
 def talkInfo(cmd):
     return talkVerb(cmd) and talkList(cmd)
 
 def deliverObjToNameAtBeac(cmd):
-    return deliverVerb(cmd) and 'IT' in cmd and deliverPrep(cmd) and personNames(cmd) and inLocPrep(cmd) and 'THE' in cmd and roomNames(cmd)
+    return deliverVerb(cmd) and 'IT' in cmd.sentence and deliverPrep(cmd) and personNames(cmd) and inLocPrep(cmd) and 'THE' in cmd.sentence and roomNames(cmd)
 
 def deliverObjToPrsInRoom(cmd):
-    return deliverVerb(cmd) and 'IT' in cmd and deliverPrep(cmd) and 'THE' in cmd and gestPers_posePers(cmd) and inLocPrep(cmd) and 'THE' in cmd and roomNames(cmd)
+    return deliverVerb(cmd) and 'IT' in cmd.sentence and deliverPrep(cmd) and 'THE' in cmd.sentence and gestPers_posePers(cmd) \
+        and inLocPrep(cmd) and 'THE' in cmd.sentence and roomNames(cmd)
 
 def deliverObjToMe(cmd):
-    return deliverVerb(cmd) and 'IT TO ME' in cmd
+    return deliverVerb(cmd) and 'IT TO ME' in cmd.sentence
 
 def placeObjOnPlcmt(cmd):
-    return placeVerb(cmd) and 'IT' in cmd and onLocPrep(cmd) and 'THE' in cmd and placementLocNames(cmd)
+    return placeVerb(cmd) and 'IT' in cmd.sentence and onLocPrep(cmd) and 'THE' in cmd.sentence and placementLocNames(cmd)
 
 def hasObj(cmd):
     return placeObjOnPlcmt(cmd) or deliverObjToMe(cmd) or deliverObjToPrsInRoom(cmd) or deliverObjToNameAtBeac(cmd)
@@ -230,17 +235,17 @@ def foundPers(cmd):
     return talkInfo(cmd) or answerQuestion(cmd) or followPrs(cmd) or followPrsToRoom(cmd) or guidePrsToBeacon(cmd)
 
 def findObj(cmd):
-    return findVerb(cmd) and art(cmd) and obj_singCat(cmd) and 'AND' in cmd and  takeVerb(cmd) and 'IT AND' in cmd and  hasObj(cmd)
+    return findVerb(cmd) and art(cmd) and obj_singCat(cmd) and 'AND' in cmd.sentence and  takeVerb(cmd) and 'IT AND' in cmd.sentence and  hasObj(cmd)
 
 def meetName(cmd):
-    return meetVerb(cmd) and personNames(cmd) and 'AND' in cmd and foundPers(cmd)
+    return meetVerb(cmd) and personNames(cmd) and 'AND' in cmd.sentence and foundPers(cmd)
 
 def findPrs(cmd):
-    return findVerb(cmd) and 'THE' in cmd and gestPers_posePers(cmd) and 'AND' in cmd and foundPers(cmd)
+    return findVerb(cmd) and 'THE' in cmd.sentence and gestPers_posePers(cmd) and 'AND' in cmd.sentence and foundPers(cmd)
 
 
 def followUpFoundObj(cmd):
-    return takeVerb(cmd) and 'IT AND' in cmd and hasObj(cmd)
+    return takeVerb(cmd) and 'IT AND' in cmd.sentence and hasObj(cmd)
 
 def followUpFoundPers(cmd):
     return foundPers(cmd)
@@ -249,80 +254,88 @@ def followUpAtLoc(cmd):
     return findPrs(cmd) or meetName(cmd) or findObj(cmd)
 
 def tellCatPropOnPlcmt(cmd):
-    return tellVerb(cmd) and 'ME WHAT IS THE' in cmd and objCompList(cmd) and singCategories(cmd) and onLocPrep(cmd) and 'THE' in cmd and placementLocNames(cmd)
+    return tellVerb(cmd) and 'ME WHAT IS THE' in cmd.sentence and objCompList(cmd) and singCategories(cmd) and onLocPrep(cmd) \
+        and 'THE' in cmd.sentence and placementLocNames(cmd)
 
 def bringMeObjFromPlcmt(cmd):
-    return bringVerb(cmd) and 'ME' in cmd and art(cmd) and objNames(cmd) and fromLocPrep(cmd) and 'THE' in cmd and placementLocNames(cmd)
+    return bringVerb(cmd) and 'ME' in cmd.sentence and art(cmd) and objNames(cmd) and fromLocPrep(cmd) and 'THE' in cmd.sentence and placementLocNames(cmd)
 
 def tellObjPropOnPlcmt(cmd):
-    return tellVerb(cmd) and 'ME WHAT IS THE' in cmd and objCompList(cmd) and 'OBJECT' in cmd and  onLocPrep(cmd) and 'THE' in cmd and placementLocNames(cmd)
+    return tellVerb(cmd) and 'ME WHAT IS THE' in cmd.sentence and objCompList(cmd) and 'OBJECT' in cmd.sentence and  onLocPrep(cmd) \
+        and 'THE' in cmd.sentence and placementLocNames(cmd)
 
 def countObjOnPlcmt(cmd):
-    return countVerb(cmd) and pluralCategories(cmd) and 'THERE ARE' in cmd and onLocPrep(cmd) and 'THE' in cmd and  placementLocNames(cmd)
+    return countVerb(cmd) and pluralCategories(cmd) and 'THERE ARE' in cmd.sentence and onLocPrep(cmd) and 'THE' in cmd.sentence and  placementLocNames(cmd)
 
 def findObjInRoom(cmd):
-    return findVerb(cmd) and art(cmd) and obj_singCat(cmd) and inLocPrep(cmd) and 'THE' in cmd and  roomNames(cmd) and 'THEN' in cmd and followUpFoundObj(cmd)
+    return findVerb(cmd) and art(cmd) and obj_singCat(cmd) and inLocPrep(cmd) and 'THE' in cmd.sentence and  roomNames(cmd) \
+        and 'THEN' in cmd.sentence and followUpFoundObj(cmd)
 
 def takeObjFromPlcmt(cmd):
-    return takeVerb(cmd) and art(cmd) and obj_singCat(cmd) and fromLocPrep(cmd) and 'THE' in cmd and placementLocNames(cmd) and 'AND' in cmd and hasObj(cmd)
+    return takeVerb(cmd) and art(cmd) and obj_singCat(cmd) and fromLocPrep(cmd) and 'THE' in cmd.sentence and placementLocNames(cmd) \
+        and 'AND' in cmd.sentence and hasObj(cmd)
 
 
 def followPrsAtLoc(cmd):
-    return followVerb(cmd) and 'THE' in cmd and gestPers_posePers(cmd) and  inRoom_atLoc(cmd)
+    return followVerb(cmd) and 'THE' in cmd.sentence and gestPers_posePers(cmd) and  inRoom_atLoc(cmd)
 
 def tellPrsInfoAtLocToPrsAtLoc(cmd):
-    return tellVerb(cmd) and 'THE' in cmd and personInfoList(cmd) and 'OF THE PERSON' and atLocPrep(cmd) and 'THE' in cmd and \
-        locationNames(cmd) and 'TO THE PERSON' in cmd and atLocPrep(cmd) and 'THE' in cmd and locationNames(cmd)
+    return tellVerb(cmd) and 'THE' in cmd.sentence and personInfoList(cmd) and 'OF THE PERSON' and atLocPrep(cmd) and 'THE' in cmd.sentence and \
+        locationNames(cmd) and 'TO THE PERSON' in cmd.sentence and atLocPrep(cmd) and 'THE' in cmd.sentence and locationNames(cmd)
 
 def countClothPrsInRoom(cmd):
-    return countVerb(cmd) and 'PEOPLE' in cmd and inLocPrep(cmd) and 'THE' in cmd and roomNames(cmd) and 'ARE WEARING' in cmd and colorClothesList(cmd)
+    return countVerb(cmd) and 'PEOPLE' in cmd.sentence and inLocPrep(cmd) and 'THE' in cmd.sentence and roomNames(cmd) \
+        and 'ARE WEARING' in cmd.sentence and colorClothesList(cmd)
 
 def meetNameAtLocThenFindInRm(cmd):
-    return meetVerb(cmd) and personNames(cmd) and atLocPrep(cmd) and 'THE' in cmd and locationNames(cmd) and \
-        'THEN' in cmd and findVerb(cmd) and 'THEM' in cmd and inLocPrep(cmd) and 'THE' in cmd and roomNames(cmd)
+    return meetVerb(cmd) and personNames(cmd) and atLocPrep(cmd) and 'THE' in cmd.sentence and locationNames(cmd) and \
+        'THEN' in cmd.sentence and findVerb(cmd) and 'THEM' in cmd.sentence and inLocPrep(cmd) and 'THE' in cmd.sentence and roomNames(cmd)
 
 def greetNameInRm(cmd):
-    return greetVerb(cmd) and personNames(cmd) and inLocPrep(cmd) and 'THE' in cmd and roomNames(cmd) and 'AND' in cmd and followUpFoundPers(cmd)
+    return greetVerb(cmd) and personNames(cmd) and inLocPrep(cmd) and 'THE' in cmd.sentence and roomNames(cmd) and 'AND' in cmd.sentence and followUpFoundPers(cmd)
 
 def greetClothDscInRm(cmd):
-    return greetVerb(cmd) and 'THE PERSON WEARING' in cmd and art(cmd) and colorClotheList(cmd) and inLocPrep(cmd) \
-        and 'THE' in cmd and roomNames(cmd) and 'AND' in cmd and followUpFoundPers(cmd)
+    return greetVerb(cmd) and 'THE PERSON WEARING' in cmd.sentence and art(cmd) and colorClotheList(cmd) and inLocPrep(cmd) \
+        and 'THE' in cmd.sentence and roomNames(cmd) and 'AND' in cmd.sentence and followUpFoundPers(cmd)
 
 def guideClothPrsFromBeacToBeac(cmd):
-    return guideVerb(cmd) and 'THE PERSON WEARING A' in cmd and  colorClotheList(cmd) and fromLocPrep(cmd) and 'THE' \
-        and locationNames(cmd) and toLocPrep(cmd) and 'THE' in cmd and loc_room(cmd)
+    return guideVerb(cmd) and 'THE PERSON WEARING A' in cmd.sentence and  colorClotheList(cmd) and fromLocPrep(cmd) and 'THE' \
+        and locationNames(cmd) and toLocPrep(cmd) and 'THE' in cmd.sentence and loc_room(cmd)
 
 def guidePrsFromBeacToBeac(cmd):
-    return guideVerb(cmd) and 'THE' in cmd and gestPers_posePers(cmd) and fromLocPrep(cmd) and 'THE' in cmd and locationNames(cmd) \
-        and toLocPrep(cmd) and 'THE' in cmd and loc_room(cmd)
+    return guideVerb(cmd) and 'THE' in cmd.sentence and gestPers_posePers(cmd) and fromLocPrep(cmd) and 'THE' in cmd.sentence and locationNames(cmd) \
+        and toLocPrep(cmd) and 'THE' in cmd.sentence and loc_room(cmd)
 
 def guideNameFromBeacToBeac(cmd):
-    return guideVerb(cmd) and personNames(cmd) and fromLocPrep(cmd) and 'THE' and locationNames(cmd) and toLocPrep(cmd) and 'THE' in cmd and loc_room(cmd)
+    return guideVerb(cmd) and personNames(cmd) and fromLocPrep(cmd) and 'THE' and locationNames(cmd) and toLocPrep(cmd) and 'THE' in cmd.sentence and loc_room(cmd)
 
 def followNameFromBeacToRoom(cmd):
-    return followVerb(cmd) and personNames(cmd) and fromLocPrep(cmd) and 'THE' in cmd and locationNames(cmd) and toLocPrep(cmd) and 'THE' in cmd and roomNames(cmd)
+    return followVerb(cmd) and personNames(cmd) and fromLocPrep(cmd) and 'THE' in cmd.sentence and locationNames(cmd) \
+        and toLocPrep(cmd) and 'THE' in cmd.sentence and roomNames(cmd)
 
 def answerToGestPrsInRoom(cmd):
-    return answerVerb(cmd) and 'THE' in cmd and questionList(cmd) and ofPrsPrep(cmd) and 'THE' in cmd and gesturePersonList(cmd) and\
-        inLocPrep(cmd) and 'THE' in cmd and roomNames(cmd)
+    return answerVerb(cmd) and 'THE' in cmd.sentence and questionList(cmd) and ofPrsPrep(cmd) and 'THE' in cmd.sentence and gesturePersonList(cmd) and\
+        inLocPrep(cmd) and 'THE' in cmd.sentence and roomNames(cmd)
 
 def talkInfoToGestPrsInRoom(cmd):
-    return talkVerb(cmd) and talkList(cmd) and talkPrep(cmd) and 'THE' in cmd and gesturePersonList(cmd) and inLocPrep(cmd) and 'THE' in cmd and roomNames(cmd)
+    return talkVerb(cmd) and talkList(cmd) and talkPrep(cmd) and 'THE' in cmd.sentence and gesturePersonList(cmd) and inLocPrep(cmd) \
+        and 'THE' in cmd.sentence and roomNames(cmd)
 
 def tellPrsInfoInLoc(cmd):
-    return tellVerb(cmd) and 'ME THE' in cmd and personInfoList(cmd) and 'OF THE PERSON' in cmd and inRoom_atLoc(cmd)
+    return tellVerb(cmd) and 'ME THE' in cmd.sentence and personInfoList(cmd) and 'OF THE PERSON' in cmd.sentence and inRoom_atLoc(cmd)
 
 def countPrsInRoom(cmd):
-    return countVerb(cmd) and gestPersPlur_posePersPlur(cmd) and ' ARE' in cmd and  inLocPrep(cmd) and 'THE' in cmd and roomNames(cmd)
+    return countVerb(cmd) and gestPersPlur_posePersPlur(cmd) and ' ARE' in cmd.sentence and  inLocPrep(cmd) and 'THE' in cmd.sentence and roomNames(cmd)
 
 def meetPrsAtBeac(cmd):
-    return meetVerb(cmd) and personNames(cmd) and inLocPrep(cmd) and 'THE' in cmd and roomNames(cmd) and 'AND' in cmd and followUpFoundPers(cmd)
+    return meetVerb(cmd) and personNames(cmd) and inLocPrep(cmd) and 'THE' in cmd.sentence and roomNames(cmd) and 'AND' in cmd.sentence and followUpFoundPers(cmd)
 
 def findPrsInRoom(cmd):
-    return findVerb(cmd) and 'A' in cmd and gestPers_posePers(cmd) and  inLocPrep(cmd) and 'THE' in cmd and roomNames(cmd) and 'AND' in cmd and followUpFoundPers(cmd)
+    return findVerb(cmd) and 'A' in cmd.sentence and gestPers_posePers(cmd) and  inLocPrep(cmd) and 'THE' in cmd.sentence \
+        and roomNames(cmd) and 'AND' in cmd.sentence and followUpFoundPers(cmd)
 
 def goToLoc(cmd):
-    return goVerb(cmd) and toLocPrep(cmd) and 'THE' in cmd and loc_room(cmd) and 'THEN' in cmd and followUpAtLoc(cmd)
+    return goVerb(cmd) and toLocPrep(cmd) and 'THE' in cmd.sentence and loc_room(cmd) and 'THEN' in cmd.sentence and followUpAtLoc(cmd)
 
 def getCommnandType(cmd):
     if goToLoc(cmd):

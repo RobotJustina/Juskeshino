@@ -33,12 +33,14 @@ def main():
         if state == SM_INIT:
             JuskeshinoHRI.say("Please tell me what do you want me to do")
             JuskeshinoHRI.clearRecognizedSentences()
-            cmd = JuskeshinoHRI.waitForNewSentence(15)
+            sentence = JuskeshinoHRI.waitForNewSentence(15)
+            cmd = grammar_checker.Command()
+            cmd.sentence = sentence
             cmdType = grammar_checker.getCommnandType(cmd)
             if cmd != '' and cmd is not None and cmdType is not None:
-                print("Recognized command: ", cmd, "  of Type: ", cmdType)
+                print("Recognized command: ", cmd.sentence, "  of Type: ", cmdType)
                 JuskeshinoHRI.say("Did you say")
-                JuskeshinoHRI.say(cmd)
+                JuskeshinoHRI.say(cmd.sentence)
                 JuskeshinoHRI.say("Please answer robot yes or robot no.")
                 state = SM_WAIT_FOR_CONFIRMATION
         elif state == SM_WAIT_FOR_CONFIRMATION:
