@@ -1,5 +1,5 @@
 objects_table_robocup:
- x: 1.62
+ x: 1.52
  y: 1.31
  theta: 3.14
  parent: home
