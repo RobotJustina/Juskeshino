@@ -1,7 +1,7 @@
 #JSGF V1.0;
 grammar gpsr;
 
-public <command> = <goToLoc> | <findPrsInRoom> | <meetPrsAtBeac> | <countPrsInRoom> | <tellPrsInfoInLoc> | <talkInfoToGestPrsInRoom> | <answerToGestPrsInRoom> | <followNameFromBeacToRoom> | <guideNameFromBeacToBeac> | <guidePrsFromBeacToBeac> | <guideClothPrsFromBeacToBeac> | <greetClothDscInRm> | <greetNameInRm> | <meetNameAtLocThenFindInRm> | <countClothPrsInRoom> | <tellPrsInfoAtLocToPrsAtLoc> | <followPrsAtLoc> | <takeObjFromPlcmt> | <findObjInRoom> | <countObjOnPlcmt> | <tellObjPropOnPlcmt> | <bringMeObjFromPlcmt> | <tellCatPropOnPlcmt>;
+public <command> = <goToLoc> | <findPrsInRoom> | <meetPrsAtBeac> | <countPrsInRoom> | <tellPrsInfoInLoc> | <talkInfoToGestPrsInRoom> | <answerToGestPrsInRoom> | <followNameFromBeacToRoom> | <guideNameFromBeacToBeac> | <guidePrsFromBeacToBeac> | <guideClothPrsFromBeacToBeac> | <greetClothDscInRm> | <greetNameInRm> | <meetNameAtLocThenFindInRm> | <countClothPrsInRoom> | <tellPrsInfoAtLocToPrsAtLoc> | <followPrsAtLoc> | <takeObjFromPlcmt> | <findObjInRoom> | <countObjOnPlcmt> | <tellObjPropOnPlcmt> | <bringMeObjFromPlcmt> | <tellCatPropOnPlcmt> | ROBOT YES | ROBOT NO | JUSTINA YES | JUSTINA NO;
 
 <goToLoc> = <goVerb> <toLocPrep> THE <loc_room> THEN <followUpAtLoc>;
 <findPrsInRoom> = <findVerb> A <gestPers_posePers> <inLocPrep> THE <roomNames> AND <followUpFoundPers>;
