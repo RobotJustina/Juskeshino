@@ -1,0 +1,80 @@
+entrance:
+  x: 2.0
+  y: 0.0
+  theta: 0.4
+  parent: home
+kitchen:
+  x: 6.77
+  y: 2.0
+  theta: -0.16
+  parent: home
+eat_table:
+  x: -5.94
+  y: -5.8
+  theta: 3.14
+  parent: home
+ingredients_table:
+  x: -5.1
+  y: -8.13
+  theta: 4.71
+  parent: home
+computer:
+  x: 5.0
+  y: 0.0
+  theta: 0.0
+  parent: home
+door:
+  x: 1.0
+  y: 0.0
+  theta: 0.0
+  parent: home
+desk_justina:
+  x: 5.44
+  y: 2.08
+  theta: 1.5
+  parent: home
+desk_takeshi:
+ x: 6.84
+ y: 1.80
+ theta: 0.0
+ parent: home
+desk_takeshi_closer:
+  x: 8.0
+  y: 1.80
+  theta: -0.1
+  parent: home
+desk_backyard:
+ x: 9.97
+ y: 1.94
+ theta: -0.4
+ parent: home
+desk_takeshi_front:
+  x: 8.39
+  y: 1.76                                                                                                 
+  theta: 3.0                                                                                              
+  parent: home
+scan_cabinet:
+ x: 9.21
+ y: 0.62
+ theta: -1.57
+ parent: home 
+cabinet:
+ x: 9.21
+ y: 0.18
+ theta: -1.57
+ parent: home
+simu_desk_1:
+ x: 3.26
+ y: 5.8
+ theta: -1.57
+ parent: home
+simu_desk_2:
+ x: 3.17
+ y: 7.32
+ theta: 1.57
+ parent: home
+ gc_desk_justina:
+  x: 5.54
+  y: 2.0
+  theta: 1.5
+  parent: home
