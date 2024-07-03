@@ -35,8 +35,8 @@ POST_GRIP         = [0.38, 0.19, -0.01, 1.57, 0 , 0.35, 0.0 ]
 PREPARE_RA    = [-0.8, -0.1, 0.0, 1.3, 1.3,0, 0.0]
 
 # Locations
-OBJECTS_TABLE = "simu_desk_1"#"desk_justina"
-EAT_TABLE     = "desk_takeshi" 
+OBJECTS_TABLE = "objects_table_robocup"#"desk_justina"
+EAT_TABLE     = "breakfast_table_robocup"#"desk_takeshi" 
 OBJECTS_TABLE_THETA = [5.44 ,2.15, 1.5]
 
 
@@ -163,8 +163,8 @@ def main():
     global listener, simu
 
     listener = tf.TransformListener()
-    simu = True
-    torso = False
+    simu = False
+    torso = True
     actual_value = 0
 
     current_state = INITIAL
@@ -306,7 +306,8 @@ def main():
             mov_flag, dist = JuskeshinoNavigation.getCloseSuitableGripPositionLa(OBJECTS_TABLE , pos_obj_bl, 100.0)
             JuskeshinoHardware.moveHead(0,-1, 5)
             time.sleep(0.2)
-            JuskeshinoNavigation.moveDist(0.1, 5.0)
+            if mov_flag:
+                JuskeshinoNavigation.moveDist(0.14, 5.0)
             # Ajusta altura de torso para mejor agarre
             if (not simu) or (torso):
                 if (actual_obj == BOWL):
@@ -421,7 +422,7 @@ def main():
             JuskeshinoHardware.moveLeftArmWithTrajectory(resp ,15)
             time.sleep(0.5)
             JuskeshinoHRI.say("Closing gripper")
-            count_grip = 0.1
+            count_grip = 0.05
             actual_value = APERTURE 
                 
             #print("GRASP RESULT:__",JuskeshinoManipulation.dynamic_grasp_left_arm())
@@ -431,7 +432,7 @@ def main():
                     actual_value = APERTURE -count_grip
                     print("Actual value:___", actual_value)
                     JuskeshinoHardware.moveLeftGripper(actual_value , 5.0)
-                    count_grip = count_grip + 0.1
+                    count_grip = count_grip + 0.05
 
             if (actual_obj == MILK):
                 while (actual_value >= GRIP_MILK):

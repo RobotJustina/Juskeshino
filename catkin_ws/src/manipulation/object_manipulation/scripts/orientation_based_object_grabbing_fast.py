@@ -726,7 +726,7 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
                 ik_msg.roll      = pose1[3]     
                 ik_msg.pitch     = pose1[4]
                 ik_msg.yaw       = pose1[5]
-                ik_msg.duration  = 7
+                ik_msg.duration  = 9
                 ik_msg.time_step = 0.07
                 try:    # intenta obtener la primera trayectoria en el espacio articular
                     resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK

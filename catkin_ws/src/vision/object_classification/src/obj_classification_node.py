@@ -21,7 +21,7 @@ def get_vision_object(img, label, confidence, frame_id, x0, y0, x1, y1, cloud):
         gray  = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         canny = cv2.Canny(gray, threshold1, threshold2)
         canny = cv2.bitwise_and(canny,mask)
-        kernel = np.ones((7, 7), np.uint8)
+        kernel = np.ones((3, 3), np.uint8)
         dilated = cv2.dilate(canny,kernel)
         eroded = cv2.erode(dilated,kernel)
         contours, hierarchy = cv2.findContours(eroded, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
