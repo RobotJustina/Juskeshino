@@ -422,7 +422,7 @@ def main():
             JuskeshinoHardware.moveLeftArmWithTrajectory(resp ,15)
             time.sleep(0.5)
             JuskeshinoHRI.say("Closing gripper")
-            count_grip = 0.05
+            count_grip = 0.1
             actual_value = APERTURE 
                 
             #print("GRASP RESULT:__",JuskeshinoManipulation.dynamic_grasp_left_arm())
@@ -432,7 +432,7 @@ def main():
                     actual_value = APERTURE -count_grip
                     print("Actual value:___", actual_value)
                     JuskeshinoHardware.moveLeftGripper(actual_value , 5.0)
-                    count_grip = count_grip + 0.05
+                    count_grip = count_grip + 0.1
 
             if (actual_obj == MILK):
                 while (actual_value >= GRIP_MILK):

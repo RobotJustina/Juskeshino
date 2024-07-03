@@ -78,16 +78,4 @@ simu_desk_2:
   y: 2.0
   theta: 1.5
   parent: home
-# Locaciones Itzel para la robocup
-# mesa donde estan los ingredientes para el desayuno
-objects_table_robocup:
- x: 3.17
- y: 7.32
- theta: 1.57
- parent: home
-# mesa a donde se llevan los ingredientes para preparar desayuno
-breakfast_table_robocup:
-  x: 5.54
-  y: 2.0
-  theta: 1.5
-  parent: home
+
