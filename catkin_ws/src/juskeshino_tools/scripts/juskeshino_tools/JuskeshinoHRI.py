@@ -52,6 +52,10 @@ class JuskeshinoHRI:
         JuskeshinoHRI.recognizedSpeech.confidences = tuple([])
         return rec
 
+    def clearRecognizedSentences():
+        JuskeshinoHRI.recognizedSpeech.hypothesis = tuple([])
+        JuskeshinoHRI.recognizedSpeech.confidences = tuple([])
+
     def waitForNewSentence(timeout):
         scaled = int(timeout/0.1)
         attempts = 0
@@ -60,7 +64,7 @@ class JuskeshinoHRI:
         JuskeshinoHRI.recognizedSpeech.confidences = tuple([])
         while (not rospy.is_shutdown() and attempts < scaled):
             rec = JuskeshinoHRI.getLastRecognizedSentence()
-            print("****", rec)
+            # print("****", rec)
             if rec is not None:
                 return rec
             attempts += 1
@@ -75,7 +79,7 @@ class JuskeshinoHRI:
         msg.arg2    = voice
         msg.arg     = text
         JuskeshinoHRI.pubSoundRequest.publish(msg)
-        rospy.sleep(0.09*len(text))
+        rospy.sleep(0.085*len(text))
 
     def enableHumanFollower(enable):
         if(not enable):
