@@ -31,13 +31,13 @@ living_room:
 - qz: 1.0
 - qw: 0.0000013
 pickup:
-- x: 7.78
-- y: 0.949
-- theta: 0.0
-- qx: 0.704
+- x: 2.0
+- y: -1.0
+- theta: -1.57
+- qx: 0.0
 - qy: 0.0
 - qz: 0.0
-- qw: 0.709
+- qw: 1.0
 place_shelf:
 - x: 9.163
 - y: 0.411

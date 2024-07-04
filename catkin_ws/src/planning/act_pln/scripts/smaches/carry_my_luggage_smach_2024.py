@@ -188,22 +188,24 @@ class GotoLivingRoom(smach.State):
         self.tries = 0
         self.time_out = 30
         self.attempts = 2
+        self.location = "pickup"   # TODO: Define place where to go  
+        self.loc_name = self.location.replace('_', ' ')
 
     def execute(self, userdata):
         self.tries += 1
         if self.tries == 1:
             self.time_out = 30
             print("\n")
-            rospy.logwarn('--> STATE <: Navigate to living room')
-            voice.talk('Navigating to, living room')
+            rospy.logwarn('--> STATE <: Navigate to ' + self.loc_name)
+            voice.talk('Navigating to ' + self.loc_name)
         
         if self.tries == self.attempts + 1: 
-            rospy.logerr('Navigation Failed, I can not reach the living room')
-            voice.talk('Navigation Failed, I can not reach the living room')
+            rospy.logerr('Navigation Failed, I can not reach the ' + self.loc_name)
+            voice.talk('Navigation Failed, I can not reach the ' + self.loc_name)
             return 'failed'
 
         print(f'Try {self.tries} of {self.attempts} attempts')        
-        res = omni_base.move_base(known_location='living_room', time_out=self.time_out)
+        res = omni_base.move_base(known_location=self.location, time_out=self.time_out)
         print("res:", res)
         
         if res == 3:  # Success
@@ -250,7 +252,7 @@ class AskForBag(smach.State):
         
         
         if vosk_enable:
-                rospy.logwarn('Listening *))')
+                rospy.logwarn('Listening now (Cc')
                 confirmation = get_keywords_speech(userdata.speech_time)
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()

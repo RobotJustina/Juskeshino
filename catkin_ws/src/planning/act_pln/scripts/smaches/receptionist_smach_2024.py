@@ -195,7 +195,7 @@ class Decide_face(smach.State):
             voice.talk('Is it correct?')
 
             if vosk_enable:
-                rospy.logwarn('Listening now (Cc )')
+                rospy.logwarn('Listening now (Cc')
                 confirmation = get_keywords_speech(userdata.speech_time)
 
             else: 
@@ -245,7 +245,7 @@ class New_face(smach.State):
         voice.talk('Please, tell me your name')
 
         if vosk_enable:
-            rospy.logwarn('Listening now (Cc )')
+            rospy.logwarn('Listening now (Cc')
             speech = get_keywords_speech(userdata.speech_time)
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
@@ -268,7 +268,7 @@ class New_face(smach.State):
         voice.talk(f'Is {name} your name?')
 
         if vosk_enable:
-            rospy.logwarn('Listening now (Cc )')
+            rospy.logwarn('Listening now (Cc')
             confirmation = get_keywords_speech(userdata.speech_time)
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
@@ -324,7 +324,7 @@ class Get_drink(smach.State):
         rospy.sleep(0.3)
 
         if vosk_enable:
-            rospy.logwarn('Listening now (Cc )')
+            rospy.logwarn('Listening now (Cc')
             drink = get_keywords_speech(userdata.speech_time)
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
@@ -343,7 +343,7 @@ class Get_drink(smach.State):
         rospy.sleep(0.3)
         # TODO: TEST VOICE BEFORE START
         if vosk_enable:
-            rospy.logwarn('Listening now (Cc )')
+            rospy.logwarn('Listening now (Cc')
             confirmation = get_keywords_speech(userdata.speech_time)
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
