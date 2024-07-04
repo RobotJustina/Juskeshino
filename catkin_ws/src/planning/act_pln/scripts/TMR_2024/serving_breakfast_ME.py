@@ -489,7 +489,7 @@ def main():
             if (not simu) or (torso):
                 if(actual_obj == BOWL):
                     try:
-                        JuskeshinoHardware.moveTorso(0.16 , 10.0)
+                        JuskeshinoHardware.moveTorso(0.18 , 10.0)
                         #time.sleep(1)
                     except:
                         print("Cannot move torso")
@@ -509,7 +509,7 @@ def main():
 
         elif(current_state == GO_TO_KITCHEN):
             print("ESTADO:____GO_TO_KITCHEN..................")
-            JuskeshinoHRI.say("I'm going to " + EAT_TABLE)
+            #JuskeshinoHRI.say("I'm going to " + EAT_TABLE)
             if not JuskeshinoNavigation.getClose(EAT_TABLE, 300):  
                 print("SB-PLN.->Cannot get close to " + EAT_TABLE +" position")
                 JuskeshinoHRI.say("Cannot get close to " + EAT_TABLE)
@@ -542,13 +542,9 @@ def main():
                 #time.sleep(1)
                 serving_breakfast(actual_obj) 
             if actual_obj == BOWL:
-                JuskeshinoHRI.say("Leave")
-                JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_BOWL , 12)
-                JuskeshinoHRI.say("bowl")
-                JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_BOWL_2 , 12)
-                #time.sleep(0.6)
+                JuskeshinoHRI.say("Leave bowl")
                 print("SB-PLN.->Open gripper")
-                JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
+                JuskeshinoHardware.moveLeftGripper(10.0, 5.0)
                 time.sleep(0.5)            # Soltar el objeto
 
             current_state = CYCLE_END
@@ -559,7 +555,7 @@ def main():
 
         elif(current_state == CYCLE_END):
             print("ESTADO:____CYCLE_END")
-            JuskeshinoNavigation.moveDist(-0.50, 7)
+            JuskeshinoNavigation.moveDist(-0.55, 7)
             time.sleep(0.5)
             JuskeshinoHardware.moveLeftArmWithTrajectory(HOME , 10)
             time.sleep(0.2)
