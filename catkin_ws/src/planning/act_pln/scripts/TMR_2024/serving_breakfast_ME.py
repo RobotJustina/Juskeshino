@@ -256,7 +256,7 @@ def main():
             print("ESTADO:___MOVE_HEAD..................")
             try:
                 JuskeshinoHardware.moveHead(0,-1, 5)
-                current_state = APROACH_TO_TABLE
+                current_state = DETECT_OBJECT
             except:
                 JuskeshinoHRI.say("Cannot move head")
                 JuskeshinoHardware.moveHead(0,-1, 5)
