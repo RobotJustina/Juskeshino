@@ -78,6 +78,31 @@ VERIFY_SUITABLE_LOCATION_GRASP = 22
 
 
 
+# Categorias 
+def categorize_objs(name):
+    # 'fork', 'knife', 'mug', 'sponge', 'b_cups', 'c_cups', 'e_cups', 'f_cups', 'dice', 'marker', 'rubiks_cube'
+    kitchen = ['bowl', 'fork', 'knife', 'mug', 'plate', 'spatula', 'sponge', 'spoon', 'b_cups', 'c_cups', 'e_cups', 'f_cups']
+    # 'extra_large_clamp', 'large_clamp', 'small_clamp', 'medium_clamp'
+    tools = ['adjustable_wrench', 'flat_screwdriver', 'phillips_screwdriver', 'wood_block']
+    # 'softball', 'a_mini_soccer_ball', 'racquetball', 'golf_ball',
+    balls = ['tennis_ball', 'baseball']
+    fruits = ['apple', 'banana', 'lemon', 'pear']  # 'plum', 'orange'
+    food = ['chips_can', 'mustard_bottle', 'potted_meat_can', 'tomato_soup_can', 'tuna_fish_can', 'pudding_box', 'cracker_box']  # 'master_chef_can', 'sugar_box'
+    other = ['dice', 'marker', 'rubiks_cube']
+    if name in kitchen:
+        return 'kitchen'
+    elif name in tools:
+        return 'tools'
+    elif name in balls:
+        return 'balls'
+    elif name in fruits:
+        return 'fruits'
+    elif name in food:
+        return 'food'
+    elif name in other:
+        return 'other'
+    return 'unknown'
+
 def serving_breakfast(object):
     print("PREPARE TOP")
     #JuskeshinoHRI.say("Prepare arm")
@@ -275,7 +300,7 @@ def main():
                 """   
                 time.sleep(0.2)
                 print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
-                JuskeshinoHRI.say("I found" + actual_obj.replace("_", " "))
+                JuskeshinoHRI.say("I found" + actual_obj.replace("_", " ") + "of the category" + categorize_objs(obj.id))
                 
                 current_state = HANDLING_LOCATION
 
