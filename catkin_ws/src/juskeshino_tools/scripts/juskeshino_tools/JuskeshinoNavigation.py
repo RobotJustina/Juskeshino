@@ -183,7 +183,7 @@ class JuskeshinoNavigation:
         if position_object[1] > l_threshold_la:     # Objeto a la izquierda
             mov_izq = (position_object[1] - l_threshold_la) 
             print("mov izq", mov_izq)
-            if abs(mov_izq) > 0.25:
+            if abs(mov_izq) > 0.28:
                 new_point = [0 - 0.1, position_object[1]-0.2, 0]  # xyz
                 #print("new point", new_point)
 
@@ -209,7 +209,7 @@ class JuskeshinoNavigation:
         if position_object[1] < r_threshold_la:     # Objeto a la derecha
             mov_der = position_object[1] - r_threshold_la
             print("mov der", mov_der)
-            if abs(mov_der) > 0.25:
+            if abs(mov_der) > 0.28:
                 new_point = [0 - 0.1, position_object[1] - 0.2, 0]  # xyz
                 #print("new point", new_point)
                 listener = tf.TransformListener()

@@ -486,16 +486,21 @@ def main():
             print("ESTADO:___POST_GRASP..................")
             print("SB-PLN.->Moving base backwards")    
             JuskeshinoNavigation.moveDist(-0.33, 10)
-            """
             if (not simu) or (torso):
-                try:
-                    JuskeshinoHardware.moveTorso(0.02 , 10.0)
-                    #time.sleep(1)
-                except:
-                    print("Cannot move torso")
-            """
-            #JuskeshinoHardware.moveLeftArmWithTrajectory(CARRY_BOWL, 10)
-            #JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
+                if(actual_obj == BOWL):
+                    try:
+                        JuskeshinoHardware.moveTorso(0.16 , 10.0)
+                        #time.sleep(1)
+                    except:
+                        print("Cannot move torso")
+                else:
+                    try:
+                        JuskeshinoHardware.moveTorso(0.05 , 10.0)
+                        #time.sleep(1)
+                    except:
+                        print("Cannot move torso")
+            if(actual_obj != BOWL):
+                JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
             
             current_state = GO_TO_KITCHEN
 

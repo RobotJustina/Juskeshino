@@ -4,7 +4,7 @@ objects_table_robocup:
  theta: 3.14
  parent: home
 breakfast_table_robocup:
-  x: 2.38
+  x: 2.48
   y: 3.15
   theta: 0.0
   parent: home
