@@ -48,11 +48,69 @@ _placementLocNames = ['BED', 'BEDSIDE TABLE', 'SHELF', 'DISHWASHER', 'KITCHEN TA
 _pluralCategories = ['SNACKS', 'CLEANING SUPPLIES', 'FOOD', 'FRUITS', 'DISHES', 'DRINKS', 'TOYS']
 
 def has_pattern(cmd, word_list):
+    # print(cmd.sentence)
+    # print(word_list)
+    for w in word_list:
+        if w in cmd.sentence.split():
+            #cmd.sentence = cmd.sentence.replace(w,'', 1)
+            return True
     for w in word_list:
         if w in cmd.sentence:
-            cmd.sentence = cmd.sentence.replace(w,'', 1)
+            #cmd.sentence = cmd.sentence.replace(w,'', 1)
             return True
     return False
+
+def get_pattern(cmd, word_list, start_idx=0, end_idx=-1):
+    sp = cmd.sentence[start_idx:end_idx].split()
+    triples = []
+    for i in range(2, len(sp)):
+        triples.append(sp[i-2] + ' ' + sp[i-1] + ' ' + sp[i])
+    for w in word_list:
+        if w in triples:
+            return w
+
+    sp = cmd.sentence[start_idx:end_idx].split()
+    pairs = []
+    for i in range(1, len(sp)):
+        pairs.append(sp[i-1] + ' ' + sp[i])
+    for w in word_list:
+        if w in pairs:
+            return w
+        
+    for w in word_list:
+        if w in cmd.sentence[start_idx:end_idx].split():
+            return w
+    
+    for w in word_list:
+        if w in cmd.sentence[start_idx:end_idx]:
+            return w
+    return ''
+
+def get_pattern_from_string(cmd, word_list, start_idx=0, end_idx=-1):
+    sp = cmd[start_idx:end_idx].split()
+    triples = []
+    for i in range(2, len(sp)):
+        triples.append(sp[i-2] + ' ' + sp[i-1] + ' ' + sp[i])
+    for w in word_list:
+        if w in triples:
+            return w
+
+    sp = cmd[start_idx:end_idx].split()
+    pairs = []
+    for i in range(1, len(sp)):
+        pairs.append(sp[i-1] + ' ' + sp[i])
+    for w in word_list:
+        if w in pairs:
+            return w
+        
+    for w in word_list:
+        if w in cmd[start_idx:end_idx].split():
+            return w
+    
+    for w in word_list:
+        if w in cmd[start_idx:end_idx]:
+            return w
+    return ''
 
 def takeVerb(command):
     return has_pattern(command, _takeVerb)
@@ -200,52 +258,156 @@ def obj_singCat(cmd):
 def gestPers_posePers(cmd):
     return gesturePersonList(cmd) or posePersonList(cmd)
 
+#
+# The following functions can represent commands.
+# Possible robot actions:
+# navigate, follow, say, find_person, find_gesture, leave_object, take, find_objects
 def guidePrsToBeacon(cmd):
-    return guideVerb(cmd) and 'THEM' in cmd.sentence and toLocPrep(cmd) and 'THE' in cmd.sentence and loc_room(cmd)
+    prev_actions = cmd.actions.copy()
+    success = guideVerb(cmd) and 'THEM' in cmd.sentence and toLocPrep(cmd) and 'THE' in cmd.sentence and loc_room(cmd)
+    if success:
+        goal_location = get_pattern(cmd, (_locationNames + _roomNames))
+        actions = [['navigate', goal_location]]
+        cmd.actions += actions
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def followPrsToRoom(cmd):
-    return followVerb(cmd) and 'THEM' in cmd.sentence and toLocPrep(cmd) and 'THE' in cmd.sentence and loc_room(cmd)
+    prev_actions = cmd.actions.copy()
+    success = followVerb(cmd) and 'THEM' in cmd.sentence and toLocPrep(cmd) and 'THE' in cmd.sentence and loc_room(cmd)
+    if success:
+        goal_location = get_pattern(cmd, (_locationNames + _roomNames))
+        actions = [['follow', goal_location]]
+        cmd.actions += actions
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def followPrs(cmd):
-    return followVerb(cmd) and 'THEM' in cmd.sentence
+    prev_actions = cmd.actions.copy()
+    success = followVerb(cmd) and 'THEM' in cmd.sentence
+    if success:
+        actions = [['follow', '']]
+        cmd.actions += actions
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def answerQuestion(cmd):
-    return answerVerb(cmd)  and 'A' in cmd.sentence and questionList(cmd)
+    prev_actions = cmd.actions.copy()
+    success = answerVerb(cmd)  and 'A' in cmd.sentence and questionList(cmd)
+    if success:
+        actions = [['say', 'I will answer a question']]
+        cmd.actions += actions
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def talkInfo(cmd):
-    return talkVerb(cmd) and talkList(cmd)
+    prev_actions = cmd.actions.copy()
+    success = talkVerb(cmd) and talkList(cmd)
+    if success:
+        None
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def deliverObjToNameAtBeac(cmd):
-    return deliverVerb(cmd) and 'IT' in cmd.sentence and deliverPrep(cmd) and personNames(cmd) and inLocPrep(cmd) and 'THE' in cmd.sentence and roomNames(cmd)
+    prev_actions = cmd.actions.copy()
+    success = deliverVerb(cmd) and 'IT' in cmd.sentence and deliverPrep(cmd) and personNames(cmd) and inLocPrep(cmd) and 'THE' in cmd.sentence and roomNames(cmd)
+    if success:
+        goal_room = get_pattern(cmd, _roomNames)
+        person_name = get_pattern(cmd, _personNames)
+        actions = [['navigate', goal_room], ['find_person', person_name], ['leave_object','']]
+        cmd.actions += actions
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def deliverObjToPrsInRoom(cmd):
-    return deliverVerb(cmd) and 'IT' in cmd.sentence and deliverPrep(cmd) and 'THE' in cmd.sentence and gestPers_posePers(cmd) \
+    prev_actions = cmd.actions.copy()
+    success = deliverVerb(cmd) and 'IT' in cmd.sentence and deliverPrep(cmd) and 'THE' in cmd.sentence and gestPers_posePers(cmd) \
         and inLocPrep(cmd) and 'THE' in cmd.sentence and roomNames(cmd)
+    if success:
+        goal_room = get_pattern(cmd, _roomNames)
+        gesture = get_pattern(cmd, (_gesturePersonList + _posePersonList))
+        actions = [['navigate', goal_room], ['find_gesture', gesture], ['leave_object','']]
+        cmd.actions += actions
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def deliverObjToMe(cmd):
-    return deliverVerb(cmd) and 'IT TO ME' in cmd.sentence
+    prev_actions = cmd.actions.copy()
+    success = deliverVerb(cmd) and 'IT TO ME' in cmd.sentence
+    if success:
+        actions = [['navigate','start'], ['leave_object', '']]
+        cmd.actions += actions
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def placeObjOnPlcmt(cmd):
-    return placeVerb(cmd) and 'IT' in cmd.sentence and onLocPrep(cmd) and 'THE' in cmd.sentence and placementLocNames(cmd)
+    prev_actions = cmd.actions.copy()
+    success = placeVerb(cmd) and 'IT' in cmd.sentence and onLocPrep(cmd) and 'THE' in cmd.sentence and placementLocNames(cmd)
+    if success:
+        goal_location = get_pattern(cmd, _placementLocNames)
+        actions = [['navigate', goal_location], ['leave_object', '']]
+        cmd.actions += actions
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def hasObj(cmd):
     return placeObjOnPlcmt(cmd) or deliverObjToMe(cmd) or deliverObjToPrsInRoom(cmd) or deliverObjToNameAtBeac(cmd)
 
 def foundPers(cmd):
-    return talkInfo(cmd) or answerQuestion(cmd) or followPrs(cmd) or followPrsToRoom(cmd) or guidePrsToBeacon(cmd)
+    return talkInfo(cmd) or answerQuestion(cmd) or followPrsToRoom(cmd) or followPrs(cmd) or guidePrsToBeacon(cmd)
 
 def findObj(cmd):
-    return findVerb(cmd) and art(cmd) and obj_singCat(cmd) and 'AND' in cmd.sentence and  takeVerb(cmd) and 'IT AND' in cmd.sentence and  hasObj(cmd)
+    prev_actions = cmd.actions.copy()
+    success = findVerb(cmd) and art(cmd) and obj_singCat(cmd) and 'AND' in cmd.sentence and  takeVerb(cmd) and 'IT AND' in cmd.sentence and  hasObj(cmd)
+    if success:
+        goal_object = get_pattern(cmd, (_objNames + _singCategories))
+        actions = [['take', goal_object]]
+        cmd.actions = actions + cmd.actions
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def meetName(cmd):
-    return meetVerb(cmd) and personNames(cmd) and 'AND' in cmd.sentence and foundPers(cmd)
+    prev_actions = cmd.actions.copy()
+    success = meetVerb(cmd) and personNames(cmd) and 'AND' in cmd.sentence and foundPers(cmd)
+    if success:
+        person_name = get_pattern(cmd, _personNames)
+        actions = [['find_person', person_name]]
+        cmd.actions = actions + cmd.actions
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def findPrs(cmd):
-    return findVerb(cmd) and 'THE' in cmd.sentence and gestPers_posePers(cmd) and 'AND' in cmd.sentence and foundPers(cmd)
+    prev_actions = cmd.actions.copy()
+    success = findVerb(cmd) and 'THE' in cmd.sentence and gestPers_posePers(cmd) and 'AND' in cmd.sentence and foundPers(cmd)
+    if success:
+        gesture = get_pattern(cmd, (_gesturePersonList + _posePersonList))
+        actions = [['find_gesture', gesture]]
+        cmd.actions = actions + cmd.actions
+    else:
+        cmd.actions = prev_actions
+    return success
 
 
 def followUpFoundObj(cmd):
-    return takeVerb(cmd) and 'IT AND' in cmd.sentence and hasObj(cmd)
+    prev_actions = cmd.actions.copy()
+    success = takeVerb(cmd) and 'IT AND' in cmd.sentence and hasObj(cmd)
+    if success:
+        actions = [['take', 'it']]
+        cmd.actions = actions + cmd.actions
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def followUpFoundPers(cmd):
     return foundPers(cmd)
@@ -254,30 +416,86 @@ def followUpAtLoc(cmd):
     return findPrs(cmd) or meetName(cmd) or findObj(cmd)
 
 def tellCatPropOnPlcmt(cmd):
-    return tellVerb(cmd) and 'ME WHAT IS THE' in cmd.sentence and objCompList(cmd) and singCategories(cmd) and onLocPrep(cmd) \
+    prev_actions = cmd.actions.copy()
+    success = tellVerb(cmd) and 'ME WHAT IS THE' in cmd.sentence and objCompList(cmd) and singCategories(cmd) and onLocPrep(cmd) \
         and 'THE' in cmd.sentence and placementLocNames(cmd)
+    if success:
+        goal_location = get_pattern(cmd, _placementLocNames)
+        actions = [['navigate', goal_location], ['find_objects', ''], ['say', 'random_object']]
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def bringMeObjFromPlcmt(cmd):
-    return bringVerb(cmd) and 'ME' in cmd.sentence and art(cmd) and objNames(cmd) and fromLocPrep(cmd) and 'THE' in cmd.sentence and placementLocNames(cmd)
+    prev_actions = cmd.actions.copy()
+    success = bringVerb(cmd) and 'ME' in cmd.sentence and art(cmd) and objNames(cmd) and fromLocPrep(cmd) and 'THE' in cmd.sentence and placementLocNames(cmd)
+    if success:
+        goal_location = get_pattern(cmd, _placementLocNames)
+        goal_object = get_pattern(cmd, _objNames)
+        actions = [['navigate', goal_location], ['take', goal_object], ['navigate', 'start'], ['leave_object','']]
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def tellObjPropOnPlcmt(cmd):
-    return tellVerb(cmd) and 'ME WHAT IS THE' in cmd.sentence and objCompList(cmd) and 'OBJECT' in cmd.sentence and  onLocPrep(cmd) \
+    prev_actions = cmd.actions.copy()
+    success = tellVerb(cmd) and 'ME WHAT IS THE' in cmd.sentence and objCompList(cmd) and 'OBJECT' in cmd.sentence and  onLocPrep(cmd) \
         and 'THE' in cmd.sentence and placementLocNames(cmd)
+    if success:
+        goal_location = get_pattern(cmd, _placementLocNames)
+        actions = [['navigate', goal_location], ['find_objects', ''], ['say', 'random_object']]
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def countObjOnPlcmt(cmd):
-    return countVerb(cmd) and pluralCategories(cmd) and 'THERE ARE' in cmd.sentence and onLocPrep(cmd) and 'THE' in cmd.sentence and  placementLocNames(cmd)
+    prev_actions = cmd.actions.copy()
+    success = countVerb(cmd) and pluralCategories(cmd) and 'THERE ARE' in cmd.sentence and onLocPrep(cmd) and 'THE' in cmd.sentence and  placementLocNames(cmd)
+    if success:
+        goal_location = get_pattern(cmd, _placementLocNames)
+        actions = [['navigate', goal_location], ['find_objects', ''], ['say', 'random_object']]
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def findObjInRoom(cmd):
-    return findVerb(cmd) and art(cmd) and obj_singCat(cmd) and inLocPrep(cmd) and 'THE' in cmd.sentence and  roomNames(cmd) \
+    prev_actions = cmd.actions.copy()
+    success = findVerb(cmd) and art(cmd) and obj_singCat(cmd) and inLocPrep(cmd) and 'THE' in cmd.sentence and  roomNames(cmd) \
         and 'THEN' in cmd.sentence and followUpFoundObj(cmd)
+    if success:
+        goal_room = get_pattern(cmd, _roomNames)
+        goal_object = get_pattern(cmd, (_objNames + _singCategories))
+        actions = [['navigate', goal_room],['take', goal_object]]
+        cmd.actions = actions + cmd.actions
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def takeObjFromPlcmt(cmd):
-    return takeVerb(cmd) and art(cmd) and obj_singCat(cmd) and fromLocPrep(cmd) and 'THE' in cmd.sentence and placementLocNames(cmd) \
+    prev_actions = cmd.actions.copy()
+    success = takeVerb(cmd) and art(cmd) and obj_singCat(cmd) and fromLocPrep(cmd) and 'THE' in cmd.sentence and placementLocNames(cmd) \
         and 'AND' in cmd.sentence and hasObj(cmd)
+    if success:
+        goal_location = get_pattern(cmd, _placementLocNames)
+        goal_object = get_pattern(cmd, (_objNames + _singCategories))
+        actions = [['navigate', goal_location], ['take', goal_object]]
+        cmd.actions = actions + cmd.actions
+    else:
+        cmd.actions = prev_actions
+    return success
 
 
 def followPrsAtLoc(cmd):
-    return followVerb(cmd) and 'THE' in cmd.sentence and gestPers_posePers(cmd) and  inRoom_atLoc(cmd)
+    prev_actions = cmd.actions.copy()
+    success = followVerb(cmd) and 'THE' in cmd.sentence and gestPers_posePers(cmd) and  inRoom_atLoc(cmd)
+    if success:
+        goal_location = get_pattern(cmd, (_roomNames + _locationNames))
+        gesture = get_pattern(cmd, (_gesturePersonList + _posePersonList))
+        actions = [['navigate', goal_location], ['find_gesture', gesture], ['follow','']]
+        cmd.actions += actions
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def tellPrsInfoAtLocToPrsAtLoc(cmd):
     return tellVerb(cmd) and 'THE' in cmd.sentence and personInfoList(cmd) and 'OF THE PERSON' and atLocPrep(cmd) and 'THE' in cmd.sentence and \
@@ -331,11 +549,27 @@ def meetPrsAtBeac(cmd):
     return meetVerb(cmd) and personNames(cmd) and inLocPrep(cmd) and 'THE' in cmd.sentence and roomNames(cmd) and 'AND' in cmd.sentence and followUpFoundPers(cmd)
 
 def findPrsInRoom(cmd):
+    
     return findVerb(cmd) and 'A' in cmd.sentence and gestPers_posePers(cmd) and  inLocPrep(cmd) and 'THE' in cmd.sentence \
         and roomNames(cmd) and 'AND' in cmd.sentence and followUpFoundPers(cmd)
 
 def goToLoc(cmd):
-    return goVerb(cmd) and toLocPrep(cmd) and 'THE' in cmd.sentence and loc_room(cmd) and 'THEN' in cmd.sentence and followUpAtLoc(cmd)
+    prev_actions  = cmd.actions.copy()
+    prev_sentence = cmd.sentence[:]
+    success = goVerb(cmd) and toLocPrep(cmd) and 'THE' in cmd.sentence and loc_room(cmd) and 'THEN' in cmd.sentence
+    parts = []
+    if success:
+        parts = cmd.sentence.split('THEN')
+        cmd.sentence = parts[1]
+    success = success and followUpAtLoc(cmd)
+    if success:
+        goal_location = get_pattern_from_string(parts[0], (_locationNames + _roomNames))
+        actions = [['navigate', goal_location]]
+        cmd.actions = actions + cmd.actions
+    else:
+        cmd.actions = prev_actions
+    cmd.sentence = prev_sentence
+    return success
 
 def getCommnandType(cmd):
     if goToLoc(cmd):
