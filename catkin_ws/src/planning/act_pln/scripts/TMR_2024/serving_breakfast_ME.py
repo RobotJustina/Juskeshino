@@ -571,7 +571,7 @@ def main():
             cycle = cycle + 1
             print("CYCLE:_____", cycle)
             if cycle > 2:
-                JuskeshinoHRI.say("Breakfast is served. I finish the test")
+                #JuskeshinoHRI.say("Breakfast is served. I finish the test")
                 current_state = END
             else:
                 j = j + 1
