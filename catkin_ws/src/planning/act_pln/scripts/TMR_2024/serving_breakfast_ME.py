@@ -29,6 +29,7 @@ LEAVE_CEREAL      = [0.54, 0.28, -0.13, 1.45, 0, 0, 0]
 LEAVE_MILK        = [0.44, 0.18, -0.03, 1.45, 0, 0, 0]
 LEAVE_BOWL        = [0.6,  0.6, -0.8, 1.7, 0, -0.1, 0]
 LEAVE_BOWL_2        = [0.6,  0.6, -0.1, 1.7, 0.0,-0.1, 0]
+CARRY_BOWL        = [-0.9, 0.2, 0.0, 2.05, 0.0, -0.64, 0.0]
 
 POST_GRIP         = [0.38, 0.19, -0.01, 1.57, 0 , 0.35, 0.0 ]
 
@@ -354,7 +355,7 @@ def main():
                 [obj, img] = JuskeshinoSimpleTasks.object_search(actual_obj) 
                 pos_obj_bl = [obj.pose.position.x, obj.pose.position.y, obj.pose.position.z]
                 print("positionn¿ obj:____", obj.pose.position.x)
-                if(obj.pose.position.x > 0.45):
+                if(obj.pose.position.x > 0.51):
                     JuskeshinoNavigation.moveDist(0.05, 5.0)
                     current_state = HANDLING_LOCATION_2
 
@@ -505,10 +506,11 @@ def main():
             JuskeshinoNavigation.moveDist(-0.33, 10)
             if (not simu) or (torso):
                 try:
-                    JuskeshinoHardware.moveTorso(0.02 , 5.0)
-                    time.sleep(1)
+                    JuskeshinoHardware.moveTorso(0.02 , 10.0)
+                    #time.sleep(1)
                 except:
                     print("Cannot move torso")
+            #JuskeshinoHardware.moveLeftArmWithTrajectory(CARRY_BOWL, 10)
             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
             
             current_state = GO_TO_KITCHEN
@@ -523,7 +525,7 @@ def main():
                 print("SB-PLN.->Cannot get close to " + EAT_TABLE +" position")
                 JuskeshinoHRI.say("Cannot get close to " + EAT_TABLE)
                 
-            current_state = APROACH_TO_TABLE_2
+            current_state = PUT_OBJECT#APROACH_TO_TABLE_2
 
 
 
@@ -548,14 +550,14 @@ def main():
         elif(current_state == PUT_OBJECT):
             print("ESTADO:____PUT_OBJECT...........................")
             if (actual_obj == MILK) or (actual_obj == CEREAL):
-                time.sleep(1)
+                #time.sleep(1)
                 serving_breakfast(actual_obj) 
             if actual_obj == BOWL:
                 JuskeshinoHRI.say("Leave")
                 JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_BOWL , 12)
                 JuskeshinoHRI.say("bowl")
                 JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_BOWL_2 , 12)
-                time.sleep(0.6)
+                #time.sleep(0.6)
                 print("SB-PLN.->Open gripper")
                 JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
                 time.sleep(0.5)            # Soltar el objeto

@@ -312,7 +312,7 @@ def cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj):
         obj_pos_2.position.x, obj_pos_2.position.y, obj_pos_2.position.z = 0, 0, 0
         num_candidates = 6 # debe ser par
     else:
-        obj_pos_2.position.x, obj_pos_2.position.y, obj_pos_2.position.z = 0 , size.z/2 , 0
+        obj_pos_2.position.x, obj_pos_2.position.y, obj_pos_2.position.z = -0.02 , size.z/2 , 0
         #print("GRIP POINT BOWL: ", obj_pos_2)
         marker_array_publish(grip_point, 'object', 59, 56)
         num_candidates = 6
