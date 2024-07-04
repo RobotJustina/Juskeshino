@@ -498,19 +498,55 @@ def followPrsAtLoc(cmd):
     return success
 
 def tellPrsInfoAtLocToPrsAtLoc(cmd):
-    return tellVerb(cmd) and 'THE' in cmd.sentence and personInfoList(cmd) and 'OF THE PERSON' and atLocPrep(cmd) and 'THE' in cmd.sentence and \
+    prev_actions = cmd.actions.copy()
+    success = tellVerb(cmd) and 'THE' in cmd.sentence and personInfoList(cmd) and 'OF THE PERSON' and atLocPrep(cmd) and 'THE' in cmd.sentence and \
         locationNames(cmd) and 'TO THE PERSON' in cmd.sentence and atLocPrep(cmd) and 'THE' in cmd.sentence and locationNames(cmd)
+    if success:
+        parts = cmd.sentence.split('TO THE PERSON')
+        goal_location1 = get_pattern_from_string(parts[0], _locationNames)
+        goal_location2 = get_pattern_from_string(parts[1], _locationNames)
+        actions = [['navigate', goal_location1], ['say', 'I am looking for person info'], ['navigate', goal_location2], ['find_person', ''],\
+                   ['say','the person at the ' + goal_location1 + ' is doing something']]
+        cmd.actions = actions
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def countClothPrsInRoom(cmd):
-    return countVerb(cmd) and 'PEOPLE' in cmd.sentence and inLocPrep(cmd) and 'THE' in cmd.sentence and roomNames(cmd) \
+    prev_actions = cmd.actions.copy()
+    success = countVerb(cmd) and 'PEOPLE' in cmd.sentence and inLocPrep(cmd) and 'THE' in cmd.sentence and roomNames(cmd) \
         and 'ARE WEARING' in cmd.sentence and colorClothesList(cmd)
+    if success:
+        goal_location = get_pattern(cmd, _roomNames)
+        goal_clothe = get_pattern(cmd, _colorClotheList)
+        actions = [['navigate', goal_location], ['find_clothes', goal_clothe]]
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def meetNameAtLocThenFindInRm(cmd):
-    return meetVerb(cmd) and personNames(cmd) and atLocPrep(cmd) and 'THE' in cmd.sentence and locationNames(cmd) and \
+    prev_actions = cmd.actions.copy()
+    success = meetVerb(cmd) and personNames(cmd) and atLocPrep(cmd) and 'THE' in cmd.sentence and locationNames(cmd) and \
         'THEN' in cmd.sentence and findVerb(cmd) and 'THEM' in cmd.sentence and inLocPrep(cmd) and 'THE' in cmd.sentence and roomNames(cmd)
+    if success:
+        parts = cmd.sentence.split('THEN')
+        goal_location = get_pattern_from_string(parts[0], _locationNames)
+        goal_room = get_pattern_from_string(parts[1], _roomNames)
+        goal_person = get_pattern_from_string(parts[0], _personNames)
+        actions = [['navigate', goal_location], ['find_person', goal_person], ['navigate', goal_room],['find_person', goal_person]]
+        cmd.actions = actions
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def greetNameInRm(cmd):
-    return greetVerb(cmd) and personNames(cmd) and inLocPrep(cmd) and 'THE' in cmd.sentence and roomNames(cmd) and 'AND' in cmd.sentence and followUpFoundPers(cmd)
+    prev_actions = cmd.actions.copy()
+    success = greetVerb(cmd) and personNames(cmd) and inLocPrep(cmd) and 'THE' in cmd.sentence and roomNames(cmd) and 'AND' in cmd.sentence and followUpFoundPers(cmd)
+    if success:
+        None
+    else:
+        cmd.actions = prev_actions
+    return success
 
 def greetClothDscInRm(cmd):
     return greetVerb(cmd) and 'THE PERSON WEARING' in cmd.sentence and art(cmd) and colorClotheList(cmd) and inLocPrep(cmd) \
