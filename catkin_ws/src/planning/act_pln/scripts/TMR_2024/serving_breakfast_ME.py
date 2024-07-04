@@ -198,7 +198,7 @@ def main():
     simu = False
     torso = True
     actual_value = 0
-    ALTURA_TORSO = 0.09
+    ALTURA_TORSO = 0.07
     ALTURA_TORSO_BOWL = 0.11
 
     current_state = INITIAL
@@ -337,16 +337,10 @@ def main():
             if (not simu) or (torso):
                 if(mesa_alta):
                     if(actual_obj == 'red_bowl'):
-                        JuskeshinoHardware.moveTorso(ALTURA_TORSO_BOWL , 5.0)
+                        JuskeshinoHardware.moveTorso(ALTURA_TORSO_BOWL , 10.0)
                     else:
-                        JuskeshinoHardware.moveTorso(ALTURA_TORSO , 5.0)
-
+                        JuskeshinoHardware.moveTorso(ALTURA_TORSO , 10.0)
             tries = 0
-            """
-            if(mov_flag):
-                current_state = DETECT_OBJECT
-            else:
-            """
             current_state = HANDLING_LOCATION_2#DETECT_OBJECT_ORIENTATION
 
 
@@ -358,12 +352,11 @@ def main():
             try:
                 [obj, img] = JuskeshinoSimpleTasks.object_search(actual_obj) 
                 pos_obj_bl = [obj.pose.position.x, obj.pose.position.y, obj.pose.position.z]
-                print("positionn¿ obj:____", obj.pose.position.x)
-                if(obj.pose.position.x > 0.56):
-                    JuskeshinoNavigation.moveDist(0.05, 5.0)
-                    current_state = HANDLING_LOCATION_2
-
-                else:
+                print("position obj:____", obj.pose.position.x)
+                if(obj.pose.position.x > 0.54):
+                    move_front = obj.pose.position.x -0.54
+                    print("MOVE FRONT:__", move_front)
+                    JuskeshinoNavigation.moveDist(move_front , 5.0)
                     current_state = DETECT_OBJECT_ORIENTATION
             except:
                 JuskeshinoHRI.say("I couldn't find the object")
