@@ -353,8 +353,9 @@ def main():
             try:
                 [obj, img] = JuskeshinoSimpleTasks.object_search(actual_obj) 
                 pos_obj_bl = [obj.pose.position.x, obj.pose.position.y, obj.pose.position.z]
+                print("positionn¿ obj:____", obj.pose.position.x)
                 if(obj.pose.position.x > 0.45):
-                    JuskeshinoNavigation.moveDist(0.8, 5.0)
+                    JuskeshinoNavigation.moveDist(0.05, 5.0)
                     current_state = HANDLING_LOCATION_2
 
                 else:
@@ -550,8 +551,10 @@ def main():
                 time.sleep(1)
                 serving_breakfast(actual_obj) 
             if actual_obj == BOWL:
-                JuskeshinoHRI.say("Leave bowl")
+                JuskeshinoHRI.say("Leave")
                 JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_BOWL , 12)
+                JuskeshinoHRI.say("bowl")
+                JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_BOWL_2 , 12)
                 time.sleep(0.6)
                 print("SB-PLN.->Open gripper")
                 JuskeshinoHardware.moveLeftGripper(0.7, 2.0)
