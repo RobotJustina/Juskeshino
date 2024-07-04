@@ -320,59 +320,91 @@ class ScanCabinet(smach.State):
         self.tries += 1
         height_d=None
         if self.tries < 10:
-            tar_obj=userdata.object
             rospy.logwarn('\n--> STATE 9 <: Scanning cabinet')
             JuskeshinoHRI.say("Scanning cabinet")
+
+            # Detect
+            tar_obj=userdata.object
+            picked_obj_category = matching_objects(tar_obj.id)
+
             JuskeshinoHardware.moveHead(0,-0.35, 5)
             recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()     
-            #object_id=target_object.id
             if recog_objects is not None:
                 for obj in recog_objects:
-                    print("",obj.id)
-                    print(obj.pose.position)
-                    category1=matching_objects(obj.id)
-                    category2=matching_objects(tar_obj.id)
-                    print("",category1)
-                    print(category2)
+                    obj_category = matching_objects(obj.id)
+                    if obj_category == picked_obj_category:
+                        JuskeshinoHRI.say("I found a match")
+                        JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
+                        userdata.object_shelf=obj
+                        if obj.pose.position.z>1.3:
+                            JuskeshinoHRI.say("The object is part of the top shelf")
+                            print("The object is part of the top shelf")
+                            height_d='top'
+                            print (height_d)
+                            userdata.height=height_d
+                            return 'succed'
+                        elif 1.3 > obj.pose.position.z > 0.8:
+                            JuskeshinoHRI.say("The object is part of the middle shelf") 
+                            print("The object is part of the middle shelf")
+                            height_d='middle'
+                            userdata.height=height_d
+                            return 'succed'
+                        elif 0.8 > obj.pose.position.z > 0.2:
+                            JuskeshinoHRI.say("The object is part of the low shelf")
+                            print("The object is part of the low shelf") 
+                            height_d='low'
+                            userdata.height=height_d
+                            return 'succed'
+                JuskeshinoHRI.say(f"I couldn't found a match for the {tar_obj.id}")
+                return 'tries'
+            return 'tries'
+
+                # for obj in recog_objects:
+                #     print("",obj.id)
+                #     print(obj.pose.position)
+                #     category1=matching_objects(obj.id)
+                #     category2=matching_objects(tar_obj.id)
+                #     print("",category1)
+                #     print(category2)
                     
-                    for recog_obj in recog_objects:  # Iterate over all objects to find matching categories
-                        recog_category = matching_objects(recog_obj.id)
-                        if recog_category and category2 == recog_category:
-                            category1 = category2  # Set category1 to match category2
-                            obj = recog_obj  # Set obj to the matching object
-                            #centroid maths
-                            JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
-                            userdata.object_shelf=obj
-                            #Aquí en este estado hay un error por ahí, es donde se atora y solamente itera sobre el mismo objecto n lugar de continuar
-                            if obj.pose.position.z>1.3:
-                                JuskeshinoHRI.say("The object is part of the top shelf")
-                                print("The object is part of the top shelf")
-                                height_d='top'
-                                print (height_d)
-                                userdata.height=height_d
-                                return 'succed'
-                                #variable shared with the next state giving q for left arm to leave the object 'object_shelf'
-                            elif 1.3 > obj.pose.position.z > 0.8:
-                                JuskeshinoHRI.say("The object is part of the middle shelf") 
-                                print("The object is part of the middle shelf")
-                                height_d='middle'
-                                userdata.height=height_d
-                                return 'succed'
-                            elif 0.8 > obj.pose.position.z > 0.2:
-                                JuskeshinoHRI.say("The object is part of the low shelf")
-                                print("The object is part of the low shelf") 
-                                height_d='low'
-                                userdata.height=height_d
-                                return 'succed'
+                #     for recog_obj in recog_objects:  # Iterate over all objects to find matching categories
+                #         recog_category = matching_objects(recog_obj.id)
+                #         if recog_category and category2 == recog_category:
+                #             category1 = category2  # Set category1 to match category2
+                #             obj = recog_obj  # Set obj to the matching object
+                #             #centroid maths
+                #             JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
+                #             userdata.object_shelf=obj
+                #             #Aquí en este estado hay un error por ahí, es donde se atora y solamente itera sobre el mismo objecto n lugar de continuar
+                #             if obj.pose.position.z>1.3:
+                #                 JuskeshinoHRI.say("The object is part of the top shelf")
+                #                 print("The object is part of the top shelf")
+                #                 height_d='top'
+                #                 print (height_d)
+                #                 userdata.height=height_d
+                #                 return 'succed'
+                #                 #variable shared with the next state giving q for left arm to leave the object 'object_shelf'
+                #             elif 1.3 > obj.pose.position.z > 0.8:
+                #                 JuskeshinoHRI.say("The object is part of the middle shelf") 
+                #                 print("The object is part of the middle shelf")
+                #                 height_d='middle'
+                #                 userdata.height=height_d
+                #                 return 'succed'
+                #             elif 0.8 > obj.pose.position.z > 0.2:
+                #                 JuskeshinoHRI.say("The object is part of the low shelf")
+                #                 print("The object is part of the low shelf") 
+                #                 height_d='low'
+                #                 userdata.height=height_d
+                #                 return 'succed'
                             
-                        else:
-                            #Check for the position of each object and start from that 
-                            print('Cannot match objects, I will try again...')
-                            #JuskeshinoNavigation.moveDist(0.1, 10)
-                            return 'failed'    
+                #         else:
+                #             #Check for the position of each object and start from that 
+                #             print('Cannot match objects, I will try again...')
+                #             #JuskeshinoNavigation.moveDist(0.1, 10)
+                #             return 'failed'  
             
         print('I could not detect objects')
-        return 'tries'
+        return 'failed'
     #check the centroid of shelf obj and leave the object on the side
     #Align with shelf state
 
