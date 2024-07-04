@@ -201,9 +201,10 @@ def grip_rules(obj_pose, type_obj, obj_state, size, grip_point):
         #return box(obj_pose, size, obj_state )
     
     # Parche temporal
+    
     if(type_obj == "BIG"):
         print("Best_Grasp_Node.-> The object  BIG will be GRABBED as BOX....................")
-        return box(obj_pose, size, obj_state )
+        return (obj_pose, size, obj_state )
     
     else:
         print("Error identificando forma del objeto.................")
@@ -308,7 +309,7 @@ def cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj):
 
     # Lista de candidatos******************************************************************************
     obj_pos_2 = Pose()
-    if (type_obj == "CUBIC"):
+    if ((type_obj == "CUBIC") or (type_obj == "BOX")):
         obj_pos_2.position.x, obj_pos_2.position.y, obj_pos_2.position.z = 0, 0, 0
         num_candidates = 6 # debe ser par
     else:

@@ -547,7 +547,6 @@ def main():
                 print("SB-PLN.->Open gripper")
                 JuskeshinoHardware.moveLeftGripper(1.0, 5.0)
                 time.sleep(0.5)            # Soltar el objeto
-
             current_state = CYCLE_END
 
 
