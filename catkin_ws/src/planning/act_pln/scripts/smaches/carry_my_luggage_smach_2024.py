@@ -433,11 +433,52 @@ class DeliverBag(smach.State):
             voice.talk('You can take the bag')
 
             rospy.sleep(5.0)
-            print('Task completed, thanks for watching')
-            voice.talk("Task completed, thanks for watching")
+            #print('Task completed, thanks for watching')
+            #voice.talk("Task completed, thanks for watching")
             JuskeshinoHardware.moveLeftArmWithTrajectory(self.l_arm_home, 6)
             rospy.sleep(3.0)
             return 'succ'
+
+
+class TryReturn(smach.State):  
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        self.tries = 0
+        self.time_out = 30
+        self.attempts = 2
+        self.location = "pickup"   # TODO: Define place where to go  
+        self.loc_name = self.location.replace('_', ' ')
+
+    def execute(self, userdata):
+        self.tries += 1
+        if self.tries == 1:
+            self.time_out = 30
+            print("\n")
+            rospy.logwarn('--> STATE <: Navigate to ' + self.loc_name)
+            voice.talk('Navigating to ' + self.loc_name)
+        
+        if self.tries == self.attempts + 1: 
+            rospy.logerr('Navigation Failed, I can not reach the ' + self.loc_name)
+            voice.talk('Navigation Failed, I can not reach the ' + self.loc_name)
+            return 'failed'
+
+        print(f'Try {self.tries} of {self.attempts} attempts')        
+        res = omni_base.move_base(known_location=self.location, time_out=self.time_out)
+        print("res:", res)
+        
+        if res == 3:  # Success
+            self.tries = 0
+            print('Task completed, thanks for watching')
+            voice.talk("Task completed, thanks for watching")
+            return 'succ'
+        elif res == 1 or res == 8:
+            if self.tries < self.attempts-1:
+                rospy.logerr('Navigation Failed, retrying')
+                voice.talk('Navigation Failed, retrying')
+            self.time_out = 25
+            return 'tries'
+        else:
+            return 'failed'
 
 
 if __name__ == '__main__':
@@ -475,6 +516,9 @@ if __name__ == '__main__':
                                transitions={'failed':'FIND_LEGS', 'succ':'DELIVER_BAG', 'tries':'ASK_ARRIVE'})
         
         smach.StateMachine.add("DELIVER_BAG", DeliverBag(), 
-                               transitions={'failed':'DELIVER_BAG', 'succ':'END', 'tries':'DELIVER_BAG'})
+                               transitions={'failed':'DELIVER_BAG', 'succ':'TRY_RETURN', 'tries':'DELIVER_BAG'})
+        
+        smach.StateMachine.add("TRY_RETURN", TryReturn(),
+                               transitions={'failed':'END', 'succ':'END', 'tries':'TRY_RETURN'})
 
     outcome = sm.execute()
