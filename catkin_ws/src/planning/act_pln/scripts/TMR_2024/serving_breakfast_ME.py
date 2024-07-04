@@ -359,7 +359,7 @@ def main():
                 [obj, img] = JuskeshinoSimpleTasks.object_search(actual_obj) 
                 pos_obj_bl = [obj.pose.position.x, obj.pose.position.y, obj.pose.position.z]
                 print("positionn¿ obj:____", obj.pose.position.x)
-                if(obj.pose.position.x > 0.51):
+                if(obj.pose.position.x > 0.56):
                     JuskeshinoNavigation.moveDist(0.05, 5.0)
                     current_state = HANDLING_LOCATION_2
 
