@@ -16,6 +16,29 @@ SM_END = 1000
 
 def main():
     print("INITIALIZING GPSR TEST Not in a Tenshily manner...")
+    cmd = grammar_checker.Command()
+    #cmd.sentence = "GIVE IT TO ANGEL IN THE KITCHEN"
+    #success = grammar_checker.deliverObjToNameAtBeac(cmd)
+    # cmd.sentence = "GIVE IT TO THE WAVING PERSON IN THE KITCHEN"
+    # success = grammar_checker.deliverObjToPrsInRoom(cmd)
+    # cmd.sentence = "DELIVER IT TO ME"
+    # success = grammar_checker.deliverObjToMe(cmd)
+    # cmd.sentence = "PLACE IT ON THE BEDSIDE TABLE"
+    # success = grammar_checker.placeObjOnPlcmt(cmd)
+    # cmd.sentence = "GUIDE THEM TO THE BED"
+    # success = grammar_checker.guidePrsToBeacon(cmd)
+    #cmd.sentence = "FOLLOW THEM TO THE KITCHEN"
+    #success = grammar_checker.foundPers(cmd)
+    # cmd.sentence = "FIND THE PRINGLES AND TAKE IT AND PLACE IT ON THE BEDSIDE TABLE"
+    # success = grammar_checker.findObj(cmd)
+    # cmd.sentence = "MEET ANGEL AND FOLLOW THEM TO THE KITCHEN"
+    # success = grammar_checker.meetName(cmd)
+    # cmd.sentence = "FIND THE WAVING PERSON AND FOLLOW THEM TO THE KITCHEN"
+    # success = grammar_checker.findPrs(cmd)
+    # print(success)
+    # print(cmd.sentence, cmd.actions)
+    
+    # return 
     rospy.init_node("gpsr")
     rate = rospy.Rate(10)   
     
@@ -39,6 +62,7 @@ def main():
             cmdType = grammar_checker.getCommnandType(cmd)
             if cmd != '' and cmd is not None and cmdType is not None:
                 print("Recognized command: ", cmd.sentence, "  of Type: ", cmdType)
+                print("List of actions: ", cmd.actions)
                 JuskeshinoHRI.say("Did you say")
                 JuskeshinoHRI.say(cmd.sentence)
                 JuskeshinoHRI.say("Please answer robot yes or robot no.")
