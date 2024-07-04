@@ -7,8 +7,12 @@ from geometry_msgs.msg import TransformStamped, Quaternion
 from tf.transformations import quaternion_from_euler
 
 import tf2_ros
-x_ofs = 0.3
-y_ofs = 4.6
+#x_ofs = 0.3
+#y_ofs = 4.6
+#TODO: Eliminate offset
+x_ofs = 0.0
+y_ofs = 0.0
+
 
 class RECEPTIONIST:
     def __init__(self, knowledge_file='/receptionist_knowledge.yaml'):
@@ -104,7 +108,8 @@ class RECEPTIONIST:
         places = []
         for place, info in self.informacion_fiesta['Places'].items():
             if place != 'Place_0':
-                xyt = [info['location']['x'] + x_ofs, info['location']['y'] + y_ofs, info['location']['theta']]
+                #xyt = [info['location']['x'] + x_ofs, info['location']['y'] + y_ofs, info['location']['theta']]
+                xyt = [info['location']['x'], info['location']['y'], info['location']['theta']]
                 places.append(place)
                 locs.append(xyt)
         return places, locs

@@ -34,7 +34,7 @@ class Initial(smach.State):
         self.tries += 1
         print(f'Try {self.tries}')
         userdata.l_arm_home = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        party.clean_knowledge(host_name="John", host_location="Place_1")
+        party.clean_knowledge(host_name="Jack", host_location="Place_2")
         places_2_tf()
 
         # Set neutral pose
