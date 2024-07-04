@@ -46,6 +46,7 @@ public <command> = <goToLoc> | <findPrsInRoom> | <meetPrsAtBeac> | <countPrsInRo
 <followPrs> = <followVerb> THEM;
 <followPrsToRoom> = <followVerb> THEM <toLocPrep> THE <loc_room>;
 <guidePrsToBeacon> = <guideVerb> THEM <toLocPrep> THE <loc_room>;
+
 <gestPers_posePers> = <gesturePersonList> | <posePersonList>;
 <obj_singCat> = <objNames> | <singCategories>;
 <loc_room> = <locationNames> | <roomNames>;

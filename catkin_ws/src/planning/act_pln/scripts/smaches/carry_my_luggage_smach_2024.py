@@ -18,7 +18,7 @@ from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 class Initial(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'],
-                             output_keys = ['mode', 'l_arm_home', 'confirm_list', 'negation_list', 'speech_time'], 
+                             output_keys = ['mode', 'l_arm_home', 'confirm_list', 'negation_list', 'speech_time'],
                              input_keys=['bag', 'l_arm_home', 'confirm_list', 'negation_list', 'speech_time'] )
         self.tries = 0
         # topic/services subscriptions: manipulation, vision, navigation, else
@@ -47,7 +47,7 @@ class Initial(smach.State):
             userdata.confirm_list = ["YES", "YEAH", "ROBOT YES", "JUSTINA YES", "JUICE"]
             userdata.negation_list = ['NO', 'ROBOT NO','NOPE','JUSTINA NO']
 
-        gram = userdata.confirm_list + userdata.negation_list
+        gram = userdata.confirm_list + userdata.negation_list + ["here is the car"]
 
         print("** confirmation list: ") 
         print(userdata.confirm_list)  
@@ -223,7 +223,7 @@ class GotoLivingRoom(smach.State):
 class AskForBag(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'],
-                             input_keys=['speech_time', 'confirm_list'])
+                             input_keys=['confirm_list', 'speech_time']) 
         self.tries = 0
         self.offerSit = [0.3, 0.2, -0.4, 1.7, 0.0, -0.4, 1.5]
         self.getBag = [0.3, 0.2, -0.5, 1.7, 0.0, 0.3, 0.0, 0.4]
@@ -339,7 +339,7 @@ class FolowwHuman(smach.State):
 
             command_voice = JuskeshinoHRI.getLastRecognizedSentence()
             print("--> command_voice: ", command_voice)
-            if command_voice != None and "CAR" in command_voice:
+            if command_voice != None and "here is the car" in command_voice:
                 JuskeshinoHRI.enableHumanFollower(False)
                 JuskeshinoHRI.enableLegFinder(False)
                 return 'succ' 
@@ -358,7 +358,8 @@ class FolowwHuman(smach.State):
 
 class AskArrive(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'], 
+                             input_keys=['confirm_list', 'negation_list', 'speech_time'])
         self.tries = 0
         self.attempts = 2
         
@@ -373,22 +374,44 @@ class AskArrive(smach.State):
         if self.tries == 1:
             print("\n")
             rospy.logwarn('--> STATE <: Ask if we arrive human')
-            print('Here is the place?')
-            voice.talk ('Here is the place?')
+            print('Is here the place?')
+            voice.talk ('Is here the place?')
 
 
         print(f'Try {self.tries} of {self.attempts} attempts')
 
         print('Tell me: Justina yes, if we arrived')
         voice.talk('Tell me. Justina yes, if we arrived')
-        answer = JuskeshinoHRI.waitForNewSentence(6)
-        print("voice: ", answer)
-        if "YES" in answer:
-            return "succ"
-        if "NO" in answer:
-            return "failed"
+        
+
+
+        if vosk_enable:
+                rospy.logwarn('Listening now (Cc')
+                confirmation = get_keywords_speech(userdata.speech_time)
+        else: 
+            JuskeshinoHRI.getLastRecognizedSentence()
+            rospy.sleep(0.3)
+            confirmation = JuskeshinoHRI.waitForNewSentence(8) # 10 is to much?
+        
+        print("confirmation:", confirmation)
+        if confirmation  in userdata.confirm_list:
+            head.set_named_target('face_to_face')
+            rospy.sleep(0.3)
+            head.set_named_target('face_to_face')
+            return 'succ'
+        if confirmation  in userdata.negation_list:
+            return 'failed'
         else:
-            return "tries"
+            return 'tries'
+
+        # answer = JuskeshinoHRI.waitForNewSentence(6)
+        # print("voice: ", answer)
+        # if "YES" in answer:
+        #     return "succ"
+        # if "NO" in answer:
+        #     return "failed"
+        # else:
+        #     return "tries"
 
 
 class DeliverBag(smach.State):
