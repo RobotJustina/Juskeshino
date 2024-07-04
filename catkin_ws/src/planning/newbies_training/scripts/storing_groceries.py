@@ -19,7 +19,7 @@ from sensor_msgs.msg import LaserScan
 
 DESK = "table"
 SIMUL_DESK = 'simul_desk'
-TOP_SHELF=[0.75, 0.2, 0.0, 1.95, 0.0, 0.06, 0.0]
+TOP_SHELF=[0.75, 0.2, 0.0, 2.4 , 0.0, -1.0, 0.0]
 MIDDLE_SHELF=[0.31, 0.2, -0.2, 1.55, 0.0, 0.16, 0.0]
 LOW_SHELF=[0.31, 0.1, -0.1, 0.35, 0.0, 1.16, 0.0]
 PREPARE_GRIP  = [-0.69, 0.2, 0, 1.55, 0, 1.16, 0]
@@ -328,6 +328,7 @@ class ScanCabinet(smach.State):
             picked_obj_category = matching_objects(tar_obj.id)
 
             JuskeshinoHardware.moveHead(0,-0.35, 5)
+            rospy.sleep(2)
             recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()     
             if recog_objects is not None:
                 for obj in recog_objects:
@@ -417,27 +418,29 @@ class LeaveObject(smach.State):
 
     def execute(self, userdata):
         self.tries += 1
-        if self.tries<6:
-            JuskeshinoNavigation.moveDist(0.4, timeout=5)
         if self.tries < 8:
             JuskeshinoHardware.moveHead(0,-0.35, 5)
             shelf=userdata.height
-            print (shelf)
+
             if shelf == 'top':
-                JuskeshinoHardware.moveTorso(0.28 , 5.0)
+                JuskeshinoHardware.moveTorso(0.28 , 10.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(TOP_SHELF, 10)
             if shelf =='middle':
-                JuskeshinoHardware.moveTorso(0.28 , 5.0)
+                JuskeshinoHardware.moveTorso(0.28 , 10.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(MIDDLE_SHELF, 10)
             if shelf=='low':
-                JuskeshinoHardware.moveTorso(0.02 , 5.0)
+                JuskeshinoHardware.moveTorso(0.02 , 10.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(LOW_SHELF, 10)
+            rospy.sleep(2)
+            JuskeshinoNavigation.moveDist(0.45, timeout=10)
+            rospy.sleep(2)
             print("Opening gripper")
-            JuskeshinoHardware.moveLeftGripper(0.8, 100.0)
-            JuskeshinoNavigation.moveDist(-0.3, timeout=5)
+            JuskeshinoHardware.moveLeftGripper(0.8, 5.0)
+            JuskeshinoNavigation.moveDist(-0.45, timeout=5)
             JuskeshinoHardware.moveTorso(0.04 , 5.0)
             rospy.sleep(1)
             JuskeshinoHardware.moveLeftArmWithTrajectory(HOME, 10)
+            JuskeshinoHardware.moveLeftGripper(0.0, 5.0)
             return 'succed'
         return 'failed'   
             #     JuskeshinoHardware.moveLeftGripper(0.9, 100.0)
