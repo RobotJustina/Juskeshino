@@ -26,7 +26,7 @@ PREPARE_GRIP  = [-0.69, 0.2, 0, 1.55, 0, 1.16, 0]
 HOME=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 HOLD_OBJ = [0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ]
 GET_CLOSE_TO_TABLE = 0.3
-TABLE_TORSO_HEIGHT = 0.04
+TABLE_TORSO_HEIGHT = 0.12
 
 def matching_objects(obj):
     obj_yaml =rospy.get_param("~categories")
@@ -304,7 +304,7 @@ class TransportObject(smach.State):
             JuskeshinoHRI.say(" I am moving to the cabinet")
             JuskeshinoNavigation.moveDist(-GET_CLOSE_TO_TABLE, 10)
             rospy.sleep(2)
-            JuskeshinoNavigation.getClose('scan_cabinet', 10)
+            JuskeshinoNavigation.getClose('scan_cabinet', 20)
             return 'succed'
         
 class ScanCabinet(smach.State):
@@ -320,7 +320,6 @@ class ScanCabinet(smach.State):
         self.tries += 1
         height_d=None
         if self.tries < 10:
-            print('Scanning shelf')
             tar_obj=userdata.object
             rospy.logwarn('\n--> STATE 9 <: Scanning cabinet')
             JuskeshinoHRI.say("Scanning cabinet")
@@ -333,7 +332,6 @@ class ScanCabinet(smach.State):
                     print(obj.pose.position)
                     category1=matching_objects(obj.id)
                     category2=matching_objects(tar_obj.id)
-                    JuskeshinoHRI.say('Matching with shelf...')
                     print("",category1)
                     print(category2)
                     
