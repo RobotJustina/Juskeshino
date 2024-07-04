@@ -75,6 +75,7 @@ DETECT_OBJECT_ORIENTATION = 19
 BEGIN_CYCLE = 20
 MOVE_TO_LOCATION_OBJECTS = 21
 VERIFY_SUITABLE_LOCATION_GRASP = 22
+HANDLING_LOCATION_2 = 23
 
 
 
@@ -162,6 +163,7 @@ def approach_to_table():
 
 
 
+
 def detect_obj_function(actual_obj):
     print("in function")
     count = 0
@@ -180,6 +182,9 @@ def detect_obj_function(actual_obj):
             JuskeshinoHRI.say("I cannot find the objects")
             count = count + 1
     return None
+
+
+
 
 
 
@@ -337,9 +342,29 @@ def main():
                 current_state = DETECT_OBJECT
             else:
             """
-            current_state = DETECT_OBJECT_ORIENTATION
+            current_state = HANDLING_LOCATION_2#DETECT_OBJECT_ORIENTATION
 
-            
+
+
+
+
+        elif(current_state == HANDLING_LOCATION_2):
+            print("ESTADO:____HANDLING_LOCATION_2..................")
+            try:
+                [obj, img] = JuskeshinoSimpleTasks.object_search(actual_obj) 
+                pos_obj_bl = [obj.pose.position.x, obj.pose.position.y, obj.pose.position.z]
+                if(obj.pose.position.x > 0.45):
+                    JuskeshinoNavigation.moveDist(0.8, 5.0)
+                    current_state = HANDLING_LOCATION_2
+
+                else:
+                    current_state = DETECT_OBJECT_ORIENTATION
+            except:
+                JuskeshinoHRI.say("I couldn't find the object")
+                current_state = HANDLING_LOCATION_2
+
+
+
 
 
         elif(current_state == DETECT_OBJECT_ORIENTATION):
