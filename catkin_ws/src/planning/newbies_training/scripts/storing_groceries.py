@@ -370,7 +370,8 @@ class ScanCabinet(smach.State):
                             print('Cannot match objects, I will try again...')
                             #JuskeshinoNavigation.moveDist(0.1, 10)
                             return 'failed'    
-            
+            else:
+                return 'failed'
         print('I could not detect objects')
         return 'tries'
     #check the centroid of shelf obj and leave the object on the side
