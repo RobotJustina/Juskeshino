@@ -275,7 +275,7 @@ def main():
                 """   
                 time.sleep(0.2)
                 print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
-                JuskeshinoHRI.say("I found" + actual_obj)
+                JuskeshinoHRI.say("I found" + actual_obj.replace("_", " "))
                 
                 current_state = HANDLING_LOCATION
 
@@ -323,17 +323,19 @@ def main():
 
             time.sleep(0.2)
             try:
-                [obj, img] = JuskeshinoVision.detectAndRecognizeObject(actual_obj)   
+                [obj, img] = JuskeshinoSimpleTasks.object_search_orientation(actual_obj)
+                #[obj, img] = JuskeshinoVision.detectAndRecognizeObject(actual_obj)   
                 print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
-                JuskeshinoHRI.say("I found" + actual_obj)
+                JuskeshinoHRI.say("I found" + actual_obj.replace("_", " "))
                 current_state = PREPARE_ARM
             except:
                 JuskeshinoHRI.say("I couldn't find the object")
                 try:
-                    [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj)
+                    [obj, img] = JuskeshinoSimpleTasks.object_search_orientation(actual_obj)
+                    #[obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj)
                     time.sleep(0.2)
                     print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
-                    JuskeshinoHRI.say("I found" + actual_obj)
+                    JuskeshinoHRI.say("I found" +actual_obj.replace("_", " "))
                     
                     current_state = PREPARE_ARM
 
@@ -414,8 +416,8 @@ def main():
             count_grip = 0.1
             actual_value = APERTURE 
                 
-            #print("GRASP RESULT:__",JuskeshinoManipulation.dynamic_grasp_left_arm())
-            
+            JuskeshinoManipulation.dynamic_grasp_left_arm(is_thin = True)
+            """
             if (actual_obj == BOWL):
                 while (actual_value >= GRIP_BOWL):
                     actual_value = APERTURE -count_grip
@@ -436,6 +438,7 @@ def main():
                     print("Actual value:___", actual_value)
                     JuskeshinoHardware.moveLeftGripper(actual_value , 5.0)
                     count_grip = count_grip + 1
+            """
 
             current_state = POST_GRASP
 
