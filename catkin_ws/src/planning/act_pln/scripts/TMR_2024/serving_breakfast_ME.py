@@ -198,7 +198,8 @@ def main():
     simu = False
     torso = True
     actual_value = 0
-    ALTURA_TORSO = 0.11
+    ALTURA_TORSO = 0.09
+    ALTURA_TORSO_BOWL = 0.11
 
     current_state = INITIAL
     while not rospy.is_shutdown():
@@ -335,7 +336,10 @@ def main():
             # Ajusta altura de torso para mejor agarre
             if (not simu) or (torso):
                 if(mesa_alta):
-                    JuskeshinoHardware.moveTorso(ALTURA_TORSO , 5.0)
+                    if(actual_obj == 'red_bowl'):
+                        JuskeshinoHardware.moveTorso(ALTURA_TORSO_BOWL , 5.0)
+                    else:
+                        JuskeshinoHardware.moveTorso(ALTURA_TORSO , 5.0)
 
             tries = 0
             """
@@ -467,32 +471,10 @@ def main():
             JuskeshinoHardware.moveLeftArmWithTrajectory(resp ,15)
             time.sleep(0.5)
             JuskeshinoHRI.say("Closing gripper")
-            count_grip = 0.1
-            actual_value = APERTURE 
-                
-            JuskeshinoManipulation.dynamic_grasp_left_arm(is_thin = True)
-            """
             if (actual_obj == BOWL):
-                while (actual_value >= GRIP_BOWL):
-                    actual_value = APERTURE -count_grip
-                    print("Actual value:___", actual_value)
-                    JuskeshinoHardware.moveLeftGripper(actual_value , 5.0)
-                    count_grip = count_grip + 0.1
-
-            if (actual_obj == MILK):
-                while (actual_value >= GRIP_MILK):
-                    actual_value = APERTURE -count_grip
-                    print("Actual value:___", actual_value)
-                    JuskeshinoHardware.moveLeftGripper(actual_value , 5.0)
-                    count_grip = count_grip + 1
-
-            if (actual_obj == CEREAL):
-                while (actual_value >= GRIP_CEREAL):
-                    actual_value = APERTURE -count_grip
-                    print("Actual value:___", actual_value)
-                    JuskeshinoHardware.moveLeftGripper(actual_value , 5.0)
-                    count_grip = count_grip + 1
-            """
+                JuskeshinoManipulation.dynamic_grasp_left_arm(is_thin = True)
+            else:
+                JuskeshinoManipulation.dynamic_grasp_left_arm()
 
             current_state = POST_GRASP
 
@@ -504,14 +486,16 @@ def main():
             print("ESTADO:___POST_GRASP..................")
             print("SB-PLN.->Moving base backwards")    
             JuskeshinoNavigation.moveDist(-0.33, 10)
+            """
             if (not simu) or (torso):
                 try:
                     JuskeshinoHardware.moveTorso(0.02 , 10.0)
                     #time.sleep(1)
                 except:
                     print("Cannot move torso")
+            """
             #JuskeshinoHardware.moveLeftArmWithTrajectory(CARRY_BOWL, 10)
-            JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
+            #JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
             
             current_state = GO_TO_KITCHEN
 
