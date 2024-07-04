@@ -168,7 +168,7 @@ class JuskeshinoNavigation:
 
     def getCloseSuitableGripPositionLa(location, position_object, timeout):
         # La posición del objeto debe ser una lista [x,y,z] en coordenadas de 'map'
-        l_threshold_la       = 0.26
+        l_threshold_la       = 0.22
         r_threshold_la       = 0.11
         # Se extrae la orientacion de la locacion
         req = GetLocationRequest()

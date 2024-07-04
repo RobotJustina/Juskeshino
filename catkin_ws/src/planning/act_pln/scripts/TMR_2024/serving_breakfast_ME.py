@@ -81,13 +81,13 @@ VERIFY_SUITABLE_LOCATION_GRASP = 22
 # Categorias 
 def categorize_objs(name):
     # 'fork', 'knife', 'mug', 'sponge', 'b_cups', 'c_cups', 'e_cups', 'f_cups', 'dice', 'marker', 'rubiks_cube'
-    kitchen = ['bowl', 'fork', 'knife', 'mug', 'plate', 'spatula', 'sponge', 'spoon', 'b_cups', 'c_cups', 'e_cups', 'f_cups']
+    kitchen = ['red_bowl', 'fork', 'knife', 'mug', 'plate', 'spatula', 'sponge', 'spoon', 'b_cups', 'c_cups', 'e_cups', 'f_cups']
     # 'extra_large_clamp', 'large_clamp', 'small_clamp', 'medium_clamp'
     tools = ['adjustable_wrench', 'flat_screwdriver', 'phillips_screwdriver', 'wood_block']
     # 'softball', 'a_mini_soccer_ball', 'racquetball', 'golf_ball',
     balls = ['tennis_ball', 'baseball']
     fruits = ['apple', 'banana', 'lemon', 'pear']  # 'plum', 'orange'
-    food = ['chips_can', 'mustard_bottle', 'potted_meat_can', 'tomato_soup_can', 'tuna_fish_can', 'pudding_box', 'cracker_box']  # 'master_chef_can', 'sugar_box'
+    food = ['chips_can', 'mango_juice','mustard_bottle', 'potted_meat_can','jelly', 'tomato_soup_can', 'tuna_fish_can', 'pudding_box', 'cracker_box']  # 'master_chef_can', 'sugar_box'
     other = ['dice', 'marker', 'rubiks_cube']
     if name in kitchen:
         return 'kitchen'
@@ -191,6 +191,7 @@ def main():
     simu = False
     torso = True
     actual_value = 0
+    ALTURA_TORSO = 0.11
 
     current_state = INITIAL
     while not rospy.is_shutdown():
@@ -327,7 +328,7 @@ def main():
             # Ajusta altura de torso para mejor agarre
             if (not simu) or (torso):
                 if(mesa_alta):
-                    JuskeshinoHardware.moveTorso(0.07 , 5.0)
+                    JuskeshinoHardware.moveTorso(ALTURA_TORSO , 5.0)
 
             tries = 0
             """
