@@ -202,7 +202,7 @@ class GraspObject(smach.State):
             obj=userdata.object
             x,y,z=userdata.object_output
             
-            JuskeshinoHRI.say("I am prepairing to pick the "+ obj.id)
+            JuskeshinoHRI.say("I am ready to pick the "+ obj.id)
             JuskeshinoHardware.moveTorso(TABLE_TORSO_HEIGHT , timeout = 5.0)
             rospy.sleep(1)
             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
@@ -213,28 +213,12 @@ class GraspObject(smach.State):
             if success:
                 JuskeshinoHRI.say("Object found correctly")
                 JuskeshinoHardware.moveLeftArmWithTrajectory(response.articular_trajectory,10)
-                #JuskeshinoHardware.moveLeftGripper(0.22, 3.0)
-                # if obj.category == 'CUBIC':
-                #     JuskeshinoHardware.moveLeftGripper(0.0 , 3.0)
-                # else:
-                #     JuskeshinoHardware.moveLeftGripper(0.15 , 3.0) 
                 success=JuskeshinoManipulation.dynamic_grasp_left_arm()
                 print (success)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(HOLD_OBJ, 10)
                 JuskeshinoHRI.say("Verifying...")
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
-                rospy.sleep(0.5)     
-                # recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
-                # JuskeshinoHRI.say("Verifying...")
-                # for objc in recog_objects:
-                #     if obj.id and objc.id:
-                #         JuskeshinoHRI.say("Please, help me to take the "+ obj.id )
-                #         rospy.sleep(5)
-                #         return 'succed'
-                #     else:
-                #         JuskeshinoHRI.say("I took correctly the "+ obj.id )
-                #         return 'succed' 
-                # return 'succed'
+                rospy.sleep(0.5)
                 if not success:
                     JuskeshinoHRI.say("I couldn't grasp the " + obj.id )
                     return 'help'
