@@ -71,7 +71,7 @@ class JuskeshinoHRI:
             loop.sleep()
         return ''
 
-    def say(text, voice="voice_cmu_us_slt_arctic_hts"):
+    def startSay(text, voice="voice_cmu_us_slt_arctic_hts"):
         msg = SoundRequest()
         msg.sound   = -3
         msg.command = 1
@@ -79,6 +79,9 @@ class JuskeshinoHRI:
         msg.arg2    = voice
         msg.arg     = text
         JuskeshinoHRI.pubSoundRequest.publish(msg)
+
+    def say(text, voice="voice_cmu_us_slt_arctic_hts"):
+        JuskeshinoHRI.startSay(text, voice)
         rospy.sleep(0.085*len(text))
 
     def enableHumanFollower(enable):

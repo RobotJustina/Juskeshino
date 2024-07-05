@@ -723,7 +723,7 @@ def findPrsInRoom(cmd):
     success = success and followUpFoundPers(cmd)
     if success:
         goal_room = get_pattern_from_string(parts[0], _roomNames)
-        goal_gesture = get_pattern_from_string(parts[0], (_gesturePerson + _posePersonList))
+        goal_gesture = get_pattern_from_string(parts[0], (_gesturePersonList + _posePersonList))
         actions = [['navigate', goal_room],['find_gesture', goal_gesture]]
         cmd.actions = actions + cmd.actions
     else:
