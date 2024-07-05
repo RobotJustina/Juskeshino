@@ -1,0 +1,158 @@
+entrance:
+  x: 0.0
+  y: 0.0
+  theta: 0.0
+  parent: home
+start:
+  x: 2.0
+  y: 0.0
+  theta: 0.5
+  parent: home
+exit:
+  x: 0.0
+  y: 0.0
+  theta: 0.0
+  parent: home
+
+bed:
+  x: 8.4
+  y: 8.4
+  theta: 0.0
+  parent: bedroom
+bedside_table:
+  x: 8.4
+  y: 7.4
+  theta: 0.0
+  parent: bedroom
+shelf:
+  x: 6.72
+  y: -1.36
+  theta: -1.57
+  parent: office
+dishwasher:
+  x: 9.45
+  y: 10.2
+  theta: 1.57
+  parent: kitchen
+kitchen_table:
+  x: 8.4
+  y: 8.4
+  theta: 0.0
+  parent: kitchen
+pantry:
+  x: 6.72
+  y: -1.36
+  theta: -1.57
+  parent: kitchen
+refrigerator:
+  x: 9.45
+  y: 10.2
+  theta: 1.57
+  parent: kitchen
+sink:
+  x: 9.45
+  y: 10.2
+  theta: 1.57
+  parent: kitchen
+cabinet:
+  x: 6.0
+  y: 9.7
+  theta: 0.0
+  parent: living_room
+desk:
+  x: 3.3
+  y: 8.9
+  theta: -1.57
+  parent: office
+tv_stand:
+  x: 6.0
+  y: 9.7
+  theta: 0.0
+  parent: living_room
+storage_rack:
+  x: 6.72
+  y: -1.36
+  theta: -1.57
+  parent: office
+side_tables:
+  x: 8.4
+  y: 7.4
+  theta: 0.0
+  parent: bedroom
+sofa:
+  x: 8.4
+  y: 7.4
+  theta: 0.0
+  parent: living_room
+bookshelf:
+  x: 6.72
+  y: -1.36
+  theta: -1.57
+  parent: office
+trashbin:
+  x: 8.4
+  y: 0.1
+  theta: 0.0
+  parent: office
+potted_plant:
+  x: 2.08
+  y: 5.52
+  theta: 1.57
+  parent: living_room
+chairs:
+  x: 2.03
+  y: 9.05
+  theta: -1.57
+  parent: living_room
+coatrack:
+  x: 6.0
+  y: 9.7
+  theta: 0.0
+  parent: living_room
+armchair:
+  x: 3.23
+  y: 5.67
+  theta: -1.57
+  parent: living_room
+desk_lamp:
+  x: 2.67
+  y: 6.13
+  theta: 3.14
+  parent: living_room
+waste_basket:
+  x: 8.39
+  y: 0.07
+  theta: 1.57
+  parent: office
+lamp:
+  x: 5.91
+  y: 9.57
+  theta: 0.0
+  parent: bedroom
+
+
+bedroom:
+  x: 5.7
+  y: -0.2
+  theta: 0.0
+  parent: home
+kitchen:
+  x: 8.3
+  y: 4.46
+  theta: 0.8
+  parent: home
+office:
+  x: 5.7
+  y: -0.2 
+  theta: 0.0
+  parent: home
+living_room:
+  x: 5.4
+  y: 4.23
+  theta: 2.5
+  parent: home
+bathroom:
+  x: 5.15
+  y: 8.74
+  theta: 1.57
+  parent: home

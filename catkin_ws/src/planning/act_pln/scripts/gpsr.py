@@ -24,6 +24,7 @@ ACTION_FOLLOW = 'follow'
 ACTION_SAY = 'say'
 
 def navigate(goal):
+    goal = goal.lower().replace(" ", "_")
     print("GPSR.->Navigating to ", goal)
     JuskeshinoHRI.startSay("I am goint to the " + goal)
     if not JuskeshinoNavigation.getClose(goal, 15):
@@ -83,6 +84,7 @@ def main():
             print("GPSR.->Waiting for command")
             JuskeshinoHRI.say("Please tell me what do you want me to do")
             JuskeshinoHRI.clearRecognizedSentences()
+            cmd.actions = []
             cmd.sentence = JuskeshinoHRI.waitForNewSentence(15)
             cmdType = grammar_checker.getCommnandType(cmd)
             if cmd != '' and cmd is not None and cmdType is not None:
