@@ -56,7 +56,6 @@
 
   <include file="$(find surge_et_ambula)/launch/justina/vision.launch"> 
     <arg name="debug"         value="$(arg debug)"/> 
-    <arg name="training_dir"  value="$(find obj_reco)/training_dir"/>
   </include> 
   
   <include file="$(find surge_et_ambula)/launch/justina/hri.launch">

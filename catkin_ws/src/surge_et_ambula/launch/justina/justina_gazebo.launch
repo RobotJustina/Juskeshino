@@ -1,8 +1,11 @@
 <launch>
   <arg name="debug" default="False"/>
   <arg name="use_vosk" default="False"/>
-  <arg name="world" default="appartment"/>
-  
+  <arg name="map_name" default="appartment"/>
+  <arg name="locations" default="known_locations_gazebo"/>
+
+  <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
+  <arg name="world" default="appartment"/> 
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
     <arg name="posx"  value="10.61"/>
     <arg name="posy"  value="11.24"/>
@@ -10,22 +13,11 @@
     <arg name="yaw"   value="3.14"/>
     <arg name="world" value="$(arg world)"/>
   </include>
-  
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_gazebo.rviz"/>
-  
-  <node name="justina_gui" pkg="justina_gui" type="justina_gui_node" output="screen">
-    <param name="la_predefined" value="$(find config_files)/justina/manipulation/la_predefined.yaml"/>
-    <param name="ra_predefined" value="$(find config_files)/justina/manipulation/ra_predefined.yaml"/>
-    <param name="hd_predefined" value="$(find config_files)/justina/manipulation/hd_predefined.yaml"/>
-    <remap from="/vision/obj_reco/recognize_object" to="/vision/obj_segmentation/get_obj_pose"/>
-    <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
-  </node>
-  <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
-
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/>
+
   <include file="$(find surge_et_ambula)/launch/justina/navigation.launch">
-    <arg name="static_map_file"  value="$(find config_files)/maps/appartment.yaml"/>
-    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/appartment.yaml"/>
+    <arg name="static_map_file"  value="$(find config_files)/maps/$(arg map_name).yaml"/>
+    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/$(arg map_name).yaml"/>
     <arg name="initial_pose_x" value="0.49"/>
     <arg name="initial_pose_y" value="-0.19"/>
     <arg name="initial_pose_a" value="0"/>
@@ -43,10 +35,18 @@
     <arg name="lidar_points_threshold" value="5"/>
   </include>
 
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_gazebo.rviz"/> 
+  <node name="justina_gui" pkg="justina_gui" type="justina_gui_node" output="screen">
+    <param name="la_predefined" value="$(find config_files)/justina/manipulation/la_predefined.yaml"/>
+    <param name="ra_predefined" value="$(find config_files)/justina/manipulation/ra_predefined.yaml"/>
+    <param name="hd_predefined" value="$(find config_files)/justina/manipulation/hd_predefined.yaml"/>
+    <remap from="/vision/obj_reco/recognize_object" to="/vision/obj_segmentation/get_obj_pose"/>
+    <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
+  </node>
+
   <include file="$(find surge_et_ambula)/launch/justina/justina_manipulation.launch"/>
   <include file="$(find surge_et_ambula)/launch/justina/vision.launch">
     <arg name="debug"         value="$(arg debug)"/>
-    <arg name="training_dir"  value="$(find obj_reco)/training_simul"/>
   </include>
 
   <include file="$(find surge_et_ambula)/launch/justina/hri.launch">
@@ -54,6 +54,6 @@
   </include>
   
   <include file="$(find surge_et_ambula)/launch/justina/planning.launch">
-    <arg name="known_locations" value="$(find config_files)/navigation/known_locations_lab.yaml"/>
+    <arg name="known_locations" value="$(find config_files)/navigation/$(arg locations).yaml"/>
   </include>
 </launch>
