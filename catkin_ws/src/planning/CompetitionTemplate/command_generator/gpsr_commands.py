@@ -105,8 +105,7 @@ class CommandGenerator:
         # Object manipulation and perception commands
         object_cmd_list = ["goToLoc", "takeObjFromPlcmt", "findObjInRoom", "countObjOnPlcmt", "tellObjPropOnPlcmt",
                            "bringMeObjFromPlcmt", "tellCatPropOnPlcmt"]
-        person_cmd_list = ['goToLoc']
-        object_cmd_list = ['goToLoc']
+        
         if cmd_category == "people":
             cmd_list = person_cmd_list
         elif cmd_category == "objects":

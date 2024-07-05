@@ -54,6 +54,7 @@ def main():
     state = SM_INIT
     while not rospy.is_shutdown():
         if state == SM_INIT:
+            print("GPSR.->Waiting for command")
             JuskeshinoHRI.say("Please tell me what do you want me to do")
             JuskeshinoHRI.clearRecognizedSentences()
             sentence = JuskeshinoHRI.waitForNewSentence(15)
@@ -61,19 +62,22 @@ def main():
             cmd.sentence = sentence
             cmdType = grammar_checker.getCommnandType(cmd)
             if cmd != '' and cmd is not None and cmdType is not None:
-                print("Recognized command: ", cmd.sentence, "  of Type: ", cmdType)
-                print("List of actions: ", cmd.actions)
+                print("GPSR.->Recognized command: ", cmd.sentence, "  of Type: ", cmdType)
+                print("GPSR.->List of actions: ", cmd.actions)
                 JuskeshinoHRI.say("Did you say")
                 JuskeshinoHRI.say(cmd.sentence)
                 JuskeshinoHRI.say("Please answer robot yes or robot no.")
                 state = SM_WAIT_FOR_CONFIRMATION
         elif state == SM_WAIT_FOR_CONFIRMATION:
+            print("GPSR.->Waiting for confirmation")
             cmd = JuskeshinoHRI.waitForNewSentence(10)
             if cmd == "ROBOT YES" or cmd == "JUSTINA YES":
+                print("GPSR.->Received confirmation: YES")
                 JuskeshinoHRI.say("O K. I'm going to execute the command")
                 state = SM_END
             else:
                 JuskeshinoHRI.say("O K")
+                print("GPSR.->Received cancelation of command")
                 state = SM_INIT
 
         elif state == SM_END:
