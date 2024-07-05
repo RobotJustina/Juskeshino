@@ -358,6 +358,9 @@ def main():
                     print("MOVE FRONT:__", move_front)
                     JuskeshinoNavigation.moveDist(move_front , 5.0)
                     current_state = DETECT_OBJECT_ORIENTATION
+                else:
+                    current_state = DETECT_OBJECT_ORIENTATION
+                    
             except:
                 JuskeshinoHRI.say("I couldn't find the object")
                 current_state = HANDLING_LOCATION_2
