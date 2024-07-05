@@ -45,7 +45,7 @@ OBJECTS_TABLE_THETA = [5.44 ,2.15, 1.5]
 # Objects
 BOWL   = "red_bowl"
 MILK   = "jelly"
-CEREAL = "mango_juice"
+CEREAL = "apple"
 
 # Gripper_aperture
 GRIP_MILK   = 0.4
@@ -482,6 +482,8 @@ def main():
             print("ESTADO:___POST_GRASP..................")
             print("SB-PLN.->Moving base backwards")    
             JuskeshinoNavigation.moveDist(-0.33, 10)
+
+            
             if (not simu) or (torso):
                 if(actual_obj == BOWL):
                     try:
@@ -556,6 +558,12 @@ def main():
             JuskeshinoHardware.moveLeftArmWithTrajectory(HOME , 10)
             time.sleep(0.2)
             JuskeshinoHardware.moveLeftGripper(0.0, 2.0)
+
+            try:
+                JuskeshinoHardware.moveTorso(0.05 , 10.0)
+                #time.sleep(1)
+            except:
+                print("Cannot move torso")
 
             current_state = CONFIG_BY_CYCLE
 
