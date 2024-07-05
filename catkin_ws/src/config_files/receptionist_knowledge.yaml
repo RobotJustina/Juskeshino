@@ -12,19 +12,19 @@ Places:
     occupied: Not_available
   Place_1:
     location:
-      theta: 3.14159
-      x: 0.85
-      y: 2.14
+      theta: 1.57
+      x: 2.31
+      y: 1.21
     occupied: None
   Place_2:
     location:
-      theta: 3.14159
-      x: 0.85
-      y: 2.64
+      theta: 1.57
+      x: 2.81
+      y: 1.21
     occupied: Jack
   Place_3:
     location:
-      theta: 3.14159
-      x: 0.85
-      y: 3.14
+      theta: 1.57
+      x: 3.31
+      y: 1.21
     occupied: None

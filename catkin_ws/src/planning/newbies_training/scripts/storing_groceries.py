@@ -197,24 +197,30 @@ class GraspObject(smach.State):
         self.tries += 1
         if self.tries <6:
             rospy.logwarn('\n--> STATE 7 <: Picking up the target object, attempt: ' + str(self.tries))
-            
             # GET OBJECT LOCATION AND CALCULATE TRAJECTORY
             obj=userdata.object
             x,y,z=userdata.object_output
-            
+            x,y,z = JuskeshinoSimpleTasks.transformPoint(x,y,z, "shoulders_left_link", "base_link")
             JuskeshinoHRI.say("I am ready to pick the "+ obj.id)
             JuskeshinoHardware.moveTorso(TABLE_TORSO_HEIGHT , timeout = 5.0)
             rospy.sleep(1)
             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
             JuskeshinoHardware.moveLeftGripper(0.7, 100.0)
 
-            # EXECUTE TRAJECTORY
-            [response, success] = JuskeshinoManipulation.GripLa(obj)
+            manip_method = rospy.get_param("~manip_method")
+            if manip_method == "best":
+                # EXECUTE TRAJECTORY
+                [response, success] = JuskeshinoManipulation.GripLa(obj)
+            else:
+                response = JuskeshinoManipulation.laIk([x,y,z, 0,-1.5,0])
+                if response is None or response is False:
+                    success = False
+                else:
+                    success = True
             if success:
                 JuskeshinoHRI.say("Object found correctly")
                 JuskeshinoHardware.moveLeftArmWithTrajectory(response.articular_trajectory,10)
                 success=JuskeshinoManipulation.dynamic_grasp_left_arm()
-                print (success)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(HOLD_OBJ, 10)
                 JuskeshinoHRI.say("Verifying...")
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
