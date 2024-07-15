@@ -1,0 +1,22 @@
+objects_table_robocup:
+ x: 0.26
+ y: 4.78
+ theta: 1.6
+ parent: home
+breakfast_table_robocup:
+  x: 7.6
+  y: -0.20
+  theta: -1.57
+  parent: home
+scan_cabinet:
+  x: 1.71
+  y: -3.3
+  theta: -3.14
+  parent: home
+table:
+  x: 2.0
+  y: 1.31
+  theta: 3.14
+  parent: home
+
+
