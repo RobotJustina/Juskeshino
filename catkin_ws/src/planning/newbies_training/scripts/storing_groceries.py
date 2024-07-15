@@ -19,8 +19,8 @@ from sensor_msgs.msg import LaserScan
 
 DESK = "table"
 SIMUL_DESK = 'simul_desk'
-TOP_SHELF=[0.75, 0.2, 0.0, 2.4 , 0.0, -1.0, 0.0]
-MIDDLE_SHELF=[0.31, 0.2, -0.2, 1.55, 0.0, 0.16, 0.0]
+TOP_SHELF=[1.28, 0.04, 0.0, 2.45 , 0.0, -1.2, 0.0]
+MIDDLE_SHELF=[1.28, 0.0, 0.0, 2.15, 0.0, -1.2, 0.0]
 LOW_SHELF=[0.31, 0.1, -0.1, 0.35, 0.0, 1.16, 0.0]
 PREPARE_GRIP  = [-0.69, 0.2, 0, 1.55, 0, 1.16, 0]
 HOME=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
