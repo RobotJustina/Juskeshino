@@ -89,3 +89,43 @@ trashcan:
   theta: -1.57
   parent: home
 
+kitchen_cabinet:
+  x: 0.48
+  y: 1.70
+  theta: -1.5708
+  parent: home
+dinner_table:
+  x: 3.12
+  y: 3.05
+  theta: 3.14
+  parent: home
+dishwasher:
+  x: 1.49
+  y: 4.94
+  theta: 1.57
+  parent: home
+kitchen_counter:
+  x: 1.58
+  y: 5.04
+  theta: 1.57
+  parent: home
+hallway:
+  x: 7.12
+  y: -1.21
+  theta: -1.57
+  parent: home
+office:
+  x: 2.8
+  y: -1.66
+  theta: 0
+  parent: home
+living_room:
+  x: 6.15
+  y: 2.62
+  theta: 1.57
+  parent: home
+kitchen:
+  x: 3.44
+  y: 3.16
+  theta: 3.14159
+  parent: home
