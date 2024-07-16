@@ -94,7 +94,7 @@ class JuskeshinoSimpleTasks:
             if not JuskeshinoHardware.moveHead(pan,tilt,2.0):
                 JuskeshinoHardware.moveHead(pan,tilt,2.0)
             rospy.sleep(0.5)
-            human_poses = rospy.wait_for_message("/vision/human_pose/human_pose_array", HumanCoordinatesArray, timeout=1.0)
+            human_poses = rospy.wait_for_message("/vision/human_pose/human_pose_array", HumanCoordinatesArray, timeout=5.0)
             src_frame_id = human_poses.header.frame_id
             human_poses = human_poses.coordinates_array
             if len(human_poses) > 0:
