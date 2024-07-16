@@ -199,8 +199,9 @@ def main():
     simu = False
     torso = True
     actual_value = 0
-    ALTURA_TORSO = 0.07
-    ALTURA_TORSO_BOWL = 0.2
+    ALTURA_TORSO = 0.1
+    ALTURA_TORSO_BOWL = 0.22#0.2
+    
 
     current_state = INITIAL
     while not rospy.is_shutdown():
