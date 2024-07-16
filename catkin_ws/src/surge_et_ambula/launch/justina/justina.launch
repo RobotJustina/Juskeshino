@@ -38,8 +38,8 @@
     <arg name="max_angular_speed" default="0.8"/>
     <arg name="linear_acceleration" default="0.25"/>
     <arg name="use_pot_fields" value="$(arg use_pot_fields)"/>
-    <arg name="pot_fields_k_rej" value="2.0"/>
-    <arg name="pot_fields_d0" default="0.4"/>
+    <arg name="pot_fields_k_rej" value="2.5"/>
+    <arg name="pot_fields_d0" default="1.0"/>
     <arg name="inflation_radius" value="0.15"/>
     <arg name="diagonal_paths" value="False"/>
     <arg name="smooth_alpha" default="0.1"/>
@@ -62,6 +62,9 @@
   <include file="$(find surge_et_ambula)/launch/justina/hri.launch">
     <arg name="use_vosk" value="$(arg use_vosk)"/>
   </include>
+
+  <arg name="topic_name" default="/navigation/obs_detector/enable" />
+  <node pkg="rostopic" type="rostopic" name="rostopic_pub_node" output="screen" args="pub $(arg topic_name) std_msgs/Bool 'data: true'" />
 
   <include file="$(find surge_et_ambula)/launch/justina/planning.launch">
     <arg name="known_locations" value="$(find config_files)/navigation/known_locations_robocup_2024.yaml"/>
