@@ -650,10 +650,10 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
         candidate_q_list   = list(first_trajectory)
 
     
-    if(category == "BOX"):
+    if(category == "BOX") or (category == "CUBE"):
         first_trajectory   = list(reversed(candidate_q_list))
-        first_trajectory.pop
-        first_trajectory.pop
+        #first_trajectory.pop
+        #first_trajectory.pop
         candidate_q_list   = list(first_trajectory)
 
     
