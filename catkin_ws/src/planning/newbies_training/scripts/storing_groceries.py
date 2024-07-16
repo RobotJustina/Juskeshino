@@ -328,26 +328,40 @@ class ScanCabinet(smach.State):
                         #JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
                         userdata.object_shelf=obj
                         if obj.pose.position.z>1.3:
-                            JuskeshinoHRI.say("The object is part of the top shelf")
-                            print("The object is part of the top shelf")
-                            height_d='top'
+                            JuskeshinoHRI.say("The object is part of the second shelf")
+                            print("The object is part of the second shelf")
+                            height_d='second'
                             print (height_d)
                             userdata.height=height_d
                             return 'succed'
-                        elif 1.3 > obj.pose.position.z > 0.8:
-                            JuskeshinoHRI.say("The object is part of the middle shelf") 
-                            print("The object is part of the middle shelf")
-                            height_d='middle'
+                        elif 1.3 > obj.pose.position.z > 0.9:
+                            JuskeshinoHRI.say("The object is part of the third shelf") 
+                            print("The object is part of the third shelf")
+                            height_d='third'
                             userdata.height=height_d
                             return 'succed'
-                        elif 0.8 > obj.pose.position.z > 0.2:
-                            JuskeshinoHRI.say("The object is part of the low shelf")
-                            print("The object is part of the low shelf") 
-                            height_d='low'
+                        elif 0.9 > obj.pose.position.z > 0.6:
+                            JuskeshinoHRI.say("The object is part of the fourth shelf")
+                            print("The object is part of the fourth shelf") 
+                            height_d='fourth'
                             userdata.height=height_d
                             return 'succed'
+                        
+                        else:
+                            JuskeshinoHardware.moveHead(0,-0.4, 5)
+                            if obj.pose.position.z < 0.7:
+                                JuskeshinoHRI.say("The object is part of the fifth shelf")
+                                print("The object is part of the fifth shelf")
+                                height_d='fifth'
+                                print (height_d)
+                                userdata.height=height_d
+                                return 'succed'
+                        
+                        
+                            
                 JuskeshinoHRI.say(f"I couldn't found a match for the {tar_obj.id}")
                 return 'tries'
+
             return 'tries'
 
                 # for obj in recog_objects:
@@ -412,13 +426,16 @@ class LeaveObject(smach.State):
             JuskeshinoHardware.moveHead(0,-0.35, 5)
             shelf=userdata.height
 
-            if shelf == 'top':
+            if shelf == 'second':
                 JuskeshinoHardware.moveTorso(0.28 , 10.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(TOP_SHELF, 10)
-            if shelf =='middle':
+            if shelf =='third':
                 JuskeshinoHardware.moveTorso(0.28 , 10.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(MIDDLE_SHELF, 10)
-            if shelf=='low':
+            if shelf=='fourth':
+                JuskeshinoHardware.moveTorso(0.28 , 10.0)
+                JuskeshinoHardware.moveLeftArmWithTrajectory(LOW_SHELF, 10)
+            if shelf=='fifth':
                 JuskeshinoHardware.moveTorso(0.02 , 10.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(LOW_SHELF, 10)
             rospy.sleep(2)
