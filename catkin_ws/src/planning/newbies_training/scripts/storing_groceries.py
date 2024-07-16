@@ -25,7 +25,7 @@ LOW_SHELF=[0.31, 0.1, -0.1, 0.35, 0.0, 1.16, 0.0]
 PREPARE_GRIP  = [-0.69, 0.2, 0, 1.55, 0, 1.16, 0]
 HOME=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 HOLD_OBJ = [0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ]
-GET_CLOSE_TO_TABLE = 0.3
+GET_CLOSE_TO_TABLE = 0.4
 TABLE_TORSO_HEIGHT = 0.12
 
 def matching_objects(obj):
@@ -317,7 +317,7 @@ class ScanCabinet(smach.State):
             tar_obj=userdata.object
             picked_obj_category = matching_objects(tar_obj.id)
 
-            JuskeshinoHardware.moveHead(0,-0.35, 5)
+            JuskeshinoHardware.moveHead(0,-0.3, 5)
             rospy.sleep(2)
             recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()     
             if recog_objects is not None:
@@ -325,7 +325,7 @@ class ScanCabinet(smach.State):
                     obj_category = matching_objects(obj.id)
                     if obj_category == picked_obj_category:
                         JuskeshinoHRI.say("I found a match")
-                        JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
+                        #JuskeshinoSimpleTasks.handling_location_la(obj.pose.position)
                         userdata.object_shelf=obj
                         if obj.pose.position.z>1.3:
                             JuskeshinoHRI.say("The object is part of the top shelf")
@@ -422,7 +422,7 @@ class LeaveObject(smach.State):
                 JuskeshinoHardware.moveTorso(0.02 , 10.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(LOW_SHELF, 10)
             rospy.sleep(2)
-            JuskeshinoNavigation.moveDist(0.45, timeout=10)
+            JuskeshinoNavigation.moveDist(0.05, timeout=10)
             rospy.sleep(2)
             print("Opening gripper")
             JuskeshinoHardware.moveLeftGripper(0.8, 5.0)
