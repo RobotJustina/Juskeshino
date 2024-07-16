@@ -320,7 +320,7 @@ def main():
                 JuskeshinoHRI.say("I couldn't find the object")
                 tries = tries + 1
                 current_state = DETECT_OBJECT
-                if tries > 30:
+                if tries > 300:
                     JuskeshinoHRI.say("I didn't find the object")
                     print("SB-PLN.-> Se excedió el numero de intentos")
                     current_state = DETECT_OBJECT_ORIENTATION
@@ -460,7 +460,7 @@ def main():
                 current_state = TAKE_OBJECT
             else:
                 grip_attempts = grip_attempts + 1
-                if grip_attempts < 3:
+                if grip_attempts < 6:
 
                     current_state = DETECT_OBJECT_ORIENTATION
 
@@ -495,13 +495,13 @@ def main():
         elif(current_state == POST_GRASP):
             print("ESTADO:___POST_GRASP..................")
             print("SB-PLN.->Moving base backwards")    
-            JuskeshinoNavigation.moveDist(-0.33, 10)
+            #JuskeshinoNavigation.moveDist(-0.33, 10)
 
             
             if (not simu) or (torso):
                 if(actual_obj == BOWL):
                     try:
-                        JuskeshinoHardware.moveTorso( 0.19, 10.0)
+                        JuskeshinoHardware.moveTorso( 0.21, 10.0)
                         #time.sleep(1)
                     except:
                         print("Cannot move torso")
@@ -511,6 +511,8 @@ def main():
                         #time.sleep(1)
                     except:
                         print("Cannot move torso")
+
+            JuskeshinoNavigation.moveDist(-0.33, 10)
             if(actual_obj != BOWL):
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
             
@@ -526,25 +528,7 @@ def main():
                 print("SB-PLN.->Cannot get close to " + EAT_TABLE +" position")
                 JuskeshinoHRI.say("Cannot get close to " + EAT_TABLE)
                 
-            current_state = PUT_OBJECT#APROACH_TO_TABLE_2
-
-
-
-
-        elif(current_state == APROACH_TO_TABLE_2):
-            print("ESTADO:____APROACH_TO_TABLE_2..................")
-            print("SB-PLN.->move head")
-            if not JuskeshinoHardware.moveHead(0,-1, 5):
-                print("SB-PLN.->Cannot move head")
-                time.sleep(0.5)
-                JuskeshinoHardware.moveHead(0,-1, 5)
-            time.sleep(0.5)
-            JuskeshinoNavigation.moveDist(0.2, 10)
-
-            #approach_to_table()
-            time.sleep(0.3)
             current_state = PUT_OBJECT
-
 
 
 
@@ -555,11 +539,15 @@ def main():
                 #time.sleep(1)
                 serving_breakfast(actual_obj) 
             if actual_obj == BOWL:
+                JuskeshinoNavigation.moveDist(0.2, 7)
                 JuskeshinoNavigation.moveLateral(-0.05 , 5.0)
                 JuskeshinoHRI.say("Leave bowl")
                 print("SB-PLN.->Open gripper")
                 JuskeshinoHardware.moveLeftGripper(1.0, 5.0)
                 time.sleep(0.5)            # Soltar el objeto
+            
+            JuskeshinoHRI.say("cicle end")
+
             current_state = CYCLE_END
 
 

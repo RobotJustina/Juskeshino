@@ -18,7 +18,6 @@ table:
   y: 3.05
   theta: 3.14
   parent: home
-
 entrance:
   x: 5.79
   y: -3.32
@@ -39,3 +38,54 @@ exit:
   y: 0.0
   theta: 0.0
   parent: home
+hallway_cabinet:
+  x: 7.15
+  y: -1.98
+  theta: -1.57
+  parent: home
+desk:
+  x: 3.54
+  y: -1.57
+  theta: 0
+  parent: home
+shelf:
+  x: 0.5
+  y: -2.56
+  theta: -1.57
+  parent: home
+coathanger:
+  x: 4.88
+  y: -0.569
+  theta: 0
+  parent: home
+tv_table:
+  x: 7.2
+  y: 1.97
+  theta: -1.57
+  parent: home
+lounge_chair:
+  x: 7.84
+  y: 4.21
+  theta: 0
+  parent: home
+lamp:
+  x: 7.75
+  y: 5.75
+  theta: 0.0
+  parent: home
+couch:
+  x: 6.23
+  y: 5.07
+  theta: 1.57
+  parent: home
+coffe_table:
+  x: 5.38
+  y: 3.73
+  theta: 0
+  parent: home
+trashcan:
+  x: 4.03
+  y: 1.48
+  theta: -1.57
+  parent: home
+
