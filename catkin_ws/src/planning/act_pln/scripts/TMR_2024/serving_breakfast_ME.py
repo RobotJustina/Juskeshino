@@ -44,7 +44,7 @@ OBJECTS_TABLE_THETA = [5.44 ,2.15, 1.5]
 
 # Objects
 BOWL   = "red_bowl"
-MILK   = "jelly"
+MILK   = "apple"
 CEREAL = "apple"
 
 # Gripper_aperture
@@ -265,6 +265,7 @@ def main():
             print("cycle:___", cycle)
             print("j:___", j)
             print("Actual object", pila[j])
+            JuskeshinoNavigation.moveDist(1.5,10)
 
             current_state = MOVE_TO_LOCATION
 
@@ -275,7 +276,7 @@ def main():
         elif(current_state == MOVE_TO_LOCATION):
             print("ESTADO:___MOVE_TO_LOCATION..................")
             #JuskeshinoHRI.say("I'm going to the "+ location_actual)
-            JuskeshinoNavigation.moveDist(1.0,10)
+            
             
             if not JuskeshinoNavigation.getClose(location_actual , 300): 
                 JuskeshinoHRI.say("Cannot get close to the "+ location_actual +" position")
@@ -524,7 +525,7 @@ def main():
                 serving_breakfast(actual_obj) 
             if actual_obj == BOWL:
                 JuskeshinoNavigation.moveDist(0.2, 7)
-                JuskeshinoNavigation.moveLateral(-0.05 , 5.0)
+                #JuskeshinoNavigation.moveLateral(-0.05 , 5.0)
                 JuskeshinoHRI.say("Leave bowl")
                 print("SB-PLN.->Open gripper")
                 JuskeshinoHardware.moveLeftGripper(1.0, 5.0)
