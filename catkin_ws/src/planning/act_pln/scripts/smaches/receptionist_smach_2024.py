@@ -156,7 +156,7 @@ class Scan_face(smach.State):
         head.set_joint_values([0.0, -0.1])
         print('Scanning for faces')
         voice.talk('Scanning for faces')
-        
+
         # For simulation use camera_enable = True
         res, userdata.face_img = wait_for_face(lap_camera=camera_enable)  # default 10 secs
         if res != None:
@@ -193,6 +193,10 @@ class Decide_face(smach.State):
             print('Is it correct?')
             voice.talk(f'I found you, I Think you are, {userdata.name}.')
             voice.talk('Is it correct?')
+        
+            # TODO: Validate sentence
+            print(f'Please answer, Robot yes. or Robot no. now')
+            voice.talk(f'Please answer, Robot yes. or Robot no. now')
 
             if vosk_enable:
                 rospy.logwarn('Listening now (Cc')
@@ -340,6 +344,10 @@ class Get_drink(smach.State):
         print(f'Did you say {drink}?')
         voice.talk(f'Did you say {drink}?')
         
+        # TODO: Validate sentence
+        print(f'Please answer, Robot yes. or Robot no. now')
+        voice.talk(f'Please answer, Robot yes. or Robot no. now')
+
         rospy.sleep(0.3)
         # TODO: TEST VOICE BEFORE START
         if vosk_enable:
@@ -505,6 +513,7 @@ class Find_host_alternative(smach.State):
             print(f'I am sorry, I can not find the host, lets keep going')
             voice.talk(f'I am sorry, I can not find the host, lets keep going')
             userdata.name_like_host, _ = party.get_host_info()
+            self.tries = 0
             return 'failed'
         
         print(f'looking for host on: {host_loc}')
@@ -588,7 +597,7 @@ if __name__ == '__main__':
         # State machine for Receptionist task
         # Initial states routine
         smach.StateMachine.add("INITIAL", Initial(),              
-                               transitions={'failed':'INITIAL', 'succ':'WAIT_DOOR_OPENED'})
+                               transitions={'failed':'INITIAL', 'succ':'GOTO_DOOR'})
         
         # smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(),       
         #                        transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'GOTO_DOOR'})
