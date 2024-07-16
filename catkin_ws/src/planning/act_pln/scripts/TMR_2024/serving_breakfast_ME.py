@@ -201,7 +201,7 @@ def main():
     actual_value = 0
     ALTURA_TORSO = 0.1
     ALTURA_TORSO_BOWL = 0.22#0.2
-    
+
 
     current_state = INITIAL
     while not rospy.is_shutdown():
@@ -275,6 +275,7 @@ def main():
         elif(current_state == MOVE_TO_LOCATION):
             print("ESTADO:___MOVE_TO_LOCATION..................")
             #JuskeshinoHRI.say("I'm going to the "+ location_actual)
+            JuskeshinoNavigation.moveDist(1.0,10)
             
             if not JuskeshinoNavigation.getClose(location_actual , 300): 
                 JuskeshinoHRI.say("Cannot get close to the "+ location_actual +" position")
@@ -357,24 +358,6 @@ def main():
 
 
 
-
-        elif(current_state == HANDLING_LOCATION_2):
-            print("ESTADO:____HANDLING_LOCATION_2..................")
-            try:
-                [obj, img] = JuskeshinoSimpleTasks.object_search(actual_obj) 
-                pos_obj_bl = [obj.pose.position.x, obj.pose.position.y, obj.pose.position.z]
-                print("position obj:____", obj.pose.position.x)
-                if(obj.pose.position.x > 0.54):
-                    move_front = obj.pose.position.x -0.54
-                    print("MOVE FRONT:__", move_front)
-                    JuskeshinoNavigation.moveDist(move_front , 5.0)
-                    current_state = DETECT_OBJECT_ORIENTATION
-                else:
-                    current_state = DETECT_OBJECT_ORIENTATION
-                    
-            except:
-                JuskeshinoHRI.say("I couldn't find the object")
-                current_state = HANDLING_LOCATION_2
 
 
 
@@ -502,7 +485,7 @@ def main():
             if (not simu) or (torso):
                 if(actual_obj == BOWL):
                     try:
-                        JuskeshinoHardware.moveTorso( 0.21, 10.0)
+                        JuskeshinoHardware.moveTorso( 0.24, 10.0)
                         #time.sleep(1)
                     except:
                         print("Cannot move torso")
