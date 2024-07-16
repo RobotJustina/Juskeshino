@@ -498,7 +498,7 @@ if __name__ == '__main__':
                                transitions={'failed':'FIND_HUMAN', 'succ':'POINTING_BAG', 'tries':'FIND_HUMAN'})
         
         smach.StateMachine.add("POINTING_BAG", PointingBag(), 
-                               transitions={'failed':'END', 'succ':'GOTO_LIVING_ROOM', 'tries':'POINTING_BAG'})
+                               transitions={'failed':'END', 'succ':'ASK_FOR_BAG', 'tries':'POINTING_BAG'})
         
         smach.StateMachine.add("GOTO_LIVING_ROOM", GotoLivingRoom(),            
                                transitions={'failed':'ASK_FOR_BAG', 'tries':'GOTO_LIVING_ROOM', 'succ':'ASK_FOR_BAG'})
