@@ -29,5 +29,7 @@
     <param name="move_backwards" value="False"/>
     <param name="max_linear" value="0.6"/>
     <param name="max_angular" value="0.8"/>
+    <param name="move_head" value="True"/>
+    <param name="pot_fields" value="True"/>
   </node>
 </launch>
