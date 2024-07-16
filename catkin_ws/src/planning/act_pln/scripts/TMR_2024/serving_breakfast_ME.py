@@ -199,7 +199,7 @@ def main():
     torso = True
     actual_value = 0
     ALTURA_TORSO = 0.07
-    ALTURA_TORSO_BOWL = 0.11
+    ALTURA_TORSO_BOWL = 0.2
 
     current_state = INITIAL
     while not rospy.is_shutdown():
@@ -222,6 +222,8 @@ def main():
             JuskeshinoSimpleTasks.setNodeHandle()
             JuskeshinoHRI.setNodeHandle()
             JuskeshinoKnowledge.setNodeHandle()
+
+            JuskeshinoHardware.moveTorso(0.02 , 10.0)
             
             pila = [BOWL, CEREAL, MILK]
             count = 0
@@ -233,7 +235,7 @@ def main():
             print("cycle:___", cycle)
             mesa_alta = True
             align_with_table = True
-            current_state = START
+            current_state = DETECT_OBJECT#START
 
 
 

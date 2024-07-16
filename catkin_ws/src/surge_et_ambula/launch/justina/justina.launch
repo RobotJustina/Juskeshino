@@ -32,7 +32,7 @@
     <arg name="move_head" value="True"/>
     <arg name="control_alpha" default="0.6"/>
     <arg name="control_beta" default="0.2"/>
-    <arg name="max_linear_speed" default="0.55"/>
+    <arg name="max_linear_speed" default="0.7"/>
     <arg name="min_linear_speed" default="0.15"/>
     <arg name="max_angular_speed" default="0.8"/>
     <arg name="linear_acceleration" default="0.25"/>
@@ -63,6 +63,6 @@
   </include>
 
   <include file="$(find surge_et_ambula)/launch/justina/planning.launch">
-    <arg name="known_locations" value="$(find config_files)/navigation/known_locations_planta_baja_2.yaml"/>
+    <arg name="known_locations" value="$(find config_files)/navigation/known_locations_robocup_2024.yaml"/>
   </include>
 </launch>

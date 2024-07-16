@@ -454,6 +454,7 @@ int main(int argc, char** argv)
     }
 
     std::cout << "MapAugmenter.->Generating static map with prohibition layer and static cost map..." << std::endl;
+    std::cout << "MapAugmnetet.->Static: " << srvMap.response.map.info.width << "  " << srvMap.response.map.info.height<<std::endl;
     static_map = merge_maps(srvMap.response.map, srvProhibitionMap.response.map);
     static_map = inflate_map(static_map, inflation_radius);
     static_cost_map = get_cost_map(static_map, cost_radius);

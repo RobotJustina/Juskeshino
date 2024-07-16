@@ -53,7 +53,7 @@ int main(int argc, char **argv){
 
   if(ros::param::has("~occupied_threshold"))
       ros::param::get("~occupied_threshold", occupied_threshold);
-
+  map_msg = *ros::topic::waitForMessage<nav_msgs::OccupancyGrid>("/map" , ros::Duration(10000.0));
   ros::Subscriber map_sub = n.subscribe("/map", 10, mapCallback);
   map_pub = n.advertise<nav_msgs::OccupancyGrid>("/cartographer_map", 1);
 

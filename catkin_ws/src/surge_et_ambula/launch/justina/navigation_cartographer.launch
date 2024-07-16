@@ -130,7 +130,7 @@
     <remap from="/map" to="/prohibition_layer_map"/>
   </node>
  
-  <node name="map_server" pkg="map_server" type="map_server" output="screen" args="$(arg static_map_file)"/>
+  <!-- <node name="map_server" pkg="map_server" type="map_server" output="screen" args="$(arg static_map_file)"/> -->
 
   <arg name="topic_name" default="/navigation/obs_detector/enable" />
   <node pkg="rostopic" type="rostopic" name="rostopic_pub_node" output="screen" args="pub $(arg topic_name) std_msgs/Bool 'data: true'" />

@@ -29,8 +29,8 @@ def navigate(goal):
     goal_to_say = goal.lower().replace("_", " ")
     print("GPSR.->Navigating to ", goal)
     JuskeshinoHRI.startSay("I am goint to the " + goal_to_say)
-    if not JuskeshinoNavigation.getClose(goal, 15):
-        if not JuskeshinoNavigation.getClose(goal, 15):
+    if not JuskeshinoNavigation.getClose(goal, 60):
+        if not JuskeshinoNavigation.getClose(goal, 60):
             print("GPSR.->Cannot arrive to goal point ", goal)
         else:
             print("GPSR.->Arrived to goal point ", goal)
@@ -113,7 +113,8 @@ def main():
             print("GPSR.->Command executed succesfully")
             JuskeshinoHRI.startSay("I have executed the command.")
             navigate('start_location')
-            state = SM_INIT
+            state = SM_UNDEFINED
+            break
         rate.sleep()
 
 
