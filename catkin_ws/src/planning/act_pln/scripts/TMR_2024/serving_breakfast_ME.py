@@ -501,7 +501,7 @@ def main():
             if (not simu) or (torso):
                 if(actual_obj == BOWL):
                     try:
-                        JuskeshinoHardware.moveTorso( , 10.0)
+                        JuskeshinoHardware.moveTorso( 0.19, 10.0)
                         #time.sleep(1)
                     except:
                         print("Cannot move torso")
@@ -539,6 +539,7 @@ def main():
                 time.sleep(0.5)
                 JuskeshinoHardware.moveHead(0,-1, 5)
             time.sleep(0.5)
+            JuskeshinoNavigation.moveDist(0.2, 10)
 
             #approach_to_table()
             time.sleep(0.3)
