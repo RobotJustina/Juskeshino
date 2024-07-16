@@ -236,7 +236,7 @@ def main():
             print("cycle:___", cycle)
             mesa_alta = True
             align_with_table = True
-            current_state = DETECT_OBJECT#START
+            current_state = START
 
 
 
@@ -305,7 +305,7 @@ def main():
         elif(current_state == DETECT_OBJECT):
             print("ESTADO:____DETECT_OBJECT..................")
             try:
-                [obj, img] = JuskeshinoSimpleTasks.object_search(actual_obj)
+                [obj, img] = JuskeshinoSimpleTasks.object_search(actual_obj) #*************************************************
                 """
                 time.sleep(0.2)
                 [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj)
@@ -320,7 +320,7 @@ def main():
                 JuskeshinoHRI.say("I couldn't find the object")
                 tries = tries + 1
                 current_state = DETECT_OBJECT
-                if tries > 3:
+                if tries > 30:
                     JuskeshinoHRI.say("I didn't find the object")
                     print("SB-PLN.-> Se excedió el numero de intentos")
                     current_state = DETECT_OBJECT_ORIENTATION
@@ -338,13 +338,20 @@ def main():
                 JuskeshinoNavigation.moveDist(0.18, 7.0)
             # Ajusta altura de torso para mejor agarre
             if (not simu) or (torso):
-                if(mesa_alta):
-                    if(actual_obj == 'red_bowl'):
-                        JuskeshinoHardware.moveTorso(ALTURA_TORSO_BOWL , 10.0)
-                    else:
-                        JuskeshinoHardware.moveTorso(ALTURA_TORSO , 10.0)
+                if(actual_obj == BOWL):
+                    JuskeshinoHardware.moveTorso(ALTURA_TORSO_BOWL , 15.0)
+                else:
+                    JuskeshinoHardware.moveTorso(ALTURA_TORSO , 15.0)
             tries = 0
-            current_state = HANDLING_LOCATION_2#DETECT_OBJECT_ORIENTATION
+
+            pos_obj_bl = [obj.pose.position.x, obj.pose.position.y, obj.pose.position.z]
+            print("position obj:____", obj.pose.position.x)
+            if(obj.pose.position.x > 0.54):
+                move_front = obj.pose.position.x -0.54
+                print("MOVE FRONT:__", move_front)
+                JuskeshinoNavigation.moveDist(move_front , 5.0)
+
+            current_state = DETECT_OBJECT_ORIENTATION#HANDLING_LOCATION_2#DETECT_OBJECT_ORIENTATION
 
 
 
@@ -387,6 +394,9 @@ def main():
                 current_state = PREPARE_ARM
             except:
                 JuskeshinoHRI.say("I couldn't find the object")
+                current_state = DETECT_OBJECT_ORIENTATION
+                print("REGRESA A DETECTAR EL OBJETO DE NUEVO.................")
+                """
                 try:
                     [obj, img] = JuskeshinoSimpleTasks.object_search_orientation(actual_obj)
                     #[obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj)
@@ -406,6 +416,7 @@ def main():
                         JuskeshinoHRI.say("oooo")
                         print("SB-PLN.-> Se excedió el numero de intentos")
                         current_state = PREPARE_ARM
+                """
             
             print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
                       
@@ -456,7 +467,7 @@ def main():
                 else:
                     JuskeshinoHRI.say("No possible poses found")
                     print("SB-PLN.->No possible poses found")
-                    resp = resp.q
+                    #resp = resp.q
                 
                     current_state = TAKE_OBJECT
 
@@ -490,7 +501,7 @@ def main():
             if (not simu) or (torso):
                 if(actual_obj == BOWL):
                     try:
-                        JuskeshinoHardware.moveTorso(0.18 , 10.0)
+                        JuskeshinoHardware.moveTorso( , 10.0)
                         #time.sleep(1)
                     except:
                         print("Cannot move torso")
