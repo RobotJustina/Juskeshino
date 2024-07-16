@@ -349,7 +349,7 @@ def main():
 
             pos_obj_bl = [obj.pose.position.x, obj.pose.position.y, obj.pose.position.z]
             print("position obj:____", obj.pose.position.x)
-            if(obj.pose.position.x > 0.54):
+            if(obj.pose.position.x > 0.52):
                 move_front = obj.pose.position.x -0.54
                 print("MOVE FRONT:__", move_front)
                 JuskeshinoNavigation.moveDist(move_front , 5.0)
