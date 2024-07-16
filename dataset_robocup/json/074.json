@@ -3,23 +3,6 @@
   "flags": {},
   "shapes": [
     {
-      "label": "mike",
-      "line_color": null,
-      "fill_color": null,
-      "points": [
-        [
-          298.990099009901,
-          152.97029702970298
-        ],
-        [
-          161.86138613861385,
-          0.0
-        ]
-      ],
-      "shape_type": "rectangle",
-      "flags": {}
-    },
-    {
       "label": "stroopwafel",
       "line_color": null,
       "fill_color": null,

@@ -3,23 +3,6 @@
   "flags": {},
   "shapes": [
     {
-      "label": "mike",
-      "line_color": null,
-      "fill_color": null,
-      "points": [
-        [
-          142.55445544554456,
-          0.0
-        ],
-        [
-          286.61386138613864,
-          121.28712871287128
-        ]
-      ],
-      "shape_type": "rectangle",
-      "flags": {}
-    },
-    {
       "label": "cornflakes",
       "line_color": null,
       "fill_color": null,

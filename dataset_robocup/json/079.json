@@ -37,23 +37,6 @@
       "flags": {}
     },
     {
-      "label": "mike",
-      "line_color": null,
-      "fill_color": null,
-      "points": [
-        [
-          113.34653465346534,
-          0.9900990099009901
-        ],
-        [
-          257.9009900990099,
-          170.2970297029703
-        ]
-      ],
-      "shape_type": "rectangle",
-      "flags": {}
-    },
-    {
       "label": "bowl",
       "line_color": null,
       "fill_color": null,

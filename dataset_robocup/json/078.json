@@ -137,23 +137,6 @@
       ],
       "shape_type": "rectangle",
       "flags": {}
-    },
-    {
-      "label": "mike",
-      "line_color": null,
-      "fill_color": null,
-      "points": [
-        [
-          249.48514851485146,
-          0.9900990099009901
-        ],
-        [
-          130.67326732673268,
-          159.40594059405942
-        ]
-      ],
-      "shape_type": "rectangle",
-      "flags": {}
     }
   ],
   "lineColor": [

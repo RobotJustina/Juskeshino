@@ -1,0 +1,4 @@
+train: /home/robocup/Juskeshino/dataset_robocup/YOLODataset/images/train/
+val: /home/robocup/Juskeshino/dataset_robocup/YOLODataset/images/val/
+nc: 41
+names: ["candle", "plum", "apple", "pear", "peach", "dishwasher_tab", "strawberry", "plate", "cornflakes", "liquorice", "milk", "washcloth", "stroopwafel", "sausages", "candy", "crisps", "hagelslag", "pancake_mix", "mayonaise", "cup", "sponges", "pea_soup", "curry", "bowl", "ice_tea", "knife", "spoon", "tictac", "cola", "orange", "lemon", "fork", "fanta", "water", "soap", "big_coke", "dubbelfris", "pringles", "banana", "ruth", "mike"]

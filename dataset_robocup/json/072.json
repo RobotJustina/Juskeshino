@@ -105,23 +105,6 @@
       "flags": {}
     },
     {
-      "label": "mike",
-      "line_color": null,
-      "fill_color": null,
-      "points": [
-        [
-          231.44475920679886,
-          0.8498583569405098
-        ],
-        [
-          109.91501416430594,
-          169.6883852691218
-        ]
-      ],
-      "shape_type": "rectangle",
-      "flags": {}
-    },
-    {
       "label": "candy",
       "line_color": null,
       "fill_color": null,
