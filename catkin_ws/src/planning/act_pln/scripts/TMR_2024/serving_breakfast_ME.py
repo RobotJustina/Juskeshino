@@ -83,27 +83,28 @@ HANDLING_LOCATION_2 = 23
 
 # Categorias 
 def categorize_objs(name):
-    # 'fork', 'knife', 'mug', 'sponge', 'b_cups', 'c_cups', 'e_cups', 'f_cups', 'dice', 'marker', 'rubiks_cube'
-    kitchen = ['red_bowl', 'fork', 'knife', 'mug', 'plate', 'spatula', 'sponge', 'spoon', 'b_cups', 'c_cups', 'e_cups', 'f_cups']
-    # 'extra_large_clamp', 'large_clamp', 'small_clamp', 'medium_clamp'
-    tools = ['adjustable_wrench', 'flat_screwdriver', 'phillips_screwdriver', 'wood_block']
-    # 'softball', 'a_mini_soccer_ball', 'racquetball', 'golf_ball',
-    balls = ['tennis_ball', 'baseball']
-    fruits = ['apple', 'banana', 'lemon', 'pear']  # 'plum', 'orange'
-    food = ['chips_can', 'mango_juice','mustard_bottle', 'potted_meat_can','jelly', 'tomato_soup_can', 'tuna_fish_can', 'pudding_box', 'cracker_box']  # 'master_chef_can', 'sugar_box'
-    other = ['dice', 'marker', 'rubiks_cube']
-    if name in kitchen:
-        return 'kitchen'
-    elif name in tools:
-        return 'tools'
-    elif name in balls:
-        return 'balls'
-    elif name in fruits:
-        return 'fruits'
+    cleaning_supplies = ['dishwasher_tab', 'soap', 'sponges', 'washcloth']
+    decorations = ['candle']
+    dishes = ['bowl','cup','fork','knife','plate','spoon']
+    drinks = ['big_coke','cola','dubbelfris', 'fanta', 'ice_tea', 'milk','water']
+    food = ['cornflakes','curry','hagelslag','mayonaise','pancake_mix', 'pea_soup', 'sausages']
+    fruits = ['apple','banana','lemon','orange','peach','pear','plum','strawberry']
+    snacks = ['candy','crisps','liquorice','pringles','stroopwafel','tictac']
+    if name in cleaning_supplies:
+        return 'cleaning supplies'
+    elif name in decorations:
+        return 'decorations'
+    elif name in dishes:
+        return 'dishes'
+    elif name in drinks:
+        return 'drinks'
     elif name in food:
         return 'food'
-    elif name in other:
-        return 'other'
+    elif name in fruits:
+        return 'fruits'
+    elif name in snacks:
+        return 'snacks'
+    
     return 'unknown'
 
 def serving_breakfast(object):
