@@ -81,6 +81,7 @@ class NavigateToTable(smach.State):
 
         if self.tries<20:
             rospy.logwarn('\n--> STATE 2 <: Reaching the table')
+            JuskeshinoNavigation.moveDist(1, timeout=10)
             JuskeshinoHRI.say(" I am moving to the table")
             JuskeshinoHardware.moveHead(0,-1, 5) # HEAD TILTED DOWN, NO PAN
             JuskeshinoNavigation.getClose(DESK, 120) # REACH DESK
@@ -106,6 +107,7 @@ class RecognizeObjects(smach.State):
         if self.tries < 20:
             rospy.logwarn('\n--> STATE 4 <: Recognizing objects')
             JuskeshinoHRI.say("I will start to recognize the objects in the table.")
+            JuskeshinoHardware.moveHead(0,-0.8, 5)
             recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
 
             if recog_objects is not None:        
@@ -174,12 +176,12 @@ class GiveMeDObject(smach.State):
     def execute(self,userdata):
         rospy.logwarn('\n--> STATE <: GIVE ME THE OBJECT')
         obj=userdata.object
-        JuskeshinoHRI.say((f"Please, help me. Put the {obj.id} in my hand until the gripper closes "))
+        JuskeshinoHRI.say((f"Please, help me. Put the {obj.id} in my hand and wait for the gripper closes "))
         JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
         JuskeshinoHRI.say("I am ready to pick the ",obj.id )
-        rospy.sleep(4)
-        success=JuskeshinoManipulation.dynamic_grasp_left_arm()
         rospy.sleep(2)
+        success=JuskeshinoManipulation.dynamic_grasp_left_arm()
+        rospy.sleep(0.5)
         if success:
             JuskeshinoHRI.say("Thank you")
             return 'succed'
@@ -259,7 +261,7 @@ class FailedGrasp(smach.State):
             print("Closing gripper")
             success=JuskeshinoManipulation.dynamic_grasp_left_arm()
             print (success)
-            JuskeshinoHardware.moveLeftArmWithTrajectory(HOLD_OBJ, 10)
+            JuskeshinoHardware.moveLeftArmWithTrajectory(HOLD_OBJ, 9)
             JuskeshinoHRI.say("Verifying...")
             JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
             rospy.sleep(0.02) 
@@ -438,15 +440,15 @@ class LeaveObject(smach.State):
             if shelf=='fifth':
                 JuskeshinoHardware.moveTorso(0.02 , 10.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(LOW_SHELF, 10)
-            rospy.sleep(2)
-            JuskeshinoNavigation.moveDist(0.05, timeout=10)
+            rospy.sleep(1)
+            JuskeshinoNavigation.moveDist(0.4, timeout=5)
             rospy.sleep(2)
             print("Opening gripper")
             JuskeshinoHardware.moveLeftGripper(0.8, 5.0)
             JuskeshinoNavigation.moveDist(-0.45, timeout=5)
             JuskeshinoHardware.moveTorso(0.04 , 5.0)
             rospy.sleep(1)
-            JuskeshinoHardware.moveLeftArmWithTrajectory(HOME, 10)
+            JuskeshinoHardware.moveLeftArmWithTrajectory(HOME, 8)
             JuskeshinoHardware.moveLeftGripper(0.0, 5.0)
             return 'succed'
         return 'failed'   

@@ -1,0 +1,4 @@
+train: ../json/YOLODataset/images/train/
+val: ../json/YOLODataset/images/val/
+nc: 41
+names: ["mayonaise", "curry", "big_coke", "sponges", "pea_soup", "sausages", "peach", "pringles", "cola", "orange", "banana", "pear", "ice_tea", "crisps", "stroopwafel", "lemon", "tictac", "milk", "liquorice", "fanta", "cup", "candy", "bowl", "cornflakes", "candle", "soap", "plate", "washcloth", "dubbelfris", "hagelslag", "dishwasher_tab", "plum", "water", "pancake_mix", "apple", "strawberry", "spoon", "fork", "mike", "knife", "ruth"]

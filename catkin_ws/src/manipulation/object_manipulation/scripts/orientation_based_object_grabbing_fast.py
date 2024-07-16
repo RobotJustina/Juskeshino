@@ -19,7 +19,7 @@ Z_OFFSET_2 = 0.01
 Z_OFFSET_PRISM = 0.21
 Z_OFFSET_PRISM_2 = 0.07
 Z_OFFSET_BOWL  = 0.22#0.19
-Z_OFFSET_BOWL_2  = 0.07#-0.03
+Z_OFFSET_BOWL_2  = 0.08#0.07
 
 LATERAL_OFFSET = 0.06
 
@@ -650,10 +650,10 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
         candidate_q_list   = list(first_trajectory)
 
     
-    if(category == "BOX"):
+    if(category == "BOX") or (category == "CUBE"):
         first_trajectory   = list(reversed(candidate_q_list))
-        first_trajectory.pop
-        first_trajectory.pop
+        #first_trajectory.pop
+        #first_trajectory.pop
         candidate_q_list   = list(first_trajectory)
 
     

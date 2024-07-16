@@ -9,7 +9,7 @@ breakfast_table_robocup:
   theta: 3.135
   parent: home
 scan_cabinet:
-  x: 0.48
+  x: 0.44
   y: 1.70
   theta: -1.5708
   parent: home

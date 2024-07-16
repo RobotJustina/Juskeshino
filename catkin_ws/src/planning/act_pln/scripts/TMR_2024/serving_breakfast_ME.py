@@ -349,7 +349,7 @@ def main():
 
             pos_obj_bl = [obj.pose.position.x, obj.pose.position.y, obj.pose.position.z]
             print("position obj:____", obj.pose.position.x)
-            if(obj.pose.position.x > 0.54):
+            if(obj.pose.position.x > 0.52):
                 move_front = obj.pose.position.x -0.54
                 print("MOVE FRONT:__", move_front)
                 JuskeshinoNavigation.moveDist(move_front , 5.0)
@@ -527,6 +527,7 @@ def main():
                 JuskeshinoNavigation.moveDist(0.2, 7)
                 #JuskeshinoNavigation.moveLateral(-0.05 , 5.0)
                 JuskeshinoHRI.say("Leave bowl")
+                JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_BOWL_2, 10)
                 print("SB-PLN.->Open gripper")
                 JuskeshinoHardware.moveLeftGripper(1.0, 5.0)
                 time.sleep(0.5)            # Soltar el objeto

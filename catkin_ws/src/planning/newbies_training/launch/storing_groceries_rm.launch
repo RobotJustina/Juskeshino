@@ -2,7 +2,7 @@
 
         <node pkg="newbies_training" type="storing_groceries.py" name="storing_groceries" output="screen">
                 <param name="categories" value="$(find config_files)/groceries_classification_rm.yaml" />
-                <param name="manip_method" value="best" />
+                <param name="manip_method" value="simple" />
         </node>
 
 </launch>
