@@ -195,8 +195,8 @@ class Decide_face(smach.State):
             voice.talk('Is it correct?')
         
             # TODO: Validate sentence
-            print(f'Please answer, Robot yes. or Robot no. now')
-            voice.talk(f'Please answer, Robot yes. or Robot no. now')
+            print(f'Please answer, Robot yes or Robot no.')
+            voice.talk(f'Please answer,. Robot yes... or. Robot no.')
 
             if vosk_enable:
                 rospy.logwarn('Listening now (Cc')
@@ -345,8 +345,8 @@ class Get_drink(smach.State):
         voice.talk(f'Did you say {drink}?')
         
         # TODO: Validate sentence
-        print(f'Please answer, Robot yes. or Robot no. now')
-        voice.talk(f'Please answer, Robot yes. or Robot no. now')
+        print(f'Please answer, Robot yes or Robot no.')
+        voice.talk(f'Please answer, Robot yes... or Robot no.')
 
         rospy.sleep(0.3)
         # TODO: TEST VOICE BEFORE START
