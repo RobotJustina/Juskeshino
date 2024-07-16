@@ -120,6 +120,23 @@
       ],
       "shape_type": "rectangle",
       "flags": {}
+    },
+    {
+      "label": "knife",
+      "line_color": null,
+      "fill_color": null,
+      "points": [
+        [
+          172.57512953367876,
+          330.96891191709847
+        ],
+        [
+          218.68911917098447,
+          404.02590673575133
+        ]
+      ],
+      "shape_type": "rectangle",
+      "flags": {}
     }
   ],
   "lineColor": [
