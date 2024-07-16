@@ -174,7 +174,7 @@ class GiveMeDObject(smach.State):
     def execute(self,userdata):
         rospy.logwarn('\n--> STATE <: GIVE ME THE OBJECT')
         obj=userdata.object
-        JuskeshinoHRI.say("Please, help me to take the "+ obj.id )
+        JuskeshinoHRI.say((f"Please, help me. Put the {obj.id} in my hand until the gripper closes "))
         JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
         JuskeshinoHRI.say("I am ready to pick the ",obj.id )
         rospy.sleep(4)
@@ -269,10 +269,10 @@ class FailedGrasp(smach.State):
             # recog_objects, img = JuskeshinoVision.detectAndRecognizeObjects()
             # for obj in recog_objects:
             #     if obj and objc:
-            #         JuskeshinoHRI.say("Please, help me to take the "+ obj.id)
+            #         JuskeshinoHRI.say("Please, help me. Put the obj in my hand until the gripper closes "+ obj.id)
             #         return 'failed'
             if not success:
-                JuskeshinoHRI.say("Please, help me to take the "+ obj.id )
+                JuskeshinoHRI.say(f"Please, help me. Put the {obj.id} in my hand until the gripper closes ")
                 
                 return 'help'
             else:
