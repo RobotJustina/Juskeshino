@@ -7,9 +7,9 @@ corridor:
 - qz: 0.0
 - qw: -1.0
 door:
-- x: 5.0
-- y: 1.2
-- theta: 1.57
+- x: 5.7
+- y: -2.26
+- theta: -1.57
 - qx: 0.0
 - qy: 0.0
 - qz: 1.0
@@ -23,8 +23,8 @@ entrance:
 - qz: -0.01
 - qw: -1.0
 living_room:
-- x: 2.6
-- y: 0.5
+- x: 5.75
+- y: 3.47
 - theta: 1.57
 - qx: 0.0
 - qy: 0.0
