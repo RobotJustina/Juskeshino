@@ -120,6 +120,23 @@
       ],
       "shape_type": "rectangle",
       "flags": {}
+    },
+    {
+      "label": "cornflakes",
+      "line_color": null,
+      "fill_color": null,
+      "points": [
+        [
+          538.3392070484581,
+          478.41409691629957
+        ],
+        [
+          639,
+          372
+        ]
+      ],
+      "shape_type": "rectangle",
+      "flags": {}
     }
   ],
   "lineColor": [

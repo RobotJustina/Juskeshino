@@ -137,23 +137,6 @@
       ],
       "shape_type": "rectangle",
       "flags": {}
-    },
-    {
-      "label": "curry",
-      "line_color": null,
-      "fill_color": null,
-      "points": [
-        [
-          301.3333333333333,
-          61.06666666666667
-        ],
-        [
-          330.1333333333333,
-          81.33333333333333
-        ]
-      ],
-      "shape_type": "rectangle",
-      "flags": {}
     }
   ],
   "lineColor": [
