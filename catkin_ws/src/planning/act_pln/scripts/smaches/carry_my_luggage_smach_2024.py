@@ -118,6 +118,7 @@ class FindHuman(smach.State):
                 print("I find you, please stay there.")
                 voice.talk("I find you, please stay there.")
                 rospy.sleep(0.3)
+                self.tries = 0
                 return 'succ'
             
         if self.tries >= 4:
@@ -125,6 +126,7 @@ class FindHuman(smach.State):
                 JuskeshinoVision.enableHumanPose(False)
             print("I can't find any human. Please go in front of me.")
             voice.talk("I can't find any human. Please go in front of me.")
+            self.tries = 0
             return 'failed'
         
         rospy.sleep(1.0)
@@ -154,6 +156,7 @@ class PointingBag(smach.State):
         res = pointing_detect_server.call()
 
         if self.tries > 3:
+            self.tries = 0
             return 'failed'
 
         if (res.x_r + res.y_r) == 0 and (res.x_l + res.y_l) == 0:
@@ -179,6 +182,7 @@ class PointingBag(smach.State):
         #head.turn_base_gaze(tf='pointing_', to_gaze='base_link') #'arm_flex_link'
         head.to_tf('pointing_')
         # There is now a "human TF with humans aprrox location(face)"
+        self.tries = 0
         return 'succ'
 
 
@@ -202,6 +206,7 @@ class GotoLivingRoom(smach.State):
         if self.tries == self.attempts + 1: 
             rospy.logerr('Navigation Failed, I can not reach the ' + self.loc_name)
             voice.talk('Navigation Failed, I can not reach the ' + self.loc_name)
+            self.tries = 0
             return 'failed'
 
         print(f'Try {self.tries} of {self.attempts} attempts')        
@@ -218,7 +223,9 @@ class GotoLivingRoom(smach.State):
             self.time_out = 25
             return 'tries'
         else:
+            self.tries = 0
             return 'failed'
+            
 
 class AskForBag(smach.State):
     def __init__(self):
@@ -250,7 +257,6 @@ class AskForBag(smach.State):
         voice.talk('Tell me. Justina yes, when you put the bag')
 
         
-        
         if vosk_enable:
                 rospy.logwarn('Listening now (Cc')
                 confirmation = get_keywords_speech(userdata.speech_time)
@@ -267,6 +273,7 @@ class AskForBag(smach.State):
             head.set_named_target('face_to_face')
             print("I will start to follow you. Please stand in front of me")
             voice.talk("I will start to follow you. Please stand in front of me")
+            self.tries = 0
             return 'succ'            
         else:
             return 'tries'
@@ -342,6 +349,7 @@ class FolowwHuman(smach.State):
             if command_voice != None and "here is the car" in command_voice:
                 JuskeshinoHRI.enableHumanFollower(False)
                 JuskeshinoHRI.enableLegFinder(False)
+                self.tries = 0
                 return 'succ' 
                 
             JuskeshinoHRI.enableHumanFollower(True)
@@ -377,13 +385,11 @@ class AskArrive(smach.State):
             print('Is here the place?')
             voice.talk ('Is here the place?')
 
-
         print(f'Try {self.tries} of {self.attempts} attempts')
 
         print('Tell me: Justina yes, if we arrived')
         voice.talk('Tell me. Justina yes, if we arrived')
         
-
 
         if vosk_enable:
                 rospy.logwarn('Listening now (Cc')
@@ -398,8 +404,10 @@ class AskArrive(smach.State):
             head.set_named_target('face_to_face')
             rospy.sleep(0.3)
             head.set_named_target('face_to_face')
+            self.tries = 0
             return 'succ'
         if confirmation  in userdata.negation_list:
+            self.tries = 0
             return 'failed'
         else:
             return 'tries'
@@ -437,6 +445,7 @@ class DeliverBag(smach.State):
             #voice.talk("Task completed, thanks for watching")
             JuskeshinoHardware.moveLeftArmWithTrajectory(self.l_arm_home, 6)
             rospy.sleep(3.0)
+            self.tries = 0
             return 'succ'
 
 

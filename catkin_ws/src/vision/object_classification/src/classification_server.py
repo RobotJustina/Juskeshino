@@ -116,5 +116,5 @@ def classify_server(model_name='ycb.pt'):
 
 
 if __name__ == "__main__":
-    model_name = "TaRJustv3_ycb.pt"
+    model_name = "robocup_2024a_300ep.pt"
     classify_server(model_name)

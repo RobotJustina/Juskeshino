@@ -31,7 +31,7 @@
   <!--node name="human_pose_estimator" pkg="human_pose_estimation" type="streaming_keypoints" output="screen"/-->
 
   <node name="object_classification" pkg="object_classification" type="obj_classification_node.py" output="screen">
-    <param name="model" value="$(find object_classification)/src/weights/robocup_2024_a.pt"/>
+    <param name="model" value="$(find object_classification)/src/weights/robocup_2024a_300ep.pt"/>
     <param name="min_confidence" value="0.7"/>
     <param name="rm_bg" value="False"/>
   </node>

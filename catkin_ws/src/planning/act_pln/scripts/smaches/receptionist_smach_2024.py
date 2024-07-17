@@ -43,11 +43,14 @@ class Initial(smach.State):
         # -----INIT GRAMMAR FOR VOSK
         # -----Use with get_keywords_speech()
         # -----------SPEECH REC
-        drinks = ['coke','juice','milk', 'water', 'soda', 'wine', 
-                  'I want a', 'I would like a', 'tea', 'iced tea', 'cola', 'red wine', 'orange juice', 'tropical juice']
+        # drinks = ['coke','juice','milk', 'water', 'soda', 'wine', 
+        #           'I want a', 'I would like a', 'tea', 'iced tea', 'cola', 'red wine', 'orange juice', 'tropical juice']
+        drinks = ['cola', 'ice_tea', 'water', 'milk', 'big_coke', 'fanta', 'dubbelfris']
        
-        names = [' my name is' , 'i am','adel', 'angel', 'axel', 
-                 'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone', 'jack']                    
+        names = [' my name is' , 'i am',
+                 'Sophie', 'Julia', 'Emma', 'Sara', 'Laura', 'Hayley', 'Susan', 'Fleur', 'Gabriëlle', 'Robin', 'John', 'Liam',
+                  'Lucas', 'William', 'Kevin', 'Jesse', 'Noah', 'Harrie', 'Peter', 'Robin']
+                 ##'adel', 'angel', 'axel', 'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone', 'jack']                    
         gram = drinks + names + userdata.confirm_list + userdata.negation_list
 
         print("** confirmation list: ") 
