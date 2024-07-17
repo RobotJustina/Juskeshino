@@ -3,17 +3,6 @@ People:
     drink: Milk
     location: Place_2
     name: Jack
-  Guest_1:
-    description: None
-    drink: something
-    location: Place_3
-    name: jules
-  Guest_2:
-    description: jules has arrived... he is a Man... I believe he is  around 35 years
-      old... I would say he is a bit neutral. I might guess he is of black descent.
-    drink: milk
-    location: None
-    name: jules
 Places:
   Place_0:
     location:
@@ -38,4 +27,4 @@ Places:
       theta: 0.0
       x: 7.8
       y: 4.2
-    occupied: Guest_1
+    occupied: None
