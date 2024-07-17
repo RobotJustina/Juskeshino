@@ -24,6 +24,7 @@ ACTION_FIND_GESTURE = 'find_gesture'
 ACTION_FIND_CLOTHES = 'find_clothes'
 ACTION_FOLLOW = 'follow'
 ACTION_SAY = 'say'
+ACTION_LEAVE_OBJECT = 'leave_object'
 
 PREPARE_GRIP  = [-0.69, 0.2, 0, 1.55, 0, 1.16, 0]
 HOME=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -31,7 +32,7 @@ TABLE_TORSO_HEIGHT = 0.12
 
 def navigate(goal):
     goal = goal.lower().replace(" ", "_")
-    goal_to_say = goal.lower()
+    goal_to_say = goal.lower().replace("_", " ")
     print("GPSR.->Navigating to ", goal)
     JuskeshinoHRI.startSay("I am goint to the " + goal_to_say)
     if not JuskeshinoNavigation.getClose(goal, 15):
@@ -95,19 +96,53 @@ def take(obj_name):
     
 def find_person(person_name):
     print("GPSR.->Trying to detect person: ", person_name)
+    JuskeshinoSimpleTasks.findHumanAndApproach(60)
 
 def find_gesture(gesture):
     print("GPSR.->Trying to detect the ", gesture)
+    JuskeshinoHRI.say("I will try to find the " + gesture.replace("_", " "))
+    JuskeshinoSimpleTasks.findHumanAndApproach(60)
 
 def find_clothes(clothes):
     print("GPSR.->Trying to detect the ", clothes)
+    JuskeshinoHRI.say("I will try to find the " + clothes.replace("_", " "))
+    JuskeshinoSimpleTasks.findHumanAndApproach(60)
 
 def follow(dest):
+    no_destination = dest is None or dest == ""
     print("GPSR.->Starting following")
+    JuskeshinoHRI.say("I will try to following you. Please stand in front of me")
+    if not JuskeshinoHRI.waitForFrontalLegsFound(15):
+        JuskeshinoHRI.say("Human, please stand closer in front of me")
+        if not JuskeshinoHRI.waitForFrontalLegsFound(15):
+            JuskeshinoHRI.say("Human, please stand closer in front of me")
+            if not JuskeshinoHRI.waitForFrontalLegsFound(10):
+                JuskeshinoHRI.say("Human, I could not found you. I am sorry.")
+                JuskeshinoHRI.enableLegFinder(False)
+                return
+    JuskeshinoHRI.say("Human, I found you. Please say. Robot stop following me. When you want me to stop following you")
+    JuskeshinoHRI.enableHumanFollower(True)
+    JuskeshinoHRI.say("Human, you can walk")
+    cmd = ""
+    loop = rospy.Rate(10)
+    max_attempts = 1500
+    while not rospy.is_shutdown() and cmd == "":
+        loop.sleep()
+        
+    
 
 def say(text):
     print("GPSR.->Saying ", text)
     JuskeshinoHRI.say(text)
+
+def leave_object():
+    print("GPSR.->Leaving object")
+    JuskeshinoHRI.say("I am going to leave the object")
+    JuskeshinoHardware.moveLeftArm([0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ])
+    JuskeshinoHardware.moveLeftGripper(0.8, 5.0)
+    JuskeshinoHardware.moveLeftGripper(0.1, 5.0)
+    JuskeshinoHardware.moveLeftArm([0,0,0,0,0,0,0])
+    
     
 def main():
     print("INITIALIZING GPSR TEST Not in a Tenshily manner...")
@@ -131,7 +166,8 @@ def main():
                        ACTION_FIND_GESTURE: find_gesture,
                        ACTION_FIND_CLOTHES: find_clothes,
                        ACTION_FOLLOW: follow,
-                       ACTION_SAY: say}
+                       ACTION_SAY: say,
+                       ACTION_LEAVE_OBJECT: }
     cmd = grammar_checker.Command()
     while not rospy.is_shutdown():
         if state == SM_INIT:
@@ -143,6 +179,7 @@ def main():
             if JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(30):
                 print("GPSR.->Door opened detected")
                 JuskeshinoHRI.say("I can see now that the door is open")
+                JuskeshinoNavigation.moveDist(1.0, 5.0)
                 navigate("start_position")
                 state = SM_WAITING_FOR_COMMAND
         elif state == SM_WAITING_FOR_COMMAND:
@@ -170,7 +207,7 @@ def main():
             else:
                 print("GPSR.->Received cancelation. ")
                 JuskeshinoHRI.say("O K.")
-                state = SM_INIT
+                state = SM_WAITING_FOR_COMMAND
 
         elif state == SM_EXECUTE:
             print("Executing action number ", current_action)

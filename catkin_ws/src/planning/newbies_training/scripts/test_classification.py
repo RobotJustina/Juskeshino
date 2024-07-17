@@ -29,18 +29,26 @@ GET_CLOSE_TO_TABLE = 0.4
 TABLE_TORSO_HEIGHT = 0.12
 
 def matching_objects(obj):
-    obj_yaml =rospy.get_param("~categories")
+    category = ''
+    thinness = None
+    graspable = None
+    obj_yaml = '/home/mike/Juskeshino/catkin_ws/src/config_files/groceries_classification_test.yaml'
     try:
         f = open(obj_yaml,'r')
         data = yaml.safe_load(f)
     except:
         data = {}
         print("KnownLocations.->Cannot load locations from file " + obj_yaml)
-    for category, items in data.items():
-        if obj.lower() in [item.lower() for item in items]:
-            rospy.loginfo(f"--->>> Detected {obj} matches an item in the '{category}' category.")
-            return category  
-    return False
+    for categ, items in data.items():
+        for item in items:
+            for key, value in item.items():
+                if key==obj:
+                    thinness = value['thin']
+                    graspable = value['graspable']
+                    obj_name = key
+                    category = categ
+
+    return category, thinness, graspable, obj_name
 
 class RecognizeObjects(smach.State):
     def __init__(self):
@@ -92,7 +100,7 @@ class Classification(smach.State):
         if self.tries < 20:    
             rospy.logwarn('\n--> STATE 5 <: Matching object with its classification')
             obj=userdata.object
-            category=matching_objects(obj.id)
+            category, thinness, graspable, _ = matching_objects(obj.id)
             if category:
                 prompt = "I found" + obj.id + " which is part of the category " + category
                 JuskeshinoHRI.say(prompt)
