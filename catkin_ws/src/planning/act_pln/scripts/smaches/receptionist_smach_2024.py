@@ -47,8 +47,7 @@ class Initial(smach.State):
         #           'I want a', 'I would like a', 'tea', 'iced tea', 'cola', 'red wine', 'orange juice', 'tropical juice']
         drinks = ['cola', 'ice_tea', 'water', 'milk', 'big_coke', 'fanta', 'dubbelfris']
        
-        names = [' my name is' , 'i am',
-                 'Sophie', 'Julia', 'Emma', 'Sara', 'Laura', 'Hayley', 'Susan', 'Fleur', 'Gabriëlle', 'Robin', 'John', 'Liam',
+        names = ['Sophie', 'Julia', 'Emma', 'Sara', 'Laura', 'Hayley', 'Susan', 'Fleur', 'Gabriëlle', 'Robin', 'John', 'Liam',
                   'Lucas', 'William', 'Kevin', 'Jesse', 'Noah', 'Harrie', 'Peter', 'Robin']
                  ##'adel', 'angel', 'axel', 'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone', 'jack']                    
         gram = drinks + names + userdata.confirm_list + userdata.negation_list
@@ -348,7 +347,7 @@ class Get_drink(smach.State):
             voice.talk("Sorry, couldn't hear you. Please speak louder.")
             return 'tries'
         
-        if drink == '[unk]':
+        if '[unk]' in drink:
             drink = 'water'
         print(f'Did you say {drink}?')
         voice.talk(f'Did you say {drink}?')
@@ -441,9 +440,19 @@ class Find_sitting_place(smach.State):
         print("I am looking for a place to sit")
         voice.talk('I am looking for a place to sit')
         isPlace, place = party.get_active_seat()
+        place_name = place
+
+        print(">>>>>>>>>>>>> place", place_name)
+        if place_name == "Place_1":
+            place_name = "couch, left side"
+        elif place_name == "Place_2":
+            place_name = "couch, right side"
+        else:
+            place_name = "lounge chair"
 
         if self.failed and self.tries < self.n_sits:
             place = party.get_any_available_seat()
+
             if place != None:
                 isPlace = True
 
@@ -463,14 +472,16 @@ class Find_sitting_place(smach.State):
         # For simulation use camera_enable = True
         res , _ = wait_for_face(lap_camera=camera_enable)  # seconds
         if res == None:
-            print("Place is: ", place)
+            print("Place is: ", place_name)
             guest = party.get_active_guest_name()
             head.turn_base_gaze(tf=place, to_gaze='base_link') #'arm_flex_link'
             head.set_named_target('neutral')
             JuskeshinoHardware.moveLeftArmWithTrajectory(self.l_arm_offerSit, 6)
             rospy.sleep(0.8)
-            print(f'{guest}, Here is a place to sit')
-            voice.talk(f'{guest}, Here is a place to sit')
+            # print(f'{guest}, Here is a place to sit')
+            # voice.talk(f'{guest}, Here is a place to sit')
+            print(f'{guest}, place to sit on {place_name}')
+            voice.talk(f'{guest}, place to sit on {place_name}')
             JuskeshinoHardware.moveLeftArmWithTrajectory(userdata.l_arm_home, 6)
             party.seat_confirmation()
             self.tries = 0
@@ -525,9 +536,13 @@ class Find_host_alternative(smach.State):
             self.tries = 0
             return 'failed'
         
-        print(f'looking for host on: {host_loc}')
+        # print(f'looking for host on: {host_loc}')
+        # host_place_say = host_loc.replace('_', ' ')
+        # voice.talk(f'looking for host on: {host_place_say}')
+        print(f'looking for host {host_name}')
         host_place_say = host_loc.replace('_', ' ')
-        voice.talk(f'looking for host on: {host_place_say}')
+        voice.talk(f'looking for host {host_name}')
+
         tf_host = host_loc.replace('_', '_face')
         head.to_tf(tf_host)
 
