@@ -394,6 +394,9 @@ class AskArrive(smach.State):
             rospy.logwarn('--> STATE <: Ask if we arrive human')
             print('Did you say stop following me?')
             voice.talk ('Did you say, stop following me?')
+            head.set_named_target('face_to_face')
+            rospy.sleep(0.3)
+            head.set_named_target('face_to_face')
 
         print(f'Try {self.tries} of {self.attempts} attempts')
 
@@ -408,10 +411,10 @@ class AskArrive(smach.State):
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
             rospy.sleep(0.3)
-            confirmation = JuskeshinoHRI.waitForNewSentence(8) # 10 is to much?
+            confirmation = JuskeshinoHRI.waitForNewSentence(10) # 10 is to much?
         
         print("confirmation:", confirmation)
-        if confirmation  in userdata.confirm_list:
+        if confirmation in userdata.confirm_list:
             JuskeshinoHRI.enableHumanFollower(False)
             JuskeshinoHRI.enableLegFinder(False)
             print('Ok')
@@ -419,9 +422,8 @@ class AskArrive(smach.State):
             head.set_named_target('face_to_face')
             rospy.sleep(0.3)
             head.set_named_target('face_to_face')
-            self.tries = 0
             return 'succ'
-        if confirmation  in userdata.negation_list:
+        elif confirmation  in userdata.negation_list:
             self.tries = 0
             return 'failed'
         else:
@@ -461,6 +463,8 @@ class DeliverBag(smach.State):
             JuskeshinoHardware.moveLeftArmWithTrajectory(self.l_arm_home, 6)
             rospy.sleep(3.0)
             self.tries = 0
+            print('Task completed, thanks for watching')
+            voice.talk("Task completed, thanks for watching")
             return 'succ'
 
 
