@@ -202,7 +202,7 @@ class GraspObject(smach.State):
             # GET OBJECT LOCATION AND CALCULATE TRAJECTORY
             obj=userdata.object
             x,y,z=userdata.object_output
-            x,y,z = JuskeshinoSimpleTasks.transformPoint(x,y,z, "shoulders_left_link", "base_link")
+            #x,y,z = JuskeshinoSimpleTasks.transformPoint(x,y,z, "shoulders_left_link", "base_link")
             JuskeshinoHRI.say("I am ready to pick the "+ obj.id)
             JuskeshinoHardware.moveTorso(TABLE_TORSO_HEIGHT , timeout = 5.0)
             rospy.sleep(1)
