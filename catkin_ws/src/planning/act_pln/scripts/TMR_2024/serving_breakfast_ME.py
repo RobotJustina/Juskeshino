@@ -179,8 +179,8 @@ def main():
     simu = False
     torso = True
     actual_value = 0
-    ALTURA_TORSO = 0.1
-    ALTURA_TORSO_BOWL = 0.22#0.2
+    ALTURA_TORSO = 0.12
+    ALTURA_TORSO_BOWL = 0.25#0.22
 
 
     current_state = INITIAL
@@ -335,10 +335,6 @@ def main():
                 JuskeshinoNavigation.moveDist(move_front , 5.0)
 
             current_state = DETECT_OBJECT_ORIENTATION#HANDLING_LOCATION_2#DETECT_OBJECT_ORIENTATION
-
-
-
-
 
 
 
@@ -527,7 +523,6 @@ def main():
             JuskeshinoHardware.moveLeftArmWithTrajectory(HOME , 10)
             time.sleep(0.2)
             JuskeshinoHardware.moveLeftGripper(0.0, 2.0)
-
             try:
                 JuskeshinoHardware.moveTorso(0.05 , 10.0)
                 #time.sleep(1)
