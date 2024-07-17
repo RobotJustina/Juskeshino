@@ -13,7 +13,7 @@ Places:
   Place_1:
     location:
       theta: 1.57
-      x: 4.0
+      x: 4.1
       y: 5.8
     occupied: None
   Place_2:
