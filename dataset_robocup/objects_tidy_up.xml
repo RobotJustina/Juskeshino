@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<categories>
+
+  <category name="food items" room="house">
+    <object name="009_gelatin_box" defaultLocation="tray 1" />
+    <object name="008_pudding_box" defaultLocation="tray 1" />
+    <object name="013_apple" defaultLocation="tray 1" />
+    <object name="004_sugar_box" defaultLocation="tray 1" />
+    <object name="016_pear" defaultLocation="tray 1" />
+    <object name="001_chips_can" defaultLocation="tray 1" />
+    <object name="006_mustard_bottle" defaultLocation="tray 1" />
+    <object name="014_lemon" defaultLocation="tray 1" />
+    <object name="005_tomato_soup_can" defaultLocation="tray 1" />
+    <object name="003_cracker_box" defaultLocation="tray 2" />
+    <object name="012_strawberry" defaultLocation="tray 2" />
+    <object name="017_orange" defaultLocation="tray 2" />
+    <object name="007_tuna_fish_can" defaultLocation="tray 2" />
+    <object name="002_master_chef_can" defaultLocation="tray 2" />
+    <object name="018_plum" defaultLocation="tray 2" />
+    <object name="011_banana" defaultLocation="tray 2" />
+    <object name="015_peach" defaultLocation="tray 2" />
+    <object name="010_potted_meat_can" defaultLocation="tray 2" />
+  </category>
+
+  <category name="tool items" room="house">
+    <object name="049_small_clamp" defaultLocation="drawer top open" />
+    <object name="051_large_clamp" defaultLocation="drawer top open" />
+    <object name="052_extra_large_clamp" defaultLocation="drawer top open" />
+    <object name="038_padlock" defaultLocation="drawer top open" />
+    <object name="050_medium_clamp" defaultLocation="drawer top open" />
+    <object name="047_plastic_nut" defaultLocation="drawer top open" />
+    <object name="042_adjustable_wrench" defaultLocation="drawer top open" />
+    <object name="043_phillips_screwdriver" defaultLocation="drawer top open" />
+    <object name="048_hammer" defaultLocation="drawer top open" />
+    <object name="041_small_marker" defaultLocation="container 2" />
+    <object name="037_scissors" defaultLocation="drawer top open" />
+    <object name="039_key" defaultLocation="drawer top open" />
+    <object name="044_flat_screwdriver" defaultLocation="drawer top open" />
+    <object name="040_large_marker" defaultLocation="container 2" />
+    <object name="035_power_drill" defaultLocation="drawer top open" />
+    <object name="036_wood_block" defaultLocation="drawer top open" />
+  </category>
+
+  <category name="task items" room="house">
+    <object name="076_timer" defaultLocation="basket 1" />
+    <object name="072-a_toy_airplane" defaultLocation="basket 1" />
+    <object name="072-b_toy_airplane" defaultLocation="basket 1" />
+    <object name="072-c_toy_airplane" defaultLocation="basket 1" />
+    <object name="072-d_toy_airplane" defaultLocation="basket 1" />
+    <object name="072-e_toy_airplane" defaultLocation="basket 1" />
+    <object name="072-f_toy_airplane" defaultLocation="basket 1" />
+    <object name="072-g_toy_airplane" defaultLocation="basket 1" />
+    <object name="072-h_toy_airplane" defaultLocation="basket 1" />
+    <object name="072-i_toy_airplane" defaultLocation="basket 1" />
+    <object name="072-j_toy_airplane" defaultLocation="basket 1" />
+    <object name="072-k_toy_airplane" defaultLocation="basket 1" />
+    <object name="073-a_lego_duplo" defaultLocation="basket 1" />
+    <object name="073-b_lego_duplo" defaultLocation="basket 1" />
+    <object name="073-c_lego_duplo" defaultLocation="basket 1" />
+    <object name="073-d_lego_duplo" defaultLocation="basket 1" />
+    <object name="073-e_lego_duplo" defaultLocation="basket 1" />
+    <object name="073-f_lego_duplo" defaultLocation="basket 1" />
+    <object name="073-g_lego_duplo" defaultLocation="basket 1" />
+    <object name="073-h_lego_duplo" defaultLocation="basket 1" />
+    <object name="073-i_lego_duplo" defaultLocation="basket 1" />
+    <object name="073-j_lego_duplo" defaultLocation="basket 1" />
+    <object name="073-k_lego_duplo" defaultLocation="basket 1" />
+    <object name="073-l_lego_duplo" defaultLocation="basket 1" />
+    <object name="073-m_lego_duplo" defaultLocation="basket 1" />
+    <object name="071_nine_hole_peg_test" defaultLocation="basket 1" />
+    <object name="077_rubiks_cube" defaultLocation="basket 1" />
+    <object name="036_wood_blocks" defaultLocation="basket 1" />
+    <object name="070-a_colored_wood_blocks" defaultLocation="basket 1" />
+    <object name="070-b_colored_wood_blocks" defaultLocation="basket 1" />
+  </category>
+
+  <category name="shape items" room="house">
+    <object name="059_chain" defaultLocation="drawer left open" />
+    <object name="065-a_cups" defaultLocation="drawer left open" />
+    <object name="065-b_cups" defaultLocation="drawer left open" />
+    <object name="065-c_cups" defaultLocation="drawer left open" />
+    <object name="065-d_cups" defaultLocation="drawer left open" />
+    <object name="065-e_cups" defaultLocation="drawer left open" />
+    <object name="065-f_cups" defaultLocation="drawer left open" />
+    <object name="065-g_cups" defaultLocation="drawer left open" />
+    <object name="065-h_cups" defaultLocation="drawer left open" />
+    <object name="065-i_cups" defaultLocation="drawer left open" />
+    <object name="065-j_cups" defaultLocation="drawer left open" />
+    <object name="058_golf_ball" defaultLocation="drawer left open" />
+    <object name="063-a_marbles" defaultLocation="drawer left open" />
+    <object name="063-b_marbles" defaultLocation="drawer left open" />
+    <object name="063-c_marbles" defaultLocation="drawer left open" />
+    <object name="063-d_marbles" defaultLocation="drawer left open" />
+    <object name="063-e_marbles" defaultLocation="drawer left open" />
+    <object name="063-f_marbles" defaultLocation="drawer left open" />
+    <object name="057_racquetball" defaultLocation="drawer left open" />
+    <object name="054_softball" defaultLocation="drawer left open" />
+    <object name="062_dice" defaultLocation="drawer left open" />
+    <object name="053-a_mini_soccer_ball" defaultLocation="drawer left open" />
+    <object name="053-b_mini_soccer_ball_v2" defaultLocation="drawer left open" />
+    <object name="055_baseball" defaultLocation="drawer left open" />
+    <object name="056_tennis_ball" defaultLocation="drawer left open" />
+    <object name="061_foam_brick" defaultLocation="drawer left open" />
+  </category>
+
+  <category name="kitchen items" room="house">
+    <object name="024_bowl" defaultLocation="container 1" />
+    <object name="026_sponge" defaultLocation="container 1" />
+    <object name="033_spatula" defaultLocation="container 1" />
+    <object name="021_bleach_cleanser" defaultLocation="container 1" />
+    <object name="030_fork" defaultLocation="container 2" />
+    <object name="025_mug" defaultLocation="container 1" />
+    <object name="019-a_pitcher_base" defaultLocation="container 1" />
+    <object name="019-b_pitcher_base_v2" defaultLocation="container 1" />
+    <object name="020_pitcher_lid" defaultLocation="container 1" />
+    <object name="029_plate" defaultLocation="container 1" />
+    <object name="022_windex_bottle" defaultLocation="container 1" />
+    <object name="032_knife" defaultLocation="container 1" />
+    <object name="023_wine_glass" defaultLocation="container 1" />
+    <object name="031_spoon" defaultLocation="container 2" />
+  </category>
+
+
+  <category name="unknown" room="house">
+    <object name="unknown" defaultLocation="basket 2" />
+  </category>
+
+</categories>
+  
+
