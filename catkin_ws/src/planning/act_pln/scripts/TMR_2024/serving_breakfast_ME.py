@@ -179,7 +179,7 @@ def main():
     simu = False
     torso = True
     actual_value = 0
-    ALTURA_TORSO = 0.12
+    ALTURA_TORSO = 0.20
     ALTURA_TORSO_BOWL = 0.25#0.22
 
 
@@ -207,7 +207,7 @@ def main():
 
             JuskeshinoHardware.moveTorso(0.02 , 10.0)
             
-            pila = [BOWL, CEREAL, MILK]
+            pila = [BOWL, MILK, CEREAL]
             count = 0
             j = 0
             actual_obj = pila[j]
@@ -256,6 +256,8 @@ def main():
         elif(current_state == MOVE_TO_LOCATION):
             print("ESTADO:___MOVE_TO_LOCATION..................")
             #JuskeshinoHRI.say("I'm going to the "+ location_actual)
+            if cycle > 0:
+                JuskeshinoNavigation.moveDist(0.13,10)
             
             
             if not JuskeshinoNavigation.getClose(location_actual , 300): 
