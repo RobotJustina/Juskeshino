@@ -26,7 +26,7 @@ PREPARE_GRIP  = [-0.69, 0.2, 0, 1.55, 0, 1.16, 0]
 HOME=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 HOLD_OBJ = [0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ]
 GET_CLOSE_TO_TABLE = 0.53
-TABLE_TORSO_HEIGHT = 0.14
+TABLE_TORSO_HEIGHT = 0.15
 
 def matching_objects(obj):
     obj_yaml =rospy.get_param("~categories")
@@ -444,6 +444,9 @@ class LeaveObject(smach.State):
             rospy.sleep(1)
             JuskeshinoNavigation.moveDist(0.4, timeout=5)
             rospy.sleep(2)
+            # obj=userdata.object_shelf
+            # JuskeshinoHRI.say(f"Please, help me to place the {obj.id} in the {shelf} part of the shelf. Put your hand below the object and waitn until I open the gripper.")
+            # rospy.sleep(12)
             print("Opening gripper")
             JuskeshinoHardware.moveLeftGripper(0.8, 5.0)
             JuskeshinoNavigation.moveDist(-0.45, timeout=5)
@@ -454,7 +457,7 @@ class LeaveObject(smach.State):
             return 'succed'
         return 'failed'   
             #     JuskeshinoHardware.moveLeftGripper(0.9, 100.0)
-            # obj_shelf=userdata.object_shelf
+            
             # rospy.logwarn('\n--> STATE 10 <: Leaving object')
             
             # # JuskeshinoNavigation.getClose('SHELF', 10)
