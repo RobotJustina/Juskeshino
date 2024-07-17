@@ -18,8 +18,8 @@ Z_OFFSET = 0.13# real 0.12
 Z_OFFSET_2 = 0.01
 Z_OFFSET_PRISM = 0.21
 Z_OFFSET_PRISM_2 = 0.07
-Z_OFFSET_BOWL  = 0.22#0.19
-Z_OFFSET_BOWL_2  = 0.08#0.07
+Z_OFFSET_BOWL  = 0.25#0.22#0.19
+Z_OFFSET_BOWL_2  = 0.05#0.07
 
 LATERAL_OFFSET = 0.06
 
@@ -50,7 +50,7 @@ def descarte_forced_poses(obj_pose):
         print("DECARTED*****: ", descarte)
     else:
         descarte = False
-        print("DECARTED: ", descarte)
+        print("DESCARTED: ", descarte)
         
 
     return descarte

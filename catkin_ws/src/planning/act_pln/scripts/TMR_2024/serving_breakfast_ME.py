@@ -468,12 +468,6 @@ def main():
                         #time.sleep(1)
                     except:
                         print("Cannot move torso")
-                else:
-                    try:
-                        JuskeshinoHardware.moveTorso(0.06 , 10.0)
-                        #time.sleep(1)
-                    except:
-                        print("Cannot move torso")
 
             JuskeshinoNavigation.moveDist(-0.33, 10)
             if(actual_obj != BOWL):
