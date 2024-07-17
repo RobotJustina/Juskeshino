@@ -32,7 +32,7 @@ def matching_objects(obj):
     category = ''
     thinness = None
     graspable = None
-    obj_yaml = '/home/mike/Juskeshino/catkin_ws/src/config_files/groceries_classification_test.yaml'
+    obj_yaml = rospy.get_param("~categories")
     try:
         f = open(obj_yaml,'r')
         data = yaml.safe_load(f)
@@ -48,7 +48,7 @@ def matching_objects(obj):
                     obj_name = key
                     category = categ
 
-    return category, thinness, graspable, obj_name
+    return category, thinness, graspable, obj
 
 class RecognizeObjects(smach.State):
     def __init__(self):
@@ -266,21 +266,21 @@ def main():
                      'succed':'ALIGNE_WITH_OBJ'})
 
         smach.StateMachine.add('ALIGNE_WITH_OBJ',AlignWithObject(), 
-        transitions={'failed':'TRANSPORT_OBJECT',
+        transitions={'failed':'END',
                      'succed':'GRASP_OBJ'})
 
         smach.StateMachine.add('GIVE_ME_D_OBJ',GiveMeDObject(), 
         transitions={'failed':'GIVE_ME_D_OBJ',
-                     'succed':'TRANSPORT_OBJECT'})
+                     'succed':'END'})
         
         smach.StateMachine.add('GRASP_OBJ',GraspObject(), 
         transitions={'failed':'FAILED_GRASP',
                      'help': 'GIVE_ME_D_OBJ',
-                     'succed':'TRANSPORT_OBJECT'})
+                     'succed':'END'})
         
         smach.StateMachine.add('FAILED_GRASP',FailedGrasp(), 
         transitions={'failed':'GIVE_ME_D_OBJ',
-                     'succed':'TRANSPORT_OBJECT',
+                     'succed':'END',
                      'help': 'GIVE_ME_D_OBJ'})
                      
     # Execute SMACH plan
