@@ -87,22 +87,28 @@ class JuskeshinoSimpleTasks:
     
 
     def findHumanAndApproach(timeout):
+        JuskeshinoHRI.say("I am looking for a human")
         head_poses = [[0.0, 0.0], [0.3, 0], [-0.3,0], [0.6, 0], [-0.6,0], [0.9,0], [-0.9, 0], [1.2,0], [-1.2,0], [1.5,0], [-1.5,0]]
-        JuskeshinoVision.enableHumanPoseDetection(True)
+        JuskeshinoVision.enableHumanPose(True)
 
+        human_poses = []
         for [pan, tilt] in head_poses:
             if not JuskeshinoHardware.moveHead(pan,tilt,2.0):
                 JuskeshinoHardware.moveHead(pan,tilt,2.0)
             rospy.sleep(0.5)
-            human_poses = rospy.wait_for_message("/vision/human_pose/human_pose_array", HumanCoordinatesArray, timeout=5.0)
+            try:
+                human_poses = rospy.wait_for_message("/vision/human_pose/human_pose_array", HumanCoordinatesArray, timeout=15.0)
+            except:
+                break
             src_frame_id = human_poses.header.frame_id
             human_poses = human_poses.coordinates_array
             if len(human_poses) > 0:
                 break
         if len(human_poses) < 1:
-            JuskeshinoVision.enableHumanPoseDetection(False)
+            JuskeshinoVision.enableHumanPose(False)
+            JuskeshinoHRI.say("I could not find a person. ")
             return False
-        
+        JuskeshinoHRI.say("I found a person")
         nearest_x, nearest_y, nearest_z = 0,0,0
         nearest_dist = float("inf")
         for p in human_poses:
@@ -119,7 +125,8 @@ class JuskeshinoSimpleTasks:
                 nearest_y = y
                 nearest_z = z
                 nearest_dist = dist
-        JuskeshinoVision.enableHumanPoseDetection(False)
+        JuskeshinoVision.enableHumanPose(False)
+        JuskeshinoHRI.say("I will try to approach to the human")
         print("JuskeshinoSimpleTask.->Nearest human pose detected at: " + str([nearest_x, nearest_y, nearest_z]))
         nearest_dist -= 1.0 #Robot will get close at 1 meter from human
         nearest_theta = math.atan2(nearest_y, nearest_x)
