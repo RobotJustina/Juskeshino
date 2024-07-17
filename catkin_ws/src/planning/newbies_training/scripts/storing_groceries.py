@@ -352,14 +352,21 @@ class ScanCabinet(smach.State):
                         
                         else:
                             JuskeshinoHardware.moveHead(0,-0.4, 5)
-                            if obj.pose.position.z < 0.7:
+                            if obj.pose.position.z < 0.6:
                                 JuskeshinoHRI.say("The object is part of the fifth shelf")
                                 print("The object is part of the fifth shelf")
                                 height_d='fifth'
                                 print (height_d)
                                 userdata.height=height_d
                                 return 'succed'
-                        
+                        JuskeshinoHardware.moveHead(0,0.0, 5)
+                        if 1.3 < obj.pose.position.z < 1.9:
+                                JuskeshinoHRI.say("The object is part of the first shelf")
+                                print("The object is part of the first shelf")
+                                height_d='first'
+                                print (height_d)
+                                userdata.height=height_d
+                                return 'succed' 
                         
                             
                 JuskeshinoHRI.say(f"I couldn't found a match for the {tar_obj.id}")
