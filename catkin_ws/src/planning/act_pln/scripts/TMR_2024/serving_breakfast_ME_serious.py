@@ -108,6 +108,26 @@ def categorize_objs(name):
     return 'unknown'
 
 def serving_breakfast(object):
+    print("PREPARE TOP")
+    #JuskeshinoHRI.say("Prepare arm")
+    #time.sleep(0.5)
+    #JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
+    JuskeshinoHRI.say("Prepare serving")
+    time.sleep(0.5)
+    JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_SERVING, 10)
+    
+    #JuskeshinoNavigation.moveDist(0.3, 7)      # mueve la base adelante con el brazo levantado y extendido
+    if object ==MILK: 
+        JuskeshinoHRI.say("Serving milk")
+    else: 
+        JuskeshinoHRI.say("Serving cereal")
+    time.sleep(0.5)
+    JuskeshinoHardware.moveLeftArmWithTrajectory(SERVING, 10)
+    JuskeshinoHRI.say("Prepare serving")
+    time.sleep(0.5)
+    JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_SERVING, 10)
+    time.sleep(0.5)
+
     if object ==MILK:
         JuskeshinoHRI.say("leave milk")
         time.sleep(0.5)
@@ -472,7 +492,7 @@ def main():
                         print("Cannot move torso")
                 else:
                     try:
-                        JuskeshinoHardware.moveTorso(0.06 , 10.0)
+                        JuskeshinoHardware.moveTorso(0.05 , 10.0)
                         #time.sleep(1)
                     except:
                         print("Cannot move torso")
