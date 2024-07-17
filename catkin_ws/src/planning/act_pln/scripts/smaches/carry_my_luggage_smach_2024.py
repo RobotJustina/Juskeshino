@@ -234,7 +234,7 @@ class AskForBag(smach.State):
         self.tries = 0
         self.offerSit = [0.3, 0.2, -0.4, 1.7, 0.0, -0.4, 1.5]
         self.getBag = [0.3, 0.2, -0.5, 1.7, 0.0, 0.3, 0.0, 0.4]
-        self.carryBag = [-0.8, 0.2, 0.0, 1.8, 0.0, 1.16, 0.0]#[-0.69, 0.2, 0.0, 1.55, 0.0, 1.16, 0.0]
+        self.carryBag = [-0.8, 0.2, 0.4, 1.6, 0.0, 1.36, 0.0]#[-0.69, 0.2, 0.0, 1.55, 0.0, 1.16, 0.0]
 
 
     def execute(self, userdata):
@@ -247,14 +247,13 @@ class AskForBag(smach.State):
             print("\n")
             rospy.logwarn('--> STATE <: Ask for Bag')
             JuskeshinoHardware.moveLeftArmWithTrajectory(self.offerSit, 6)
-            head.set_named_target('neutral')
-            print('Can you put the bag over my hand? Please')
-            voice.talk('Can you put the bag over my hand?. Please')
+            head.set_named_target('neutral')            
             JuskeshinoHardware.moveLeftGripper(0, 2.0)
             JuskeshinoHardware.moveLeftArmWithTrajectory(self.getBag, 6)
-        
-        print('Tell me: Justina yes, when you put the bag')
-        voice.talk('Tell me. Justina yes, when you put the bag')
+            print('Can you put the bag over my hand? Please')
+            voice.talk('Can you put the bag over my hand?. Please')
+            print('Tell me: Justina yes, when you put the bag')
+            voice.talk('Tell me. Justina yes, when you put the bag')
 
         
         if vosk_enable:
@@ -541,7 +540,7 @@ if __name__ == '__main__':
                                transitions={'failed':'FOLLOW_HUMAN', 'succ':'DELIVER_BAG', 'tries':'ASK_ARRIVE'})
         
         smach.StateMachine.add("DELIVER_BAG", DeliverBag(), 
-                               transitions={'failed':'DELIVER_BAG', 'succ':'TRY_RETURN', 'tries':'DELIVER_BAG'})
+                               transitions={'failed':'DELIVER_BAG', 'succ':'END', 'tries':'DELIVER_BAG'})
         
         smach.StateMachine.add("TRY_RETURN", TryReturn(),
                                transitions={'failed':'END', 'succ':'END', 'tries':'TRY_RETURN'})
