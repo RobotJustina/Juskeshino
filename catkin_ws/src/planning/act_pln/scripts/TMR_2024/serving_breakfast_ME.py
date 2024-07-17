@@ -43,9 +43,9 @@ OBJECTS_TABLE_THETA = [5.44 ,2.15, 1.5]
 
 
 # Objects
-BOWL   = "red_bowl"
-MILK   = "apple"
-CEREAL = "apple"
+BOWL   = "bowl"
+MILK   = "milk"
+CEREAL = "cornflakes"
 
 # Gripper_aperture
 GRIP_MILK   = 0.4
@@ -503,7 +503,7 @@ def main():
                 JuskeshinoNavigation.moveDist(0.2, 7)
                 #JuskeshinoNavigation.moveLateral(-0.05 , 5.0)
                 JuskeshinoHRI.say("Leave bowl")
-                JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_BOWL_2, 10)
+                #JuskeshinoHardware.moveLeftArmWithTrajectory(LEAVE_BOWL_2, 10)
                 print("SB-PLN.->Open gripper")
                 JuskeshinoHardware.moveLeftGripper(1.0, 5.0)
                 time.sleep(0.5)            # Soltar el objeto
