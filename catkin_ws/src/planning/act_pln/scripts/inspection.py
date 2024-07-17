@@ -37,41 +37,7 @@ def navigate(goal):
     else:
         print("GPSR.->Arrived to goal point ", goal)
     JuskeshinoHardware.moveHead(0,0,3)
-    JuskeshinoHRI.say("I arrived to the " + goal_to_say)
-
-def take(obj_name):
-    print("GPRS.->Trying to take object: ", obj_name)
-    obj_to_say = obj_name.lower()
-    obj_name = obj_name.lower().replace(" ", "_")
-    JuskeshinoHRI.say("I will try to find the " + obj_to_say) 
-    result = JuskeshinoSimpleTasks.object_search_orientation(obj_name)
-    if result is None:
-        print("GPSR.->Cannot find object ", obj_name)
-        JuskeshinoHRI.say("I am sorry. I cannot find the " + obj_to_say)
-        return
-    found_obj, img = result
-    print("Found Object: ", found_obj.id, found_obj.pose)
-    JuskeshinoHRI.say("I found the " + obj_name)
-    JuskeshinoSimpleTasks.handling_location_la(found_obj.pose.position)
-
-    x,y,z=found_obj.pose.position.x, found_obj.pose.position.y, found_obj.pose.position.z
-    x,y,z = JuskeshinoSimpleTasks.transformPoint(x,y,z, "shoulders_left_link", "base_link")
-    JuskeshinoHRI.say("I am ready to pick the "+ obj.id)
-    JuskeshinoHardware.moveTorso(TABLE_TORSO_HEIGHT , timeout = 5.0)
-    rospy.sleep(1)
-    JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
-    JuskeshinoHardware.moveLeftGripper(0.7, 100.0)
-    
-    manip_method = rospy.get_param("~manip_method")
-    if manip_method == "best":
-        # EXECUTE TRAJECTORY
-        [response, success] = JuskeshinoManipulation.GripLa(obj)
-    else:
-        response = JuskeshinoManipulation.laIk([x,y,z, 0,-1.5,0])
-        success = not (response is None or response is False)
-    if not success:
-        print("Could not take the " + obj_to_say)
-    
+    JuskeshinoHRI.say("I arrived to the " + goal_to_say)    
     
 def main():
     print("INITIALIZING GPSR TEST Not in a Tenshily manner...")
@@ -98,6 +64,7 @@ def main():
             if JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(30):
                 print("GPSR.->Door opened detected")
                 JuskeshinoHRI.say("I can see now that the door is open")
+                JuskeshinoNavigation.moveDist(1.0, 5)
                 navigate("inspection_point")
                 state = SM_WAITING_FOR_COMMAND
         elif state == SM_WAITING_FOR_COMMAND:

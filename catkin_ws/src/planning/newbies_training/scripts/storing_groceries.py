@@ -88,6 +88,7 @@ class NavigateToTable(smach.State):
             JuskeshinoNavigation.moveDist(GET_CLOSE_TO_TABLE, timeout=5) # GET CLOSE TO THE TABLE
             JuskeshinoHRI.say("I have reached the table. I will start to analyze the table.")
             return 'succed'
+        
         else:
             JuskeshinoHRI.say("I did too many attempts to reach the table. I'm shutting down")
             return 'kill'

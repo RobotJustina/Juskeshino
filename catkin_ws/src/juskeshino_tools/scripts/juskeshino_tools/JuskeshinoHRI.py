@@ -35,7 +35,17 @@ class JuskeshinoHRI:
         JuskeshinoHRI.pubLegFinderEnable.publish(msg)
 
     def frontalLegsFound():
-        return JuskeshinoHRI.legsFound 
+        return JuskeshinoHRI.legsFound
+
+    def waitForFrontalLegsFound(timeout):
+        JuskeshinoHRI.legsFound = False
+        JuskeshinoHRI.enableLegFinder(True)
+        attempts = int(timeout/0.1);
+        loop = rospy.Rate(10)
+        while not rospy.is_shutdown() and not JuskeshinoHRI.legsFound:
+            loop.sleep()
+            attempts -= 1
+        return JuskeshinoHRI.legsFound
 
     def callbackLegsFound(msg):
         #print("JuskeshinoHRI.->Legs found signal received!")
