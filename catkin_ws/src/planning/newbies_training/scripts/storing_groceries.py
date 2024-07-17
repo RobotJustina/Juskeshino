@@ -25,8 +25,8 @@ LOW_SHELF=[0.31, 0.1, -0.1, 0.35, 0.0, 1.16, 0.0]
 PREPARE_GRIP  = [-0.69, 0.2, 0, 1.55, 0, 1.16, 0]
 HOME=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 HOLD_OBJ = [0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ]
-GET_CLOSE_TO_TABLE = 0.4
-TABLE_TORSO_HEIGHT = 0.12
+GET_CLOSE_TO_TABLE = 0.53
+TABLE_TORSO_HEIGHT = 0.14
 
 def matching_objects(obj):
     obj_yaml =rospy.get_param("~categories")
@@ -223,6 +223,7 @@ class GraspObject(smach.State):
                 JuskeshinoHRI.say("Object found correctly")
                 JuskeshinoHardware.moveLeftArmWithTrajectory(response.articular_trajectory,10)
                 success=JuskeshinoManipulation.dynamic_grasp_left_arm()
+                rospy.sleep(5)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(HOLD_OBJ, 10)
                 JuskeshinoHRI.say("Verifying...")
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
