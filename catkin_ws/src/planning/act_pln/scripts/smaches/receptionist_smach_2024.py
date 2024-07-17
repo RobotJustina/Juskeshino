@@ -271,7 +271,7 @@ class New_face(smach.State):
             voice.talk('Please repeat it and speak louder.')
             return 'failed'
 
-        if name == '[unk]':
+        if '[unk]' in name:
             name = 'william'
 
         print(f'Is {name} your name?')
