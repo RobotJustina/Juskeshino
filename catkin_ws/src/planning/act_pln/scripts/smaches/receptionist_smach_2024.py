@@ -271,6 +271,9 @@ class New_face(smach.State):
             voice.talk('Please repeat it and speak louder.')
             return 'failed'
 
+        if name == '[unk]':
+            name = 'william'
+
         print(f'Is {name} your name?')
         voice.talk(f'Is {name} your name?')
 
@@ -344,6 +347,9 @@ class Get_drink(smach.State):
             print("Sorry, couldn't hear you. Please speak louder.")
             voice.talk("Sorry, couldn't hear you. Please speak louder.")
             return 'tries'
+        
+        if drink == '[unk]':
+            drink = 'water'
         print(f'Did you say {drink}?')
         voice.talk(f'Did you say {drink}?')
         

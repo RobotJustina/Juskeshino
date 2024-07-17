@@ -47,7 +47,7 @@ class Initial(smach.State):
             userdata.confirm_list = ["YES", "YEAH", "ROBOT YES", "JUSTINA YES", "JUICE"]
             userdata.negation_list = ['NO', 'ROBOT NO','NOPE','JUSTINA NO']
 
-        gram = userdata.confirm_list + userdata.negation_list + ["here is the car"]
+        gram = userdata.confirm_list + userdata.negation_list + ["stop following me"]
 
         print("** confirmation list: ") 
         print(userdata.confirm_list)  
@@ -234,7 +234,7 @@ class AskForBag(smach.State):
         self.tries = 0
         self.offerSit = [0.3, 0.2, -0.4, 1.7, 0.0, -0.4, 1.5]
         self.getBag = [0.3, 0.2, -0.5, 1.7, 0.0, 0.3, 0.0, 0.4]
-        self.carryBag = [-0.69, 0.2, 0.0, 1.55, 0.0, 1.16, 0.0]
+        self.carryBag = [-0.8, 0.2, 0.0, 1.8, 0.0, 1.16, 0.0]#[-0.69, 0.2, 0.0, 1.55, 0.0, 1.16, 0.0]
 
 
     def execute(self, userdata):
@@ -271,8 +271,8 @@ class AskForBag(smach.State):
             head.set_named_target('face_to_face')
             rospy.sleep(0.3)
             head.set_named_target('face_to_face')
-            print("I will start to follow you. Please stand in front of me")
-            voice.talk("I will start to follow you. Please stand in front of me")
+            print("I will try to find you. Please stand in front of me")
+            voice.talk("I will try to find you. Please stand in front of me")
             self.tries = 0
             return 'succ'            
         else:
@@ -288,8 +288,8 @@ class FindLegs(smach.State):
         self.tries += 1  
 
         if self.tries > 6:  # TODO: many times
-            print("I can't found you, I stop trying to follow you")
-            voice.talk("I can't found you, I stop trying to follow you")
+            print("I can't found you, please stand one meter in front of me")
+            voice.talk("I can't found you, please stand one meter in front of me")
             print("Lets try again")
             voice.talk("Lets try again")
             self.tries = 0
@@ -298,21 +298,33 @@ class FindLegs(smach.State):
         if self.tries == 1:
             print("\n")
             rospy.logwarn('--> STATE <: Find legs')
-            JuskeshinoVision.enableHumanPose(True)
+            #JuskeshinoVision.enableHumanPose(True)  # TODO: try ----------------------------?
             JuskeshinoHRI.enableLegFinder(True)
+            loop = rospy.Rate(10)
+            max_attempts = 30
+            while not JuskeshinoHRI.frontalLegsFound() and max_attempts > 0:
+                loop.sleep()
+                max_attempts -= 1
+
             #print("I will start to follow you. Please stand in front of me")
             #voice.talk("I will start to follow you. Please stand in front of me")
             
         legs_found = JuskeshinoHRI.frontalLegsFound()
         print("CML-PLN.-> human detector is :__", legs_found.data)
         if legs_found.data:
-            print("Please say here is the car if we reached the final location")
-            voice.talk("Please say. here is the car, if we reached the final location")
+            print('I found you')
+            voice.talk('I found you')
+            print("Please say stop following me when we reached the final location")
+            voice.talk("Please say. . Stop following me. When we reached the final location")
+            JuskeshinoHRI.enableHumanFollower(True)
+            print('Now you can walk')
+            voice.talk('Now you can walk')
             self.tries = 0
+            
             return 'succ'
         else:
-            print("I can't found you, please stand in front of me")
-            voice.talk("I can't found you, please stand in front of me")
+            print("I can't found you, please stand closer to me")
+            voice.talk("I can't found you, please stand closer to me")
     
         return 'tries'
 
@@ -328,8 +340,8 @@ class FolowwHuman(smach.State):
         if self.tries == 1:
             print("\n")
             rospy.logwarn('--> STATE <: Follow human')
-            print("I follow you")
-            voice.talk("I follow you")
+            # print("I follow you")
+            # voice.talk("I follow you")
         
 
         legs_found = JuskeshinoHRI.frontalLegsFound()
@@ -340,24 +352,23 @@ class FolowwHuman(smach.State):
             print("ACT-PLN.-> found legs")
             print("ACT-PLN.-> HumanFollower enable")
             if self.tries % 7 == 0:
-                print("I follow you")
-                voice.talk("I follow you")
+                print("I am following you")
+                voice.talk("I am following you")
             
 
             command_voice = JuskeshinoHRI.getLastRecognizedSentence()
             print("--> command_voice: ", command_voice)
-            if command_voice != None and "here is the car" in command_voice:
-                JuskeshinoHRI.enableHumanFollower(False)
-                JuskeshinoHRI.enableLegFinder(False)
+            if command_voice != None and "stop following me" in command_voice:
+                
                 self.tries = 0
-                return 'succ' 
+                return 'succ'
                 
             JuskeshinoHRI.enableHumanFollower(True)
             return 'tries'
         else:
             rospy.logwarn("ACT-PLN.-> Not found legs")
-            print("I can't found you, please stand in front of me")
-            voice.talk("I can't found you, please stand in front of me")
+            print("I lost you, please stop and stand in front of me")
+            voice.talk("I lost you, please stop and stand in front of me")
             JuskeshinoHRI.enableHumanFollower(False)
             JuskeshinoHRI.enableLegFinder(False)
             self.tries = 0
@@ -382,18 +393,19 @@ class AskArrive(smach.State):
         if self.tries == 1:
             print("\n")
             rospy.logwarn('--> STATE <: Ask if we arrive human')
-            print('Is here the place?')
-            voice.talk ('Is here the place?')
+            print('Did you say stop following me?')
+            voice.talk ('Did you say, stop following me?')
 
         print(f'Try {self.tries} of {self.attempts} attempts')
 
-        print('Tell me: Justina yes, if we arrived')
-        voice.talk('Tell me. Justina yes, if we arrived')
-        
+        #print('Tell me: Justina yes, if we arrived')
+        #voice.talk('Tell me. Justina yes, if we arrived')
+        print('Please say: Robot yes or robot no')
+        voice.talk('Please say: Robot yes, or robot no')
 
         if vosk_enable:
-                rospy.logwarn('Listening now (Cc')
-                confirmation = get_keywords_speech(userdata.speech_time)
+            rospy.logwarn('Listening now (Cc')
+            confirmation = get_keywords_speech(userdata.speech_time)
         else: 
             JuskeshinoHRI.getLastRecognizedSentence()
             rospy.sleep(0.3)
@@ -401,6 +413,10 @@ class AskArrive(smach.State):
         
         print("confirmation:", confirmation)
         if confirmation  in userdata.confirm_list:
+            JuskeshinoHRI.enableHumanFollower(False)
+            JuskeshinoHRI.enableLegFinder(False)
+            print('Ok')
+            voice.talk('Ok')
             head.set_named_target('face_to_face')
             rospy.sleep(0.3)
             head.set_named_target('face_to_face')
@@ -522,7 +538,7 @@ if __name__ == '__main__':
                                transitions={'failed':'FIND_LEGS', 'succ':'ASK_ARRIVE', 'tries':'FOLLOW_HUMAN'})
 
         smach.StateMachine.add("ASK_ARRIVE", AskArrive(), 
-                               transitions={'failed':'FIND_LEGS', 'succ':'DELIVER_BAG', 'tries':'ASK_ARRIVE'})
+                               transitions={'failed':'FOLLOW_HUMAN', 'succ':'DELIVER_BAG', 'tries':'ASK_ARRIVE'})
         
         smach.StateMachine.add("DELIVER_BAG", DeliverBag(), 
                                transitions={'failed':'DELIVER_BAG', 'succ':'TRY_RETURN', 'tries':'DELIVER_BAG'})
