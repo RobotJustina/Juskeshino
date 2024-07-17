@@ -1,0 +1,8 @@
+<launch>
+
+        <node pkg="newbies_training" type="test_classification.py" name="storing_groceries" output="screen">
+                <param name="categories" value="$(find config_files)/groceries_classification_test.yaml" />
+                <param name="manip_method" value="best"/>
+        </node>
+
+</launch>
