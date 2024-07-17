@@ -26,7 +26,7 @@ PREPARE_TOP_GRIP  = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
 PREPARE_SERVING   = [0.91, 0.4, -0.5, 1.15, 0, 0.16, 0.5]
 SERVING           = [0.91, 0.4, -0.5, 1.15, 0, 0.16, -1.6]
 LEAVE_CEREAL      = [0.54, 0.28, -0.13, 1.25, 0, 0, 0]
-LEAVE_MILK        = [0.44, 0.18, -0.03, 1.25, 0, 0, 0]
+LEAVE_MILK        = [0.44, 0.18, 0.37, 1.15, 0, 0, 0]
 LEAVE_BOWL        = [0.6,  0.6, -0.8, 1.7, 0, -0.1, 0]
 LEAVE_BOWL_2        = [0.6,  0.6, -0.1, 1.7, 0.0,-0.1, 0]
 CARRY_BOWL        = [-0.9, 0.2, 0.0, 2.05, 0.0, -0.64, 0.0]
@@ -38,7 +38,7 @@ PREPARE_RA    = [-0.8, -0.1, 0.0, 1.3, 1.3,0, 0.0]
 
 # Locations
 OBJECTS_TABLE = "objects_table_robocup"#"desk_justina"
-EAT_TABLE     = "breakfast_table_robocup"#"desk_takeshi" 
+EAT_TABLE     = "mesa_1" #breakfast_table_robocup"#"desk_takeshi" 
 OBJECTS_TABLE_THETA = [5.44 ,2.15, 1.5]
 
 
