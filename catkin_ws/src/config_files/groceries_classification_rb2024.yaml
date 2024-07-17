@@ -1,0 +1,46 @@
+Fruits: 
+  - apple
+  - banana
+  - lemon
+  - orange
+  - peach
+  - pear
+  - plum
+  - strawberry
+Drinks:
+  - big_coke
+  - cola
+  - dubbelfris
+  - fanta
+  - ice_tea
+  - milk
+  - water
+Snacks:
+  - candy
+  - crisps
+  - liquorice
+  - pringles
+  - stroopwafel
+  - tictac
+Food:
+  - cornflakes
+  - curry
+  - hagelslag
+  - mayonaise
+  - pancake_mix
+  - pea_soup
+  - sausages
+Dishes:
+  - bowl
+  - cup
+  - fork
+  - knife
+  - plate
+  - spoon
+Decorations:
+  - candle
+Cleaning_Supplies:
+  - dishwasher_tab
+  - soap
+  - sponges
+  - washcloth
