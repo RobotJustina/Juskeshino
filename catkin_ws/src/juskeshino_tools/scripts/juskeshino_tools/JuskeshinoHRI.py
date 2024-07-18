@@ -42,7 +42,7 @@ class JuskeshinoHRI:
         JuskeshinoHRI.enableLegFinder(True)
         attempts = int(timeout/0.1);
         loop = rospy.Rate(10)
-        while not rospy.is_shutdown() and not JuskeshinoHRI.legsFound:
+        while not rospy.is_shutdown() and not JuskeshinoHRI.legsFound and attempts > 0:
             loop.sleep()
             attempts -= 1
         return JuskeshinoHRI.legsFound
