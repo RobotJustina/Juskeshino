@@ -9,8 +9,8 @@ import tf2_ros
 import tf
 import numpy as np
 import math
-from geometry_msgs.msg import PointStamped, Point
 from std_msgs.msg import Float64MultiArray
+from geometry_msgs.msg import PointStamped, Point
 from juskeshino_tools.JuskeshinoNavigation import JuskeshinoNavigation
 from juskeshino_tools.JuskeshinoVision import JuskeshinoVision
 from juskeshino_tools.JuskeshinoHardware import JuskeshinoHardware
@@ -27,10 +27,11 @@ PREPARE_TOP_GRIP  = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
 PREPARE_SERVING   = [0.91, 0.4, -0.5, 1.15, 0, 0.16, 0.5]
 SERVING           = [0.91, 0.4, -0.5, 1.15, 0, 0.16, -1.6]
 LEAVE_CEREAL      = [0.54, 0.28, -0.13, 1.25, 0, 0, 0]
-LEAVE_MILK        = [0.44, 0.18, 0.37, 1.15, 0, 0, 0]
+LEAVE_MILK        = [0.44, 0.18, -0.03, 1.25, 0, 0, 0]
 LEAVE_BOWL        = [0.6,  0.6, -0.8, 1.7, 0, -0.1, 0]
 LEAVE_BOWL_2        = [0.6,  0.6, -0.1, 1.7, 0.0,-0.1, 0]
 CARRY_BOWL        = [-0.9, 0.2, 0.0, 2.05, 0.0, -0.64, 0.0]
+CARRY_OBJECT      = []
 
 POST_GRIP         = [0.38, 0.19, -0.01, 1.57, 0 , 0.35, 0.0 ]
 
@@ -205,8 +206,8 @@ def main():
             JuskeshinoSimpleTasks.setNodeHandle()
             JuskeshinoHRI.setNodeHandle()
             JuskeshinoKnowledge.setNodeHandle()
-            if torso:
-                JuskeshinoHardware.moveTorso(0.02 , 10.0)
+
+            JuskeshinoHardware.moveTorso(0.02 , 10.0)
             
             pila = [BOWL, MILK, CEREAL]
             count = 0
@@ -218,7 +219,7 @@ def main():
             print("cycle:___", cycle)
             mesa_alta = True
             align_with_table = True
-            current_state = DETECT_OBJECT#START
+            current_state = MOVE_HEAD
 
 
 
@@ -450,11 +451,10 @@ def main():
             else:
                 JuskeshinoManipulation.dynamic_grasp_left_arm()
 
-
-            actual_position = rospy.wait_for_message("/hardware/left_arm/current_pose", Float64MultiArray, 5.0)
-            actual_position_arm = list(actual_position.data)
-            actual_position_arm[5] = actual_position_arm[5] + 1.57 
-            JuskeshinoHardware.moveLeftArmWithTrajectory(actual_position_arm , 10) 
+            actual_position = rospy.wait_for_message("/hardware/arm/current_pose", Float64MultiArray, 5.0)
+            actual_position = actual_position.data
+            actual_position[5] = actual_position[5] + 1.57 
+            JuskeshinoHardware.moveLeftArmWithTrajectory(, 10) 
 
             current_state = POST_GRASP
 
@@ -480,7 +480,7 @@ def main():
             if(actual_obj != BOWL):
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
             
-            current_state = GO_TO_KITCHEN
+            current_state = -1#GO_TO_KITCHEN
 
 
 
