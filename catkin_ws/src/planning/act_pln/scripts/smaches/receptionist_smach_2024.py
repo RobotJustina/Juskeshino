@@ -210,15 +210,25 @@ class Decide_face(smach.State):
                 confirmation = JuskeshinoHRI.waitForNewSentence(userdata.speech_time) # 10 is to much?
             
             print(confirmation)
-            if confirmation not in userdata.confirm_list:
+            if confirmation == "robot yes":
+                party.add_guest(userdata.name)
+                return 'succ'
+            elif confirmation == "robot no":
                 return 'unknown'
-            elif confirmation == "timeout":
+            else:
                 print('I could not hear you, lets try again, please speak louder.')
                 voice.talk('I could not hear you, lets try again, please speak louder.')
                 return "failed"
-            else:
-                party.add_guest(userdata.name)
-                return 'succ'
+            
+            # if confirmation not in userdata.confirm_list:
+            #     return 'unknown'
+            # elif confirmation == "timeout":
+            #     print('I could not hear you, lets try again, please speak louder.')
+            #     voice.talk('I could not hear you, lets try again, please speak louder.')
+            #     return "failed"
+            # else:
+            #     party.add_guest(userdata.name)
+            #     return 'succ'
 
 
 # --------------------------------------------------
@@ -286,7 +296,7 @@ class New_face(smach.State):
 
         print(confirmation)
         confirmation = confirmation.split(' ')
-        confirm = match_speech(confirmation, userdata.confirm_list)
+        confirm = match_speech(confirmation, "robot yes") #userdata.confirm_list
         if confirm:
             userdata.name = name
             print(f'Nice to Meet You {userdata.name}')
@@ -366,7 +376,7 @@ class Get_drink(smach.State):
             confirmation = JuskeshinoHRI.waitForNewSentence(userdata.speech_time)
 
         print(confirmation)
-        confirm = match_speech(confirmation, userdata.confirm_list)
+        confirm = match_speech(confirmation, "robot yes") # userdata.confirm_list
         if not confirm: 
             return 'tries' 
 
