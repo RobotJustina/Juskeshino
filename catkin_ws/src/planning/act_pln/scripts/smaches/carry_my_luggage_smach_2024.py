@@ -234,7 +234,7 @@ class AskForBag(smach.State):
         self.tries = 0
         self.offerSit = [0.3, 0.2, -0.4, 1.7, 0.0, -0.4, 1.5]
         self.getBag = [0.3, 0.2, -0.5, 1.7, 0.0, 0.3, 0.0, 0.4]
-        self.carryBag = [-0.8, 0.2, 0.4, 1.6, 0.0, 1.36, 0.0]#[-0.69, 0.2, 0.0, 1.55, 0.0, 1.16, 0.0]
+        self.carryBag = [-1.6, 0.6, 0.0, 2.2, 0.0, 1.2, 0.0]#[-0.69, 0.2, 0.0, 1.55, 0.0, 1.16, 0.0]
 
 
     def execute(self, userdata):
@@ -414,7 +414,7 @@ class AskArrive(smach.State):
             confirmation = JuskeshinoHRI.waitForNewSentence(10) # 10 is to much?
         
         print("confirmation:", confirmation)
-        if confirmation in userdata.confirm_list:
+        if "robot yes" in confirmation: # userdata.confirm_list:
             JuskeshinoHRI.enableHumanFollower(False)
             JuskeshinoHRI.enableLegFinder(False)
             print('Ok')
