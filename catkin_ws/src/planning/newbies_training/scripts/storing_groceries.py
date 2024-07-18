@@ -25,7 +25,7 @@ LOW_SHELF=[0.31, 0.1, -0.1, 0.35, 0.0, 1.16, 0.0]
 PREPARE_GRIP  = [-0.69, 0.2, 0, 1.55, 0, 1.16, 0]
 HOME=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 HOLD_OBJ = [0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ]
-GET_CLOSE_TO_TABLE = 0.53
+GET_CLOSE_TO_TABLE = 0.48
 TABLE_TORSO_HEIGHT = 0.15
 
 def matching_objects(obj):
@@ -69,6 +69,8 @@ class WaitForTheDoor(smach.State):
         
         JuskeshinoHRI.say("The door is open")
         rospy.sleep(2.5)
+        JuskeshinoNavigation.moveDist(1, timeout=10)
+
         return 'succed'
 
 class NavigateToTable(smach.State):
@@ -81,7 +83,6 @@ class NavigateToTable(smach.State):
 
         if self.tries<20:
             rospy.logwarn('\n--> STATE 2 <: Reaching the table')
-            JuskeshinoNavigation.moveDist(1, timeout=10)
             JuskeshinoHRI.say(" I am moving to the table")
             JuskeshinoHardware.moveHead(0,-1, 5) # HEAD TILTED DOWN, NO PAN
             JuskeshinoNavigation.getClose(DESK, 120) # REACH DESK
@@ -441,23 +442,23 @@ class LeaveObject(smach.State):
                 JuskeshinoHardware.moveTorso(0.28 , 10.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(TOP_SHELF, 10)
             if shelf =='third':
-                JuskeshinoHardware.moveTorso(0.28 , 10.0)
+                JuskeshinoHardware.moveTorso(0.0 , 10.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(MIDDLE_SHELF, 10)
             if shelf=='fourth':
                 JuskeshinoHardware.moveTorso(0.28 , 10.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(LOW_SHELF, 10)
             if shelf=='fifth':
-                JuskeshinoHardware.moveTorso(0.02 , 10.0)
+                JuskeshinoHardware.moveTorso(0.0 , 10.0)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(LOW_SHELF, 10)
             rospy.sleep(1)
-            JuskeshinoNavigation.moveDist(0.4, timeout=5)
+            JuskeshinoNavigation.moveDist(0.5, timeout=5)
             rospy.sleep(2)
             # obj=userdata.object_shelf
             # JuskeshinoHRI.say(f"Please, help me to place the {obj.id} in the {shelf} part of the shelf. Put your hand below the object and waitn until I open the gripper.")
             # rospy.sleep(12)
             print("Opening gripper")
             JuskeshinoHardware.moveLeftGripper(0.8, 5.0)
-            JuskeshinoNavigation.moveDist(-0.45, timeout=5)
+            JuskeshinoNavigation.moveDist(-0.5, timeout=5)
             JuskeshinoHardware.moveTorso(0.04 , 5.0)
             rospy.sleep(1)
             JuskeshinoHardware.moveLeftArmWithTrajectory(HOME, 8)
