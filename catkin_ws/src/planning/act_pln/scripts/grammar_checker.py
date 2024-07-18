@@ -344,7 +344,7 @@ def deliverObjToMe(cmd):
     prev_actions = cmd.actions.copy()
     success = deliverVerb(cmd) and 'IT TO ME' in cmd.sentence
     if success:
-        actions = [['navigate','start'], ['leave_object', '']]
+        actions = [['navigate','start_position'], ['leave_object', '']]
         cmd.actions += actions
     else:
         cmd.actions = prev_actions
@@ -436,7 +436,7 @@ def bringMeObjFromPlcmt(cmd):
     if success:
         goal_location = get_pattern(cmd, _placementLocNames)
         goal_object = get_pattern(cmd, _objNames)
-        actions = [['navigate', goal_location], ['take', goal_object], ['navigate', 'start'], ['leave_object','']]
+        actions = [['navigate', goal_location], ['take', goal_object], ['navigate', 'start_position'], ['leave_object','']]
         cmd.actions = actions
     else:
         cmd.actions = prev_actions

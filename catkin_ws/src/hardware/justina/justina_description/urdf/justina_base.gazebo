@@ -80,7 +80,7 @@
       <rightJoint>wheel_right_connect</rightJoint>
       <wheelSeparation>0.42</wheelSeparation>
       <wheelDiameter>0.12</wheelDiameter>
-      <torque>20</torque>  
+      <torque>200</torque>  
       <publishWheelTF>false</publishWheelTF>
       <robotNamespace>/</robotNamespace>
       <publishTf>1</publishTf>
@@ -88,7 +88,7 @@
       <alwaysOn>true</alwaysOn>
       <updateRate>100.0</updateRate>
       <broadcastTF>1</broadcastTF>
-      <wheelTorque>20.0</wheelTorque>
+      <wheelTorque>200.0</wheelTorque>
       <commandTopic>cmd_vel</commandTopic>
       <odometryFrame>odom</odometryFrame>
       <odometryTopic>odom</odometryTopic>

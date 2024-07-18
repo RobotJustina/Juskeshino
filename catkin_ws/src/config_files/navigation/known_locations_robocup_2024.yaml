@@ -34,10 +34,10 @@ entrance:
   theta: 1.5708
   parent: home
 start_position:
-  x: 2.0
-  y: 0.0
-  theta: 0.5
-  parent: home
+  x: 5.34
+  y: 1.54
+  theta: 0.8    
+  parent: home  
 inspection_point:
   x: 5.34
   y: 1.54
@@ -64,7 +64,7 @@ shelf:
   theta: -1.57
   parent: home
 coathanger:
-  x: 4.88
+  x: 5.38
   y: -0.569
   theta: 0
   parent: home
@@ -88,7 +88,7 @@ couch:
   y: 5.07
   theta: 1.57
   parent: home
-coffe_table:
+coffee_table:
   x: 5.38
   y: 3.73
   theta: 0
