@@ -25,11 +25,24 @@ ACTION_FIND_CLOTHES = 'find_clothes'
 ACTION_FOLLOW = 'follow'
 ACTION_SAY = 'say'
 ACTION_LEAVE_OBJECT = 'leave_object'
+ACTION_ANSWER = 'answer'
 
 PREPARE_GRIP  = [-0.69, 0.2, 0, 1.55, 0, 1.16, 0]
 HOME=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 TABLE_TORSO_HEIGHT = 0.12
 
+_objCompList = ['BIGGEST', 'LARGEST', 'SMALLEST', 'HEAVIEST', 'LIGHTEST', 'THINNEST']
+_objCompListAnswers = {'BIGGEST':'Big coke', 'LARGEST':'big coke', 'SMALLEST':'tic tac', 'HEAVIEST':'big coke', 'LIGHTEST':'lemon', 'THINNEST':'sponges'}
+questions = ['WHAT IS THE HIGHEST MOUNTAIN IN THE NETHERLANDS':'The Vaalserberg is the highest mountain in the Netherlands, although parts of the mountain belong to Belgium and Germany.',
+             'WHICH PAINTER CREATED THE NIGHT WATCH':'It was created by the dutch painter Rembrandt.',
+             'WHAT IS THE LARGEST LAKE IN THE NETHERLANDS':'The largest lake in the Netherlands is the Ijsselmeer.',
+             'WHO IS THE CURRENT BARON OF EINDHOVEN':'King Willem-Alexander of the Netherlands.',
+             'WHEN WAS EINDHOVEN FIRST CHARTERED':'In twelve thirty two, by the duke of Brabant, Henry the first',
+             'HOW MANY PEOPLE LIVE IN EINDHOVEN': 'More than two hundred thousand people currently live in Eindhoven.',
+             'WHAT IS THE MASCOT FOR THE TWENTY TWENTY FOUR ROBOCUP MASCOT CALLED':'The official mascot for this years Robo Cup is called Robin.',
+             'WHAT IS THE MASCOT FOR THE TWENTY THOUSAND AND TWENTY FOUR ROBOCUP MASCOT CALLED':'The official mascot for this years Robo Cup is called Robin.',
+             'HOW LOW IS THE LOWEST POINT IN THE NETHERLANDS':'The lowest point of the Netherlands is minus six dot sixty seven meters below sea level. It is located close to the A twenty.',
+             'WHAT WAS THE DUTCH CURRENCY BEFORE THE EURO':' The guilder was the currency of the Netherlands before the euro was introduced in two thousand two'.]
 def navigate(goal):
     goal = goal.lower().replace(" ", "_")
     goal_to_say = goal.lower().replace("_", " ")
@@ -109,7 +122,13 @@ def find_clothes(clothes):
     JuskeshinoSimpleTasks.findHumanAndApproach(60)
 
 def follow(dest):
-    no_destination = dest is None or dest == ""
+    dest_pose = JuskeshinoKnowledge.getKnownLocation(dest)
+    no_destination = dest_pose is None
+    if dest_pose is None:
+        dest_x, dest_y, dest_a = float("inf"),float("inf"),float("inf")
+    else:
+        dest_x, dest_y, dest_a = dest_pose
+    dest_pose = numpy.asarray([dest_x, dest_y, dest_a])
     print("GPSR.->Starting following")
     JuskeshinoHRI.say("I will try to following you. Please stand in front of me")
     if not JuskeshinoHRI.waitForFrontalLegsFound(15):
@@ -120,20 +139,38 @@ def follow(dest):
                 JuskeshinoHRI.say("Human, I could not found you. I am sorry.")
                 JuskeshinoHRI.enableLegFinder(False)
                 return
-    JuskeshinoHRI.say("Human, I found you. Please say. Robot stop following me. When you want me to stop following you")
     JuskeshinoHRI.enableHumanFollower(True)
+    if no_destination:
+        JuskeshinoHRI.say("Human, I found you. Please say. Robot stop following me. When you want me to stop following you")
+    else:
+        JuskeshinoHRI.say("Human, I found you")
     JuskeshinoHRI.say("Human, you can walk")
     cmd = ""
     loop = rospy.Rate(10)
     max_attempts = 1500
+    
     while not rospy.is_shutdown() and cmd == "":
+        cmd = JuskeshinoHRI.waitForNewSentence(5)
+        if "STOP FOLLOWING ME" in cmd:
+            JuskeshinoHRI.say("Do you want me to stop following you? Please answer robot yes or robot no")
+            cmd = JuskeshinoHRI.waitForNewSentence(10)
+            if "YES" in cmd:
+                JuskeshinoHRI.say("OK. I will stop following you")
+            else:
+                JuskeshinoHRI.say("OK. I will keep following you")
+        robot_pose = numpy.asarray(JuskeshinoNavigation.getRobotPoseWrtMap())
+        dist_to_dest = numpy.linalg.norm(robot_pose - dest_pose)
+        if dist_to_dest < 3.0:
+            JuskeshinoHRI.say("I arrived to the " + dest.lower().replace("_", " ") + ". I will stop following you")
         loop.sleep()
-        
     
 
 def say(text):
     print("GPSR.->Saying ", text)
-    JuskeshinoHRI.say(text)
+    if text in _objCompList:        
+        JuskeshinoHRI.say("The " + text + " object is the " + _objCompListAnswers[text])
+    else:
+        JuskeshinoHRI.say(text)
 
 def leave_object():
     print("GPSR.->Leaving object")
@@ -142,7 +179,21 @@ def leave_object():
     JuskeshinoHardware.moveLeftGripper(0.8, 5.0)
     JuskeshinoHardware.moveLeftGripper(0.1, 5.0)
     JuskeshinoHardware.moveLeftArm([0,0,0,0,0,0,0])
-    
+
+def answer_question():
+    print("GPSR.->Answering a question")
+    JuskeshinoHRI.say("Human, please make your question")
+    cmd = JuskeshinoHRI.waitForNewSentence(10)
+    if cmd in questions.keys():
+        JuskeshinoHRI.say(questions[cmd])
+    else:
+        JuskeshinoHRI.say("Human, I could not hear you. Please make your question")
+        cmd = JuskeshinoHRI.waitForNewSentence(10)
+        if cmd in questions.keys():
+            JuskeshinoHRI.say(questions[cmd])
+        else:
+            JuskeshinoHRI.say("Human, I could not hear you. I will continue with the test")
+            
     
 def main():
     print("INITIALIZING GPSR TEST Not in a Tenshily manner...")
@@ -155,8 +206,8 @@ def main():
     JuskeshinoHardware.setNodeHandle()
     JuskeshinoSimpleTasks.setNodeHandle()
     JuskeshinoHRI.setNodeHandle()
-    # JuskeshinoManipulation.setNodeHandle()
-    # JuskeshinoKnowledge.setNodeHandle()
+    JuskeshinoManipulation.setNodeHandle()
+    JuskeshinoKnowledge.setNodeHandle()
     # rospy.Subscriber("/hri/sp_rec/recognized", RecognizedSpeech, callback_sp_rec)
     state = SM_INIT
     current_action = 0
@@ -167,7 +218,8 @@ def main():
                        ACTION_FIND_CLOTHES: find_clothes,
                        ACTION_FOLLOW: follow,
                        ACTION_SAY: say,
-                       ACTION_LEAVE_OBJECT: }
+                       ACTION_LEAVE_OBJECT: leave_object,
+                       ACTION_ANSWER: answer_question}
     cmd = grammar_checker.Command()
     while not rospy.is_shutdown():
         if state == SM_INIT:
