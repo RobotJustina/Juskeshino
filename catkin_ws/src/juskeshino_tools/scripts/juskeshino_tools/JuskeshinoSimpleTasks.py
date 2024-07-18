@@ -188,7 +188,7 @@ class JuskeshinoSimpleTasks:
 
 
     def object_search(name_obj):
-        JuskeshinoHardware.moveHead(0,-1, 5)
+        JuskeshinoHardware.moveHead(0,-0.9, 5)
         print("JuskeshinoSimpleTask.->Primer intento")
         [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(name_obj)
 
@@ -218,18 +218,18 @@ class JuskeshinoSimpleTasks:
 
         
     def object_search_orientation(name_obj):
-        JuskeshinoHardware.moveHead(0,-1, 5)
+        JuskeshinoHardware.moveHead(0,-0.9, 5)
         print("JuskeshinoSimpleTask.->Primer intento")
         [obj, img] = JuskeshinoVision.detectAndRecognizeObject(name_obj)
 
         if obj == None: # si no reconocio el objeto
-            JuskeshinoHardware.moveHead(-0.3,-1, 5) #move head to the right 
+            JuskeshinoHardware.moveHead(-0.5,-0.9, 5) #move head to the right 
             time.sleep(1)
             [obj, img] = JuskeshinoVision.detectAndRecognizeObject(name_obj)
             print("JuskeshinoSimpleTask.->Segundo intento")
 
             if obj == None: # si no reconocio el objeto
-                JuskeshinoHardware.moveHead(0.3,-1, 5) #move head to the left
+                JuskeshinoHardware.moveHead(0.5,-0.9, 5) #move head to the left
                 time.sleep(1)
                 [obj, img] = JuskeshinoVision.detectAndRecognizeObject(name_obj)
                 print("JuskeshinoSimpleTask.->tercer intento")

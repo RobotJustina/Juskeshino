@@ -1,12 +1,22 @@
-objects_table_robocup:
- x: 0.31
+bowl_table_robocup:
+ x: 1.45
+ y: 5.17
+ theta: 1.635
+ parent: home
+cereal_table_robocup:
+ x: 0.51
  y: 5.1
  theta: 1.635
  parent: home
+milk_table_robocup:
+ x: 0.58
+ y: 1.14
+ theta: -1.635
+ parent: home
 breakfast_table_robocup:
-  x: 2.74
-  y: 3.1
-  theta: 3.135
+  x: 1.02
+  y: 3.54
+  theta: -1.635
   parent: home
 scan_cabinet:
   x: 0.44
@@ -129,3 +139,9 @@ kitchen:
   y: 3.16
   theta: 3.14159
   parent: home
+mesa_1:
+  x: 1.7
+  y: 2.54
+  theta: 1.66
+  parent: home
+
