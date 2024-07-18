@@ -256,10 +256,6 @@ def main():
 
         elif(current_state == MOVE_TO_LOCATION):
             print("ESTADO:___MOVE_TO_LOCATION..................")
-            #JuskeshinoHRI.say("I'm going to the "+ location_actual)
-            if cycle > 0:
-                JuskeshinoNavigation.moveDist(0.13,10)
-            
             
             if not JuskeshinoNavigation.getClose(location_actual , 300): 
                 JuskeshinoHRI.say("Cannot get close to the "+ location_actual +" position")
@@ -271,6 +267,9 @@ def main():
                 current_state = MOVE_HEAD
             time.sleep(0.5)
 
+            if cycle > 0:
+                JuskeshinoNavigation.moveDist(0.13,10)
+
 
 
 
@@ -278,11 +277,11 @@ def main():
         elif(current_state == MOVE_HEAD):
             print("ESTADO:___MOVE_HEAD..................")
             try:
-                JuskeshinoHardware.moveHead(0,-1, 5)
+                JuskeshinoHardware.moveHead(0,-0.9, 5)
                 current_state = DETECT_OBJECT
             except:
                 JuskeshinoHRI.say("Cannot move head")
-                JuskeshinoHardware.moveHead(0,-1, 5)
+                JuskeshinoHardware.moveHead(0,-0.9, 5)
                 current_state = DETECT_OBJECT
 
             
@@ -332,7 +331,7 @@ def main():
 
             pos_obj_bl = [obj.pose.position.x, obj.pose.position.y, obj.pose.position.z]
             print("position obj:____", obj.pose.position.x)
-            if(obj.pose.position.x > 0.52):
+            if(obj.pose.position.x > 0.82):
                 move_front = obj.pose.position.x -0.54
                 print("MOVE FRONT:__", move_front)
                 JuskeshinoNavigation.moveDist(move_front , 5.0)
@@ -354,7 +353,7 @@ def main():
                 [obj, img] = JuskeshinoSimpleTasks.object_search_orientation(actual_obj)
                 #[obj, img] = JuskeshinoVision.detectAndRecognizeObject(actual_obj)   
                 print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
-                JuskeshinoHRI.say("I found" + actual_obj.replace("_", " "))
+                #JuskeshinoHRI.say("I found" + actual_obj.replace("_", " "))
                 current_state = PREPARE_ARM
             except:
                 JuskeshinoHRI.say("I couldn't find the object")
@@ -381,7 +380,6 @@ def main():
                         print("SB-PLN.-> Se excedió el numero de intentos")
                         current_state = PREPARE_ARM
                 """
-            
             print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
                       
             
@@ -393,7 +391,7 @@ def main():
             if((obj.category == "CUBIC") or (obj.category == "BOWL") or (obj.category == "BOX") or (obj.object_state == "horizontal")):
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)  # prepare 
                 if(obj.category == "BOWL"):
-                    JuskeshinoHRI.say("Open gripper")
+                    #JuskeshinoHRI.say("Open gripper")
                     APERTURE = 0.4
                     JuskeshinoHardware.moveLeftGripper(APERTURE , 5.0)
                 else:
@@ -401,7 +399,7 @@ def main():
                     JuskeshinoHardware.moveLeftGripper(APERTURE , 5.0)
             else: 
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE, 10)  # prepare 
-                JuskeshinoHRI.say("Open gripper")
+                #JuskeshinoHRI.say("Open gripper")
                 APERTURE = 1.0
                 JuskeshinoHardware.moveLeftGripper(APERTURE , 5.0)
 
@@ -450,11 +448,11 @@ def main():
             else:
                 JuskeshinoManipulation.dynamic_grasp_left_arm()
 
-
-            actual_position = rospy.wait_for_message("/hardware/left_arm/current_pose", Float64MultiArray, 5.0)
-            actual_position_arm = list(actual_position.data)
-            actual_position_arm[5] = actual_position_arm[5] + 1.57 
-            JuskeshinoHardware.moveLeftArmWithTrajectory(actual_position_arm , 10) 
+            if(actual_obj != BOWL):
+                actual_position = rospy.wait_for_message("/hardware/left_arm/current_pose", Float64MultiArray, 5.0)
+                actual_position_arm = list(actual_position.data)
+                actual_position_arm[5] = actual_position_arm[5] + 1.58 
+                JuskeshinoHardware.moveLeftArmWithTrajectory(actual_position_arm , 10) 
 
             current_state = POST_GRASP
 
@@ -467,19 +465,20 @@ def main():
             print("SB-PLN.->Moving base backwards")    
             #JuskeshinoNavigation.moveDist(-0.33, 10)
 
-            
+            """
             if (not simu) or (torso):
                 if(actual_obj == BOWL):
                     try:
-                        JuskeshinoHardware.moveTorso( 0.24, 10.0)
+                        JuskeshinoHardware.moveTorso( 0.25, 10.0)
                         #time.sleep(1)
                     except:
                         print("Cannot move torso")
-
+            """
             JuskeshinoNavigation.moveDist(-0.33, 10)
+            """
             if(actual_obj != BOWL):
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
-            
+            """
             current_state = GO_TO_KITCHEN
 
 
@@ -511,7 +510,7 @@ def main():
                 JuskeshinoHardware.moveLeftGripper(1.0, 5.0)
                 time.sleep(0.5)            # Soltar el objeto
             
-            JuskeshinoHRI.say("cicle end")
+            #JuskeshinoHRI.say("cicle end")
 
             current_state = CYCLE_END
 
@@ -525,9 +524,9 @@ def main():
             time.sleep(0.5)
             JuskeshinoHardware.moveLeftArmWithTrajectory(HOME , 10)
             time.sleep(0.2)
-            JuskeshinoHardware.moveLeftGripper(0.0, 2.0)
+            JuskeshinoHardware.moveLeftGripper(0.0, 6.0)
             try:
-                JuskeshinoHardware.moveTorso(0.05 , 10.0)
+                JuskeshinoHardware.moveTorso(0.10 , 10.0)
                 #time.sleep(1)
             except:
                 print("Cannot move torso")

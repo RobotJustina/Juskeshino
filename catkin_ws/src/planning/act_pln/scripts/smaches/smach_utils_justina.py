@@ -707,5 +707,4 @@ pointing_detect_server = rospy.ServiceProxy('/detect_pointing', Point_detector)
 classify_client = rospy.ServiceProxy('/classify', Classify)
 segmentation_server = rospy.ServiceProxy('/segment', Segmentation)
 
-
 human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)  ####HUMAN FINDER OPPOSEBASED

@@ -2,7 +2,7 @@ People:
   Guest_0:
     drink: Milk
     location: Place_2
-    name: Jack
+    name: John
 Places:
   Place_0:
     location:
@@ -21,7 +21,7 @@ Places:
       theta: 1.57
       x: 7.13
       y: 5.8
-    occupied: Jack
+    occupied: John
   Place_3:
     location:
       theta: 0.0
