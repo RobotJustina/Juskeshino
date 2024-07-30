@@ -14,7 +14,7 @@ import geometry_msgs.msg
 MAXIMUM_GRIP_LENGTH = 0.14
 MINIMUM_HEIGHT_PRISM = 0.17
 MAXIMUM_CUBE_SIZE = 0.16
-Z_OFFSET = 0.13# real 0.12
+Z_OFFSET = 0.08# real 0.12
 Z_OFFSET_2 = 0.01
 Z_OFFSET_PRISM = 0.21
 Z_OFFSET_PRISM_2 = 0.07
@@ -95,7 +95,7 @@ def points_actual_to_points_target(point_in, f_actual, f_target):
 
 
 
-def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame, step, num_candidates, type_obj = None):    # Cambiar nombre por generates_candidates
+def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame, step, num_candidates, type_obj = None, offset = 0):    # Cambiar nombre por generates_candidates
     """
         grip_point:     Vector que contiene  el punto origen de los sistemas candidatos, entra en el frame 'object'.
         obj_pose:       Orientacion del objeto en msg Pose en frame 'object', expresado en cuaterniones.
@@ -138,6 +138,10 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
                                              obj_pose.orientation.y ,
                                              obj_pose.orientation.z, 
                                              obj_pose.orientation.w])
+    if rotacion == "P": 
+        P = np.deg2rad(offset) #horizontal grip#
+    else:
+        if rotacion == "R": R = R + np.deg2rad(offset) #vertical grip
     
     for j in range(num_candidates):      # genera candidatos
         obj_pose_frame_object = Pose()
@@ -155,11 +159,9 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
         obj_pose_frame_object.orientation.w = q_gripper[3]
         
         if rotacion == "P": 
-            P = P + np.deg2rad(step) #horizontal grip
-            #print("Best_Grasp_Node.-> Rotacion en Pitch", np.rad2deg(P))
+            P = P + np.deg2rad(step) + np.deg2rad(offset) #horizontal grip#
         else:
-            if rotacion == "R": R = R + np.deg2rad(step)  #vertical grip
-            #print("Best_Grasp_Node.-> Rotacion en Roll", np.rad2deg(R))
+            if rotacion == "R": R = R + np.deg2rad(step) + np.deg2rad(offset) #vertical grip
         
         obj_pose_frame_object.position.x = grip_point[0]
         obj_pose_frame_object.position.y = grip_point[1]
@@ -227,8 +229,9 @@ def top_grip(grip_point):
     obj_pose_1.orientation.y = 0.0
     obj_pose_1.orientation.z = 0.0
     obj_pose_1.orientation.w = 1.0
+    offset = 0
 
-    pose_list1 = generates_candidates(grip_point , obj_pose_1, "P", obj_state ,  'c1', step = -15, num_candidates = 6, type_obj = None)
+    pose_list1 = generates_candidates(grip_point , obj_pose_1, "P", obj_state ,  'c1', step = -15, num_candidates = 6, type_obj = None, offset=0)
         
 
     # Segunda lista de candidatos******************************************************************************
@@ -239,7 +242,7 @@ def top_grip(grip_point):
     obj_pose_2.orientation.z = 0.0
     obj_pose_2.orientation.w = 1.0
         
-    pose_list2 = generates_candidates(grip_point , obj_pose_2, "P", obj_state , 'C2', step = 13, num_candidates = 6, type_obj = None)
+    pose_list2 = generates_candidates(grip_point , obj_pose_2, "P", obj_state , 'C2', step = 13, num_candidates = 6, type_obj = None, offset=0)
         
     # Tercera lista de candidatos.................................
     obj_pose_3 = Pose()
@@ -265,7 +268,7 @@ def top_grip(grip_point):
     obj_pose_3.position.y = 0
     obj_pose_3.position.z = 0
         
-    pose_list3 = generates_candidates(grip_point, obj_pose_3 , "P", obj_state , 'c3', step = -13, num_candidates = 6, type_obj = None)
+    pose_list3 = generates_candidates(grip_point, obj_pose_3 , "P", obj_state , 'c3', step = -13, num_candidates = 6, type_obj = None, offset=0)
 
     # Cuarta lista de candidatos.................................
     obj_pose_4 = Pose()
@@ -290,7 +293,7 @@ def top_grip(grip_point):
     obj_pose_4.position.y = 0
     obj_pose_4.position.z = 0
 
-    pose_list4 = generates_candidates(grip_point , obj_pose_4 , "P", obj_state , 'c4', step = 13, num_candidates = 6, type_obj = None)
+    pose_list4 = generates_candidates(grip_point , obj_pose_4 , "P", obj_state , 'c4', step = 13, num_candidates = 6, type_obj = None, offset=0)
 
     print("Num Candidates:____", len(pose_list2 + pose_list1 + pose_list3 + pose_list4))
         
@@ -311,20 +314,26 @@ def cubic_and_bowl_obj(obj_pose, obj_state , grip_point, size, type_obj):
     obj_pos_2 = Pose()
     if ((type_obj == "CUBIC") or (type_obj == "BOX")):
         obj_pos_2.position.x, obj_pos_2.position.y, obj_pos_2.position.z = 0, 0, 0
-        num_candidates = 6 # debe ser par
+        num_candidates = 3 # debe ser par
+        offset = -80
+        name_frame = "CUB_BOX"
+        step = -10
     else:
         obj_pos_2.position.x, obj_pos_2.position.y, obj_pos_2.position.z = -0.02 , size.z/2 , 0
         #print("GRIP POINT BOWL: ", obj_pos_2)
         marker_array_publish(grip_point, 'object', 59, 56)
         num_candidates = 6
+        offset = 0
+        name_frame = "BOWL"
+        step = -15
         
 
     obj_pos_2.orientation.x = 0.0
     obj_pos_2.orientation.y = 0.0
     obj_pos_2.orientation.z = 0.0
     obj_pos_2.orientation.w = 1.0
-    step = -15
-    pose_list = generates_candidates([obj_pos_2.position.x , obj_pos_2.position.y ,obj_pos_2.position.z] , obj_pos_2, "P", obj_state ,  'c2', step, num_candidates, type_obj)
+    #step = -15
+    pose_list = generates_candidates([obj_pos_2.position.x , obj_pos_2.position.y ,obj_pos_2.position.z] , obj_pos_2, "P", obj_state ,  name_frame, step, num_candidates, type_obj, offset)
  
 
     return pose_list 
@@ -375,8 +384,10 @@ def box(obj_pose, size, obj_state):
         # genera punto de agarre lateral
         grip_point_side = [-size.x/3, 0, 0]
         marker_array_publish(grip_point_side , 'object', 59, 56)
+
+        offset = 0
             
-        candidates_h_list_2 = generates_candidates(grip_point_side , obj_pose_2, "P", 'vertical' , 'C2', step = -12, num_candidates = 4, type_obj = None)
+        candidates_h_list_2 = generates_candidates(grip_point_side , obj_pose_2, "P", 'vertical' , 'C2', step = -12, num_candidates = 4, type_obj = None, offset=0)
 
         return candidates_h_list_1  + candidates_h_list_2
 
@@ -392,7 +403,8 @@ def box(obj_pose, size, obj_state):
         obj_pos_1.orientation.z = 0.0
         obj_pos_1.orientation.w = 1.0
         grip_point_side = [size.x/6, 0, size.z/2]
-        candidates_v_list = generates_candidates(grip_point_side , obj_pos_1, "R", obj_state ,'object', step = 10, num_candidates = 5, type_obj = None)  
+        offset = 0
+        candidates_v_list = generates_candidates(grip_point_side , obj_pos_1, "R", obj_state ,'object', step = 10, num_candidates = 5, type_obj = None, offset=0)  
 
         # Segunda lista de candidatos******************************************************************************
         obj_pos_22 = Pose()
@@ -402,7 +414,7 @@ def box(obj_pose, size, obj_state):
         obj_pos_22.orientation.z = 0.0
         obj_pos_22.orientation.w = 1.0
         grip_point_side_2 = [size.x/6, 0, size.z/2]
-        candidates_v_list_2 = generates_candidates(grip_point_side_2 , obj_pos_22, "R", obj_state ,'object', step = -10, num_candidates = 5, type_obj = None)  
+        candidates_v_list_2 = generates_candidates(grip_point_side_2 , obj_pos_22, "R", obj_state ,'object', step = -10, num_candidates = 5, type_obj = None, offset=0)  
 
         # tercera lista de candidatos******************************************************************************
         obj_pos_3 = Pose()
@@ -431,7 +443,7 @@ def box(obj_pose, size, obj_state):
         grip_point_side = [-size.x/6, 0, 0]
         marker_array_publish(grip_point_side , 'object', 59, 56)
             
-        candidates_V_list_3 = generates_candidates(grip_point_side , obj_pos_3, "R", 'vertical' , 'C2', step = -16, num_candidates = 4, type_obj = None)
+        candidates_V_list_3 = generates_candidates(grip_point_side , obj_pos_3, "R", 'vertical' , 'C2', step = -16, num_candidates = 4, type_obj = None, offset=0)
 
         # Cuarta lista de candidatos******************************************************************************
         obj_pos_4 = Pose()
@@ -460,7 +472,7 @@ def box(obj_pose, size, obj_state):
         grip_point_side_4 = [-size.x/6, 0, 0]
         marker_array_publish(grip_point_side_4 , 'object', 50, 53)
             
-        candidates_V_list_4 = generates_candidates(grip_point_side_4, obj_pos_4, "R", 'vertical' , 'C2', step = 16, num_candidates = 4, type_obj = None)
+        candidates_V_list_4 = generates_candidates(grip_point_side_4, obj_pos_4, "R", 'vertical' , 'C2', step = 16, num_candidates = 4, type_obj = None, offset=0)
 
 
         return candidates_v_list + candidates_v_list_2 + candidates_V_list_3+candidates_V_list_4 # En frame 'object'
