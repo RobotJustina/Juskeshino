@@ -147,7 +147,7 @@ def callback_ik_for_trajectory(req):
         initial_guess = req.initial_guess
     p1 = forward_kinematics(initial_guess)
     p2 = [req.x, req.y, req.z, req.roll, req.pitch, req.yaw]
-    t  = req.duration if req.duration > 0 else get_trajectory_time(p1, p2, 0.25)
+    t  = req.duration if req.duration > 0 else get_trajectory_time(p1, p2, 0.35)
     dt = req.time_step if req.time_step > 0 else 0.05
     X,T = get_polynomial_trajectory_multi_dof(p1, p2, duration=t, time_step=dt)
     trj = JointTrajectory()

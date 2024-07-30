@@ -36,7 +36,7 @@
     <arg name="max_linear_speed" default="0.7"/>
     <arg name="min_linear_speed" default="0.15"/>
     <arg name="max_angular_speed" default="0.8"/>
-    <arg name="linear_acceleration" default="0.25"/>
+    <arg name="linear_acceleration" default="0.45"/>
     <arg name="use_pot_fields" value="$(arg use_pot_fields)"/>
     <arg name="pot_fields_k_rej" value="2.5"/>
     <arg name="pot_fields_d0" default="1.0"/>

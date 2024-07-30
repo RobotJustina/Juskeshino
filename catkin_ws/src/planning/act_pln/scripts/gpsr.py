@@ -70,7 +70,7 @@ def take(obj_name):
     obj_to_say = obj_name.lower()
     obj_name = obj_name.lower().replace(" ", "_")
     JuskeshinoHRI.say("I will try to find the " + obj_to_say) 
-    result = JuskeshinoSimpleTasks.object_search_orientation(obj_name)
+    result = JuskeshinoSimpleTasks.object_search_orientation(obj_name, -0.9)
     if result is None:
         print("GPSR.->Cannot find object ", obj_name)
         JuskeshinoHRI.say("I am sorry. I cannot find the " + obj_to_say)
@@ -208,7 +208,7 @@ def answer_question(data):
 def find_objects(data):
     print("GPSR.>Looking for objects")
     JuskeshinoHRI.say("I am looking for objects")
-    result = JuskeshinoSimpleTasks.object_search_orientation('hagel')
+    result = JuskeshinoSimpleTasks.object_search_orientation('hagel', -0.9)
             
 def main():
     print("INITIALIZING GPSR TEST Not in a Tenshily manner...")
@@ -247,7 +247,7 @@ def main():
             if JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(30):
                 print("GPSR.->Door opened detected")
                 JuskeshinoHRI.say("I can see now that the door is open")
-                JuskeshinoNavigation.moveDist(1.0, 5.0)
+                JuskeshinoNavigation.moveDist(1.5, 10.0)
                 navigate("start_position")
                 state = SM_WAITING_FOR_COMMAND
         elif state == SM_WAITING_FOR_COMMAND:

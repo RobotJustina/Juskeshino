@@ -18,7 +18,7 @@ Z_OFFSET = 0.13# real 0.12
 Z_OFFSET_2 = 0.01
 Z_OFFSET_PRISM = 0.21
 Z_OFFSET_PRISM_2 = 0.07
-Z_OFFSET_BOWL  = 0.26#0.22#0.19
+Z_OFFSET_BOWL  = 0.304#0.22#0.19
 Z_OFFSET_BOWL_2  = 0.07#0.07
 
 LATERAL_OFFSET = 0.06
@@ -620,7 +620,8 @@ def ik_msg_response(array_xyzRPY, offsets, initial_guess):
     ik_msg.roll      = array_xyzRPY[3] + offsets[3]
     ik_msg.pitch     = array_xyzRPY[4] + offsets[4]
     ik_msg.yaw       = array_xyzRPY[5] + offsets[5]
-    ik_msg.duration  = 5
+    #ik_msg.duration  = 5
+    ik_msg.duration  = 0
     ik_msg.time_step = 0.05
     ik_msg.initial_guess = initial_guess
 
@@ -651,7 +652,7 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
 
     
     if(category == "BOX") or (category == "CUBE"):
-        first_trajectory   = list(reversed(candidate_q_list))
+        first_trajectory   = list(candidate_q_list)
         #first_trajectory.pop
         #first_trajectory.pop
         candidate_q_list   = list(first_trajectory)
@@ -674,7 +675,8 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
             ik_msg.roll = pose_xyzrpy[3]
             ik_msg.pitch = pose_xyzrpy[4]
             ik_msg.yaw = pose_xyzrpy[5]
-            ik_msg.duration = 5
+            #ik_msg.duration = 5
+            ik_msg.duration = 0
             ik_msg.time_step = 0.05
             try:
                 resp_ik_srv = ik_srv(ik_msg)
@@ -727,8 +729,9 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
                 ik_msg.roll      = pose1[3]     
                 ik_msg.pitch     = pose1[4]
                 ik_msg.yaw       = pose1[5]
-                ik_msg.duration  = 9
-                ik_msg.time_step = 0.07
+                #ik_msg.duration  = 4
+                ik_msg.duration  = 0
+                ik_msg.time_step = 0.05
                 try:    # intenta obtener la primera trayectoria en el espacio articular
                     resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
                     print("Best_Grasp_Node.-> Suitable pose 1 for horizontal object found.....................")
@@ -765,8 +768,9 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
                         ik_msg_3.roll          = cartesian_pose_shoulder[3]      
                         ik_msg_3.pitch         = cartesian_pose_shoulder[4]
                         ik_msg_3.yaw           = cartesian_pose_shoulder[5]
-                        ik_msg_3.duration      = 6
-                        ik_msg_3.time_step     = 0.07
+                        #ik_msg_3.duration      = 6
+                        ik_msg_3.duration      = 0
+                        ik_msg_3.time_step     = 0.05
                 
                         ik_msg_3.initial_guess = guess
 
@@ -797,8 +801,9 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
                 ik_msg.roll      = pose1[3]     
                 ik_msg.pitch     = pose1[4]
                 ik_msg.yaw       = pose1[5]
-                ik_msg.duration  = 6
-                ik_msg.time_step = 0.09
+                #ik_msg.duration  = 6
+                ik_msg.duration  = 0
+                ik_msg.time_step = 0.05
                 try:    # intenta obtener la primera trayectoria en el espacio articular
                     resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
                     print("Best_Grasp_Node.-> Suitable pose 1 for horizontal object found.....................")
@@ -821,7 +826,7 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
                     ik_msg.pitch = pose1[4]
                     ik_msg.yaw = pose1[5]
                     ik_msg.duration = 3
-                    ik_msg.time_step = 0.1
+                    ik_msg.time_step = 0.05
                     ik_msg.initial_guess = guess
 
                     try:    

@@ -44,13 +44,13 @@ class JuskeshinoManipulation:
         JuskeshinoHardware.pubLaGoalGrip.publish(msg)
         rospy.sleep(1)
         msg = Float64()
-        for i in np.linspace(start=1.0, stop=0.0, num=20):
+        for i in np.linspace(start=1.0, stop=-0.2, num=20):
             rospy.sleep(0.05)
             msg.data = i
             JuskeshinoHardware.pubLaGoalGrip.publish(msg)
             current = np.asarray(rospy.wait_for_message("/hardware/left_arm/current_gripper", Float64, timeout=1.0).data)
             if abs(current-i) > 0.2:
-                msg.data = current - 0.1
+                msg.data = current - 0.12
                 JuskeshinoHardware.pubLaGoalGrip.publish(msg)
                 return True
         msg.data = 0.0
