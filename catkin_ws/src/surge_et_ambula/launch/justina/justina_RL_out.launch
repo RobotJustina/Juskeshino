@@ -116,7 +116,7 @@
     </node-->
 
     <node name ="get_direction" pkg ="machine_learning" type="get_direction.py"/>
-    <node name ="RL" pkg ="machine_learning" type="RL.py"/>
+    <node name ="RL_out" pkg ="machine_learning" type="RL_out.py"/>
     <node name ="get_votes" pkg ="machine_learning" type="get_votes"/>
 
 </launch>
