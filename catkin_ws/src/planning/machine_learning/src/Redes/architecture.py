@@ -316,7 +316,11 @@ class DQN_4(nn.Module):
             nn.ReLU() #,nn.Dropout(0.6)
         )
 
-        self.vec=nn.Linear(2,200)
+        self.vec = nn.Sequential(
+            nn.Linear(2,200),
+            nn.BatchNorm1d(200),
+            nn.ReLU()
+        )
 
         self.fc_salida=nn.Sequential(
             nn.Linear(l1+200, l2),
@@ -345,6 +349,69 @@ class DQN_4(nn.Module):
         x = th.cat((x, pos), 1)
         x = self.fc_salida(x)
         return x
+
+class DQN_5(nn.Module):
+    def __init__(self, salida):
+        f0,f1,f2,f3,f4=16,32,64,2048,100   ##Mejor configuración f1 =32, l1=64, lr=8.1e-3, epoch=14
+        l1,expand,l2,l3=512*2,32,128,64
+        pos_size=200
+        super(DQN_5, self).__init__()
+        self.conv = nn.Sequential(
+            nn.Conv2d(1, f0, 3, padding = 'same'),
+            nn.BatchNorm2d(f0),
+            nn.ReLU()
+        )
+        self.max=nn.MaxPool2d(2, stride=2)
+        self.conv_grid = nn.Sequential(
+            nn.Conv2d(f0, f1, 3, padding = 'same'),
+            nn.BatchNorm2d(f1),
+            nn.ReLU(),
+            nn.Conv2d(f1, f2, 3, padding = 'same'),
+            nn.BatchNorm2d(f2) #,nn.ReLU()
+        )
+        self.con1x1_1 = nn.Conv2d(f0, f2, 1)
+        self.avg = nn.MaxPool2d(2, stride=2)
+        self.fc_grid = nn.Sequential(
+            nn.Linear(f2* 20 * 20, f3),
+            nn.ReLU(),
+            nn.Linear(f3, l1),
+            nn.ReLU() #,nn.Dropout(0.6)
+        )
+
+        self.vec = nn.Sequential(
+            nn.Linear(200,200),
+            nn.BatchNorm1d(200),
+            nn.ReLU()
+        )
+
+        self.fc_salida=nn.Sequential(
+            nn.Linear(l1+200, l2),
+            nn.ReLU(),
+            nn.Linear(l2, l3),
+            nn.ReLU(),
+            nn.Linear(l3, salida)
+        )
+        self.lr = 1e-5
+
+    def forward(self,x):
+        device = x.device
+        pos = x[:,6400:]
+        pos = self.vec(pos)
+        x = x[:,0:6400]
+        x = x.view(x.size(0),1,80,80)
+        x = self.conv(x)
+        x = self.max(x)
+
+        y = self.con1x1_1(x)
+        x = nn.functional.relu(self.conv_grid(x)+y)
+        x = self.avg(x)
+
+        x = th.flatten(x,1)
+        x = self.fc_grid(x)
+        x = th.cat((x, pos), 1)
+        x = self.fc_salida(x)
+        return x
+
 
 class Red_conv2(nn.Module):
 	def __init__(self):

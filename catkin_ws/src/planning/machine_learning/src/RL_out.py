@@ -16,7 +16,9 @@ from std_msgs.msg import Float64MultiArray
 from std_msgs.msg import Int32MultiArray
 from std_msgs.msg import Int32
 from std_msgs.msg import Float32MultiArray
+from geometry_msgs.msg import PointStamped
 
+init_time=-1.0
 last_goal=[0,0]
 
 def callback_goal_point(msg):
@@ -44,6 +46,13 @@ def callback_goal(msg):
     if(msg.status==3):
         next=True
     return
+
+def callback_point(msg):
+    global init_time
+    init_time=rospy.get_time()
+    #print(f"Init time: {init_time}")
+    print(f"New goal: {msg.point.x, msg.point.y}")
+
 
 def callback_votes(msg):
     global edo
@@ -77,8 +86,17 @@ def do_action(act):
          pub_ang.publish(goal_ang)
     return
 
+def tiempo_total():
+    global init_time
+    tiempo=rospy.get_time()
+    print(f"inicio: {init_time}, {tiempo}")
+    tiempo=tiempo-init_time
+    print(f"Time: {tiempo}")
+
 rospy.init_node("RL")
 #rospy.Subscriber("/hardware/scan", LaserScan, callback_laser_scan)
+rospy.on_shutdown(tiempo_total)
+rospy.Subscriber("/clicked_point", PointStamped, callback_point)
 rospy.Subscriber("/votes", Int32MultiArray , callback_votes)
 rospy.Subscriber("/ready", GoalStatus, callback_goal)
 rospy.Subscriber("/offset", Int32, callback_offset)
@@ -262,7 +280,6 @@ def main():
 
     outfile=str(Path(__file__).resolve().parent)+"/Entrenamiento.npz"
     file_list=glob.glob(path)
-    #file_list=glob.glob('./*.npz')
     if len(file_list)>=1:
         print("Se encontraron datos de entrenamiento")
         npzfile = np.load(outfile)
@@ -271,39 +288,22 @@ def main():
         print("Episodio "+str(first_episode))
         first_episode+=1
         print(Q)
-    else:
-        print("No hay datos de entrenamiento")
-        Q = np.zeros((128,5))
-        first_episode=0
     loop.sleep()
     loop.sleep()
     while(wait and not(rospy.is_shutdown()) ):
         pass
     print("Siguiente")
-    for x in range(first_episode, first_episode+total_episodes):
-        if(rospy.is_shutdown()):
-            break
-        G=0 ##Ganancia acumulada
-        act_ant=choose_action(edo)
-        edo_ant=edo
+    act_ant=choose_action(edo)
+    edo_ant=edo
+    next = False
+    while not(rospy.is_shutdown()) and last_goal[0]>0.22:
+        #Se realiza la accion anterior y se escoge una nueva dependiendo del estado
+        do_action(act_ant)
+        while((wait or not next)  and not rospy.is_shutdown()):
+            pass
+        act=choose_action(edo)
         next=False
-        steps=0 ##Conteo de pasos
-        while steps<max_steps and not(rospy.is_shutdown()) and last_goal[0]>0.22:
-            print(last_goal[0])
-            #Se realiza la accion anterior y se escoge una nueva dependiendo del estado
-            do_action(act_ant)
-            while( (wait or not(next)) and not(rospy.is_shutdown())):
-                pass
-            act=choose_action(edo)
-            next=False
-            Q[edo_ant,act_ant]=Q[edo_ant,act_ant]+alpha*(R[edo_ant,act_ant]+gamma*Q[edo,act]-Q[edo_ant,act_ant])
-            G=G+R[edo_ant,act_ant]
-            edo_ant, act_ant = edo, act
-            steps=steps+1
-        if not(rospy.is_shutdown()):
-            np.savez(outfile, x=x, Q=Q)
-            print("Episodio "+str(x)+" Ganancia total "+str(G))
-            print(Q)
+        edo_ant, act_ant = edo, act
 
 if __name__ == '__main__':
     try:

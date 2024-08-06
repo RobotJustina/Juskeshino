@@ -33,7 +33,6 @@ r_total=0
 done=True
 stop=False
 last_distance=None
-
 #Seed
 #np.random.seed(42)
 #random.seed(42)
@@ -41,8 +40,8 @@ th.manual_seed(42)
 th.cuda.manual_seed(42)
 th.backends.cudnn.deterministic = True
 
-policy_net = architecture.DQN_4(3)
-target_net = architecture.DQN_4(3)
+policy_net = architecture.DQN_5(3)
+target_net = architecture.DQN_5(3)
 target_net.eval()
 if os.path.exists(data_folder+"/DRL_gazebo_policy.pth"):
 	policy_net.load_state_dict(th.load(data_folder+"/DRL_gazebo_policy.pth",map_location=th.device('cpu')))
@@ -165,6 +164,22 @@ def train(replay_buffer):
 	expected_state_action_values=expected_state_action_values.to('cpu')
 	th.cuda.empty_cache()
 
+def polar2vec(last_goal):
+	p0=(last_goal[0]/10)*99
+	p1=((last_goal[1]/(math.pi))+1)/2 * 99
+	l0=[0 for i in range(100)]
+	if(round(p1)>=99):
+		l0[99]=1
+	else:
+		l0[round(p1)]=1
+	l1=[0 for i in range(100)]
+	if(round(p0)>=99):
+		l1[99]=1
+	else:
+		l1[round(p0)]=1
+	l=l0+l1
+	return l
+
 def select_action(policy_net,steps, grid_act):
 	EPS_START = 0.95
 	EPS_END = 0.05
@@ -176,7 +191,8 @@ def select_action(policy_net,steps, grid_act):
 	random_number = np.random.rand()
 	#inicio = time.time()  # Registra el tiempo inicial
 	if(random_number>=epsilon):
-		entrada = np.expand_dims(np.asarray(grid_act), axis=0)
+		temp_act=grid_act[:6400]+polar2vec(grid_act[6400:])
+		entrada = np.expand_dims(np.asarray(temp_act), axis=0)
 		x_ent = th.tensor(entrada).to(th.device(disp), th.float32)
 		#policy_net.to(disp)
 		policy_net.eval()
@@ -199,22 +215,6 @@ def select_action(policy_net,steps, grid_act):
 	#tiempo = fin - inicio
 	#print(f'Tiempo {tiempo}')
 	return index
-
-def polar2vec(last_goal):
-	p0=(last_goal[0]/10)*99
-	p1=((last_goal[1]/(math.pi))+1)/2 * 99
-	l0=[0 for i in range(100)]
-	if(round(p1)>=99):
-		l0[99]=1
-	else:
-		l0[round(p1)]=1
-	l1=[0 for i in range(100)]
-	if(round(p0)>=99):
-		l1[99]=1
-	else:
-		l1[round(p0)]=1
-	l=l0+l1
-	return l
 
 def callback_grid(msg):
 	global grid, last_goal
@@ -246,6 +246,7 @@ def main():
 	rospy.Subscriber("/laser_mod", LaserScan, callback_scan, queue_size=1)
 	rospy.Subscriber("/NN_goal", Float32MultiArray, callback_goal, queue_size=1)
 	rospy.Subscriber("/local_occ_grid_array", Float32MultiArray, callback_grid, queue_size=1)
+	rospy.Subscriber("/clicked_point", PointStamped, callback_point)
 	#pub_cmd = rospy.Publisher("/cmd_vel", Twist  , queue_size=1)
 	print("REWARDS")
 	loop = rospy.Rate(2)
@@ -268,32 +269,40 @@ def main():
 				else:
 					r_dist=-3
 				r=r_obstacle+r_dist+r_goal
-				temp_bef=grid_bef
-				temp_act=grid_act
-				if(temp_bef[6400]>10):
-					temp_bef[6400]=10
-				if(temp_act[6400]>10):
-					temp_act[6400]=10
+				#checar
+				#if(grid_bef[6400]>10):
+				#	grif_bef[6400]=10
+				#if(grid_act[6400]>10):
+				#	grid_act[6400]=10
 				r_total+=r
 				print('Recompensa: ',r, " Accion: ",action_bef, " distancia anterior: ",grid_bef[6400], "distancia_actual: ",grid_act[6400], "seguir de frente es 0")
 				total_steps+=1
 				steps+=1
+				temp_bef=grid_bef[:6400]+polar2vec(grid_bef[6400:])
+				temp_act=grid_act[:6400]+polar2vec(grid_act[6400:])
+				#print(len(temp_bef))
 				replay_buffer.append((np.asarray(temp_bef),r, action_bef, np.asarray(temp_act),	True))
 			elif(action_bef is not None and ((done and steps>2) or (stop and steps>2))):
 				if(stop):
 					r=r_obstacle
 				else:
 					r=r_goal
+				if(grid_bef[6400]>10):
+					grif_bef[6400]=10
+				if(grid_act[6400]>10):
+					grid_act[6400]=10
 				print('Recompensa: ',r, " Accion: ",action_bef, "seguir de frente es 0")
 				r_total+=r
 				total_steps+=1
 				steps+=1
-				replay_buffer.append((np.asarray(grid_bef),r, action_bef, np.asarray(grid_act), False))
+				temp_bef=grid_bef[:6400]+polar2vec(grid_bef[6400:])
+				temp_act=grid_act[:6400]+polar2vec(grid_act[6400:])
+				replay_buffer.append((np.asarray(temp_bef),r, action_bef, np.asarray(temp_act), False))
 				end=True
 			if((total_steps+1)%2==0 and len(replay_buffer)>290):
 				next_train=True
 			if not done and not stop:
-				action_bef=select_action(policy_net, total_steps, grid_act)
+				action_bef=select_action(policy_net, total_steps, grid_act[:6400]+polar2vec(grid_act[6400:]))
 				#print(action_bef)
 				msg.linear.x=C[action_bef,0]
 				msg.angular.z=C[action_bef,1]
