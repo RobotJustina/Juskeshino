@@ -44,7 +44,7 @@ LOCATIONS     = ["bowl_table_robocup", "cereal_table_robocup", "milk_table_roboc
 
 
 # Objects
-BOWL   = "bowl"
+BOWL   = "sausages"#"bowl"
 MILK   = "milk"
 CEREAL = "cornflakes"
 
@@ -190,7 +190,7 @@ def main():
         if(current_state == INITIAL):
             print("ESTADO:___INITIAL.................")
             print("INITIALIZING SERVE BREAKFAST 2024 TEST BY ITZEL..............ヾ(๑╹◡╹)ﾉ")
-            current_state = CONFIG
+            current_state = MOVE_HEAD#CONFIG
 
 
 
