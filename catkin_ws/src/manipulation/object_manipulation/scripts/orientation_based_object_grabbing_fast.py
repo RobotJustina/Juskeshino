@@ -44,7 +44,7 @@ def descarte_forced_poses(obj_pose):
     angle_z_obj = abs(np.rad2deg(math.atan2(vector_z_obj[1] , vector_z_obj[0])))
     print("angulo de Z_OBJECT:___",  angle_z_obj)
 
-    if (angle_z_obj < 135.0): 
+    if (angle_z_obj < 140.0): 
         descarte = True
         print("GraspLa.-> Forced pose discarded")
         print("DECARTED*****: ", descarte)
@@ -491,7 +491,7 @@ def prism(obj_pose, obj_state):
     obj_centroid = [0,0,0]#np.asarray([obj_pose.position.x , obj_pose.position.y, obj_pose.position.z]) # origen de la circunferencia
     axis_x_candidate = [1,0,0]#np.asarray( [MT[0,0], MT[1,0], MT[2,0]])   # eje x del objeto vector normal al plano que corta al objet
     
-    step_size = np.deg2rad(10)
+    step_size = np.deg2rad(20)
     range_points = np.deg2rad(360)          # rango dentro del cual se generan los candidatos 360 grados
     num_points = int(range_points / step_size) 
     theta_offset = np.deg2rad(0)
@@ -546,6 +546,7 @@ def prism(obj_pose, obj_state):
             grasp_candidates_quaternion.append(candidate_grasp) 
             if debug:
                 print("vertical_prism"+str(j))
+                print("GRIP POINT:", p)
                 broadcaster_frame_object('object', 'vertical_prism'+str(j) , candidate_grasp ) 
             j += 1
         print("Best_Grasp_Node.-> number of candidates vertical grip prism", len(grasp_candidates_quaternion))

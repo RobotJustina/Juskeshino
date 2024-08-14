@@ -154,43 +154,21 @@ class JuskeshinoSimpleTasks:
     
     def handling_location_la(position_obj):     # Recibe un  objeto de tipo position extraido de un mensaje pose de ROS
         l_threshold_la       = 0.26
-        r_threshold_la       = 0.11
+        r_threshold_la       = 0.15
         
         if position_obj.y > l_threshold_la:     # Objeto a la izquierda
             mov_izq = position_obj.y - l_threshold_la
             print("mov izq", mov_izq)
-            if abs(mov_izq) > 0.25:
-                print("2 move")
-                JuskeshinoNavigation.moveDist(-0.2, 5.0)
-                time.sleep(0.3)
-                JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
-                time.sleep(0.4)
-                JuskeshinoNavigation.moveDist(0.2, 5.0)
-                
-                return True, mov_izq
-            else:
-                JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
-                time.sleep(0.2)
-                return False, 0
+            JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
+            return 
 
         if position_obj.y < r_threshold_la:     # Objeto a la derecha
             mov_der = position_obj.y - r_threshold_la
             print("mov der", mov_der)
-            if abs(mov_der) > 0.25:
-                print("22 move")
-                JuskeshinoNavigation.moveDist(-0.2, 5.0)
-                time.sleep(0.2)
-                JuskeshinoNavigation.moveLateral(mov_der , 5.0)
-                time.sleep(0.4)
-                JuskeshinoNavigation.moveDist(0.2, 5.0)
-                return True, mov_der
-                
-            else:
-                JuskeshinoNavigation.moveLateral(mov_der , 5.0)
-                time.sleep(0.2)
-                return False, 0
+            JuskeshinoNavigation.moveLateral(mov_der , 5.0)
+            time.sleep(0.2)
+            return 
             
-        return False, 0
     
 
 
