@@ -76,9 +76,10 @@ def pca(xyz_points):    # pc del contorno mas cercano
     size_obj = np.asarray([H, L,W])
     idx = size_obj.argsort()  # entrega el orden de las 3 componentes principale de menor a mayor 
     size_obj = size_obj[idx]
-    print("size obj", size_obj)         # menor a mayor 
+    #print("size obj", size_obj)         # menor a mayor 
     # Los vectores de salida estan en el frame base_link
     size_object = Vector3(x = size_obj[2] , z = size_obj[1], y = size_obj[0])
+    print("SIZE OBJ", size_object)
     return [eig_vect[:,2], eig_vect[:,1] , eig_vect[:,0]], [eig_val[2], eig_val[1], eig_val[0]], size_object
 
 
@@ -339,16 +340,18 @@ def object_category(size_obj, obj_state, name_obj):  # estima la forma geometric
                     return "BOX", True
 
     else:    # obj_state == 'vertical'
-        if(((size_obj.x /size_obj.z) > 1.4) and ((size_obj.x /size_obj.y) > 1.4) and ((size_obj.y /size_obj.z) < 1.4)) and (size_obj.x > MAXIMIUN_CUBE_SIZE):# and size_obj.x > MAXIMIUN_CUBE_SIZE):   # barra
-            print("V-> PRISM")
-            return "PRISM", True
+        #if(((size_obj.x /size_obj.z) > 1.4) and ((size_obj.x /size_obj.y) > 1.4) and ((size_obj.y /size_obj.z) < 1.4)) and (size_obj.x > MAXIMIUN_CUBE_SIZE):# and size_obj.x > MAXIMIUN_CUBE_SIZE):   # barra
+        if(((size_obj.x /size_obj.z) < 1.4) and ((size_obj.x /size_obj.y) < 1.4) and ((size_obj.y /size_obj.z) < 1.4)) and (size_obj.x < MAXIMIUN_CUBE_SIZE):# and size_obj.x > MAXIMIUN_CUBE_SIZE):   # barra
+
+            print("V-> CUBIC")
+            return "CUBIC", True
         else:
-            if (size_obj.x > MAXIMIUN_CUBE_SIZE):
+            if (size_obj.x > MAXIMIUN_CUBE_SIZE) and (size_obj.y > MAXIMIUN_CUBE_SIZE):
                 print("V-> BOX")
                 return "BOX", True
             else:
-                print("V-> CUBIC")
-                return "CUBIC", True
+                print("V-> PRISM")
+                return "PRISM", True
             
 
 
