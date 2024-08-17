@@ -92,6 +92,9 @@ def callback_goal(msg):
 	if(dist<0.22):
 		r_goal=200
 		done=True
+		pub_cmd = rospy.Publisher("/cmd_vel", Twist  , queue_size=1)
+		msg2=Twist()
+		pub_cmd.publish(msg2)
 	else:
 		r_goal=0
 		done=False
@@ -221,6 +224,10 @@ def tiempo_total():
 	print(f"inicio: {init_time}, {tiempo}")
 	tiempo=tiempo-init_time
 	print(f"Time: {tiempo}")
+	#pub_cmd = rospy.Publisher("/cmd_vel", Twist  , queue_size=1)
+	#msg=Twist()
+	#pub_cmd.publish(msg)
+
 
 def main():
 	global loop, grid, grid_act, grid_bef, policy_net,C, total_steps, action_bef, stop, replay_buffer, done, r_obstacle, r_dist, r_goal

@@ -160,73 +160,20 @@
       <uri>model://grey_wall_350</uri>
       <name>wall3</name>
     </include>
+    <include>
+      <static>1</static>
+      <pose>2.5 7 0 0 0 0</pose>
+      <uri>model://wagon</uri>
+      <name>wagon_100</name>
+    </include>
+    <include>
+      <static>1</static>
+      <pose>2.5 5.5 0 0 0 -1.1</pose>
+      <uri>model://wagon</uri>
+      <name>wagon_101</name>
+    </include>
     <!--include>
       <static>1</static>
-      <pose>10.1025 11.67 0 0 0 0</pose>
-      <uri>model://hinged_door_stopper</uri>
-      <name>door_stopper_x13y13</name>
-    </include>
-    <include>
-      <static>0</static>
-      <pose>1.8 13.2075 0 0 0 3.14</pose>
-      <uri>model://openable_hinged_door_z_reversely</uri>
-      <name>door_x02y16</name>
-    </include>
-    <include>
-      <static>1</static>
-      <pose>0.93 13.2075 0 0 0 1.5708</pose>
-      <uri>model://hinged_door_stopper</uri>
-      <name>door_stopper_x02y16</name>
-    </include>
-    <include>
-      <static>0</static>
-      <pose>4.075 7.33 0 0 0 1.5708</pose>
-      <uri>model://openable_hinged_door_z_reversely</uri>
-      <name>door_x05y09a</name>
-    </include>
-    <include>
-      <static>1</static>
-      <pose>4.075 6.425 0 0 0 0</pose>
-      <uri>model://hinged_door_stopper</uri>
-      <name>door_stopper_x05y09a</name>
-    </include>
-    <include>
-      <static>0</static>
-      <pose>1.65 8.23 0 0 0 -1.5708</pose>
-      <uri>model://openable_sliding_door</uri>
-      <name>door_x03y09</name>
-    </include>
-    <include>
-      <static>0</static>
-      <pose>5.5425 8.23 0 0 0 3.14</pose>
-      <uri>model://openable_hinged_door_z_reversely</uri>
-      <name>door_x08y09a</name>
-    </include>
-    <include>
-      <static>1</static>
-      <pose>4.675 8.23 0 0 0 1.5708</pose>
-      <uri>model://hinged_door_stopper</uri>
-      <name>door_stopper_x08y09a</name>
-    </include>
-    <include>
-      <static>0</static>
-      <pose>6.47 11.35 0 0 0 0</pose>
-      <uri>model://openable_sliding_door</uri>
-      <name>door_x08y13</name>
-    </include>
-    <include>
-      <static>0</static>
-      <pose>9.00 9.23 0 0 0 3.14</pose>
-      <uri>model://openable_hinged_door_z_normally</uri>
-      <name>door_x10y11</name>
-    </include>
-    <include>
-      <static>1</static>
-      <pose>8.13 9.23 0 0 0 1.5708</pose>
-      <uri>model://hinged_door_stopper</uri>
-      <name>door_stopper_x10y11</name>
-    </include -->
-    <!--End of wall models-->
     <!-- Start of object models -->
     <include>
       <static>1</static>
@@ -260,18 +207,6 @@
     </include>
     <include>
       <static>1</static>
-      <pose>8.55 6.65 0 0 0 0</pose>
-      <uri>model://kitchen_chair</uri>
-      <name>chair01</name>
-    </include>
-    <include>
-      <static>1</static>
-      <pose>7.3 7.15 0 0 0 -3.1416</pose>
-      <uri>model://kitchen_chair</uri>
-      <name>chair02</name>
-    </include>
-    <include>
-      <static>1</static>
       <pose>8.75 5.1 0 0 0 0</pose>
       <uri>model://kitchen_table</uri>
       <name>table01</name>
@@ -290,7 +225,7 @@
     </include>
     <include>
       <static>1</static>
-      <pose>1.56 3.56 0 0 0 -1.5708</pose>
+      <pose>1.56 3.56 0 0 0 -1</pose>
       <uri>model://sofa-fix</uri>
       <name>sofa02</name>
     </include>
@@ -321,8 +256,8 @@
     <include>
       <static>1</static>
       <pose>1.5 5.0 0 0 0 0</pose>
-      <uri>model://construction_cone</uri>
-      <name>waypoint_01</name>
+      <uri>model://wagon</uri>
+      <name>wagon1_01</name>
     </include>
     <include>
       <static>1</static>
@@ -338,7 +273,7 @@
     </include>
     <include>
       <static>1</static>
-      <pose>1.56 2.58 0 0 0 1.5708</pose>
+      <pose>2.50 2.58 0 0 0 1.5708</pose>
       <uri>model://kitchen_lowtable</uri>
       <name>kitchen_lowtable</name>
     </include>
@@ -365,12 +300,6 @@
       <pose>7.9 3.0 0 0 0 -1.5708</pose>
       <uri>model://kitchen_chair</uri>
       <name>chair04</name>
-    </include>
-    <include>
-      <static>1</static>
-      <pose>9.2 3.0 0 0 0 -1.5708</pose>
-      <uri>model://kitchen_chair</uri>
-      <name>chair05</name>
     </include>
     <include>
       <static>0</static>
