@@ -14,9 +14,6 @@ class JuskeshinoManipulation:
         rospy.wait_for_service("/manipulation/get_best_grasp_traj")
         JuskeshinoManipulation.cltGripLa = rospy.ServiceProxy("/manipulation/get_best_grasp_traj", BestGraspTraj )
 
-        rospy.wait_for_service("/manipulation/grasp_object_ra")
-        JuskeshinoManipulation.cltGripRa = rospy.ServiceProxy("/manipulation/grasp_object_ra", BestGraspTraj )
-        
         rospy.wait_for_service("/manipulation/la_ik_trajectory")
         JuskeshinoManipulation.cltIkLaPose = rospy.ServiceProxy("/manipulation/la_ik_trajectory", InverseKinematicsPose2Traj )
 

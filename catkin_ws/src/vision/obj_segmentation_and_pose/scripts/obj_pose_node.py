@@ -356,42 +356,8 @@ def object_category(size_obj, obj_state, name_obj):  # estima la forma geometric
 
 
 
-
-
-
-    """
-    if (size_obj.z <= MAXIMUM_GRIP_LENGTH) and (size_obj.y <= MAXIMUM_GRIP_LENGTH): #and (size_obj.x >= 0.13):
-
-        #if((size_obj.x /size_obj.z) < 1.4) and (obj_state == 'horizontal'):     
-        if((size_obj.x /size_obj.z) < 2.5) and (obj_state == 'horizontal'):
-            # si el tamanio en z no es mucho menor al tamanio en x y la mayor componente es horizontal
-            print("The object is a bowl")
-            return "BOWL", True
-        else:
-            print("The object will be GRABBED AS CUBE..................")
-            return "CUBIC", True
-
-
-    else:
-        if(size_obj.z <= MAXIMUM_GRIP_LENGTH) and (size_obj.y <= MAXIMUM_GRIP_LENGTH) and (size_obj.x < MAXIMIUN_CUBE_SIZE):# and (size_obj.x > 0.07):
-            print("Object spheric or cubic SMALL, SUPERIOR GRIP will be made")
-            return "CUBIC", True
-            
-        else:
-            if((size_obj.x /size_obj.z) < 1.4) and (obj_state == 'horizontal'):
-                print("The object is a bowl")
-                return "BOWL", True
-            else:
-                if (size_obj.z >= MAXIMUM_GRIP_LENGTH) and (size_obj.y >= MAXIMUM_GRIP_LENGTH) and (size_obj.x >= MAXIMUM_GRIP_LENGTH):
-                    return "CUBIC", True#return "BOX", True
-                
-                print("size object > MAX LENGHT GRIP")
-                print("The object will be GRABBED as BOX....................")
-                return "BOX", True
-    """
-
-
 def callbackPoseObjectOrientation(req):  # Request is a PointCloud2
+    
     cv_mats= get_cv_mats_from_cloud_message(req.point_cloud)
     obj_xyz = get_object_xyz(cv_mats , req.obj_mask)
 

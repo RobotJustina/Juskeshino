@@ -44,7 +44,7 @@ LOCATIONS     = ["bowl_table_robocup", "cereal_table_robocup", "milk_table_roboc
 
 
 # Objects
-BOWL   = "bowl"
+BOWL   = "washcloth"#"sausages"#"bowl"
 MILK   = "milk"
 CEREAL = "cornflakes"
 
@@ -177,8 +177,8 @@ def main():
     global listener, simu
 
     listener = tf.TransformListener()
-    simu = False
-    torso = True
+    simu = True
+    torso = False
     actual_value = 0
     ALTURA_TORSO = 0.20
     ALTURA_TORSO_BOWL = 0.2#0.22
@@ -219,7 +219,7 @@ def main():
             print("cycle:___", cycle)
             mesa_alta = True
             align_with_table = True
-            current_state = START
+            current_state = MOVE_HEAD#START
 
 
 
@@ -467,16 +467,18 @@ def main():
             JuskeshinoHardware.moveLeftArmWithTrajectory(resp ,15)
             time.sleep(0.5)
             JuskeshinoHRI.say("Closing gripper")
+            """
             if (actual_obj == BOWL):
                 JuskeshinoManipulation.dynamic_grasp_left_arm(is_thin = True)
             else:
                 JuskeshinoManipulation.dynamic_grasp_left_arm()
-
+            
             if(actual_obj != BOWL):
                 actual_position = rospy.wait_for_message("/hardware/left_arm/current_pose", Float64MultiArray, 5.0)
                 actual_position_arm = list(actual_position.data)
                 actual_position_arm[5] = actual_position_arm[5] + 1.57 
                 JuskeshinoHardware.moveLeftArmWithTrajectory(actual_position_arm , 10) 
+            """
 
             current_state = POST_GRASP
 
@@ -499,12 +501,13 @@ def main():
                         print("Cannot move torso")
             """
             JuskeshinoNavigation.moveDist(-0.33, 10)
+            JuskeshinoHardware.moveLeftArmWithTrajectory(HOME , 10)
             """
             if(actual_obj != BOWL):
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
             """
             
-            current_state = GO_TO_KITCHEN
+            current_state = -1#GO_TO_KITCHEN
 
 
 
