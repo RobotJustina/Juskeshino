@@ -14,7 +14,7 @@ from cv_bridge import CvBridge
 
 
 MAXIMUM_GRIP_LENGTH = 0.16
-MAXIMIUN_CUBE_SIZE  = 0.16
+MAXIMIUN_CUBE_SIZE  = 0.15
 
 
 def get_cv_mats_from_cloud_message(cloud_msg):
@@ -182,6 +182,7 @@ def object_pose(centroid, principal_component, second_component, size_obj, name_
             eje_x_obj = np.asarray([1, 0, 0], dtype=np.float64)
             eje_z_obj = eje_z
             eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+        
 
 
     # ********************************************
@@ -222,18 +223,19 @@ def object_pose(centroid, principal_component, second_component, size_obj, name_
                 eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
                 print("COnstruccion de frame con PCA")
             else:
-                eje_x_obj = np.asarray([0, 0, 1], dtype=np.float64)
+                eje_y_obj = np.asarray([0, 1, 0], dtype=np.float64)
                 eje_z_obj = np.asarray([1, 0, 0], dtype=np.float64)
-                eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+                eje_x_obj = np.cross(eje_z_obj , eje_y_obj )
+                print("COnstruccion de frame sin PCA")
             
 
         else:
             # Si el objeto es pequenio se construye un frame que permita el agarre superior
             print("SMALL VERTICAL.................")
             print("se construye un frame que permita el agarre frontal")
-            eje_x_obj = np.asarray([1, 0, 0], dtype=np.float64)
-            eje_z_obj = eje_z
-            eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+            eje_y_obj = np.asarray([0, 1, 0], dtype=np.float64)
+            eje_z_obj = np.asarray([1, 0, 0], dtype=np.float64)
+            eje_x_obj = np.cross(eje_z_obj , eje_y_obj )
 
     # **************************************************************************************************
 
@@ -383,24 +385,6 @@ def callbackPoseObjectOrientation(req):  # Request is a PointCloud2
     return resp
 
 
-def callbackPoseObject(req):
-    cv_mats= get_cv_mats_from_cloud_message(req.point_cloud)
-    obj_xyz = get_object_xyz(cv_mats , req.obj_mask)
-
-    print("**    OBJECT INFORMATION    **********************")
-
-    centroid = np.mean(obj_xyz, axis=0)
-    graspable = True
-    obj_pose = object_pose_without_PCA(centroid)
-    print("CENTROID:____", centroid)
-    resp = RecognizeObjectResponse()
-    resp.recog_object.graspable  = graspable 
-    resp.recog_object.pose = obj_pose
-    resp.recog_object.category = "CUBIC"
-    return resp
-
-
-
 
 def main():
     print("Obj_segmentation_and_pose --> obj_pose by Iby *******************(✿◠‿◠)7**")
@@ -408,9 +392,8 @@ def main():
 
     global pub_point, marker_pub, debug, PCA_vertical
     debug = False
-    PCA_vertical = False
+    PCA_vertical = False  # PCA para objetos con 1a componente vertical
     rospy.Service("/vision/obj_segmentation/get_obj_pose_with_orientation", RecognizeObject, callbackPoseObjectOrientation) 
-    rospy.Service("/vision/obj_segmentation/get_obj_pose_without_orientation", RecognizeObject, callbackPoseObject) 
     pub_point = rospy.Publisher('/vision/detected_object', PointStamped, queue_size=10)
     marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10) 
 

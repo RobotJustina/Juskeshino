@@ -44,9 +44,9 @@ LOCATIONS     = ["bowl_table_robocup", "cereal_table_robocup", "milk_table_roboc
 
 
 # Objects
-BOWL   = "washcloth"#"sausages"#"bowl"
-MILK   = "milk"
-CEREAL = "cornflakes"
+BOWL   = "pudding_box"#"potted_meat_can"#"apple"#"sausages"#"bowl"
+MILK   = "potted_meat_can"
+CEREAL = "potted_meat_can"
 
 # Gripper_aperture
 GRIP_MILK   = 0.4
@@ -219,7 +219,7 @@ def main():
             print("cycle:___", cycle)
             mesa_alta = True
             align_with_table = True
-            current_state = MOVE_HEAD#START
+            current_state = DETECT_OBJECT_ORIENTATION #START
 
 
 
@@ -412,19 +412,15 @@ def main():
             
         elif(current_state == PREPARE_ARM):
             print("ESTADO:___PREPARE_ARM..................")
-            if((obj.category == "CUBIC") or (obj.category == "BOWL") or (obj.category == "BOX") or (obj.object_state == "horizontal")):
-                JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)  # prepare 
-                if(obj.category == "BOWL"):
-                    JuskeshinoHRI.say("Open gripper")
-                    APERTURE = 0.6
-                    JuskeshinoHardware.moveLeftGripper(APERTURE , 5.0)
-                else:
-                    APERTURE = 0.9
-                    JuskeshinoHardware.moveLeftGripper(APERTURE , 5.0)
-            else: 
-                JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE, 10)  # prepare 
+            #if((obj.category == "CUBIC") or (obj.category == "BOWL") or (obj.category == "BOX") or (obj.object_state == "horizontal")):
+            #JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)  # prepare 
+            JuskeshinoHardware.moveLeftArmWithTrajectory([-0.9, 0.3, 0.0 ,1.55, 0.0 , 1.34, 0.0], 10)
+            if(obj.category == "BOWL"):
                 JuskeshinoHRI.say("Open gripper")
-                APERTURE = 1.0
+                APERTURE = 0.6
+                JuskeshinoHardware.moveLeftGripper(APERTURE , 5.0)
+            else:
+                APERTURE = 0.9
                 JuskeshinoHardware.moveLeftGripper(APERTURE , 5.0)
 
             current_state = LOOKING_GRIP

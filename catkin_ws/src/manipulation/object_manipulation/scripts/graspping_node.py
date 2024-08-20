@@ -17,17 +17,20 @@ MINIMUM_HEIGHT_PRISM = 0.17
 MAXIMUM_CUBE_SIZE = 0.16
 Z_OFFSET_CUB = 0.08# real 0.12
 Z_OFFSET_CUB_2 = 0.01
-Z_OFFSET_PRISM = 0.21
+Z_OFFSET_PRISM = 0.05#0.21
 Z_OFFSET_PRISM_2 = 0.07
 Z_OFFSET_BOWL  = 0.304#0.22#0.19
 Z_OFFSET_BOWL_2  = 0.07#0.07
 
 
-def generate_tf_msg(tf_):
-    tf_.orientation.x = 0.0
-    tf_.orientation.y = 0.0
-    tf_.orientation.z = 0.0
-    tf_.orientation.w = 1.0
+def generate_tf_msg(tf_name, point):
+    tf_name.orientation.x = 0.0
+    tf_name.orientation.y = 0.0
+    tf_name.orientation.z = 0.0
+    tf_name.orientation.w = 1.0
+    tf_name.position.x = point[0]
+    tf_name.position.y = point[1]
+    tf_name.position.z = point[2]
 
 
 def points_actual_to_points_target(point_in, f_actual, f_target):
@@ -131,39 +134,23 @@ def broadcaster_frame_object(frame, child_frame, pose):
 
 
 
-
-
-
-
-
-
-
-
-
 def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame, step, num_candidates, type_obj = None, offset = 0):    
     global debug 
     j = 0
 
-    if (obj_state == "horizontal") or (type_obj == "BOWL") or (type_obj == "BOX") or (type_obj == "CUBIC"):   # 13 cm por encima del objeto (z_base_link)
+    if (obj_state == "horizontal") or (type_obj == "BOWL") or (type_obj == "CUBIC") or (type_obj == "BOX"):   # 13 cm por encima del objeto (z_base_link)
         grip_point_bl = points_actual_to_points_target(grip_point, 'object', 'base_link')
 
         if type_obj == "BOWL":
-            grip_point_bl[2] = grip_point_bl[2] + Z_OFFSET_BOWL
-
-        else:
-            if (type_obj == "BOX") or (type_obj == "CUBIC"):
-                #print("BOX OR CUBE Z OFFSET")
+            grip_point_bl[2]     = grip_point_bl[2] + Z_OFFSET_BOWL
+        if type_obj == "CUBIC":
                 grip_point_bl[2] = grip_point_bl[2] + Z_OFFSET_CUB
-            else:
+        if type_obj == "PRISM" or type_obj == "BOX":
                 grip_point_bl[2] = grip_point_bl[2] + Z_OFFSET_PRISM
-                #print("HORIZONTAL PRISM POINT OFFSET.................")
-
-        #print("PUNTO CENTROIDE", grip_point_bl)
 
         grip_point = points_actual_to_points_target(grip_point_bl, 'base_link', 'object')
         if debug:
             marker_array_publish(grip_point, 'object', 59, 56)
-
 
     grasp_candidates_quaternion = []
     q_gripper = []
@@ -175,34 +162,26 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
     if rotacion == "P": 
         P = np.deg2rad(offset) #horizontal grip#
     else:
-        if rotacion == "R": R = R + np.deg2rad(offset) #vertical grip
-    
+        if rotacion == "R": 
+            R = np.deg2rad(offset) #vertical grip
+    print("GRIP POINT=",grip_point)
     for j in range(num_candidates):      # genera candidatos
         obj_pose_frame_object = Pose()
-        obj_pose_frame_object.orientation.x = 0
-        obj_pose_frame_object.orientation.y = 0
-        obj_pose_frame_object.orientation.z = 0
-        obj_pose_frame_object.orientation.w = 1
-        obj_pose_frame_object.position.x = 0
-        obj_pose_frame_object.position.y = 0
-        obj_pose_frame_object.position.z = 0
-        q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Pose en frame 'object' cuaterniones
+        generate_tf_msg(obj_pose_frame_object, grip_point)
+        q_gripper = tft.quaternion_from_euler(R,P,Y,'sxyz')  # Orientación de la tf de entrada
         obj_pose_frame_object.orientation.x = q_gripper[0]
         obj_pose_frame_object.orientation.y = q_gripper[1]
         obj_pose_frame_object.orientation.z = q_gripper[2]
         obj_pose_frame_object.orientation.w = q_gripper[3]
         
-        if rotacion == "P": 
-            P = P + np.deg2rad(step) + np.deg2rad(offset) #horizontal grip#
+        if rotacion == "P": P = P + np.deg2rad(step)  #horizontal grip#
         else:
-            if rotacion == "R": R = R + np.deg2rad(step) + np.deg2rad(offset) #vertical grip
-        
-        obj_pose_frame_object.position.x = grip_point[0]
-        obj_pose_frame_object.position.y = grip_point[1]
-        obj_pose_frame_object.position.z = grip_point[2]
+            if rotacion == "R": 
+                R = R + np.deg2rad(step) #+ np.deg2rad(offset) #vertical grip
+                
         
         if debug:
-            #print("Best_Grasp_Node.-> emitiendo pose........." + name_frame+str(j)+obj_state , grip_point)
+            print("Best_Grasp_Node.-> emitiendo pose........." + name_frame+str(j)+obj_state , obj_pose_frame_object.position)
             broadcaster_frame_object('object', name_frame+str(j)+obj_state , obj_pose_frame_object )
         
         grasp_candidates_quaternion.append(obj_pose_frame_object )     # guarda el candidato en frame bl
@@ -211,82 +190,109 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
 
 
 
-
-
-def initial_pose(obj_pose, obj_state , grip_point, size, type_obj):
-    global debug
-
-    grip_tf = Pose()
-    #grip_tf.position.x, grip_tf.position.y, grip_tf.position.z = grip_point[0], grip_point[1], grip_point[2]
-    num_candidates = 3 # debe ser par
-    offset = -85
-    name_frame = "CUBIC"
-    step = -5
-        
-    generate_tf_msg(grip_tf)
-
-    pose_list = generates_candidates(grip_point , grip_tf, "P", obj_state ,  name_frame, step, num_candidates, type_obj, offset)
-
-    return pose_list 
-
-
-def bowl(obj_pose, obj_state , grip_point, size, type_obj):
+def bowl(obj_pose, obj_state, size, type_obj):
     grip_point = [-0.02 , size.z/2 , 0]
-    first_trajectory = initial_pose(obj_pose, obj_state , grip_point, size, type_obj)
+    global debug
+    offset = 0
+    grip_tf = Pose()
+    generate_tf_msg(grip_tf, grip_point)
+    num_candidates = 1
+    name_frame = "BOWL"
+    step = -5
+
+    candidate_list = generates_candidates(grip_point , grip_tf, "R", obj_state ,  name_frame, step, num_candidates, type_obj, offset)
+    first_trajectory = evaluating_possibility_grip(candidate_list , obj_state, type_obj)
     total_traj = first_trajectory
     return total_traj
 
 
-def cubic(obj_pose, obj_state , grip_point, size, type_obj):
+def cubic(obj_pose, obj_state , size, type_obj):
+    global debug
     grip_point = [0,0,0]
-    candidate_list = initial_pose(obj_pose, obj_state , grip_point, size, type_obj)
+    offset = -5
+    grip_tf = Pose()
+    generate_tf_msg(grip_tf, grip_point)
+    num_candidates = 3
+    name_frame = "CUBIC"
+    step = -5
+
+    candidate_list = generates_candidates(grip_point , grip_tf, "R", obj_state ,  name_frame, step, num_candidates, type_obj, offset)
     return evaluating_possibility_grip(candidate_list , obj_state, type_obj)
 
 
-def prism_horizontal(obj_pose, obj_state , grip_point, size, type_obj):
+def prism_horizontal(obj_pose, obj_state, size, type_obj):
     grip_point = [0,0,0]
-    candidate_list = initial_pose(obj_pose, obj_state , grip_point, size, type_obj)
+    offset = 0
+
+    global debug
+    grip_point = [0,0,0]
+    offset = -5
+    grip_tf = Pose()
+    generate_tf_msg(grip_tf, grip_point)
+    num_candidates = 3
+    name_frame = "P_H"
+    step = -5
+
+    candidate_list = generates_candidates(grip_point , grip_tf, "R", obj_state ,  name_frame, step, num_candidates, type_obj, offset)
+    
     total_traj = first_trajectory =  evaluating_possibility_grip(candidate_list , obj_state, type_obj)
     # Falta agregar rotacion de la muneca
     total_traj = first_trajectory
     return total_traj
 
 
-def prism_vertical(obj_pose, obj_state , grip_point, size, type_obj):
+def prism_vertical(obj_pose, obj_state, size, type_obj):
     global debug
-
     grip_tf = Pose()
-    grip_tf.position.x, grip_tf.position.y, grip_tf.position.z = 0, 0, 0
-    num_candidates = 36 # debe ser par
-    offset = -90
-    name_frame = "CUBIC"
-    step = -10
-        
-    generate_tf_msg(grip_tf)
-    pose_list = generates_candidates([grip_tf.position.x , grip_tf.position.y , grip_tf.position.z] , grip_tf, "R", obj_state ,  name_frame, step, num_candidates, type_obj, offset)
-
-    return 
-
-
-
-def grip_rules(obj_pose, type_obj, obj_state, size, grip_point):
+    generate_tf_msg(grip_tf, [0,0,0])
+    num_candidates = 6 # debe ser par
+    offset = -40
+    name_frame = "V_P"
+    step = 10
     
+    candidate_list = generates_candidates([0,0,0] , grip_tf, "R", obj_state ,  name_frame, step, num_candidates, type_obj, offset)
+    return evaluating_possibility_grip(candidate_list , obj_state, type_obj)
+     
+
+
+def box(obj_pose, obj_state, size, type_obj):
+    grip_point = [0,0,0]
+    offset = 0
+
+    global debug
+    grip_point = [0,0,0]
+    offset = -5
+    grip_tf = Pose()
+    generate_tf_msg(grip_tf, grip_point)
+    num_candidates = 3
+    name_frame = "P_H"
+    step = -5
+
+    candidate_list = generates_candidates(grip_point , grip_tf, "R", obj_state ,  name_frame, step, num_candidates, type_obj, offset)
+    
+    total_traj = first_trajectory =  evaluating_possibility_grip(candidate_list , obj_state, type_obj)
+    # Falta agregar rotacion de la muneca
+    total_traj = first_trajectory
+    return total_traj
+
+
+
+def grip_rules(obj_pose, type_obj, obj_state, size):
     if(type_obj == "BOWL"):
         print("Best_Grasp_Node.->The object will be GRABBED AS BOWL.................")
-        return bowl(obj_pose, obj_state , grip_point, size, type_obj)
+        return bowl(obj_pose, obj_state, size, type_obj)
     
-
     if(type_obj == "CUBIC"):
         print("Best_Grasp_Node.->The object will be GRABBED AS CUBE.................")
-        return cubic(obj_pose, obj_state , grip_point, size, type_obj)
+        return cubic(obj_pose, obj_state , size, type_obj)
 
-
-    if(type_obj == "PRISM"):
+    if(type_obj == "PRISM") or (type_obj == "BOX"):
         print("Best_Grasp_Node.->The object will be GRABBED AS PRISM..................")
+        print("object_state", obj_state)
         if obj_state == 'horizontal':
-            return prism_horizontal(obj_pose, obj_state , grip_point, size, type_obj)
+            return prism_horizontal(obj_pose, obj_state , size, type_obj)
         else:
-            return prism_vertical(obj_pose, obj_state)
+            return prism_vertical(obj_pose, obj_state , size, type_obj)
         
         """
     if(type_obj == "SPOON"):
@@ -347,32 +353,14 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
 
 
 
-
 def callback(req):
     global listener
     resp = BestGraspTrajResponse() 
 
-    """
-    pose_list_quaternion = grip_rules(req.recog_object.pose, 
-                                      req.recog_object.category, 
-                                      req.recog_object.object_state  , 
-                                      req.recog_object.size , 
-                                      [req.recog_object.pose.position.x, req.recog_object.pose.position.y, req.recog_object.pose.position.z] )
-    
-    if len( pose_list_quaternion) <= 0:
-        print("Best_Grasp_Node.-> object is no graspable")
-        return resp
-    
-    trajectory, pose, graspable = evaluating_possibility_grip(pose_list_quaternion , 
-                                                              req.recog_object.object_state, 
-                                                              req.recog_object.category)
-   """
     trajectory, pose, graspable = grip_rules(req.recog_object.pose, 
                                       req.recog_object.category, 
                                       req.recog_object.object_state  , 
-                                      req.recog_object.size , 
-                                      [req.recog_object.pose.position.x, req.recog_object.pose.position.y, req.recog_object.pose.position.z] )
-        
+                                      req.recog_object.size)
 
     if graspable:
         print("Best_Grasp_Node.-> SUITABLE POSE FOR OBJECT MANIPULATION......")
@@ -392,16 +380,12 @@ def callback(req):
 
 
 
-
 def main():
     global listener , ik_srv, marker_pub, marker_array_pub, debug
     debug = True
-
     print("Node to grab objects based on their orientation by ITZEL..............ʕ•ᴥ•ʔ")
-
     rospy.init_node("gripper_orientation_for_grasping")
     rospy.Service("/manipulation/get_best_grasp_traj", BestGraspTraj, callback)
-
     rospy.wait_for_service( '/manipulation/la_ik_trajectory' )
     ik_srv           = rospy.ServiceProxy( '/manipulation/la_ik_trajectory' , InverseKinematicsPose2Traj )
     marker_pub       = rospy.Publisher("/vision/object_recognition/markers",  Marker, queue_size = 10) 
