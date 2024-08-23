@@ -239,23 +239,41 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
 
 
 def bowl(obj_pose, obj_state, size, type_obj):
-    grip_point_bl = points_actual_to_points_target(grip_point, 'object', 'base_link')
+    first_point = [-0.02 , size.z/2 , 0]
 
+    # Primera trayectoria**********************************************
+    # Origen de TF 1
+    grip_point_bl = points_actual_to_points_target(first_point, 'object', 'base_link')
     grip_point_bl[2] = grip_point_bl[2] + Z_OFFSET_BOWL
-    grip_point = points_actual_to_points_target(grip_point_bl, 'base_link', 'object')
+    first_point = points_actual_to_points_target(grip_point_bl, 'base_link', 'object')
 
-    grip_point = [-0.02 , size.z/2 , 0]
+    offset = -90
     global debug
+    first_tf = Pose()
+    generate_tf_msg(first_tf, first_point)
+    num_candidates = 3
+    name_frame = "BOWL_1"
+    step = 10
+    candidate_list = generates_candidates(first_point , first_tf, "P", obj_state ,  name_frame, step, num_candidates, type_obj, offset)
+    first_trajectory, c_ft, graspable =  evaluating_possibility_grip(candidate_list , obj_state, type_obj)
+    
+    # Segunda trayectoria
+    grip_point = [0,0,0]
     offset = 0
+    global debug
     grip_tf = Pose()
     generate_tf_msg(grip_tf, grip_point)
-    num_candidates = 1
-    name_frame = "BOWL"
-    step = -5
-    candidate_list = generates_candidates(grip_point , grip_tf, "R", obj_state ,  name_frame, step, num_candidates, type_obj, offset)
-    first_trajectory = evaluating_possibility_grip(candidate_list , obj_state, type_obj)
-    total_traj = first_trajectory
-    return total_traj
+    num_candidates = 3
+    name_frame = "BOWL_2"
+    step = -10
+    candidate_list = generates_candidates(grip_point , grip_tf, "P", obj_state ,  name_frame, step, num_candidates, type_obj, offset)
+    second_trajectory, c_ft_2, graspable_2 =  evaluating_possibility_grip(candidate_list , obj_state, type_obj)
+    # Falta agregar rotacion de la muneca
+    
+
+
+    first_trajectory.points = first_trajectory.points + second_trajectory.points
+    return first_trajectory , c_ft, graspable
 
 
 def cubic(obj_pose, obj_state , size, type_obj):
@@ -308,8 +326,10 @@ def prism_horizontal(obj_pose, obj_state, size, type_obj):
     
 
 
-    total_traj = first_trajectory + second_trajectory
-    return total_traj, c_ft, graspable
+    #total_traj = resp_ik_srv.articular_trajectory.points + resp_3_ik_srv.articular_trajectory.points
+    
+    first_trajectory.points = first_trajectory.points + second_trajectory.points
+    return first_trajectory , c_ft, graspable
 
 
 def prism_vertical(obj_pose, obj_state, size, type_obj):
