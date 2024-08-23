@@ -267,7 +267,7 @@ def bowl(obj_pose, obj_state, size, type_obj):
     name_frame = "BOWL_2"
     step = -10
     candidate_list = generates_candidates(grip_point , grip_tf, "P", obj_state ,  name_frame, step, num_candidates, type_obj, offset)
-    second_trajectory, c_ft_2, graspable_2 =  evaluating_possibility_grip(candidate_list , obj_state, type_obj)
+    second_trajectory, c_ft_2, graspable_2 =  evaluating_possibility_grip(candidate_list , obj_state, type_obj, )
     # Falta agregar rotacion de la muneca
     
 
@@ -291,7 +291,7 @@ def cubic(obj_pose, obj_state , size, type_obj):
     step = -5
 
     candidate_list = generates_candidates(grip_point , grip_tf, "R", obj_state ,  name_frame, step, num_candidates, type_obj, offset)
-    return evaluating_possibility_grip(candidate_list , obj_state, type_obj)
+    return evaluating_possibility_grip(candidate_list , obj_state, type_obj, )
 
 
 def prism_horizontal(obj_pose, obj_state, size, type_obj):
@@ -312,6 +312,15 @@ def prism_horizontal(obj_pose, obj_state, size, type_obj):
     first_trajectory, c_ft, graspable =  evaluating_possibility_grip(candidate_list , obj_state, type_obj)
     
     # Segunda trayectoria
+    #    el ultimo punto de la 1a trayectoria es el primero de la segunda
+    guess = [first_trajectory.points[-1].positions[0],
+                first_trajectory.points[-1].positions[1],
+                first_trajectory.points[-1].positions[2],
+                first_trajectory.points[-1].positions[3],
+                first_trajectory.points[-1].positions[4],
+                first_trajectory.points[-1].positions[5],
+                first_trajectory.points[-1].positions[6]]
+
     grip_point = [0,0,0]
     offset = 0
     global debug
@@ -321,7 +330,7 @@ def prism_horizontal(obj_pose, obj_state, size, type_obj):
     name_frame = "P_H_2"
     step = -10
     candidate_list = generates_candidates(grip_point , grip_tf, "P", obj_state ,  name_frame, step, num_candidates, type_obj, offset)
-    second_trajectory, c_ft_2, graspable_2 =  evaluating_possibility_grip(candidate_list , obj_state, type_obj)
+    second_trajectory, c_ft_2, graspable_2 =  evaluating_possibility_grip(candidate_list , obj_state, type_obj, guess)
     # Falta agregar rotacion de la muneca
     
 
@@ -332,7 +341,7 @@ def prism_horizontal(obj_pose, obj_state, size, type_obj):
     return first_trajectory , c_ft, graspable
 
 
-def prism_vertical(obj_pose, obj_state, size, type_obj):
+def prism_vertical(obj_pose, obj_state, size, type_obj,):
     global debug
     grip_tf = Pose()
     generate_tf_msg(grip_tf, [0,0,0])
@@ -359,7 +368,7 @@ def box(obj_pose, obj_state, size, type_obj):
     step = -5
 
     candidate_list = generates_candidates(grip_point , grip_tf, "R", obj_state ,  name_frame, step, num_candidates, type_obj, offset)
-    total_traj = first_trajectory =  evaluating_possibility_grip(candidate_list , obj_state, type_obj)
+    total_traj = first_trajectory =  evaluating_possibility_grip(candidate_list , obj_state, type_obj,)
     # Falta agregar rotacion de la muneca
     total_traj = first_trajectory
     return total_traj
@@ -407,7 +416,7 @@ def build_trajectory():
 
 
 
-def evaluating_possibility_grip(candidate_q_list, obj_state, category):
+def evaluating_possibility_grip(candidate_q_list, obj_state, category, guess = None ):
     global ik_srv
     ik_msg = InverseKinematicsPose2TrajRequest()
     print("Best_Grasp_Node.-> evaluating_possibility_grip()")
@@ -421,6 +430,9 @@ def evaluating_possibility_grip(candidate_q_list, obj_state, category):
         ik_msg.yaw       = candidate_ik_msg[5]
         ik_msg.duration  = 0
         ik_msg.time_step = 0.05
+        if guess != None:
+            ik_msg.initial_guess = guess
+
         try:
             resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
             print("Best_Grasp_Node.-> Suitable pose for object .....................")
