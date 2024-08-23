@@ -460,7 +460,7 @@ def main():
         
         elif(current_state == TAKE_OBJECT):
             print("ESTADO:___TAKE_OBJECT..................")
-            JuskeshinoHardware.moveLeftArmWithTrajectory(resp ,15)
+            #JuskeshinoHardware.moveLeftArmWithTrajectory(resp ,15)
             time.sleep(0.5)
             JuskeshinoHRI.say("Closing gripper")
             """
@@ -476,7 +476,7 @@ def main():
                 JuskeshinoHardware.moveLeftArmWithTrajectory(actual_position_arm , 10) 
             """
 
-            current_state = POST_GRASP
+            current_state = -1#POST_GRASP
 
 
 
