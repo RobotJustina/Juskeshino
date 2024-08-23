@@ -196,7 +196,7 @@ def broadcaster_frame_object(frame, child_frame, pose):
 
 
 
-
+# rotation_axis
 def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame, step, num_candidates, type_obj, offset):    
     global debug 
     j = 0
@@ -206,6 +206,7 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
     grasp_candidates_quaternion = []
     q_gripper = []
 
+    #[0,10]
     R, P, Y = tft.euler_from_quaternion([obj_pose.orientation.x ,  # pose expresada en RPY para realizar rotaciones
                                              obj_pose.orientation.y,
                                              obj_pose.orientation.z, 
@@ -223,12 +224,14 @@ def generates_candidates(grip_point , obj_pose, rotacion, obj_state , name_frame
         obj_pose_frame_object.orientation.z = q_gripper[2]
         obj_pose_frame_object.orientation.w = q_gripper[3]
         
+        # Pitch
         if rotacion == "P": 
             P = P + np.deg2rad(step)  #horizontal grip#
             print("P =", np.rad2deg(P))
         else:
-            if rotacion == "R": R = R + np.deg2rad(step) #+ np.deg2rad(offset) #vertical grip
-
+            if rotacion == "R": R = R + np.deg2rad(step) #+ np.deg2rad(offset) #vertical grip,
+        [R,P,Y] += step*rotation_axis
+        
         if debug:
             print("Best_Grasp_Node.-> emitiendo pose........." + name_frame+str(j)+obj_state , obj_pose_frame_object.position)
             broadcaster_frame_object('object', name_frame+str(j)+obj_state , obj_pose_frame_object )
@@ -294,18 +297,21 @@ def cubic(obj_pose, obj_state , size, type_obj):
     return evaluating_possibility_grip(candidate_list , obj_state, type_obj, )
 
 
-def prism_horizontal(obj_pose, obj_state, size, type_obj):
+def prism_horizontal(obj_pose, obj_state, size, type_obj, num_candidates=3):
     # Primera trayectoria**********************************************
     # Origen de TF 1
+    #point_current
+    #.......
     first_point_bl = points_actual_to_points_target([0,0,0], 'object', 'base_link')
     first_point_bl[2] = first_point_bl[2] + Z_OFFSET_PRISM
     first_point = points_actual_to_points_target(first_point_bl , 'base_link', 'object')
     
     offset = -90
     global debug
+    #first_pose
     first_tf = Pose()
     generate_tf_msg(first_tf, first_point)
-    num_candidates = 3
+    #num_candidates = 3
     name_frame = "P_H_1"
     step = 10
     candidate_list = generates_candidates(first_point , first_tf, "P", obj_state ,  name_frame, step, num_candidates, type_obj, offset)
