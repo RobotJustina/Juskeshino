@@ -44,7 +44,7 @@ LOCATIONS     = ["bowl_table_robocup", "cereal_table_robocup", "milk_table_roboc
 
 
 # Objects
-BOWL   = "pudding_box"#"potted_meat_can"#"apple"#"sausages"#"bowl"
+BOWL   = "apple"#"pudding_box"#"potted_meat_can"#"apple"#"sausages"#"bowl"
 MILK   = "potted_meat_can"
 CEREAL = "potted_meat_can"
 
