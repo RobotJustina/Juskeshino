@@ -197,8 +197,8 @@ def broadcaster_frame_object(frame, child_frame, pose):
 
 
 
-def generates_candidates(obj_pose, name_frame, step, num_candidates, offset, rotation_axis):    
-    global debug 
+def generates_candidates(obj_pose, name_frame, step, offset, rotation_axis):    
+    global debug, num_candidates
     j = 0
     if debug: marker_array_publish([obj_pose.position.x, obj_pose.position.y, obj_pose.position.z], 'object', 59, 56)
     grasp_candidates_quaternion = []
@@ -225,19 +225,16 @@ def bowl(obj_state, size, type_obj):
     grip_point_bl[2] = grip_point_bl[2] + Z_OFFSET_BOWL
     first_point = points_actual_to_points_target(grip_point_bl, 'base_link', 'object')
     offset = -90
-    global debug
+    global debug, num_candidates
     first_tf = Pose()
     first_pose = generates_candidates(first_tf, first_point)
-    num_candidates = 3
     name_frame = "BOWL_1"
     step = 10
-    candidate_list = generates_candidates(first_pose,  name_frame, step, num_candidates, offset)
+    candidate_list = generates_candidates(first_pose,  name_frame, step, offset, np.asarray([0,1,0]))
     first_trajectory, c_ft, graspable =  evaluating_possibility_grip(candidate_list , obj_state, type_obj)
     # Segunda trayectoria
-    global debug
     grip_pose_2 = generate_pose([0,0,0], [0,0,0,1])
     offset = [0,0,0]
-    num_candidates = 3
     name_frame = "BOWL_2"
     step = np.deg2rad(-10)
     candidate_list = generates_candidates(grip_pose_2 ,  name_frame, step, num_candidates, offset)
@@ -249,18 +246,18 @@ def bowl(obj_state, size, type_obj):
 
 
 
-def prism_horizontal(obj_state, size, type_obj, num_candidates=3):
+def prism_horizontal(obj_state, size, type_obj):
     # Primera trayectoria*********************************************************************************************
     first_point_bl = points_actual_to_points_target([0,0,0], 'object', 'base_link')
     first_point_bl[2] = first_point_bl[2] + Z_OFFSET_PRISM
     first_point = points_actual_to_points_target(first_point_bl , 'base_link', 'object')
     offset = [0, np.deg2rad(-90) , 0]
-    global debug
+    global debug, num_candidates
     first_pose = generate_pose[first_point, [0,0,0,1]]
     #num_candidates = 3
     name_frame = "P_H_1"
     step = np.deg2rad(10)
-    candidate_list = generates_candidates(first_pose,  name_frame, step, num_candidates, offset)
+    candidate_list = generates_candidates(first_pose,  name_frame, step, num_candidates, offset, np.asarray([0,1,0]))
     first_trajectory, c_ft, graspable =  evaluating_possibility_grip(candidate_list , obj_state, type_obj)
     # Segunda trayectoria*********************************************************************************************
     #    el ultimo punto de la 1a trayectoria es el primero de la segunda
@@ -276,7 +273,7 @@ def prism_horizontal(obj_state, size, type_obj, num_candidates=3):
     num_candidates = 3
     name_frame = "P_H_2"
     step = np.deg2rad(-10)
-    candidate_list = generates_candidates( second_pose,  name_frame, step, num_candidates, offset)
+    candidate_list = generates_candidates( second_pose,  name_frame, step, num_candidates, offset, np.asarray([0,1,0]))
     second_trajectory, c_ft_2, graspable_2 =  evaluating_possibility_grip(candidate_list , obj_state, type_obj, guess)
     # Falta agregar rotacion de la muneca
     #total_traj = resp_ik_srv.articular_trajectory.points + resp_3_ik_srv.articular_trajectory.points
@@ -286,9 +283,9 @@ def prism_horizontal(obj_state, size, type_obj, num_candidates=3):
 
 
 def prism_vertical( obj_state, size, type_obj,):
-    global debug
+    global debug, num_candidates
     grip_pose = generate_pose([0,0,0] ,[0,0,0,1])
-    num_candidates = 3 
+    #num_candidates = 3 
     offset = [np.deg2rad(0), np.deg2rad(-5), 0]
     name_frame = "V_P"
     step = -5#10
@@ -298,17 +295,16 @@ def prism_vertical( obj_state, size, type_obj,):
 
 
 def cubic( obj_state , size, type_obj):
-    global debug
+    global debug, num_candidates
     grip_point_bl = points_actual_to_points_target([0,0,0], 'object', 'base_link')
     grip_point_bl[2] = grip_point_bl[2] + Z_OFFSET_CUB
     grip_point = points_actual_to_points_target(grip_point_bl, 'base_link', 'object')
     offset = [np.deg2rad(0), 0, 0] # Rotacion en row
     candidate_pose = generate_pose(grip_point, [0,0,0,1])
-    num_candidates = 3
+    #num_candidates = 3
     name_frame = "CUBIC"
-    step = -5
-    rotation_axis = np.asarray([0,1,0])
-    candidate_list = generates_candidates(candidate_pose ,  name_frame, step, num_candidates, offset, np.asarray([0,1,0]))
+    step = -5           
+    candidate_list = generates_candidates(candidate_pose ,  name_frame, step, offset, np.asarray([0,1,0]))
     return evaluating_possibility_grip(candidate_list , obj_state, type_obj, )
 
 
@@ -444,10 +440,10 @@ def callback(req):
 
 
 def main():
-    global listener , ik_srv, marker_pub, marker_array_pub, debug
+    global listener , ik_srv, marker_pub, marker_array_pub, debug, num_candidates
     debug = True
     print("Node to grab objects based on their orientation by ITZEL..............ʕ•ᴥ•ʔ")
-    rospy.init_node("gripper_orientation_for_grasping")
+    rospy.init_node("grasp_object")
     rospy.Service("/manipulation/get_best_grasp_traj", BestGraspTraj, callback)
     rospy.wait_for_service( '/manipulation/la_ik_trajectory' )
     ik_srv           = rospy.ServiceProxy( '/manipulation/la_ik_trajectory' , InverseKinematicsPose2Traj )
@@ -455,7 +451,7 @@ def main():
     marker_array_pub = rospy.Publisher("/vision/obj_reco/marker_array",       MarkerArray, queue_size = 10) 
 
     listener = tf.TransformListener()
-    threshold1 = rospy.get_param('~threshold1', 50)
+    num_candidates = rospy.get_param('~num_candidates', 3)
 
     loop = rospy.Rate(30)
     while not rospy.is_shutdown():
