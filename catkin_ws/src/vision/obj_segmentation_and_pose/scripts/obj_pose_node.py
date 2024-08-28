@@ -313,13 +313,11 @@ def publish_arow_marker(centroide_cam, p1,frame_id, id, name):
 
 def get_obj_pose_response(obj_state, c_obj, size_obj, obj_pose, graspable):
     resp = RecognizeObjectResponse()
-    resp.recog_object.object_state = obj_state
     resp.recog_object.category = c_obj
     resp.recog_object.graspable  = graspable 
     resp.recog_object.size = size_obj
     resp.recog_object.pose = obj_pose
     return resp
-
 
 
 
@@ -332,7 +330,7 @@ def object_category(size_obj, obj_state, name_obj):  # estima la forma geometric
         else:
             if((size_obj.x /size_obj.z) > 1.4) and ((size_obj.x /size_obj.y) > 1.4) and ((size_obj.y /size_obj.z) < 1.4) or ((size_obj.y < 0.15) and ((size_obj.x /size_obj.y) > 1.4) ):   # barra
                 print("H-> PRISM")
-                return "PRISM", True
+                return "PRISM_HORIZONTAL", True
             else:
                 if((size_obj.x /size_obj.z) < 1.4) and ((size_obj.x /size_obj.y) < 1.4) and ((size_obj.y /size_obj.z) < 1.4): 
                     print("H-> CUBIC")
@@ -342,7 +340,6 @@ def object_category(size_obj, obj_state, name_obj):  # estima la forma geometric
                     return "BOX", True
 
     else:    # obj_state == 'vertical'
-        #if(((size_obj.x /size_obj.z) > 1.4) and ((size_obj.x /size_obj.y) > 1.4) and ((size_obj.y /size_obj.z) < 1.4)) and (size_obj.x > MAXIMIUN_CUBE_SIZE):# and size_obj.x > MAXIMIUN_CUBE_SIZE):   # barra
         if(((size_obj.x /size_obj.z) < 1.4) and ((size_obj.x /size_obj.y) < 1.4) and ((size_obj.y /size_obj.z) < 1.4)) and (size_obj.x < MAXIMIUN_CUBE_SIZE):# and size_obj.x > MAXIMIUN_CUBE_SIZE):   # barra
 
             print("V-> CUBIC")
@@ -352,7 +349,7 @@ def object_category(size_obj, obj_state, name_obj):  # estima la forma geometric
                 print("V-> BOX")
                 return "BOX", True
             else:
-                print("V-> PRISM")
+                print("V-> PRISM_VERTICAL")
                 return "PRISM", True
             
 
