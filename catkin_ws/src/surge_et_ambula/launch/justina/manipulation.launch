@@ -22,7 +22,7 @@
   <!--  -->
 
   <node name="grasp_object" pkg="object_manipulation" type="graspping_node.py" output="screen">
-    <param name="rm_bg" value="False"/>
+    <param name="num_candidates" value="3"/> 
   </node>
   
 
