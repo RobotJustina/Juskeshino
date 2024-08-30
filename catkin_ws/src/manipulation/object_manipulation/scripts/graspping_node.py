@@ -220,12 +220,11 @@ def generates_candidates(obj_pose, name_frame, step, offset, rotation_axis):
 
 
 def grasp_bowl():
-    global size, type_obj
+    global size, num_candidates
     # Primera trayectoria**********************************************
     grip_point_bl = points_actual_to_points_target([-0.02 , size.z/2 , 0] , 'object', 'base_link')
     grip_point_bl[2] = grip_point_bl[2] + Z_OFFSET_BOWL
     first_point = points_actual_to_points_target(grip_point_bl, 'base_link', 'object')
-    global debug, num_candidates
     first_tf = Pose()
     first_pose = generates_candidates(first_tf, first_point)
     candidate_list = generates_candidates(first_pose,  "BOWL_1", 10, -90, np.asarray([0,1,0]))
@@ -241,12 +240,11 @@ def grasp_bowl():
 
 
 def grasp_prism_horizontal():
-    global size, type_obj
+    global size, num_candidates
     # Primera trayectoria*********************************************************************************************
     first_point_bl = points_actual_to_points_target([0,0,0], 'object', 'base_link')
     first_point_bl[2] = first_point_bl[2] + Z_OFFSET_PRISM
     first_point = points_actual_to_points_target(first_point_bl , 'base_link', 'object')
-    global debug, num_candidates
     first_pose = generate_pose[first_point, [0,0,0,1]]
     candidate_list = generates_candidates(first_pose,  "P_H_1", np.deg2rad(10), [0, np.deg2rad(-90) , 0], np.asarray([0,1,0]))
     first_trajectory, c_ft, graspable =  evaluating_possibility_grip(candidate_list , )
@@ -270,14 +268,14 @@ def grasp_prism_horizontal():
 
 
 def grasp_prism_vertical():
-    global debug, num_candidates, size, type_obj
+    global  num_candidates, size
     candidate_list = generates_candidates( generate_pose([0,0,0] ,[0,0,0,1]) , "V_P", -5, [np.deg2rad(0), np.deg2rad(-5), 0],  np.asarray([0,1,0]))
     return evaluating_possibility_grip(candidate_list ,)
      
 
 
 def grasp_cubic():
-    global debug, num_candidates
+    global num_candidates, size
     grip_point_bl = points_actual_to_points_target([0,0,0], 'object', 'base_link')
     grip_point_bl[2] = grip_point_bl[2] + Z_OFFSET_CUB
     grip_point = points_actual_to_points_target(grip_point_bl, 'base_link', 'object')
@@ -286,10 +284,9 @@ def grasp_cubic():
 
 
 
-
 def grasp_box():
     # Primera trayectoria*********************************************************************************************
-    global size, category, debug
+    global size
     first_point_bl = points_actual_to_points_target([0 , size.z/2 , 0], 'object', 'base_link')
     first_point_bl[0] = first_point_bl[0] - 0.05#3Z_OFFSET_PRISM
     first_point = points_actual_to_points_target(first_point_bl , 'base_link', 'object')
@@ -311,7 +308,6 @@ def grasp_box():
     first_trajectory.points = first_trajectory.points + second_trajectory.points
     """
     return first_trajectory , c_ft, graspable
-
 
 
 
