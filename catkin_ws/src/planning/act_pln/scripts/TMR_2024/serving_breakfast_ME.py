@@ -44,7 +44,7 @@ LOCATIONS     = ["bowl_table_robocup", "cereal_table_robocup", "milk_table_roboc
 
 
 # Objects
-BOWL   = "apple"#"pudding_box"#"potted_meat_can"#"apple"#"sausages"#"bowl"
+BOWL   = "tomato_soup_can"#"apple"#"pudding_box"#"potted_meat_can"#"apple"#"sausages"#"bowl"
 MILK   = "potted_meat_can"
 CEREAL = "potted_meat_can"
 
@@ -362,12 +362,12 @@ def main():
             time.sleep(0.2)
             try:
                 if (cycle < 1):
-                    tilt = -0.9
+                    tilt = -1.0
                 else:
                     tilt = -0.7
                 [obj, img] = JuskeshinoSimpleTasks.object_search_orientation(actual_obj, tilt)
                 #[obj, img] = JuskeshinoVision.detectAndRecognizeObject(actual_obj)   
-                print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
+                #print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
                 JuskeshinoHRI.say("I found" + actual_obj.replace("_", " "))
 
 
@@ -404,7 +404,7 @@ def main():
                         current_state = PREPARE_ARM
                 """
             
-            print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
+            #print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
                       
             
 

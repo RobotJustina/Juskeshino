@@ -125,14 +125,6 @@ def object_pose(centroid, principal_component, second_component, size_obj, name_
     eje_z = np.asarray([0, 0, 1], dtype=np.float64 )# coordenadas en 'base_link'
     angle_obj = np.abs(np.arcsin( np.dot(principal_component , eje_z ) / (np.linalg.norm(principal_component ) * 1) ))
     print("angulo del objeto respecto de la superficie: ", np.rad2deg(angle_obj))
-
-
-    """
-    p = Point()
-    p.x, p.y, p.z = second_component[0], second_component[1], second_component[2] 
-    print("s c", second_component)
-    publish_arow_marker(centroid, p ,"base_link", 6, "z_obj")
-    """
     
     # ************************************************************************************************
     if ((angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150))):  # Si el objeto es horizontal
@@ -215,7 +207,7 @@ def object_pose(centroid, principal_component, second_component, size_obj, name_
                     eje_x_obj = principal_component 
                     eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
         """
-        if (c_obj == "PRISM"):
+        if (c_obj == "PRISM_VERTICAL"):
             if (PCA_vertical == True):
                 # Asignacion de ejes del objeto
                 eje_z_obj = second_component 
@@ -252,8 +244,9 @@ def object_pose(centroid, principal_component, second_component, size_obj, name_
     quaternion_obj = tft.quaternion_from_euler(r, p, y)
     obj_pose = Pose()
     print("centroid before", centroid)
-    if((c_obj == "PRISM") and (obj_state == 'vertical')):
-        obj_pose.position.x, obj_pose.position.y, obj_pose.position.z = centroid[0], centroid[1], centroid[2] + 0.03
+    #if((c_obj == "PRISM") and (obj_state == 'vertical')):
+    if(c_obj == "PRISM_VERTICAL"):
+        obj_pose.position.x, obj_pose.position.y, obj_pose.position.z = centroid[0], centroid[1], centroid[2] + 0.0
         
     else:
         obj_pose.position.x, obj_pose.position.y, obj_pose.position.z = centroid[0], centroid[1], centroid[2]
@@ -329,7 +322,7 @@ def object_category(size_obj, obj_state, name_obj):  # estima la forma geometric
             return "BOWL", True
         else:
             if((size_obj.x /size_obj.z) > 1.4) and ((size_obj.x /size_obj.y) > 1.4) and ((size_obj.y /size_obj.z) < 1.4) or ((size_obj.y < 0.15) and ((size_obj.x /size_obj.y) > 1.4) ):   # barra
-                print("H-> PRISM")
+                print("H-> PRISM_H")
                 return "PRISM_HORIZONTAL", True
             else:
                 if((size_obj.x /size_obj.z) < 1.4) and ((size_obj.x /size_obj.y) < 1.4) and ((size_obj.y /size_obj.z) < 1.4): 
@@ -350,7 +343,7 @@ def object_category(size_obj, obj_state, name_obj):  # estima la forma geometric
                 return "BOX", True
             else:
                 print("V-> PRISM_VERTICAL")
-                return "PRISM", True
+                return "PRISM_VERTICAL", True
             
 
 

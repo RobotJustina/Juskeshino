@@ -219,7 +219,8 @@ def generates_candidates(obj_pose, name_frame, step, offset, rotation_axis):
 
 
 
-def grasp_bowl(size, type_obj):
+def grasp_bowl():
+    global size, type_obj
     # Primera trayectoria**********************************************
     grip_point_bl = points_actual_to_points_target([-0.02 , size.z/2 , 0] , 'object', 'base_link')
     grip_point_bl[2] = grip_point_bl[2] + Z_OFFSET_BOWL
@@ -228,26 +229,27 @@ def grasp_bowl(size, type_obj):
     first_tf = Pose()
     first_pose = generates_candidates(first_tf, first_point)
     candidate_list = generates_candidates(first_pose,  "BOWL_1", 10, -90, np.asarray([0,1,0]))
-    first_trajectory, c_ft, graspable =  evaluating_possibility_grip(candidate_list, type_obj)
+    first_trajectory, c_ft, graspable =  evaluating_possibility_grip(candidate_list,)
     # Segunda trayectoria
     grip_pose_2 = generate_pose([0,0,0], [0,0,0,1])
-    candidate_list = generates_candidates(grip_pose_2 , "BOWL_2", np.deg2rad(-10), num_candidates, offset = [0,0,0])
-    second_trajectory, c_ft_2, graspable_2 =  evaluating_possibility_grip(candidate_list, type_obj, )
+    candidate_list = generates_candidates(grip_pose_2 , "BOWL_2", np.deg2rad(-10), offset = [0,0,0])
+    second_trajectory, c_ft_2, graspable_2 =  evaluating_possibility_grip(candidate_list, )
     first_trajectory.points = first_trajectory.points + second_trajectory.points
     return first_trajectory , c_ft, graspable
 
 
 
 
-def grasp_prism_horizontal( size, type_obj):
+def grasp_prism_horizontal():
+    global size, type_obj
     # Primera trayectoria*********************************************************************************************
     first_point_bl = points_actual_to_points_target([0,0,0], 'object', 'base_link')
     first_point_bl[2] = first_point_bl[2] + Z_OFFSET_PRISM
     first_point = points_actual_to_points_target(first_point_bl , 'base_link', 'object')
     global debug, num_candidates
     first_pose = generate_pose[first_point, [0,0,0,1]]
-    candidate_list = generates_candidates(first_pose,  "P_H_1", np.deg2rad(10), num_candidates, [0, np.deg2rad(-90) , 0], np.asarray([0,1,0]))
-    first_trajectory, c_ft, graspable =  evaluating_possibility_grip(candidate_list , type_obj)
+    candidate_list = generates_candidates(first_pose,  "P_H_1", np.deg2rad(10), [0, np.deg2rad(-90) , 0], np.asarray([0,1,0]))
+    first_trajectory, c_ft, graspable =  evaluating_possibility_grip(candidate_list , )
 
     # Segunda trayectoria*********************************************************************************************
     #    el ultimo punto de la 1a trayectoria es el primero de la segunda
@@ -260,41 +262,41 @@ def grasp_prism_horizontal( size, type_obj):
                 first_trajectory.points[-1].positions[6]]
 
     second_pose = generate_pose([0,0,0], [0,0,0,1])
-    candidate_list = generates_candidates( second_pose,  "P_H_2", np.deg2rad(-10), num_candidates, [0,0,0], np.asarray([0,1,0]))
-    second_trajectory, c_ft_2, graspable_2 =  evaluating_possibility_grip(candidate_list, type_obj, guess)
+    candidate_list = generates_candidates( second_pose,  "P_H_2", np.deg2rad(-10), [0,0,0], np.asarray([0,1,0]))
+    second_trajectory, c_ft_2, graspable_2 =  evaluating_possibility_grip(candidate_list, guess)
     first_trajectory.points = first_trajectory.points + second_trajectory.points
     return first_trajectory , c_ft, graspable
 
 
 
-def grasp_prism_vertical( size, type_obj,):
-    global debug, num_candidates
-    candidate_list = generates_candidates( generate_pose([0,0,0] ,[0,0,0,1]) , "V_P", -5, num_candidates, [np.deg2rad(0), np.deg2rad(-5), 0],  np.asarray([0,1,0]))
-    return evaluating_possibility_grip(candidate_list , type_obj)
+def grasp_prism_vertical():
+    global debug, num_candidates, size, type_obj
+    candidate_list = generates_candidates( generate_pose([0,0,0] ,[0,0,0,1]) , "V_P", -5, [np.deg2rad(0), np.deg2rad(-5), 0],  np.asarray([0,1,0]))
+    return evaluating_possibility_grip(candidate_list ,)
      
 
 
-def grasp_cubic(size, type_obj):
+def grasp_cubic():
     global debug, num_candidates
     grip_point_bl = points_actual_to_points_target([0,0,0], 'object', 'base_link')
     grip_point_bl[2] = grip_point_bl[2] + Z_OFFSET_CUB
     grip_point = points_actual_to_points_target(grip_point_bl, 'base_link', 'object')
-    candidate_list = generates_candidates(generate_pose(grip_point, [0,0,0,1]) , "CUBIC", -5, [np.deg2rad(0), 0, 0], np.asarray([0,1,0]))
-    return evaluating_possibility_grip(candidate_list , type_obj, )
+    candidate_list = generates_candidates(generate_pose(grip_point, [0,0,0,1]) , "CUBIC", -5, [0, 0, 0], np.asarray([0,1,0]))
+    return evaluating_possibility_grip(candidate_list, )
 
 
 
 
-def grasp_box(size, type_obj):
+def grasp_box():
     # Primera trayectoria*********************************************************************************************
-    first_point_bl = points_actual_to_points_target([0,0,0], 'object', 'base_link')
-    first_point_bl[2] = first_point_bl[2] + Z_OFFSET_PRISM
+    global size, category, debug
+    first_point_bl = points_actual_to_points_target([0 , size.z/2 , 0], 'object', 'base_link')
+    first_point_bl[0] = first_point_bl[0] - 0.05#3Z_OFFSET_PRISM
     first_point = points_actual_to_points_target(first_point_bl , 'base_link', 'object')
-    global debug
-    first_pose = generate_pose[first_point, [0,0,0,1]]
-    candidate_list = generates_candidates(first_pose, "P_H_1", 10, num_candidates, [0, -90, 0])
-    first_trajectory, c_ft, graspable =  evaluating_possibility_grip(candidate_list, type_obj)
+    candidate_list = generates_candidates(generate_pose(first_point, [0,0,0,1]) , "BOX_1", -5,[0, 0, 0] ,np.asarray([0,1,0]))
+    first_trajectory, c_ft, graspable =  evaluating_possibility_grip(candidate_list, )
     # Segunda trayectoria*********************************************************************************************
+    """
     #    el ultimo punto de la 1a trayectoria es el primero de la segunda
     guess = [first_trajectory.points[-1].positions[0],
                 first_trajectory.points[-1].positions[1],
@@ -304,56 +306,16 @@ def grasp_box(size, type_obj):
                 first_trajectory.points[-1].positions[5],
                 first_trajectory.points[-1].positions[6]]
     second_pose = generate_pose([0,0,0], [0,0,0,1])
-    candidate_list = generates_candidates( second_pose,  "P_H_2", -10, num_candidates, [0,0,0])
+    candidate_list = generates_candidates( second_pose,  "BOX_2", -10, num_candidates, [0,0,0])
     second_trajectory, c_ft_2, graspable_2 =  evaluating_possibility_grip(candidate_list , type_obj, guess)
     first_trajectory.points = first_trajectory.points + second_trajectory.points
+    """
     return first_trajectory , c_ft, graspable
 
 
 
 
-def grip_rules(type_obj, size):  # eliminar obj_state y usar prism_vertical y prism_horizontal en las categorias
-    if(type_obj == "BOWL"):
-        print("Best_Grasp_Node.->The object will be GRABBED AS BOWL.................")
-        return grasp_bowl(size, type_obj)
-    
-    if(type_obj == "CUBIC"):
-        print("Best_Grasp_Node.->The object will be GRABBED AS CUBE.................")
-        return grasp_cubic(size, type_obj)
-        """
-    if(type_obj == "PRISM") or (type_obj == "BOX"):
-        print("Best_Grasp_Node.->The object will be GRABBED AS PRISM..................")
-       
-
-            return grasp_prism_horizontal(size, type_obj)
-        else:
-            return grasp_prism_vertical( size, type_obj)
-
-    if(type_obj == "SPOON"):
-        print("Best_Grasp_Node.->The object will be GRABBED AS BOWL.................")
-        return spoon(obj_pose, obj_state , grip_point, size, type_obj)
-
-    if(type_obj == "BOX"):
-        print("Best_Grasp_Node.->The object will be GRABBED AS BOWL.................")
-        return spoon(obj_pose, obj_state , grip_point, size, type_obj)
-
-    if(type_obj == "DISH"):
-        print("Best_Grasp_Node.->The object will be GRABBED AS BOWL.................")
-        return spoon(obj_pose, obj_state , grip_point, size, type_obj)
-        """
-    else:
-        print("Error identificando forma del objeto.................")
-        poses_list = []
-        return None, None, False
-    
-
-
-def build_trajectory():
-    print("...")
-
-
-
-def evaluating_possibility_grip(candidate_q_list, category, guess = None ):
+def evaluating_possibility_grip(candidate_q_list, guess = None ):
     global ik_srv
     ik_msg = InverseKinematicsPose2TrajRequest()
     print("Best_Grasp_Node.-> evaluating_possibility_grip()")
@@ -381,16 +343,16 @@ def evaluating_possibility_grip(candidate_q_list, category, guess = None ):
 
 
 def callback(req):
-    global listener
+    global listener, category, size
     resp = BestGraspTrajResponse() 
+    category = req.recog_object.category
+    size = req.recog_object.size
     graspping_function = {"BOWL": grasp_bowl, "CUBIC": grasp_cubic, "PRISM_HORIZONTAL": grasp_prism_horizontal, "PRISM_VERTICAL": grasp_prism_vertical, "BOX": grasp_box}
-    #trajectory_pose_graspable = graspping_function[ req.recog_object.category](req.recog_object.category, req.recog_object.object_state  , req.recog_object.size)
-    trajectory, pose, graspable = grip_rules(req.recog_object.category,
-                                      req.recog_object.size)
+    trajectory_pose_graspable, pose, graspable = graspping_function[ req.recog_object.category]()
     if graspable:
         print("Best_Grasp_Node.-> SUITABLE POSE FOR OBJECT MANIPULATION......")
         broadcaster_frame_object('shoulders_left_link', 'suitable_pose' , pose)
-        resp.articular_trajectory = trajectory  # Retorna trayectoria en el espacio articular
+        resp.articular_trajectory = trajectory_pose_graspable  # Retorna trayectoria en el espacio articular
         pose_stamped = PoseStamped()
         pose_stamped.header.frame_id = 'shoulders_left_link'
         pose_stamped.pose = pose
