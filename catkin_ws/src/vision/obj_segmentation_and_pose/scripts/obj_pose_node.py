@@ -60,7 +60,6 @@ def get_centroid(img_bgr):
 
 
 def pca(xyz_points):    # pc del contorno mas cercano
-    print("xyz_point shape: ", xyz_points.shape)
     eig_val, eig_vect = np.linalg.eig(np.cov(np.transpose(xyz_points))) # Eigenvalues and eigenvectors from Point Cloud Cov Matrix
     idx = eig_val.argsort()
     eig_val  = eig_val[idx]
@@ -79,35 +78,8 @@ def pca(xyz_points):    # pc del contorno mas cercano
     #print("size obj", size_obj)         # menor a mayor 
     # Los vectores de salida estan en el frame base_link
     size_object = Vector3(x = size_obj[2] , z = size_obj[1], y = size_obj[0])
-    print("SIZE OBJ", size_object)
     return [eig_vect[:,2], eig_vect[:,1] , eig_vect[:,0]], [eig_val[2], eig_val[1], eig_val[0]], size_object
 
-
-def object_pose_without_PCA(centroid):
-    # Asignacion de ejes del objeto
-    eje_x_obj = np.asarray([1, 0, 0], dtype=np.float64 )# coordenadas en 'base_link' 
-    eje_z_obj = np.asarray([0, 0, 1], dtype=np.float64 )# coordenadas en 'base_link'
-    eje_y_obj = np.asarray([0, 1, 0], dtype=np.float64 )# coordenadas en 'base_link'
-    # Se forma la matriz de rotacion (columnas) del objeto, a partir de ella se obtienen los cuaterniones necesarios para generar el frame del objeto
-    RM = np.asarray([eje_x_obj, eje_y_obj , eje_z_obj])
-    RM = RM.T
-    TM = [[RM[0,0], RM[0,1] , RM[0,2], 0],
-         [RM[1,0], RM[1,1] , RM[1,2], 0],
-         [RM[2,0], RM[2,1] , RM[2,2], 0], 
-         [0, 0, 0, 1]]
-
-    r,p,y = tft.euler_from_matrix(np.asarray(TM))
-    quaternion_obj = tft.quaternion_from_euler(r, p, y)
-    obj_pose = Pose()
-    obj_pose.position.x, obj_pose.position.y, obj_pose.position.z = centroid[0], centroid[1], centroid[2]
-    obj_pose.orientation.x = quaternion_obj[0]
-    obj_pose.orientation.y = quaternion_obj[1]
-    obj_pose.orientation.z = quaternion_obj[2]
-    obj_pose.orientation.w = quaternion_obj[3]
-
-    broadcaster_frame_object("base_link", "object", obj_pose)
-    # Retorna la pose del objeto en 'base_link'
-    return obj_pose
 
 
 
@@ -243,14 +215,13 @@ def object_pose(centroid, principal_component, second_component, size_obj, name_
     r,p,y = tft.euler_from_matrix(np.asarray(TM))
     quaternion_obj = tft.quaternion_from_euler(r, p, y)
     obj_pose = Pose()
-    print("centroid before", centroid)
     #if((c_obj == "PRISM") and (obj_state == 'vertical')):
     if(c_obj == "PRISM_VERTICAL"):
         obj_pose.position.x, obj_pose.position.y, obj_pose.position.z = centroid[0], centroid[1], centroid[2] + 0.0
         
     else:
         obj_pose.position.x, obj_pose.position.y, obj_pose.position.z = centroid[0], centroid[1], centroid[2]
-    print("centroid ", centroid)
+    
     obj_pose.orientation.x = quaternion_obj[0]
     obj_pose.orientation.y = quaternion_obj[1]
     obj_pose.orientation.z = quaternion_obj[2]
@@ -315,7 +286,6 @@ def get_obj_pose_response(obj_state, c_obj, size_obj, obj_pose, graspable):
 
 
 def object_category(size_obj, obj_state, name_obj):  # estima la forma geometrica del objeto. (x,z,y)
-    
     if(obj_state == 'horizontal'):
         if('bowl' in name_obj):
             print("H-> BOWL")
@@ -348,8 +318,7 @@ def object_category(size_obj, obj_state, name_obj):  # estima la forma geometric
 
 
 
-def callbackPoseObjectOrientation(req):  # Request is a PointCloud2
-    
+def callbackPoseObject(req):  # Request is a PointCloud2
     cv_mats= get_cv_mats_from_cloud_message(req.point_cloud)
     obj_xyz = get_object_xyz(cv_mats , req.obj_mask)
 
@@ -362,7 +331,7 @@ def callbackPoseObjectOrientation(req):  # Request is a PointCloud2
     centroid = np.mean(obj_xyz, axis=0)
     pca_vectors, eig_val, size_obj = pca(obj_xyz)
     obj_pose, axis_x_obj, obj_state, c_obj, graspable = object_pose(centroid, pca_vectors[0], pca_vectors[1], size_obj, req.name )
-    #c_obj, graspable = object_category(size_obj, obj_state, req.name)
+    
 
     print("ObjPose node->CENTROID:____", centroid)
     #publish_arow_marker(centroid, axis_x_obj, 'base_link', ns ="principal_component", id=22)
@@ -383,7 +352,7 @@ def main():
     global pub_point, marker_pub, debug, PCA_vertical
     debug = False
     PCA_vertical = False  # PCA para objetos con 1a componente vertical
-    rospy.Service("/vision/obj_segmentation/get_obj_pose_with_orientation", RecognizeObject, callbackPoseObjectOrientation) 
+    rospy.Service("/vision/obj_segmentation/get_obj_pose", RecognizeObject, callbackPoseObject) 
     pub_point = rospy.Publisher('/vision/detected_object', PointStamped, queue_size=10)
     marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10) 
 
