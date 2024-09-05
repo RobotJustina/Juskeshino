@@ -17,6 +17,12 @@ from std_msgs.msg import Int32MultiArray
 from std_msgs.msg import Int32
 from std_msgs.msg import Float32MultiArray
 
+last_goal=[0,0]
+
+def callback_goal_point(msg):
+    global last_goal
+    last_goal=list(msg.data)
+
 def Last_pub():
     pub_stop.publish(Empty())
     print("Se cierra el nodo")
@@ -76,6 +82,7 @@ rospy.init_node("RL")
 rospy.Subscriber("/votes", Int32MultiArray , callback_votes)
 rospy.Subscriber("/ready", GoalStatus, callback_goal)
 rospy.Subscriber("/offset", Int32, callback_offset)
+rospy.Subscriber("/NN_goal", Float32MultiArray, callback_goal_point)
 pub_lat = rospy.Publisher("/simple_move/goal_dist_lateral", Float32, queue_size=10)
 pub_fro = rospy.Publisher("/simple_move/goal_dist", Float32, queue_size=10)
 pub_stop = rospy.Publisher("/simple_move/stop", Empty, queue_size=10)
@@ -237,6 +244,7 @@ def main():
     global next
     global offset
     global wait
+    global last_goal
     wait=True
     offset=0
     edo=0
@@ -280,7 +288,8 @@ def main():
         edo_ant=edo
         next=False
         steps=0 ##Conteo de pasos
-        while steps<max_steps and not(rospy.is_shutdown()):
+        while steps<max_steps and not(rospy.is_shutdown()) and last_goal[0]>0.22:
+            print(last_goal[0])
             #Se realiza la accion anterior y se escoge una nueva dependiendo del estado
             do_action(act_ant)
             while( (wait or not(next)) and not(rospy.is_shutdown())):

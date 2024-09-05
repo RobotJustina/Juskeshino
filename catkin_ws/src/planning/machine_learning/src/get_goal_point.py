@@ -28,12 +28,17 @@ def get_direction():
     global listener
     global goal_x
     global goal_y
-    [robot_x, robot_y, robot_a]    = get_robot_pose(listener, "map")
+    [robot_x, robot_y, robot_a]    = get_robot_pose(listener, "odom")
     ang_pos=math.atan2(goal_y-robot_y, goal_x-robot_x)
     d=math.sqrt( (goal_y-robot_y)**2 + (goal_x-robot_x)**2 )
     if ang_pos > math.pi:
         ang_pos=ang_pos-2*math.pi
     ang=ang_pos-robot_a
+
+    if(ang>=math.pi):
+        ang=ang-2*math.pi
+    if(ang<-math.pi):
+        ang=ang+2*math.pi
     print("-------------")
     print("Angulo", ang)
     print("Distancia", d)
@@ -50,10 +55,10 @@ def main():
     rospy.Subscriber('/clicked_point', PointStamped, callback_global_goal)
     pub_goal = rospy.Publisher("/NN_goal", Float32MultiArray  , queue_size=10)
 
-    loop = rospy.Rate(0.1)
-    loop.sleep()
+    loop = rospy.Rate(50)
+    listener.waitForTransform("odom", "base_link", rospy.Time(), rospy.Duration(4.0))
     msg=Float32MultiArray()
-    [goal_x, goal_y, temp] = get_robot_pose(listener,"map") ##Wait for the current pose
+    [goal_x, goal_y, temp] = get_robot_pose(listener,"odom") ##Wait for the current pose
     while not rospy.is_shutdown():
         data_goal=get_direction()
         msg.data=data_goal

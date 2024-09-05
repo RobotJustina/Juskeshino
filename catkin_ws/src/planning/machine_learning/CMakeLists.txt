@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   pcl_ros
   cv_bridge
+  occupancy_grid_utils
 )
 
 ## System dependencies are found with CMake's conventions
@@ -139,6 +140,7 @@ include_directories(
 add_executable(get_votes src/get_votes.cpp)
 add_executable(get_grid  src/get_grid.cpp)
 add_executable(map_publisher  src/map_publisher.cpp)
+add_executable(sim_laser  src/sim_laser.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -151,6 +153,8 @@ add_executable(map_publisher  src/map_publisher.cpp)
 add_dependencies(get_votes ${get_votes_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(get_grid ${get_grid_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(map_publisher ${get_grid_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(sim_laser ${sim_laser_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 ## Specify libraries to link a library or executable target against
 target_link_libraries(get_votes
    ${catkin_LIBRARIES} ${OpenCV_LIBS} 
@@ -161,6 +165,10 @@ target_link_libraries(get_grid
 )
 
 target_link_libraries(map_publisher
+   ${catkin_LIBRARIES} ${OpenCV_LIBS} 
+)
+
+target_link_libraries(sim_laser
    ${catkin_LIBRARIES} ${OpenCV_LIBS} 
 )
 
