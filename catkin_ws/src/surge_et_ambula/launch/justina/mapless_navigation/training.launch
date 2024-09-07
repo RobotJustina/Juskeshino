@@ -12,7 +12,7 @@
     <param name="la_predefined" value="$(find config_files)/justina/manipulation/la_predefined.yaml"/>
     <param name="ra_predefined" value="$(find config_files)/justina/manipulation/ra_predefined.yaml"/>
     <param name="hd_predefined" value="$(find config_files)/justina/manipulation/hd_predefined.yaml"/>
-    <remap from="/camera/depth_registered/points" to="/hardware/realsense/points"/>
+    <!-- <remap from="/camera/depth_registered/points" to="/hardware/realsense/points"/> -->
     <remap from="/vision/obj_reco/recognize_object" to="/vision/obj_segmentation/get_obj_pose"/>
   </node>
 
@@ -41,6 +41,6 @@
     <param name="use_lidar" value="true"/>
     <param name="use_cloud" value="true"/>
     <param name="laser_scan_topic" value="/hardware/scan"/>
-    <param name="point_cloud_topic" value="/hardware/realsense/points"/>
+    <param name="point_cloud_topic" value="/camera/depth_registered/points"/>
   </node>
 </launch>

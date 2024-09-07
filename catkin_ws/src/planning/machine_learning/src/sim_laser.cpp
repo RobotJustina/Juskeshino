@@ -33,7 +33,7 @@ int main(int argc, char** argv)
     ros::NodeHandle n("~");
     ros::Rate loop(10);
     ros::Subscriber sub_occ      = n.subscribe("/local_occ_grid", 1, callback_occ);
-    ros::Publisher  pub_laser = n.advertise<sensor_msgs::LaserScan>("/laser_mod", 10);
+    ros::Publisher  pub_laser = n.advertise<sensor_msgs::LaserScan>("/hardware/scan", 10);
     //tf::TransformListener listener;
     sensor_msgs::LaserScan real_scan;
     sensor_msgs::LaserScan real_sensor_info;

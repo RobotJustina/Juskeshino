@@ -74,7 +74,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.03999999910593033
       Style: Flat Squares
-      Topic: /laser_mod
+      Topic: /hardware/scan
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -284,7 +284,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Image
       Enabled: true
-      Image Topic: /hardware/realsense/rgb/image_raw
+      Image Topic: /camera/depth_registered/rgb/image_raw
       Max Value: 1
       Median window: 5
       Min Value: 0
@@ -317,7 +317,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Flat Squares
-      Topic: /hardware/realsense/points
+      Topic: /camera/depth_registered/points
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true

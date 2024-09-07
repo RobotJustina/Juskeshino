@@ -258,7 +258,7 @@ def main():
 	global pub_cmd, loop
 	rospy.init_node("DRL_train")
 	rospy.on_shutdown(saving_function)
-	rospy.Subscriber("/laser_mod", LaserScan, callback_scan)
+	rospy.Subscriber("/hardware/scan", LaserScan, callback_scan)
 	rospy.Subscriber("/NN_goal", Float32MultiArray, callback_goal)
 	rospy.Subscriber("/local_occ_grid_array", Float32MultiArray, callback_grid, queue_size=1)
 	pub_cmd = rospy.Publisher("/cmd_vel", Twist  , queue_size=1)
