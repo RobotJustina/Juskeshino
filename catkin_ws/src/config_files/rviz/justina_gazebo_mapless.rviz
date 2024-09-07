@@ -74,7 +74,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.03999999910593033
       Style: Flat Squares
-      Topic: /hardware/scan
+      Topic: "/laser_mod"
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
