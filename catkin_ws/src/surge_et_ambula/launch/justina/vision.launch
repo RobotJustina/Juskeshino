@@ -33,7 +33,7 @@
   <node name="object_classification" pkg="object_classification" type="obj_classification_node.py" output="screen">
     <param name="model" value="$(find object_classification)/src/weights/TaRJustv3_ycb.pt"/>
     <param name="min_confidence" value="0.7"/>
-    <param name="rm_bg" value="False"/>
+    <param name="rm_bg" value="True"/>
   </node>
 
 </launch>

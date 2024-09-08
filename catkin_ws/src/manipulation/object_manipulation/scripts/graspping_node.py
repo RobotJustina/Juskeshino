@@ -217,11 +217,10 @@ def callback(req):
     resp = BestGraspTrajResponse() 
     category = req.recog_object.category
     size = req.recog_object.size
-    #graspping_function = {"BOWL": grasp_bowl, "CUBIC": grasp_cubic, "PRISM_HORIZONTAL": grasp_prism_horizontal, "PRISM_VERTICAL": grasp_prism_vertical, "BOX": grasp_box}
     trajectory_pose_graspable, pose, graspable = graspping_function() #[ req.recog_object.category]()
     if graspable:
         print("Best_Grasp_Node.-> SUITABLE POSE FOR OBJECT MANIPULATION......")
-        #broadcaster_frame_object('shoulders_left_link', 'suitable_pose' , pose)
+        broadcaster_frame_object('shoulders_left_link', 'suitable_pose' , pose)
         resp.articular_trajectory = trajectory_pose_graspable  # Retorna trayectoria en el espacio articular
         pose_stamped = PoseStamped()
         pose_stamped.header.frame_id = 'shoulders_left_link'
