@@ -17,7 +17,7 @@ MINIMUM_HEIGHT_PRISM = 0.17
 MAXIMUM_CUBE_SIZE = 0.16
 BOWL_OFFSET  = 0.14
 PH_OFFSET    = 0.1
-PV_OFFSET    = 0.0
+PV_OFFSET    = 0.05
 BOX_OFFSET   = 0.1
 CUBIC_OFFSET = 0.06 
 
@@ -152,18 +152,23 @@ def generates_candidates(obj_pose, name_frame, step, offset, rotation_axis):
 def graspping_function():
     global category, size
     #               category object    , grip point,     offset on the rotation axis,           candidate pose names, point offset 
-    object_dic = {"BOWL"            : [[-0.02 ,size.z/2 ,0],[0,np.deg2rad(-90) ,0],             "BOWL_1", "BOWL_2", BOWL_OFFSET], 
-                  "PRISM_HORIZONTAL": [[0     ,0        ,0],[0,0               ,0],             "PH1"   , "PH2"   , PH_OFFSET], 
-                  "PRISM_VERTICAL"  : [[0     ,0        ,0],[np.deg2rad(0), np.deg2rad(-5), 0], "PV"    , "..."   , PV_OFFSET], 
-                  "CUBIC"           : [[0     ,0        ,0],[0,0               ,0],             "CUBIC" , "..."   , CUBIC_OFFSET], 
-                  "BOX"             : [[0     ,size.z/2 ,0],[0,0               ,0],             "BOX1"  , "BOX"   , BOX_OFFSET]}
+    object_dic = {"BOWL"            : [[-0.02 ,size.z/2 ,0],[0,np.deg2rad(-90) ,0],             "BOWL_1", "BOWL_2", BOWL_OFFSET,   5], 
+                  "PRISM_HORIZONTAL": [[0     ,0        ,0],[0,0               ,0],             "PH1"   , "PH2"   , PH_OFFSET,     6], 
+                  "PRISM_VERTICAL"  : [[0     ,0        ,0],[np.deg2rad(0), np.deg2rad(-5), 0], "PV"    , "..."   , PV_OFFSET,     6], 
+                  "CUBIC"           : [[0     ,0        ,0],[0,0               ,0],             "CUBIC" , "..."   , CUBIC_OFFSET,  6], 
+                  "BOX"             : [[0     ,size.z/2 ,0],[0,0               ,0],             "BOX1"  , "BOX"   , BOX_OFFSET,    6]}
     object_info = object_dic[category]
 
+    print("object info [0]", object_info[0])
+    print("object info [1]", object_info[1])
+    print("object info [2]", object_info[2])
+    print("object info [4]", object_info[4])
     first_point_bl    = points_actual_to_points_target( object_info[0] , 'object', 'base_link')
-    first_point_bl[0] = first_point_bl[0] + object_info[4]
+    first_point_bl[2] = first_point_bl[2] + object_info[4]
+    print("first point*****", first_point_bl)
     first_point       = points_actual_to_points_target(first_point_bl , 'base_link', 'object')
 
-    candidate_list = generates_candidates(generate_pose(first_point, [0,0,0,1]) , object_info[2] , float(-5), object_info[1] ,np.asarray([0,1,0]))
+    candidate_list = generates_candidates(generate_pose(first_point, [0,0,0,1]) , object_info[2] , object_info[5], object_info[1] ,np.asarray([0,1,0]))
     first_trajectory, c_ft, graspable =  evaluating_possibility_grip(candidate_list , )
     if graspable:
         if (category == "CUBIC") or (category == "PRISM_VERTICAL"):
@@ -247,7 +252,7 @@ def main():
     marker_array_pub = rospy.Publisher("/vision/obj_reco/marker_array",       MarkerArray, queue_size = 10) 
 
     listener = tf.TransformListener()
-    num_candidates = rospy.get_param('~num_candidates', 3)
+    num_candidates = 3#rospy.get_param('~num_candidates', 3)
 
     loop = rospy.Rate(30)
     while not rospy.is_shutdown():

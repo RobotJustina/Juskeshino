@@ -19,13 +19,7 @@
   </node>
   <node name="trajectory_planner" pkg="trajectory_planner" type="trajectory_planner.py" output="screen"/>
 
-  <!--  -->
-
-  <node name="grasp_object" pkg="object_manipulation" type="graspping_node.py" output="screen">
-    <param name="num_candidates" value="3"/> 
-  </node>
-  
-
+  <node name="grasp_object" pkg="object_manipulation" type="graspping_node.py" output="screen"/>
 
   <node name="grip_test" pkg="object_manipulation" type="demo_grasp.py"/>
 

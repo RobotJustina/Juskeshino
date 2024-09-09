@@ -44,9 +44,9 @@ LOCATIONS     = ["bowl_table_robocup", "cereal_table_robocup", "milk_table_roboc
 
 
 # Objects
-BOWL   = "tomato_soup_can"#"apple"#"pudding_box"#"potted_meat_can"#"apple"#"sausages"#"bowl"
-MILK   = "potted_meat_can"
-CEREAL = "potted_meat_can"
+BOWL   = #"pudding_box"#"potted_meat_can"#"apple"#"sausages"#"bowl"
+MILK   = "mustard_bottle"
+CEREAL = ",ustard_bottle"
 
 # Gripper_aperture
 GRIP_MILK   = 0.4
@@ -329,14 +329,7 @@ def main():
             mov_flag, dist = JuskeshinoNavigation.getCloseSuitableGripPositionLa(OBJECTS_TABLE , pos_obj_bl, 100.0)
             JuskeshinoHardware.moveHead(0,-1, 5)
             time.sleep(0.2)
-            if mov_flag:
-                JuskeshinoNavigation.moveDist(0.18, 7.0)
-            # Ajusta altura de torso para mejor agarre
-            if (not simu) or (torso):
-                if(actual_obj == BOWL):
-                    JuskeshinoHardware.moveTorso(ALTURA_TORSO_BOWL , 15.0)
-                else:
-                    JuskeshinoHardware.moveTorso(ALTURA_TORSO , 15.0)
+
             tries = 0
 
             pos_obj_bl = [obj.pose.position.x, obj.pose.position.y, obj.pose.position.z]

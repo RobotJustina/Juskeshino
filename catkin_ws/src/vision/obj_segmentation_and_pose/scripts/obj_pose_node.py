@@ -14,7 +14,7 @@ from cv_bridge import CvBridge
 
 
 MAXIMUM_GRIP_LENGTH = 0.16
-MAXIMIUN_CUBE_SIZE  = 0.15
+MAXIMIUN_CUBE_SIZE  = 0.14
 
 
 def get_cv_mats_from_cloud_message(cloud_msg):
@@ -100,7 +100,7 @@ def object_pose(centroid, principal_component, second_component, size_obj, name_
     
     # ************************************************************************************************
     if ((angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150))):  # Si el objeto es horizontal
-        if (size_obj.x >= MAXIMIUN_CUBE_SIZE):        # Si el objeto es
+        if (size_obj.x > MAXIMIUN_CUBE_SIZE):        # Si el objeto es
             # Realiza agarre superior
             obj_state = 'horizontal'
 
@@ -140,12 +140,11 @@ def object_pose(centroid, principal_component, second_component, size_obj, name_
             # Si el objeto es pequenio se construye un frame que permita el agarre superior
             obj_state = 'horizontal'
             c_obj, graspable = object_category(size_obj, obj_state, name_obj)
-
-            print("se construye un frame que permita el agarre superior")
             obj_state = 'horizontal'
-            eje_x_obj = np.asarray([1, 0, 0], dtype=np.float64)
-            eje_z_obj = eje_z
-            eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+            print("se construye un frame que permita el agarre frontal")
+            eje_y_obj = np.asarray([0, 1, 0], dtype=np.float64)
+            eje_z_obj = np.asarray([1, 0, 0], dtype=np.float64)
+            eje_x_obj = np.cross(eje_z_obj , eje_y_obj )
         
 
 
@@ -286,7 +285,7 @@ def get_obj_pose_response(obj_state, c_obj, size_obj, obj_pose, graspable):
 
 
 def object_category(size_obj, obj_state, name_obj):  # estima la forma geometrica del objeto. (x,z,y)
-    if(obj_state == 'horizontal'):
+    if(obj_state == 'horizontal') and (size_obj.x > MAXIMIUN_CUBE_SIZE):
         if('bowl' in name_obj):
             print("H-> BOWL")
             return "BOWL", True
