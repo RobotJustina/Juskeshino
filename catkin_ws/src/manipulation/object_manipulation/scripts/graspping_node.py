@@ -15,11 +15,11 @@ import geometry_msgs.msg
 MAXIMUM_GRIP_LENGTH = 0.16
 MINIMUM_HEIGHT_PRISM = 0.17
 MAXIMUM_CUBE_SIZE = 0.16
-BOWL_OFFSET  = 0.14
-PH_OFFSET    = 0.1
-PV_OFFSET    = 0.05
-BOX_OFFSET   = 0.1
-CUBIC_OFFSET = 0.06 
+BOWL_OFFSET  =  np.asarray([0,0,0.14])
+PH_OFFSET    =  np.asarray([0,0,0.1])
+PV_OFFSET    =  np.asarray([0,0,0.04])
+BOX_OFFSET   =  np.asarray([0.12,0,0])
+CUBIC_OFFSET =  np.asarray([0,0,0.5])
 
 
 def generate_pose(point_xyz, pose_quaternion):
@@ -136,7 +136,7 @@ def generates_candidates(obj_pose, name_frame, step, offset, rotation_axis):
     j = 0
     if debug: marker_array_publish([obj_pose.position.x, obj_pose.position.y, obj_pose.position.z], 'object', 59, 56)
     grasp_candidates_quaternion = []
-    rotation = np.asanyarray([ offset[0],offset[1], offset[2]])
+    rotation = np.asarray([ offset[0],offset[1], offset[2]])
     for j in range(num_candidates):      # genera candidatos
         q_gripper = tft.quaternion_from_euler(np.deg2rad(rotation[0]), np.deg2rad(rotation[1]), np.deg2rad(rotation[2]),'sxyz')  # Orientación de la tf de entrada
         candidate = generate_pose([obj_pose.position.x, obj_pose.position.y, obj_pose.position.z] , q_gripper)
@@ -163,10 +163,10 @@ def graspping_function():
     print("object info [1]", object_info[1])
     print("object info [2]", object_info[2])
     print("object info [4]", object_info[4])
-    first_point_bl    = points_actual_to_points_target( object_info[0] , 'object', 'base_link')
-    first_point_bl[2] = first_point_bl[2] + object_info[4]
-    print("first point*****", first_point_bl)
-    first_point       = points_actual_to_points_target(first_point_bl , 'base_link', 'object')
+    first_point_bl = np.asarray([points_actual_to_points_target( object_info[0] , 'object', 'base_link')])
+    first_point_bl = first_point_bl + object_info[4]
+    print("first point*****", first_point_bl[0])
+    first_point       = points_actual_to_points_target(first_point_bl[0] , 'base_link', 'object')
 
     candidate_list = generates_candidates(generate_pose(first_point, [0,0,0,1]) , object_info[2] , object_info[5], object_info[1] ,np.asarray([0,1,0]))
     first_trajectory, c_ft, graspable =  evaluating_possibility_grip(candidate_list , )

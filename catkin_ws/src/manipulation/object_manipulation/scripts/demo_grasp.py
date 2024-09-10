@@ -20,38 +20,9 @@ from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
 from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 
 
-# Left arm
-HOME              = [0,0,0,0,0,0,0]
-PREPARE           = [-0.8, 0.2, 0.0, 1.55, 0.0, 1.24, 0.0]#[-0.69, 0.2, 0.0, 1.55, 0.0, 1.16, 0.0]
-PREPARE_TOP_GRIP  = [-1.25, 0.3, 0, 2.4, 0, 0.7,0]
-PREPARE_SERVING   = [0.91, 0.4, -0.5, 1.15, 0, 0.16, 0.5]
-SERVING           = [0.91, 0.4, -0.5, 1.15, 0, 0.16, -1.6]
-LEAVE_CEREAL      = [0.54, 0.28, -0.13, 1.25, 0, 0, 0]
-LEAVE_MILK        = [0.44, 0.18, 0.37, 1.15, 0, 0, 0]
-LEAVE_BOWL        = [0.6,  0.6, -0.8, 1.7, 0, -0.1, 0]
-LEAVE_BOWL_2        = [0.6,  0.6, -0.1, 1.7, 0.0,-0.1, 0]
-CARRY_BOWL        = [-0.9, 0.2, 0.0, 2.05, 0.0, -0.64, 0.0]
 
 POST_GRIP         = [0.38, 0.19, -0.01, 1.57, 0 , 0.35, 0.0 ]
 
-# RIght arm
-PREPARE_RA    = [-0.8, -0.1, 0.0, 1.3, 1.3,0, 0.0]
-
-# Locations
-OBJECTS_TABLE = "bowl_table_robocup"#"objects_table_robocup"#"desk_justina"
-EAT_TABLE     = "breakfast_table_robocup"#"desk_takeshi" 
-LOCATIONS     = ["bowl_table_robocup", "cereal_table_robocup", "milk_table_robocup"]
-
-
-# Objects
-BOWL   = "apple"#"pudding_box"#"potted_meat_can"#"apple"#"sausages"#"bowl"
-MILK   = "mustard_bottle"
-CEREAL = ",ustard_bottle"
-
-# Gripper_aperture
-GRIP_MILK   = 0.4
-GRIP_BOWL   = -0.05
-GRIP_CEREAL = 0.1
 
 
 # ESTADOS
@@ -114,59 +85,15 @@ def categorize_objs(name):
 
 
 
-def approach_to_table():
-    JuskeshinoHRI.say("I will try to align with table")
-    i = 0
-    while i <4:
-        if (not JuskeshinoSimpleTasks.alignWithTable()):
-            JuskeshinoHRI.say("Cannot align with table")
-            time.sleep(0.3)
-            JuskeshinoNavigation.moveDist(0.10, 10)
-        else:
-            JuskeshinoHRI.say("Align with table")
-            break
-        i = i+1
-
-
-
-
-
-def detect_obj_function(actual_obj):
-    print("in function")
-    count = 0
-    while(count < 13):
-        time.sleep(0.2)
-        try:
-            [obj, img] = JuskeshinoVision.detectAndRecognizeObject()
-            print("(*B*)")
-            if obj.id == actual_obj:
-                print("ID:___", obj.od)
-                return obj
-            else:
-                continue
-        except:
-            print("I cannot find the objects")
-            JuskeshinoHRI.say("I cannot find the objects")
-            count = count + 1
-    return None
-
-
-
-
-
-
 def main():
     print("INITIALIZING GRIP TEST BY ITZEL..............ヾ(๑╹◡╹)ﾉ")
     rospy.init_node("grip_test")
     rate = rospy.Rate(10)
     global object_name
-
     # Se subcribe a los servicios necesarios para manipulacion, navegacion,vision, etc...
     rospy.Subscriber('/plannning/simple_task/take_object' ,String ,callback_take_object )
     global listener
     listener = tf.TransformListener()
-    
-
 
     while not rospy.is_shutdown():
         print("waiting for an object to be requested.............................ʕ•ᴥ•ʔ")
@@ -187,7 +114,6 @@ def main():
                 JuskeshinoSimpleTasks.setNodeHandle()
                 JuskeshinoHRI.setNodeHandle()
                 JuskeshinoKnowledge.setNodeHandle()
-                
                 j = 0
                 tries = 0
                 grip_attempts = 0
@@ -207,17 +133,13 @@ def main():
 
                 
 
-
             elif(current_state == DETECT_OBJECT):
                 print("ESTADO:____DETECT_OBJECT..................")
                 try:
                     tilt = -1.0
-                    [obj, img] = JuskeshinoSimpleTasks.object_search(actual_obj, tilt) #*************************************************
-
-                    #print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
+                    [obj, img] = JuskeshinoSimpleTasks.object_search(actual_obj, tilt) #************************
                     JuskeshinoHRI.say("I found" + actual_obj.replace("_", " ") + "of the category" + categorize_objs(obj.id))
                     current_state = HANDLING_LOCATION
-
                 except:
                     JuskeshinoHRI.say("I couldn't find the object")
                     print("I couldn't find the object")
@@ -230,7 +152,6 @@ def main():
     
 
 
-
             elif(current_state == HANDLING_LOCATION):
                 print("ESTADO:____HANDLING_LOCATION..................")
                 pos_obj_bl = [obj.pose.position.x, obj.pose.position.y, obj.pose.position.z]
@@ -239,36 +160,26 @@ def main():
                 time.sleep(0.2)
                 if mov_flag:
                     JuskeshinoNavigation.moveDist(0.18, 7.0)
-                # Ajusta altura de torso para mejor agarre
                 tries = 0
-
                 pos_obj_bl = [obj.pose.position.x, obj.pose.position.y, obj.pose.position.z]
                 print("position obj:____", obj.pose.position.x)
                 if(obj.pose.position.x > 0.52):
                     move_front = obj.pose.position.x -0.54
                     print("MOVE FRONT:__", move_front)
                     JuskeshinoNavigation.moveDist(move_front , 5.0)
-
-
                 current_state = DETECT_OBJECT_ORIENTATION#HANDLING_LOCATION_2#DETECT_OBJECT_ORIENTATION
-
 
 
 
 
             elif(current_state == DETECT_OBJECT_ORIENTATION):
                 print("ESTADO:____DETECT_OBJECT_ORIENTATION..................")
-                
-                JuskeshinoHRI.say("Trying to detect the object")
                 print("Trying to detect the object:__", actual_obj)
-
                 time.sleep(0.2)
                 try:
                     tilt = -1.0
                     [obj, img] = JuskeshinoSimpleTasks.object_search_orientation(actual_obj, tilt)
                     JuskeshinoHRI.say("I found" + actual_obj.replace("_", " "))
-
-
                     if(obj.pose.position.x > 0.65):
                         JuskeshinoHRI.say("I cannot take the object")
                         JuskeshinoNavigation.moveDist(-0.3,10)
@@ -283,23 +194,16 @@ def main():
                 
 
 
-                
             elif(current_state == PREPARE_ARM):
                 print("ESTADO:___PREPARE_ARM..................")
-                #if((obj.category == "CUBIC") or (obj.category == "BOWL") or (obj.category == "BOX") or (obj.object_state == "horizontal")):
-                #JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)  # prepare 
                 JuskeshinoHardware.moveLeftArmWithTrajectory([-0.9, 0.3, 0.0 ,1.55, 0.0 , 1.34, 0.0], 10)
                 if(obj.category == "BOWL"):
-                    JuskeshinoHRI.say("Open gripper")
                     APERTURE = 0.6
                     JuskeshinoHardware.moveLeftGripper(APERTURE , 5.0)
                 else:
                     APERTURE = 0.9
                     JuskeshinoHardware.moveLeftGripper(APERTURE , 5.0)
-
                 current_state = LOOKING_GRIP
-
-
 
 
 
@@ -307,24 +211,18 @@ def main():
                 print("ESTADO:___LOOKING_GRIP..................")
                 print("Grip attempts:______", grip_attempts)
                 JuskeshinoHRI.say("looking for proper grip")
-
                 [resp, graspable] = JuskeshinoManipulation.GripLa(obj)
                 if graspable:
-                    JuskeshinoHRI.say("graspable")
                     print("SB-PLN.->object position", obj.pose.position)
                     resp = resp.articular_trajectory
                     current_state = TAKE_OBJECT
                 else:
                     grip_attempts = grip_attempts + 1
                     if grip_attempts < 16:
-
                         current_state = DETECT_OBJECT_ORIENTATION
-
                     else:
                         JuskeshinoHRI.say("No possible poses found")
                         print("SB-PLN.->No possible poses found")
-                        #resp = resp.q
-                    
                         current_state = TAKE_OBJECT
 
                     
@@ -333,18 +231,14 @@ def main():
                 print("ESTADO:___TAKE_OBJECT..................")
                 JuskeshinoHardware.moveLeftArmWithTrajectory(resp ,15)
                 time.sleep(0.5)
+                if (actual_obj == "BOWL"):
+                    JuskeshinoManipulation.dynamic_grasp_left_arm(is_thin = True)
+                else:
+                    JuskeshinoManipulation.dynamic_grasp_left_arm()
                 actual_obj = None
                 current_state = -1
                 break
-
-
-
-    
-    
     return 
-    while not rospy.is_shutdown():
-        rate.sleep()
-
 
 if __name__ == "__main__":
     main()
