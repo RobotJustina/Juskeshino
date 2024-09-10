@@ -163,11 +163,16 @@ def main():
                 tries = 0
                 pos_obj_bl = [obj.pose.position.x, obj.pose.position.y, obj.pose.position.z]
                 print("position obj:____", obj.pose.position.x)
-                if(obj.pose.position.x > 0.52):
-                    move_front = obj.pose.position.x -0.54
+                if(obj.pose.position.x > 0.48):
+                    move_front = obj.pose.position.x -0.48
                     print("MOVE FRONT:__", move_front)
-                    JuskeshinoNavigation.moveDist(move_front , 5.0)
-                current_state = DETECT_OBJECT_ORIENTATION#HANDLING_LOCATION_2#DETECT_OBJECT_ORIENTATION
+                    JuskeshinoNavigation.moveDist(move_front , 10.0)
+                print("position obj:____", obj.pose.position.x)
+                if(obj.pose.position.x < 0.42):
+                    move_back =  0.42 - obj.pose.position.x
+                    print("MOVE BACK:__", move_back)
+                    JuskeshinoNavigation.moveDist(-move_back , 10.0)
+                current_state = DETECT_OBJECT_ORIENTATION
 
 
 
@@ -188,8 +193,13 @@ def main():
                         
                         current_state = PREPARE_ARM
                 except:
-                    JuskeshinoHRI.say("I couldn't find the object")
-                    current_state = DETECT_OBJECT_ORIENTATION
+                    JuskeshinoHRI.say("New attempt at object recognition")
+                    tries = tries + 1
+                    if tries > 8:
+                        JuskeshinoHRI.say("I couldn't find the object, try again")
+                        break
+                    else: 
+                        current_state = DETECT_OBJECT_ORIENTATION
                     print("REGRESA A DETECTAR EL OBJETO DE NUEVO.................")       
                 
 

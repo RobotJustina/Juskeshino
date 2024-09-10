@@ -4,7 +4,6 @@ import numpy as np
 import tf.transformations as tft
 import tf2_ros
 import tf
-import math
 from geometry_msgs.msg import PoseStamped, Point, PointStamped, Pose
 from vision_msgs.srv import *
 from manip_msgs.srv import *
@@ -12,14 +11,11 @@ from visualization_msgs.msg import Marker, MarkerArray
 import geometry_msgs.msg
 
 
-MAXIMUM_GRIP_LENGTH = 0.16
-MINIMUM_HEIGHT_PRISM = 0.17
-MAXIMUM_CUBE_SIZE = 0.16
-BOWL_OFFSET  =  np.asarray([0,0,0.14])
-PH_OFFSET    =  np.asarray([0,0,0.1])
-PV_OFFSET    =  np.asarray([0,0,0.04])
-BOX_OFFSET   =  np.asarray([0.12,0,0])
-CUBIC_OFFSET =  np.asarray([0,0,0.5])
+BOWL_OFFSET  =  np.asarray([0   ,0 ,0.13])
+PH_OFFSET    =  np.asarray([0   ,0 ,0.1 ])
+PV_OFFSET    =  np.asarray([0   ,0 ,0.04])
+BOX_OFFSET   =  np.asarray([0.12,0 ,0   ])
+CUBIC_OFFSET =  np.asarray([0   ,0 ,0.5 ])
 
 
 def generate_pose(point_xyz, pose_quaternion):
@@ -56,14 +52,12 @@ def pose_actual_to_pose_target(pose, f_actual, f_target):
     poseStamped_msg.header.frame_id = "object"   # frame de origen
     poseStamped_msg.header.stamp = rospy.Time()  # la ultima transformacion
     poseStamped_msg.pose = pose
-
     try:
         listener.waitForTransform("object", "shoulders_left_link", rospy.Time(0), rospy.Duration(10.0))
         print("waitfor ..despues")
         new_poseStamped = listener.transformPose('shoulders_left_link', poseStamped_msg)
         new_pose = new_poseStamped.pose
         return new_pose
-    
     except:
         print("Best_Grasp_Node.-> Could not get the pose in the desired frame")
         return -1
@@ -77,10 +71,8 @@ def pose_for_ik_service(pose_in_frame_object):
     """
     print("In pose-for_ik_service")
     new_pose = pose_actual_to_pose_target(pose_in_frame_object, 'object' , 'shoulders_left_link') 
-
     if new_pose == -1:
         return -1, -1
-
     x , y, z = new_pose.position.x , new_pose.position.y , new_pose.position.z
     roll,pitch,yaw = tft.euler_from_quaternion( [new_pose.orientation.x , new_pose.orientation.y , 
                                           new_pose.orientation.z , new_pose.orientation.w ])
@@ -90,7 +82,6 @@ def pose_for_ik_service(pose_in_frame_object):
 
 
 def marker_array_publish(pointxyz, target_frame, count, id):
-    #print("point grip", pointxyz)
     global marker_array_pub
     MARKERS_MAX = 100
     marker_array = MarkerArray()
@@ -159,13 +150,8 @@ def graspping_function():
                   "BOX"             : [[0     ,size.z/2 ,0],[0,0               ,0],             "BOX1"  , "BOX"   , BOX_OFFSET,    6]}
     object_info = object_dic[category]
 
-    print("object info [0]", object_info[0])
-    print("object info [1]", object_info[1])
-    print("object info [2]", object_info[2])
-    print("object info [4]", object_info[4])
     first_point_bl = np.asarray([points_actual_to_points_target( object_info[0] , 'object', 'base_link')])
     first_point_bl = first_point_bl + object_info[4]
-    print("first point*****", first_point_bl[0])
     first_point       = points_actual_to_points_target(first_point_bl[0] , 'base_link', 'object')
 
     candidate_list = generates_candidates(generate_pose(first_point, [0,0,0,1]) , object_info[2] , object_info[5], object_info[1] ,np.asarray([0,1,0]))
