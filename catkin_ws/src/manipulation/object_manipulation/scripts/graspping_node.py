@@ -133,16 +133,14 @@ def generates_candidates(obj_pose, name_frame, step, offset, rotation_axis):
 
 def graspping_function():
     global category, size
-    BOWL_OFFSET_2 = np.asarray([0   ,size.z/2 ,0.06]) # in frame 'object'
-    BOX_OFFSET_2  = np.asarray([0   ,size.z/2 ,0]) # in frame 'object'
 
-    #               category object    , first grip point,     offset on the rotation axis,           candidate pose names, point offset step°
-    object_dic = {"BOWL"            : [[-0.02 ,size.z/2 ,0.12],[0,-90 ,0],                         "BOWL_1", "BOWL_2", [-0.02 ,size.z/2 ,0.12] ,5, 5], 
-                  "PRISM_HORIZONTAL": [[0     ,0        ,0.12] ,[0,-90 ,0],                         "PH1"   , "PH2"   , [0     ,0        ,0.10] ,6,-9], 
-                  "PRISM_VERTICAL"  : [[0.03     ,0        ,0],[np.deg2rad(0), np.deg2rad(-5), 0], "PV"    , "None"  , None                    ,6, 5], 
-                  "CUBIC"           : [[0.06  ,0        ,0]   ,[0,0               ,0],             "CUBIC" , "None"  , None                    ,5, 5], 
-                  "BOX_HORIZONTAL"  : [[0     ,size.z/2 ,0]   ,[0,0               ,0],             "BOX_H1", "BOX_H2", [0     ,size.z/2 ,0]    ,6, 5],
-                  "BOX_VERTICAL"    : [[0     ,size.z/2 ,0]   ,[0,0               ,0],             "BOX_V1", "BOX_V2", [0     ,size.z/2 ,0]    ,6, 5]}
+    #               category object  , last point of 1 trajectory ,  offset on the rotation axis,  candidate pose names, last point of 2nd trajectory step°
+    object_dic = {"BOWL"            : [[-0.02 ,size.z/2 ,0.12],[0,-90 ,0],                         "BOWL_1", "BOWL_2", [-0.02 ,size.z/2 ,0.06]       ,5, 5], 
+                  "PRISM_HORIZONTAL": [[0     ,0        ,0.12] ,[0,-90 ,0],                         "PH1"   , "PH2"   , [0     ,0        ,0.10]      ,6,-9], 
+                  "PRISM_VERTICAL"  : [[0.03     ,0        ,0],[np.deg2rad(0), np.deg2rad(-5), 0], "PV"    , "None"  , None                          ,6, None], 
+                  "CUBIC"           : [[0.06  ,0        ,0]   ,[0,0               ,0],             "CUBIC" , "None"  , None                          ,5, None], 
+                  "BOX_HORIZONTAL"  : [[0     ,size.z/2 ,0]   ,[0,0               ,0],             "BOX_H1", "BOX_H2", [0     ,size.z/2 ,0]          ,6, 5],
+                  "BOX_VERTICAL"    : [[0     ,size.z/2 ,0]   ,[0,0               ,0],             "BOX_V1", "BOX_V2", [0     ,size.z/2 ,0]          ,6, 5]}
     
     object_info = object_dic[category]
     candidate_list = generates_candidates(generate_pose(object_info[0] , [0,0,0,1]) , object_info[2] , object_info[5], object_info[1] ,np.asarray([0,1,0]))
