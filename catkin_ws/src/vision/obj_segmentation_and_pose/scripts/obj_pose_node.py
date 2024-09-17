@@ -54,11 +54,6 @@ def imgmsg_to_cv2(img_array): # Entra imagen en forma de array
     return obj_cv
 
 
-def get_centroid(img_bgr):
-    centroid = 1
-    return centroid
-
-
 def pca(xyz_points):    # pc del contorno mas cercano
     eig_val, eig_vect = np.linalg.eig(np.cov(np.transpose(xyz_points))) # Eigenvalues and eigenvectors from Point Cloud Cov Matrix
     idx = eig_val.argsort()
@@ -75,7 +70,6 @@ def pca(xyz_points):    # pc del contorno mas cercano
     size_obj = np.asarray([H, L,W])
     idx = size_obj.argsort()  # entrega el orden de las 3 componentes principale de menor a mayor 
     size_obj = size_obj[idx]
-    #print("size obj", size_obj)         # menor a mayor 
     # Los vectores de salida estan en el frame base_link
     size_object = Vector3(x = size_obj[2] , z = size_obj[1], y = size_obj[0])
     return [eig_vect[:,2], eig_vect[:,1] , eig_vect[:,0]], [eig_val[2], eig_val[1], eig_val[0]], size_object
@@ -87,6 +81,7 @@ def object_pose(centroid, principal_component, second_component, size_obj, name_
     """
     Construction of the coordinate system of the object,the construction of the frame depends on the coordinate system of the robot gripper 
     Ademas se imponen restricciones para que la pose sea realizable por el gripper
+    * 1a y 2a componente estan en el frame "base_link"
     """
     global PCA_vertical
     principal_component = np.asarray(principal_component)
@@ -100,105 +95,75 @@ def object_pose(centroid, principal_component, second_component, size_obj, name_
     
     # ************************************************************************************************
     if ((angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150))):  # Si el objeto es horizontal
-        if (size_obj.x > MAXIMIUN_CUBE_SIZE):        # Si el objeto es
+        #if (size_obj.x > MAXIMIUN_CUBE_SIZE):        # Si el objeto es
             # Realiza agarre superior
-            obj_state = 'horizontal'
+        obj_state = 'horizontal'
+        c_obj, graspable = object_category(size_obj, obj_state, name_obj)
+        # Angulo respecto de x_base_link
+        angle_obj_x_bl =  math.atan2(principal_component[1], principal_component[0]) 
 
-            c_obj, graspable = object_category(size_obj, obj_state, name_obj)
-
-            print("Eje principal horizontal")
-            # Angulo respecto de x_base_link
-            angle_obj_x_bl =  math.atan2(principal_component[1], principal_component[0]) 
-            print("Angulo respecto de eje X de BASE_LINK:", np.rad2deg(angle_obj_x_bl))
-
-
-            if angle_obj_x_bl > np.deg2rad(60) or angle_obj_x_bl < np.deg2rad(-130):
-                print("Angulo 1pc fuera de limites corregido...........")
-                principal_component[0] = -1*principal_component[0]
-                principal_component[1] = -1*principal_component[1]
+        if angle_obj_x_bl > np.deg2rad(60) or angle_obj_x_bl < np.deg2rad(-130):
+                #print("Angulo 1pc fuera de limites corregido...........")
+            principal_component[0] = -1*principal_component[0]
+            principal_component[1] = -1*principal_component[1]
                                                         
-            if second_component[2] < 0: 
-                print("se corrigio sc")
-                second_component = -1 * second_component    # sc no puede ser un vector negativo
-
+        if second_component[2] < 0: 
+            second_component = -1 * second_component    # sc no puede ser un vector negativo
             
-            if ((size_obj.x /size_obj.z) > 1.333) and ((size_obj.x /size_obj.y) > 1.333):    # Objeto prismatico
-                print("cylinder..........")
-                # Asignacion de ejes del objeto
-                eje_x_obj = principal_component 
-                eje_z_obj = eje_z
-                eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+        if(c_obj == "PRISM_HORIZONTAL"):#((size_obj.x /size_obj.z) > 1.333) and ((size_obj.x /size_obj.y) > 1.333):    # Objeto prismatico
+            eje_x_obj = np.asarray([principal_component[0] , principal_component[1], 0], dtype=np.float64)#principal_component 
+            eje_z_obj = eje_z # 'base_link'
+            eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
 
-            else:
-                print("BOWL.................")
+        else:
+            if(c_obj == 'BOWL'):
                 eje_x_obj = np.asarray([1, 0, 0], dtype=np.float64 )# coordenadas en 'base_link'
                 eje_z_obj = eje_z
                 eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
-            
-        
-        else:   # Sie el objeto es vertical
-            # Si el objeto es pequenio se construye un frame que permita el agarre superior
-            obj_state = 'horizontal'
-            c_obj, graspable = object_category(size_obj, obj_state, name_obj)
-            obj_state = 'horizontal'
-            print("se construye un frame que permita el agarre frontal")
+            else:    
+                if(c_obj == 'CUBIC'):
+                    eje_y_obj = np.asarray([0, 1, 0], dtype=np.float64)
+                    eje_z_obj = np.asarray([1, 0, 0], dtype=np.float64)
+                    eje_x_obj = np.cross(eje_z_obj , eje_y_obj )
+                else:
+                    if(c_obj == 'BOX_HORIZONTAL'):
+                        eje_x_obj = np.asarray([0, 0, 1], dtype=np.float64 )# coordenadas en 'base_link'
+                        eje_z_obj = np.asarray([principal_component[0] , principal_component[1], 0], dtype=np.float64) # 'base_link'
+                        eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
+                    else:print("Forma no definida del objeto, intente de nuevo.......")
+    # ********************************************
+    else: 
+        obj_state = 'vertical'
+        c_obj, graspable = object_category(size_obj, obj_state, name_obj)
+
+        if (c_obj == "PRISM_VERTICAL"):
             eje_y_obj = np.asarray([0, 1, 0], dtype=np.float64)
             eje_z_obj = np.asarray([1, 0, 0], dtype=np.float64)
             eje_x_obj = np.cross(eje_z_obj , eje_y_obj )
-        
-
-
-    # ********************************************
-    else: # Realiza agarre lateral
-        obj_state = 'vertical'
-
-        c_obj, graspable = object_category(size_obj, obj_state, name_obj)
-        print("Eje principal vertical")
-
-        """ para box
-        if (size_obj.x >= MAXIMIUN_CUBE_SIZE):
-            # Mide el angulo de la proyeccion del vector z_obj sobre el plano xy de base_link y el eje x_base_link
-            angle_2pc_x_bl =  math.atan2(second_component[1], second_component[0])  
-            print("angulo de la proyeccion del vector z_obj sobre el plano xy de base_link y el eje x_base_link", np.rad2deg(angle_2pc_x_bl))
-
-            if angle_2pc_x_bl < np.deg2rad(23):
-                if angle_2pc_x_bl > np.deg2rad(-157):
-                    print("angulo fuera de rango de agarre ,se invirtio sentido de 2pc")
-                    p = Point()
-                    p.x, p.y, p.z = second_component[0], second_component[1], second_component[2] 
-                    print("s c", second_component)
-                    publish_arow_marker(centroid, p ,"base_link", 6, "z_obj")
-                    second_component[0] = -1*second_component[0]
-                    second_component[1] = -1*second_component[1]
-                    angle_2pc_x_bl =  math.atan2(second_component[1], second_component[0]) 
-                    print("angulo de vector z_obj respecto del eje x_base_link despues", np.rad2deg(angle_2pc_x_bl))
-
-                    # Asignacion de ejes del objeto
-                    eje_z_obj = second_component 
-                    eje_x_obj = principal_component 
-                    eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
-        """
-        if (c_obj == "PRISM_VERTICAL"):
-            if (PCA_vertical == True):
-                # Asignacion de ejes del objeto
-                eje_z_obj = second_component 
-                eje_x_obj = principal_component 
+        else:
+            if (c_obj == "BOX_VERTICAL"):
+                print("SECOND COMPONENT________________". second_component)
+                """ para box
+                if (size_obj.x >= MAXIMIUN_CUBE_SIZE):
+                    if angle_2pc_x_bl < np.deg2rad(23):
+                        if angle_2pc_x_bl > np.deg2rad(-157):
+                            print("angulo fuera de rango de agarre ,se invirtio sentido de 2pc")
+                            p = Point()
+                            p.x, p.y, p.z = second_component[0], second_component[1], second_component[2] 
+                            print("s c", second_component)
+                            publish_arow_marker(centroid, p ,"base_link", 6, "z_obj")
+                            second_component[0] = -1*second_component[0]
+                            second_component[1] = -1*second_component[1]
+                            angle_2pc_x_bl =  math.atan2(second_component[1], second_component[0]) 
+                            print("angulo de vector z_obj respecto del eje x_base_link despues", np.rad2deg(angle_2pc_x_bl))
+                """
+                eje_x_obj = np.asarray([0, 0, 1], dtype=np.float64)
+                eje_z_obj = np.asarray([second_component[0], second_component[1], 0], dtype=np.float64) # proyeccion de 2c sobre el plano xy de 'base_link'
                 eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
-                print("COnstruccion de frame con PCA")
-            else:
+            else:   #Cubic.....................................................
                 eje_y_obj = np.asarray([0, 1, 0], dtype=np.float64)
                 eje_z_obj = np.asarray([1, 0, 0], dtype=np.float64)
                 eje_x_obj = np.cross(eje_z_obj , eje_y_obj )
-                print("COnstruccion de frame sin PCA")
-            
-
-        else:
-            # Si el objeto es pequenio se construye un frame que permita el agarre superior
-            print("SMALL VERTICAL.................")
-            print("se construye un frame que permita el agarre frontal")
-            eje_y_obj = np.asarray([0, 1, 0], dtype=np.float64)
-            eje_z_obj = np.asarray([1, 0, 0], dtype=np.float64)
-            eje_x_obj = np.cross(eje_z_obj , eje_y_obj )
 
     # **************************************************************************************************
 
@@ -298,8 +263,8 @@ def object_category(size_obj, obj_state, name_obj):  # estima la forma geometric
                     print("H-> CUBIC")
                     return "CUBIC", True
                 else:
-                    print("H-> BOX")
-                    return "BOX", True
+                    print("H-> BOX_HORIZONTAL")
+                    return "BOX_HORIZONTAL", True
 
     else:    # obj_state == 'vertical'
         if(((size_obj.x /size_obj.z) < 1.4) and ((size_obj.x /size_obj.y) < 1.4) and ((size_obj.y /size_obj.z) < 1.4)) and (size_obj.x < MAXIMIUN_CUBE_SIZE):# and size_obj.x > MAXIMIUN_CUBE_SIZE):   # barra
@@ -308,8 +273,8 @@ def object_category(size_obj, obj_state, name_obj):  # estima la forma geometric
             return "CUBIC", True
         else:
             if (size_obj.x > MAXIMIUN_CUBE_SIZE) and (size_obj.y > MAXIMIUN_CUBE_SIZE):
-                print("V-> BOX")
-                return "BOX", True
+                print("V-> BOX_VERTICAL")
+                return "BOX_VERTICAL", True
             else:
                 print("V-> PRISM_VERTICAL")
                 return "PRISM_VERTICAL", True
@@ -326,7 +291,7 @@ def callbackPoseObject(req):  # Request is a PointCloud2
     print("******************************")
     print("ObjPose node->CvMats shape: " , cv_mats.shape)
     print("ObjPose node->Objxyz shape:", obj_xyz.shape)
-    print("ObjPose node->OBJECT NAME", req.name)
+    print("ObjPose node->OBJECT NAME:_____", req.name)
     centroid = np.mean(obj_xyz, axis=0)
     pca_vectors, eig_val, size_obj = pca(obj_xyz)
     obj_pose, axis_x_obj, obj_state, c_obj, graspable = object_pose(centroid, pca_vectors[0], pca_vectors[1], size_obj, req.name )
@@ -334,10 +299,9 @@ def callbackPoseObject(req):  # Request is a PointCloud2
 
     print("ObjPose node->CENTROID:____", centroid)
     #publish_arow_marker(centroid, axis_x_obj, 'base_link', ns ="principal_component", id=22)
-    print("ObjPose node->SIZE:________", )
-    print(size_obj)
-    print("ObjPose node->OBJECT TYPE", c_obj)
-    print("ObjPose node->STATE", obj_state)
+    print("ObjPose node->SIZE:________", size_obj.x, size_obj.z, size_obj.y) 
+    print("ObjPose node->OBJECT TYPE_____", c_obj)
+    print("ObjPose node->STATE_____", obj_state)
     
     resp = get_obj_pose_response( obj_state, c_obj, size_obj, obj_pose, graspable)
     return resp

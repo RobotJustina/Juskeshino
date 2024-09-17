@@ -227,7 +227,7 @@ def main():
                     current_state = TAKE_OBJECT
                 else:
                     grip_attempts = grip_attempts + 1
-                    if grip_attempts < 16:
+                    if grip_attempts < 4:
                         current_state = DETECT_OBJECT_ORIENTATION
                     else:
                         JuskeshinoHRI.say("No possible poses found")

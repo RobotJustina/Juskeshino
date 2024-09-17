@@ -11,16 +11,6 @@ from visualization_msgs.msg import Marker, MarkerArray
 import geometry_msgs.msg
 
 
-BOWL_OFFSET  =  np.asarray([0   ,0 ,0.11])
-#BOWL_OFFSET_2=  np.asarray([0.0   ,0 ,0.06])
-PH_OFFSET    =  np.asarray([0   ,0 ,0.10])
-PH_OFFSET_2  =  np.asarray([0.02   ,0 ,0.05])
-PV_OFFSET    =  np.asarray([0   ,0 ,0.04])
-BOX_OFFSET   =  np.asarray([0.12,0 ,0   ])
-#BOX_OFFSET_2 =  np.asarray([0.12,0 ,0   ])
-CUBIC_OFFSET =  np.asarray([0   ,0 ,0.08 ])
-
-
 def generate_pose(point_xyz, pose_quaternion):
     msg = Pose()
     msg.orientation.x = pose_quaternion[0]
@@ -41,7 +31,6 @@ def points_actual_to_points_target(point_in, f_actual, f_target):
     point_msg.point.x         = point_in[0]
     point_msg.point.y         = point_in[1]
     point_msg.point.z         = point_in[2]
-
     listener.waitForTransform(f_actual, f_target, rospy.Time(), rospy.Duration())
     point_target_frame        = listener.transformPoint(f_target, point_msg)
     new_point                 = point_target_frame.point
@@ -57,7 +46,6 @@ def pose_actual_to_pose_target(pose, f_actual, f_target):
     poseStamped_msg.pose = pose
     try:
         listener.waitForTransform("object", "shoulders_left_link", rospy.Time(0), rospy.Duration(10.0))
-        print("waitfor ..despues")
         new_poseStamped = listener.transformPose('shoulders_left_link', poseStamped_msg)
         new_pose = new_poseStamped.pose
         return new_pose
@@ -72,7 +60,6 @@ def pose_for_ik_service(pose_in_frame_object):
     Cambia a los candidatos de agarre del sistema 'object' al sistema del brazo izquierdo
     y regresa un arreglo [x,y,z,R,P,Y], si no lo consiguió retorna el valor -1
     """
-    print("In pose-for_ik_service")
     new_pose = pose_actual_to_pose_target(pose_in_frame_object, 'object' , 'shoulders_left_link') 
     if new_pose == -1:
         return -1, -1
@@ -149,19 +136,16 @@ def graspping_function():
     BOWL_OFFSET_2 = np.asarray([0   ,size.z/2 ,0.06]) # in frame 'object'
     BOX_OFFSET_2  = np.asarray([0   ,size.z/2 ,0]) # in frame 'object'
 
-    #               category object    , grip point,     offset on the rotation axis,           candidate pose names, point offset step°
-    object_dic = {"BOWL"            : [[-0.02 ,size.z/2 ,0],[0,-90 ,0],                         "BOWL_1", "BOWL_2", BOWL_OFFSET,   BOWL_OFFSET_2 ,5, 5], 
-                  "PRISM_HORIZONTAL": [[0     ,0        ,0],[0,-90 ,0],                         "PH1"   , "PH2"   , PH_OFFSET,     PH_OFFSET_2   ,6,-9], 
-                  "PRISM_VERTICAL"  : [[0     ,0        ,0],[np.deg2rad(0), np.deg2rad(-5), 0], "PV"    , "None"  , PV_OFFSET,     None          ,6, 5], 
-                  "CUBIC"           : [[0     ,0        ,0],[0,0               ,0],             "CUBIC" , "None"  , CUBIC_OFFSET,  None          ,5, 5], 
-                  "BOX"             : [[0     ,size.z/2 ,0],[0,0               ,0],             "BOX1"  , "BOX"   , BOX_OFFSET,    BOX_OFFSET_2  ,6, 5]}
+    #               category object    , first grip point,     offset on the rotation axis,           candidate pose names, point offset step°
+    object_dic = {"BOWL"            : [[-0.02 ,size.z/2 ,0.12],[0,-90 ,0],                         "BOWL_1", "BOWL_2", [-0.02 ,size.z/2 ,0.12] ,5, 5], 
+                  "PRISM_HORIZONTAL": [[0     ,0        ,0.12] ,[0,-90 ,0],                         "PH1"   , "PH2"   , [0     ,0        ,0.10] ,6,-9], 
+                  "PRISM_VERTICAL"  : [[0.03     ,0        ,0],[np.deg2rad(0), np.deg2rad(-5), 0], "PV"    , "None"  , None                    ,6, 5], 
+                  "CUBIC"           : [[0.06  ,0        ,0]   ,[0,0               ,0],             "CUBIC" , "None"  , None                    ,5, 5], 
+                  "BOX_HORIZONTAL"  : [[0     ,size.z/2 ,0]   ,[0,0               ,0],             "BOX_H1", "BOX_H2", [0     ,size.z/2 ,0]    ,6, 5],
+                  "BOX_VERTICAL"    : [[0     ,size.z/2 ,0]   ,[0,0               ,0],             "BOX_V1", "BOX_V2", [0     ,size.z/2 ,0]    ,6, 5]}
+    
     object_info = object_dic[category]
-
-    first_point_bl = np.asarray([points_actual_to_points_target( object_info[0] , 'object', 'base_link')])
-    first_point_bl = first_point_bl + object_info[4]
-    first_point       = points_actual_to_points_target(first_point_bl[0] , 'base_link', 'object')
-
-    candidate_list = generates_candidates(generate_pose(first_point, [0,0,0,1]) , object_info[2] , object_info[6], object_info[1] ,np.asarray([0,1,0]))
+    candidate_list = generates_candidates(generate_pose(object_info[0] , [0,0,0,1]) , object_info[2] , object_info[5], object_info[1] ,np.asarray([0,1,0]))
     first_trajectory, c_ft, graspable =  evaluating_possibility_grip(candidate_list , )
 
     print("GRASPABLE?", graspable)
@@ -180,7 +164,7 @@ def graspping_function():
                         first_trajectory.points[-1].positions[5],
                         first_trajectory.points[-1].positions[6]]
             
-            candidate_list = generates_candidates( generate_pose(object_info[5] , [0,0,0,1]) , object_info[3], object_info[7], [0,0,0], np.asarray([0,1,0]))
+            candidate_list = generates_candidates( generate_pose(object_info[4] , [0,0,0,1]) , object_info[3], object_info[6], [0,0,0], np.asarray([0,1,0]))
             second_trajectory, c_ft_2, graspable_2 =  evaluating_possibility_grip(candidate_list, guess)
             if not graspable_2:
                 return second_trajectory, c_ft_2, graspable_2
@@ -207,7 +191,7 @@ def evaluating_possibility_grip(candidate_q_list, guess = None ):
             ik_msg.initial_guess = guess
         try:
             resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
-            print("Aproved pose...........................................")
+            print("APPROVED POSE...........................................")
             return resp_ik_srv.articular_trajectory , candidate_tf , True
         except:
             print("Best_Grasp_Node.-> Candidato no aprobado")
