@@ -20,10 +20,7 @@ from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
 from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 
 
-
 POST_GRIP         = [0.38, 0.19, -0.01, 1.57, 0 , 0.35, 0.0 ]
-
-
 
 # ESTADOS
 INITIAL = 1
@@ -185,6 +182,7 @@ def main():
                     tilt = -1.0
                     [obj, img] = JuskeshinoSimpleTasks.object_search_orientation(actual_obj, tilt)
                     JuskeshinoHRI.say("I found" + actual_obj.replace("_", " "))
+                    
                     if(obj.pose.position.x > 0.65):
                         JuskeshinoHRI.say("I cannot take the object")
                         JuskeshinoNavigation.moveDist(-0.3,10)
@@ -207,6 +205,7 @@ def main():
             elif(current_state == PREPARE_ARM):
                 print("ESTADO:___PREPARE_ARM..................")
                 JuskeshinoHardware.moveLeftArmWithTrajectory([-0.9, 0.3, 0.0 ,1.55, 0.0 , 1.34, 0.0], 10)
+                print(obj.point_cloud)
                 if(obj.category == "BOWL"):
                     APERTURE = 0.6
                     JuskeshinoHardware.moveLeftGripper(APERTURE , 5.0)

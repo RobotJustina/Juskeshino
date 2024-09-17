@@ -77,6 +77,7 @@ class JuskeshinoVision:
         req.name = name
         try:
             resp = JuskeshinoVision.cltDetectRecogObject(req)
+            #print(resp.recog_object.point_cloud)
             reqObjPose = RecognizeObjectRequest()
             reqObjPose.point_cloud = resp.recog_object.point_cloud
             reqObjPose.image       = resp.recog_object.image

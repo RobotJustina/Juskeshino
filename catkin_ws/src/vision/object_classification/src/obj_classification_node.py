@@ -30,7 +30,7 @@ def get_vision_object(img, label, confidence, frame_id, x0, y0, x1, y1, cloud):
         mask = cv2.bitwise_or(eroded, mask)
         for i in range(len(contours)):
             cv2.drawContours(mask, contours, i, 255, -1)
-        mask = cv2.erode(mask,kernel)
+        #mask = cv2.erode(mask,kernel)
 
     display_img = cv2.bitwise_and(img, cv2.cvtColor(mask,cv2.COLOR_GRAY2BGR))
 

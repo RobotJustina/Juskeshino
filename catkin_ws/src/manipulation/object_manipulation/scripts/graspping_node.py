@@ -11,11 +11,14 @@ from visualization_msgs.msg import Marker, MarkerArray
 import geometry_msgs.msg
 
 
-BOWL_OFFSET  =  np.asarray([0   ,0 ,0.13])
-PH_OFFSET    =  np.asarray([0   ,0 ,0.1 ])
+BOWL_OFFSET  =  np.asarray([0   ,0 ,0.11])
+#BOWL_OFFSET_2=  np.asarray([0.0   ,0 ,0.06])
+PH_OFFSET    =  np.asarray([0   ,0 ,0.10])
+PH_OFFSET_2  =  np.asarray([0.02   ,0 ,0.05])
 PV_OFFSET    =  np.asarray([0   ,0 ,0.04])
 BOX_OFFSET   =  np.asarray([0.12,0 ,0   ])
-CUBIC_OFFSET =  np.asarray([0   ,0 ,0.5 ])
+#BOX_OFFSET_2 =  np.asarray([0.12,0 ,0   ])
+CUBIC_OFFSET =  np.asarray([0   ,0 ,0.08 ])
 
 
 def generate_pose(point_xyz, pose_quaternion):
@@ -75,7 +78,7 @@ def pose_for_ik_service(pose_in_frame_object):
         return -1, -1
     x , y, z = new_pose.position.x , new_pose.position.y , new_pose.position.z
     roll,pitch,yaw = tft.euler_from_quaternion( [new_pose.orientation.x , new_pose.orientation.y , 
-                                          new_pose.orientation.z , new_pose.orientation.w ])
+                                                new_pose.orientation.z , new_pose.orientation.w ])
     cartesian_pose_shoulder = np.asarray([x ,y ,z , roll, pitch , yaw])
     return cartesian_pose_shoulder, new_pose
 
@@ -121,9 +124,10 @@ def broadcaster_frame_object(frame, child_frame, pose):
     br.sendTransform(t)
 
 
-#***********FUNCIONES DE AGARRE DE OBJETOS**************************************************************************************************************************
+#***********FUNCIONES DE AGARRE DE OBJETOS********offset in rotation axis*************************************************************************************************************
 def generates_candidates(obj_pose, name_frame, step, offset, rotation_axis):    
     global debug, num_candidates
+    num_candidates = 4
     j = 0
     if debug: marker_array_publish([obj_pose.position.x, obj_pose.position.y, obj_pose.position.z], 'object', 59, 56)
     grasp_candidates_quaternion = []
@@ -133,7 +137,7 @@ def generates_candidates(obj_pose, name_frame, step, offset, rotation_axis):
         candidate = generate_pose([obj_pose.position.x, obj_pose.position.y, obj_pose.position.z] , q_gripper)
         rotation = rotation + step*rotation_axis
         if debug:
-            print("Best_Grasp_Node.-> emitiendo pose........." + name_frame+str(j), candidate.position)
+            #print("Best_Grasp_Node.-> emitiendo pose........." + name_frame+str(j), candidate.position)
             broadcaster_frame_object('object', name_frame+str(j), candidate )
         grasp_candidates_quaternion.append(candidate )     # guarda el candidato en frame bl
     return grasp_candidates_quaternion  # REGRESA A LOS CANDIDATOS EN FRAME OBJECT
@@ -142,25 +146,31 @@ def generates_candidates(obj_pose, name_frame, step, offset, rotation_axis):
 
 def graspping_function():
     global category, size
-    #               category object    , grip point,     offset on the rotation axis,           candidate pose names, point offset 
-    object_dic = {"BOWL"            : [[-0.02 ,size.z/2 ,0],[0,np.deg2rad(-90) ,0],             "BOWL_1", "BOWL_2", BOWL_OFFSET,   5], 
-                  "PRISM_HORIZONTAL": [[0     ,0        ,0],[0,0               ,0],             "PH1"   , "PH2"   , PH_OFFSET,     6], 
-                  "PRISM_VERTICAL"  : [[0     ,0        ,0],[np.deg2rad(0), np.deg2rad(-5), 0], "PV"    , "..."   , PV_OFFSET,     6], 
-                  "CUBIC"           : [[0     ,0        ,0],[0,0               ,0],             "CUBIC" , "..."   , CUBIC_OFFSET,  6], 
-                  "BOX"             : [[0     ,size.z/2 ,0],[0,0               ,0],             "BOX1"  , "BOX"   , BOX_OFFSET,    6]}
+    BOWL_OFFSET_2 = np.asarray([0   ,size.z/2 ,0.06]) # in frame 'object'
+    BOX_OFFSET_2  = np.asarray([0   ,size.z/2 ,0]) # in frame 'object'
+
+    #               category object    , grip point,     offset on the rotation axis,           candidate pose names, point offset step°
+    object_dic = {"BOWL"            : [[-0.02 ,size.z/2 ,0],[0,-90 ,0],                         "BOWL_1", "BOWL_2", BOWL_OFFSET,   BOWL_OFFSET_2 ,5, 5], 
+                  "PRISM_HORIZONTAL": [[0     ,0        ,0],[0,-90 ,0],                         "PH1"   , "PH2"   , PH_OFFSET,     PH_OFFSET_2   ,6,-9], 
+                  "PRISM_VERTICAL"  : [[0     ,0        ,0],[np.deg2rad(0), np.deg2rad(-5), 0], "PV"    , "None"  , PV_OFFSET,     None          ,6, 5], 
+                  "CUBIC"           : [[0     ,0        ,0],[0,0               ,0],             "CUBIC" , "None"  , CUBIC_OFFSET,  None          ,5, 5], 
+                  "BOX"             : [[0     ,size.z/2 ,0],[0,0               ,0],             "BOX1"  , "BOX"   , BOX_OFFSET,    BOX_OFFSET_2  ,6, 5]}
     object_info = object_dic[category]
 
     first_point_bl = np.asarray([points_actual_to_points_target( object_info[0] , 'object', 'base_link')])
     first_point_bl = first_point_bl + object_info[4]
     first_point       = points_actual_to_points_target(first_point_bl[0] , 'base_link', 'object')
 
-    candidate_list = generates_candidates(generate_pose(first_point, [0,0,0,1]) , object_info[2] , object_info[5], object_info[1] ,np.asarray([0,1,0]))
+    candidate_list = generates_candidates(generate_pose(first_point, [0,0,0,1]) , object_info[2] , object_info[6], object_info[1] ,np.asarray([0,1,0]))
     first_trajectory, c_ft, graspable =  evaluating_possibility_grip(candidate_list , )
+
+    print("GRASPABLE?", graspable)
     if graspable:
-        if (category == "CUBIC") or (category == "PRISM_VERTICAL"):
+        if (category == "CUBIC") or (category == "PRISM_VERTICAL"): #or (category == "PRISM_HORIZONTAL"):
             print("Return one trajectory")
             return first_trajectory, c_ft, graspable
         else:
+            print("Second trajetory")
             # Segunda trayectoria*********************************************************************************************
             guess =    [first_trajectory.points[-1].positions[0],      # El ultimo punto de la 1a trayectoria es el primero de la segunda
                         first_trajectory.points[-1].positions[1],
@@ -170,8 +180,10 @@ def graspping_function():
                         first_trajectory.points[-1].positions[5],
                         first_trajectory.points[-1].positions[6]]
             
-            candidate_list = generates_candidates( generate_pose([0,0,0], [0,0,0,1]) ,  "P_H_2", np.deg2rad(-5), [0,0,0], np.asarray([0,1,0]))
+            candidate_list = generates_candidates( generate_pose(object_info[5] , [0,0,0,1]) , object_info[3], object_info[7], [0,0,0], np.asarray([0,1,0]))
             second_trajectory, c_ft_2, graspable_2 =  evaluating_possibility_grip(candidate_list, guess)
+            if not graspable_2:
+                return second_trajectory, c_ft_2, graspable_2
             first_trajectory.points = first_trajectory.points + second_trajectory.points
             return first_trajectory , c_ft_2, graspable_2
     return first_trajectory , c_ft, graspable
@@ -195,6 +207,7 @@ def evaluating_possibility_grip(candidate_q_list, guess = None ):
             ik_msg.initial_guess = guess
         try:
             resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
+            print("Aproved pose...........................................")
             return resp_ik_srv.articular_trajectory , candidate_tf , True
         except:
             print("Best_Grasp_Node.-> Candidato no aprobado")
