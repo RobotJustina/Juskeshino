@@ -1,16 +1,9 @@
 #!/usr/bin/env python3
 import rospy
-import rospkg
 import time
-import numpy as np
-import math
-import tf.transformations as tft
 from std_msgs.msg import String
 import tf
-import numpy as np
-import math
-from geometry_msgs.msg import PointStamped, Point
-from std_msgs.msg import Float64MultiArray
+
 from juskeshino_tools.JuskeshinoNavigation import JuskeshinoNavigation
 from juskeshino_tools.JuskeshinoVision import JuskeshinoVision
 from juskeshino_tools.JuskeshinoHardware import JuskeshinoHardware
@@ -25,27 +18,14 @@ POST_GRIP         = [0.38, 0.19, -0.01, 1.57, 0 , 0.35, 0.0 ]
 # ESTADOS
 INITIAL = 1
 CONFIG  = 2
-START = 3
-MOVE_TO_LOCATION = 4    # Ir a locacion de ingredientes
 MOVE_HEAD = 5
 DETECT_OBJECT = 6
-APROACH_TO_TABLE = 7
+DETECT_OBJECT_ORIENTATION = 23
 HANDLING_LOCATION = 8   # El robot se mueve a la mejor mejor ubicacion de agarre ,Toma objeto con brazo izquierdo
 PREPARE_ARM = 9
 LOOKING_GRIP = 10
 TAKE_OBJECT = 11
 POST_GRASP = 12 
-GO_TO_KITCHEN = 13
-PUT_OBJECT = 14
-APROACH_TO_TABLE_2 = 15
-CYCLE_END = 16
-CONFIG_BY_CYCLE = 17
-END = 18
-DETECT_OBJECT_ORIENTATION = 19
-BEGIN_CYCLE = 20
-MOVE_TO_LOCATION_OBJECTS = 21
-VERIFY_SUITABLE_LOCATION_GRASP = 22
-HANDLING_LOCATION_2 = 23
 
 
 def callback_take_object(msg):
@@ -186,7 +166,7 @@ def main():
                     if(obj.pose.position.x > 0.65):
                         JuskeshinoHRI.say("I cannot take the object")
                         JuskeshinoNavigation.moveDist(-0.3,10)
-                        current_state = CONFIG_BY_CYCLE
+                        break
                     else:
                         
                         current_state = PREPARE_ARM
