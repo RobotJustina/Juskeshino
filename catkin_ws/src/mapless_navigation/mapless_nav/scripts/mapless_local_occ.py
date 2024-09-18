@@ -3,8 +3,16 @@ import rospy
 from std_msgs.msg import Float32MultiArray
 from nav_msgs.msg import OccupancyGrid
 import numpy as np
+import rospkg
 import torch
 
+#from models import nn_models
+
+# package_path = rospkg.RosPack().get_path("mapless_nav")
+# model_path = package_path + "/models/modelo.pth"
+# print(model_path)
+# model = nn_models.SingleConvModel()
+# model.load_state_dict(torch.load(model_path))
 
 def occGridArrayCallback(msg):
     data = np.asarray(msg.data)
