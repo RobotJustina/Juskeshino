@@ -6,21 +6,45 @@ import numpy as np
 import rospkg
 import torch
 
-#from models import nn_models
+from TorchModels import models
 
-# package_path = rospkg.RosPack().get_path("mapless_nav")
-# model_path = package_path + "/models/modelo.pth"
-# print(model_path)
-# model = nn_models.SingleConvModel()
-# model.load_state_dict(torch.load(model_path))
+package_path = rospkg.RosPack().get_path("mapless_nav")
+model_path = package_path + "/scripts/TorchModels/modelo.pth"
+print("model path: ", model_path)
+#model = models.SingleConvModel()
+model = models.Reg()
+model.load_state_dict(torch.load(model_path))
+disp = 'cuda' if torch.cuda.is_available() else 'cpu'
+model.to(disp)
 
 def occGridArrayCallback(msg):
-    data = np.asarray(msg.data)
+    global model
+    """
+    simple_data = msg.data  # Default is a tuple (6400)
+    print(len(simple_data))
+    print(type(simple_data))
+    """
+    # Transform to List and concatenate
+    data_list = list(msg.data)
+    data_list += [0, 0]  # TODO: Concatenate las goal
 
-    print("occ_g_a:", data.shape)
+    print("occ_g_list:", len(data_list))
+    print("data_list:", type(data_list))
+    print("---")
+    # Transform to numpy arrray
+    data_np = np.asarray(data_list)
+
+    print("data_np shape=", data_np.shape)
+    print("data_np:", type(data_np))
+    
+    # Expand dims
+    data_np = np.expand_dims(data_np, 0)
+    print("data_np shape=", data_np.shape)
+    print(">>")
+
 
 # TODO: DELETE
-# def occGridCallback(msg):
+# def occGridCallback(msg):SingleConvModel()
 #     data = np.asarray(msg.data)
 
 #     print("occ_g:", data.shape)
