@@ -90,7 +90,7 @@ class Reg(torch.nn.Module):
 		x = torch.nn.functional.avg_pool2d(x, kernel_size=2, stride=2)
 		x = self.dropout1(x)
 
-		x = torch.nn.flatten(x,1)
+		x = torch.flatten(x,1)
 		x = self.c1(x)
 		x = torch.nn.functional.relu(self.norm3(x))
 		x = self.dropout3(x)

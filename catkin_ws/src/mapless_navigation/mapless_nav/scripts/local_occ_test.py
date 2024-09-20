@@ -23,6 +23,7 @@ last_goal = [0, 0]
 
 def occGridArrayCallback(msg):
     global model, disp, last_goal, lin_vel_x, ang_vel_z
+    print(msg)
     """
     simple_data = msg.data  # Default is a tuple (6400)
     print(len(simple_data))
@@ -74,11 +75,14 @@ def goalCallback(msg):
 def clickPointCallback(msg):
      print("New goal")
 
-# TODO: Use this one to make a 80x80 matrix
-# def occGridCallback(msg):SingleConvModel()
-#     data = np.asarray(msg.data)
+# TODO: DELETE
+def occGridCallback(msg):#SingleConvModel()
+    data = np.asarray(msg.data)
 
-#     print("occ_g:", data.shape)
+    print("occ_g:", data.shape)
+    print(msg)
+    print("___________________________________________")
+    print("___________________________________________")
 
 
 def main():
