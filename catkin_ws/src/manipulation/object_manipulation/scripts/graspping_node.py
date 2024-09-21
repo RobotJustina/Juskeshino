@@ -5,6 +5,7 @@ import tf.transformations as tft
 import tf2_ros
 import tf
 from geometry_msgs.msg import PoseStamped, Point, PointStamped, Pose
+from std_msgs.msg import String
 from vision_msgs.srv import *
 from manip_msgs.srv import *
 from visualization_msgs.msg import Marker, MarkerArray
@@ -138,7 +139,7 @@ def graspping_function():
     object_dic = {"BOWL"            : [[-0.02 ,size.z/2 ,0.12], [0,-90 ,0]    , "BOWL_1", "BOWL_2", [-0.02 ,size.z/2 ,0.06] ,5,    5], 
                   "PRISM_HORIZONTAL": [[0     ,0        ,0.12], [0,-90 ,0]    , "PH1"   , "PH2"   , [0     ,0        ,0.10] ,6,   -9], 
                   "PRISM_VERTICAL"  : [[0.03     ,0     ,0   ], [-5,-5 ,0]    , "PV"    , "None"  , None                    ,6, None], 
-                  "CUBIC"           : [[0.06  ,0        ,0]   , [0,0   ,0]    , "CUBIC" , "None"  , None                    ,5, None], 
+                  "CUBIC"           : [[0.09  ,0        ,0]   , [0,0   ,0]    , "CUBIC" , "None"  , None                    ,5, None], 
                   "BOX_HORIZONTAL"  : [[0     ,size.z/2 ,0]   , [0,0   ,0]    , "BOX_H1", "BOX_H2", [0     ,size.z/2 ,0]    ,6,    5],
                   "BOX_VERTICAL"    : [[0     ,size.z/2 ,0]   , [0,0   ,0]    , "BOX_V1", "BOX_V2", [0     ,size.z/2 ,0]    ,6,    5]}
     
@@ -199,13 +200,14 @@ def evaluating_possibility_grip(candidate_q_list, guess = None ):
 
 
 def callback(req):
-    global listener, category, size
+    global listener, category, size, gs_pub
     resp = BestGraspTrajResponse() 
     category = req.recog_object.category
     size = req.recog_object.size
     trajectory_pose_graspable, pose, graspable = graspping_function() #[ req.recog_object.category]()
     if graspable:
         print("Best_Grasp_Node.-> SUITABLE POSE FOR OBJECT MANIPULATION......")
+        gs_pub.publish("SUCCESS")
         broadcaster_frame_object('shoulders_left_link', 'suitable_pose' , pose)
         resp.articular_trajectory = trajectory_pose_graspable  # Retorna trayectoria en el espacio articular
         pose_stamped = PoseStamped()
@@ -222,7 +224,7 @@ def callback(req):
 
 
 def main():
-    global listener , ik_srv, marker_pub, marker_array_pub, debug, num_candidates
+    global listener , ik_srv, marker_pub, marker_array_pub, debug, num_candidates, gs_pub
     debug = True
     print("Node to grab objects based on their orientation by ITZEL..............ʕ•ᴥ•ʔ")
     rospy.init_node("grasp_object")
@@ -231,7 +233,7 @@ def main():
     ik_srv           = rospy.ServiceProxy( '/manipulation/la_ik_trajectory' , InverseKinematicsPose2Traj )
     marker_pub       = rospy.Publisher("/vision/object_recognition/markers",  Marker, queue_size = 10) 
     marker_array_pub = rospy.Publisher("/vision/obj_reco/marker_array",       MarkerArray, queue_size = 10) 
-
+    gs_pub = rospy.Publisher("/manipulation/grasp/grasp_status",       String, queue_size = 10) 
     listener = tf.TransformListener()
     num_candidates = 4#rospy.get_param('~num_candidates', 3)
 

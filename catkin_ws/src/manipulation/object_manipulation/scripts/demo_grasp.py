@@ -13,7 +13,7 @@ from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
 from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 
 
-POST_GRIP         = [0.38, 0.19, -0.01, 1.57, 0 , 0.35, 0.0 ]
+POST_GRIP         = [0.38, 0.19, -0.01, 1.57, 0 , 1.05, 0.0 ] 
 
 # ESTADOS
 INITIAL = 1
@@ -224,6 +224,9 @@ def main():
                     JuskeshinoManipulation.dynamic_grasp_left_arm(is_thin = True)
                 else:
                     JuskeshinoManipulation.dynamic_grasp_left_arm()
+
+                JuskeshinoHardware.moveLeftArmWithTrajectory(POST_GRIP ,15)
+
                 actual_obj = None
                 current_state = -1
                 break
