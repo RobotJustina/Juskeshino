@@ -50,6 +50,7 @@ class JuskeshinoVision:
         msg = Bool()
         msg.data = enable
         JuskeshinoVision.pubHumanPoseEnable.publish(msg)
+        return
 
     def findTableEdge():
         req = FindLinesRequest()

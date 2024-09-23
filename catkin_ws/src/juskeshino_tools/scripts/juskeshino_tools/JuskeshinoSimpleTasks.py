@@ -86,60 +86,33 @@ class JuskeshinoSimpleTasks:
         return JuskeshinoNavigation.moveDistAngle(error_d, error_a, timeout)
     
 
-    def findHumanAndApproach(timeout):
-        head_poses = [[0.0, 0.0], [0.3, 0], [-0.3,0], [0.6, 0], [-0.6,0]]#, [0.9,0], [-0.9, 0], [1.2,0], [-1.2,0], [1.5,0], [-1.5,0]]
+    def GetClosestHumanPose(timeout):
         JuskeshinoVision.enableHumanPose(True)
-        human_poses = []
-        for [pan, tilt] in head_poses:
-            if not JuskeshinoHardware.moveHead(pan,tilt,2.0):
-                JuskeshinoHardware.moveHead(pan,tilt,2.0)
-            rospy.sleep(0.5)
-            try:
-                human_poses = rospy.wait_for_message("/vision/human_pose/human_pose_array", HumanCoordinatesArray, timeout=3.0)
-                src_frame_id = human_poses.header.frame_id
-                human_poses = human_poses.coordinates_array
-            except:
-                human_poses = []
-            if len(human_poses) > 0:
-                break
-        if len(human_poses) < 1:
+        human_posess = rospy.wait_for_message("/vision/human_pose/human_pose_array", HumanCoordinatesArray, timeout=3.0)
+        human_poses = human_posess.coordinates_array
+        min_dist = 500
+        if human_poses is None:
             JuskeshinoVision.enableHumanPose(False)
-            return False
-        
-        nearest_x, nearest_y, nearest_z = 0,0,0
-        nearest_dist = float("inf")
-        for p in human_poses:
-            x,y,z = 0,0,0
-            for k in p.keypoints_array:
-                x += k.keypoint_coordinates.position.x
-                y += k.keypoint_coordinates.position.y
-                z += k.keypoint_coordinates.position.z
-            try:
-                x,y,z = x/len(p.keypoints_array), y/len(p.keypoints_array), z/len(p.keypoints_array)
-            except:
-                x,y,z = 0,0,0
-                continue
-            [x, y, z] = JuskeshinoSimpleTasks.transformPoint(x, y, z, "base_link", src_frame_id)
-            dist = math.sqrt(x**2 + y**2)
-            if dist < nearest_dist:
-                nearest_x = x
-                nearest_y = y
-                nearest_z = z
-                nearest_dist = dist
+            return [None, None]
+
+        for person in human_poses:         
+            for k in person.keypoints_array:
+                if "nose" in k.keypoint_name:
+                    [x, y, z] = JuskeshinoSimpleTasks.transformPoint( k.keypoint_coordinates.position.x ,
+                                                                      k.keypoint_coordinates.position.y, 
+                                                                      k.keypoint_coordinates.position.z, "base_link", human_posess.header.frame_id )
+                    dist = math.sqrt(x**2 + y**2)
+                    if dist < min_dist:
+                        min_dist = dist
+                        closest_human_id = person.person_id
+                        closest_human_pose = person
+
+        time.sleep(3)
         JuskeshinoVision.enableHumanPose(False)
-        print("JuskeshinoSimpleTask.->Nearest human pose detected at: " + str([nearest_x, nearest_y, nearest_z]))
-        nearest_dist -= 1.0 #Robot will get close at 1 meter from human
-        nearest_theta = math.atan2(nearest_y, nearest_x)
-        nearest_x = nearest_dist*math.cos(nearest_theta)
-        nearest_y = nearest_dist*math.sin(nearest_theta)
-        [robot_x, robot_y, robot_a] = JuskeshinoNavigation.getRobotPoseWrtMap()
-        goal_x = robot_x + nearest_x*math.cos(robot_a) - nearest_y*math.sin(robot_a)
-        goal_y = robot_y + nearest_x*math.sin(robot_a) + nearest_y*math.cos(robot_a)
-        goal_a = (robot_a + nearest_theta + math.pi)%(2*math.pi) - math.pi
-        if not JuskeshinoNavigation.getCloseXYA(goal_x, goal_y, goal_a, 20):
-            if not JuskeshinoNavigation.getCloseXYA(goal_x, goal_y, goal_a, 20):
-                return False
-        return JuskeshinoHardware.moveHead(0,0,2.0)
+        print("JuskeshinoSimpleTask.GetHumanPoseArray->Nearest human id:____ ", closest_human_id)
+        return closest_human_pose
+
+
                 
     def transformPoint(x,y,z, target_frame, source_frame):
         listener = tf.TransformListener()
