@@ -184,7 +184,7 @@ def main():
 
             elif(current_state == PREPARE_ARM):
                 print("ESTADO:___PREPARE_ARM..................")
-                JuskeshinoHardware.moveLeftArmWithTrajectory([-0.9, 0.3, 0.0 ,1.55, 0.0 , 1.34, 0.0], 10)
+                JuskeshinoHardware.moveLeftArmWithTrajectory([-1.2, 0.3,0,1.85,0.2,1.04,0],10)#([-0.9, 0.3, 0.0 ,1.55, 0.0 , 1.34, 0.0], 10)
                 print(obj.point_cloud)
                 if(obj.category == "BOWL"):
                     APERTURE = 0.6
