@@ -63,6 +63,7 @@ add_service_files(
   InverseKinematicsPose2Pose.srv
   InverseKinematicsPose2Traj.srv
   InverseKinematicsTraj2Traj.srv
+  DataCapture.srv
 )
 
 ## Generate actions in the 'action' folder
