@@ -12,7 +12,7 @@ from manip_msgs.srv import DataCapture
 def generate_random_pose():
     rpose = Pose()
     rpose.position.x = random.randint(205,310)/100
-    rpose.position.y = random.randint(205,230)/100
+    rpose.position.y = random.randint(205,225)/100
     rpose.position.z = 0.745
     rpose.orientation.x = random.randint(-315,315)/100
     rpose.orientation.y = random.randint(-315,315)/100
@@ -38,6 +38,7 @@ def callback_grasp_status(msg):
     else:
         grasp_trajectory_found = False
         grasp_attempts += 1
+        reset_simulation()
 
 def callback_left_grip_sensor(msg):
     global left_gripper_made_contact, obj
@@ -61,7 +62,7 @@ def create_origin_pose():
     return jop
     
 def reset_simulation():
-    global justina_origin_pose, obj, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops, left_gripper_made_contact, right_gripper_made_contact
+    global justina_origin_pose, obj, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts
     change_gazebo_object_pose(state_msg, generate_random_pose(), obj)
     change_gazebo_object_pose(state_msg, justina_origin_pose, "justina")
     num_loops = 0
@@ -69,7 +70,10 @@ def reset_simulation():
     right_gripper_made_contact = False
     pub_la.publish(msg_la)
     pub_hd.publish(msg_hd)
+    rospy.sleep(0.1)
     pub_object.publish(obj)
+    pub_object.publish(obj)
+    grasp_attempts = 0
     
 
 def main():
@@ -104,14 +108,17 @@ def main():
         num_loops += 1
         if grasp_trajectory_found:
             grasp_trajectory_found = False
-            print("Grasp Trajetory found")
+            msg_capture.data = "Found_grasp"
+            print(capture(msg_capture))
             rospy.sleep(17)
             if left_gripper_made_contact and right_gripper_made_contact:
                 print("Object successfully grasped")
+                msg_capture.data = "Save_successful_grasp"
+            else:
+                msg_capture.data = "Save_grasp"
+            print(capture(msg_capture))
             reset_simulation()
-            #msg_capture.data = "siu"
-            print(capture("siu"))
-        if num_loops > 60:
+        if num_loops > 80:
             reset_simulation()
         loop.sleep()
 
