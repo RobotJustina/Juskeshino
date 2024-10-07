@@ -8,6 +8,18 @@
   <xacro:include filename="$(find justina_description)/urdf/justina_right_arm.xacro"/>
   <xacro:include filename="$(find justina_description)/urdf/justina_head.xacro"/>
   
+  <sensor name='left_gripper_contact' type='contact'>
+          <contact>
+            <collision>left_gripper_collision</collision>
+          </contact>
+  </sensor>
+  
+  <sensor name='riht_gripper_contact' type='contact'>
+          <contact>
+            <collision>right_gripper_collision</collision>
+          </contact>
+  </sensor>
+
   <joint name="torso_connect" type="fixed">
     <origin xyz= "0.03 0 1.08" rpy="0 0 0"/>
     <parent link="base_link"/>

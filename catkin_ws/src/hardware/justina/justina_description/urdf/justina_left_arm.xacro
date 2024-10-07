@@ -13,9 +13,14 @@
     </visual>
     <collision>
       <origin xyz="0 -0.01 0.02" rpy = "0 0 0"/>
-      <geometry> 
+      <geometry>
         <box size = "0.04025 0.108 0.065"/> 
       </geometry>
+      <surface>
+	<contact>
+	  <collide_bitmask>0x01</collide_bitmask>
+	</contact>
+      </surface>
     </collision>
     <inertial>
       <origin xyz="0 -0.01 0.02" rpy = "0 0 0"/>
@@ -40,6 +45,11 @@
       <geometry> 
         <box size = "0.04025 0.06 0.04025"/> 
       </geometry>
+      <surface>
+	<contact>
+	  <collide_bitmask>0x01</collide_bitmask>
+	</contact>
+      </surface>
     </collision>
     <inertial>
       <origin xyz="0 -0.01 -0.04881" rpy = "0 0 0"/>
@@ -71,12 +81,22 @@
       <geometry> 
         <box size = "0.04025 0.04025 0.19"/> 
       </geometry>
+      <surface>
+	<contact>
+	  <collide_bitmask>0x01</collide_bitmask>
+	</contact>
+      </surface>
     </collision>
     <collision>
       <origin xyz="-0.01 0 -0.197" rpy = "0 0 0"/>
       <geometry> 
         <box size = "0.06 0.04025 0.04025"/> 
       </geometry>
+      <surface>
+	<contact>
+	  <collide_bitmask>0x01</collide_bitmask>
+	</contact>
+      </surface>
     </collision>
     <inertial>
       <origin xyz="0 0 -0.175" rpy = "0 0 0"/>
@@ -101,6 +121,11 @@
       <geometry> 
         <box size = "0.04025 0.04025 0.06"/> 
       </geometry>
+      <surface>
+	<contact>
+	  <collide_bitmask>0x01</collide_bitmask>
+	</contact>
+      </surface>
     </collision>
     <inertial>
       <origin xyz="0 0 -0.04" rpy = "0 0 0"/>
@@ -132,12 +157,22 @@
       <geometry> 
         <box size = "0.04025 0.04025 0.16"/> 
       </geometry>
+      <surface>
+	<contact>
+	  <collide_bitmask>0x01</collide_bitmask>
+	</contact>
+      </surface>
     </collision>
     <collision>
       <origin xyz="-0.01 0 -0.167" rpy = "0 0 0"/>
       <geometry> 
         <box size = "0.06 0.04025 0.04025"/> 
       </geometry>
+      <surface>
+	<contact>
+	  <collide_bitmask>0x01</collide_bitmask>
+	</contact>
+      </surface>
     </collision>
     <inertial>
       <origin xyz="-0.01 0 -0.147" rpy = "0 0 0"/>
@@ -162,6 +197,11 @@
       <geometry> 
         <box size = "0.04025 0.04025 0.02"/> 
       </geometry>
+      <surface>
+	<contact>
+	  <collide_bitmask>0x01</collide_bitmask>
+	</contact>
+      </surface>
     </collision>
     <inertial>
       <origin xyz="0 0 -0.025" rpy = "0 0 0"/>
@@ -186,6 +226,11 @@
       <geometry> 
         <box size = "0.04025 0.04025 0.04"/> 
       </geometry>
+      <surface>
+	<contact>
+	  <collide_bitmask>0x01</collide_bitmask>
+	</contact>
+      </surface>
     </collision>
     <inertial>
       <origin xyz="0 0 -0.042" rpy = "0 0 0"/>
@@ -217,12 +262,22 @@
       <geometry> 
         <box size = "0.06 0.03525 0.03525"/> 
       </geometry>
+      <surface>
+	<contact>
+	  <collide_bitmask>0x01</collide_bitmask>
+	</contact>
+      </surface>
     </collision>
     <collision>
       <origin xyz="0 0 -0.055" rpy = "0 0 0"/>
       <geometry> 
         <box size = "0.03 0.1 0.03"/> 
       </geometry>
+      <surface>
+	<contact>
+	  <collide_bitmask>0x01</collide_bitmask>
+	</contact>
+      </surface>
     </collision>
     <inertial>
       <origin xyz="-0.01 0 -0.05" rpy = "0 0 0"/>
@@ -242,11 +297,16 @@
       </geometry>
       <material name = "la_material"><color rgba="1.0 0.5 0 1"/></material>
     </visual>
-    <collision>
+    <collision name = 'left_arm_grip_left_collision'>
       <origin xyz="0 0 -0.065" rpy = "0 0 0"/>
       <geometry> 
         <box size = "0.04 0.005 0.09"/> 
       </geometry>
+      <surface>
+	<contact>
+	  <collide_bitmask>0x01</collide_bitmask>
+	</contact>
+      </surface>
     </collision>
     <inertial>
       <origin xyz="0 0 -0.065" rpy = "0 0 0"/>
@@ -266,11 +326,16 @@
       </geometry>
       <material name = "la_material"><color rgba="1.0 0.5 0 1"/></material>
     </visual>
-    <collision>
+    <collision name = 'left_arm_grip_right_collision'>
       <origin xyz="0 0 -0.065" rpy = "0 0 0"/>
       <geometry> 
         <box size = "0.04 0.005 0.09"/> 
       </geometry>
+      <surface>
+	<contact>
+	  <collide_bitmask>0x01</collide_bitmask>
+	</contact>
+      </surface>
     </collision>
     <inertial>
       <origin xyz="0 0 -0.065" rpy = "0 0 0"/>
