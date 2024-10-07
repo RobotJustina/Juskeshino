@@ -174,7 +174,7 @@ def graspping_function():
 
 
 def evaluating_possibility_grip(candidate_q_list, guess = None ):
-    global ik_srv
+    global ik_srv, gs_pub
     ik_msg = InverseKinematicsPose2TrajRequest()
     for candidate in candidate_q_list:  # rellena el mensaje para el servicio IK
         candidate_ik_msg, candidate_tf = pose_for_ik_service(candidate)
@@ -200,10 +200,11 @@ def evaluating_possibility_grip(candidate_q_list, guess = None ):
 
 
 def callback(req):
-    global listener, category, size, gs_pub
+    global listener, category, size, gs_pub, obj_shape_pub
     resp = BestGraspTrajResponse() 
     category = req.recog_object.category
     size = req.recog_object.size
+    obj_shape_pub.publish(category)
     trajectory_pose_graspable, pose, graspable = graspping_function() #[ req.recog_object.category]()
     if graspable:
         print("Best_Grasp_Node.-> SUITABLE POSE FOR OBJECT MANIPULATION......")
@@ -219,12 +220,13 @@ def callback(req):
     else: 
         print("Best_Grasp_Node.-> No possible poses found :'(...................")
         resp.graspable = False
+        #gs_pub.publish("Failed")
         return resp
 
 
 
 def main():
-    global listener , ik_srv, marker_pub, marker_array_pub, debug, num_candidates, gs_pub
+    global listener , ik_srv, marker_pub, marker_array_pub, debug, num_candidates, gs_pub, obj_shape_pub
     debug = True
     print("Node to grab objects based on their orientation by ITZEL..............ʕ•ᴥ•ʔ")
     rospy.init_node("grasp_object")
@@ -233,7 +235,8 @@ def main():
     ik_srv           = rospy.ServiceProxy( '/manipulation/la_ik_trajectory' , InverseKinematicsPose2Traj )
     marker_pub       = rospy.Publisher("/vision/object_recognition/markers",  Marker, queue_size = 10) 
     marker_array_pub = rospy.Publisher("/vision/obj_reco/marker_array",       MarkerArray, queue_size = 10) 
-    gs_pub = rospy.Publisher("/manipulation/grasp/grasp_status",       String, queue_size = 10) 
+    gs_pub = rospy.Publisher("/manipulation/grasp/grasp_status",       String, queue_size = 10)
+    obj_shape_pub = rospy.Publisher("/manipulation/grasp/object_shape",       String, queue_size = 10)  
     listener = tf.TransformListener()
     num_candidates = 4#rospy.get_param('~num_candidates', 3)
 
