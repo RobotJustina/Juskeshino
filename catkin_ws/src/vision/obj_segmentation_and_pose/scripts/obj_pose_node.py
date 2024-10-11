@@ -250,12 +250,12 @@ def get_obj_pose_response(obj_state, c_obj, size_obj, obj_pose, graspable):
 
 
 def object_category(size_obj, obj_state, name_obj):  # estima la forma geometrica del objeto. (x,z,y)
-    if(obj_state == 'horizontal') and (size_obj.x > MAXIMIUN_CUBE_SIZE):
+    if(obj_state == 'horizontal'):
         if('bowl' in name_obj):
             print("H-> BOWL")
             return "BOWL", True
         else:
-            if((size_obj.x /size_obj.z) > 1.4) and ((size_obj.x /size_obj.y) > 1.4) and ((size_obj.y /size_obj.z) < 1.4) or ((size_obj.y < 0.15) and ((size_obj.x /size_obj.y) > 1.4) ):   # barra
+            if((size_obj.x /size_obj.z) > 1.4) and ((size_obj.x /size_obj.y) > 1.4) and ((size_obj.y /size_obj.z) < 1.4) and (size_obj.x > MAXIMIUN_CUBE_SIZE):#or ((size_obj.y < 0.15) and ((size_obj.x /size_obj.y) > 1.4) ):   # barra
                 print("H-> PRISM_H")
                 return "PRISM_HORIZONTAL", True
             else:
@@ -263,8 +263,8 @@ def object_category(size_obj, obj_state, name_obj):  # estima la forma geometric
                     print("H-> CUBIC")
                     return "CUBIC", True
                 else:
-                    print("H-> BOX_HORIZONTAL")
-                    return "BOX_HORIZONTAL", True
+                    print("H-> BOX_HORIZONTAL parche temp")
+                    return "PRISM_HORIZONTAL", True#"BOX_HORIZONTAL", True
 
     else:    # obj_state == 'vertical'
         if(((size_obj.x /size_obj.z) < 1.4) and ((size_obj.x /size_obj.y) < 1.4) and ((size_obj.y /size_obj.z) < 1.4)) and (size_obj.x < MAXIMIUN_CUBE_SIZE):# and size_obj.x > MAXIMIUN_CUBE_SIZE):   # barra

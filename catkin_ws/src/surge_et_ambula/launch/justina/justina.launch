@@ -11,8 +11,8 @@
   <include file="$(find surge_et_ambula)/launch/justina/hardware/justina_hardware.launch"/>
   
   <include file="$(find surge_et_ambula)/launch/justina/navigation.launch">
-    <arg name="static_map_file"  value="$(find config_files)/maps/lab_20240513.yaml"/>
-    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/lab_20240513.yaml"/>
+    <arg name="static_map_file"  value="$(find config_files)/maps/LabBiorobotica.yaml"/>
+    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/LabBiorobotica.yaml"/>
     <arg name="initial_pose_x" value="0.0"/>
     <arg name="initial_pose_y" value="0.0"/>
     <arg name="initial_pose_a" value="0.0"/>
@@ -67,6 +67,6 @@
   <node pkg="rostopic" type="rostopic" name="rostopic_pub_node" output="screen" args="pub $(arg topic_name) std_msgs/Bool 'data: true'" />
 
   <include file="$(find surge_et_ambula)/launch/justina/planning.launch">
-    <arg name="known_locations" value="$(find config_files)/navigation/known_locations_robocup_2024.yaml"/>
+    <arg name="known_locations" value="$(find config_files)/navigation/known_locations_lab.yaml"/>
   </include>
 </launch>

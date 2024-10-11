@@ -135,8 +135,6 @@ def main():
                 mov_flag, dist = JuskeshinoNavigation.getCloseSuitableGripPositionLa( pos_obj_bl, 100.0)
                 JuskeshinoHardware.moveHead(0,-1, 5)
                 time.sleep(0.2)
-                if mov_flag:
-                    JuskeshinoNavigation.moveDist(0.18, 7.0)
                 tries = 0
                 pos_obj_bl = [obj.pose.position.x, obj.pose.position.y, obj.pose.position.z]
                 print("position obj:____", obj.pose.position.x)
@@ -165,7 +163,6 @@ def main():
                     
                     if(obj.pose.position.x > 0.65):
                         JuskeshinoHRI.say("I cannot take the object")
-                        JuskeshinoNavigation.moveDist(-0.3,10)
                         break
                     else:
                         
