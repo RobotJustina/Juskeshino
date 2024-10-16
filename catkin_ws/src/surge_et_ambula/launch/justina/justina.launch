@@ -11,8 +11,8 @@
   <include file="$(find surge_et_ambula)/launch/justina/hardware/justina_hardware.launch"/>
   
   <include file="$(find surge_et_ambula)/launch/justina/navigation.launch">
-    <arg name="static_map_file"  value="$(find config_files)/maps/LabBiorobotica.yaml"/>
-    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/LabBiorobotica.yaml"/>
+    <arg name="static_map_file"  value="$(find config_files)/maps/auditorio.yaml"/>
+    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/auditorio.yaml"/>
     <arg name="initial_pose_x" value="0.0"/>
     <arg name="initial_pose_y" value="0.0"/>
     <arg name="initial_pose_a" value="0.0"/>
@@ -38,7 +38,7 @@
     <arg name="max_angular_speed" default="0.8"/>
     <arg name="linear_acceleration" default="0.45"/>
     <arg name="use_pot_fields" value="$(arg use_pot_fields)"/>
-    <arg name="pot_fields_k_rej" value="2.5"/>
+    <arg name="pot_fields_k_rej" value="1.5"/> <!-- <2.5/> -->
     <arg name="pot_fields_d0" default="1.0"/>
     <arg name="inflation_radius" value="0.15"/>
     <arg name="diagonal_paths" value="False"/>
@@ -67,6 +67,6 @@
   <node pkg="rostopic" type="rostopic" name="rostopic_pub_node" output="screen" args="pub $(arg topic_name) std_msgs/Bool 'data: true'" />
 
   <include file="$(find surge_et_ambula)/launch/justina/planning.launch">
-    <arg name="known_locations" value="$(find config_files)/navigation/known_locations_lab.yaml"/>
+    <arg name="known_locations" value="$(find config_files)/navigation/auditorio_locations.yaml"/>
   </include>
 </launch>
