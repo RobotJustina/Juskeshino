@@ -45,6 +45,7 @@
   </node>
 
   <include file="$(find surge_et_ambula)/launch/justina/justina_manipulation.launch"/>
+  
   <include file="$(find surge_et_ambula)/launch/justina/vision.launch">
     <arg name="debug"         value="$(arg debug)"/>
   </include>

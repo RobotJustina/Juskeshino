@@ -175,16 +175,16 @@ class JuskeshinoNavigation:
             mov_izq = (position_object[1] - l_threshold_la) 
             print("mov izq", mov_izq)
 
-            JuskeshinoNavigation.moveLateral(mov_izq + 0.03, 5.0)
-            print("Movimiento lateral", mov_izq + 0.03)
+            JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
+            print("Movimiento lateral", mov_izq )
             return False, mov_izq
 
         if position_object[1] < r_threshold_la:     # Objeto a la derecha
             mov_der = position_object[1] - r_threshold_la
             print("mov der", mov_der)
 
-            JuskeshinoNavigation.moveLateral(mov_der - 0.03 , 10.0)
-            print("Movimiento lateral", mov_der -0.03)
+            JuskeshinoNavigation.moveLateral(mov_der, 10.0)
+            print("Movimiento lateral", mov_der)
             return False, mov_der
             
         return False, 0

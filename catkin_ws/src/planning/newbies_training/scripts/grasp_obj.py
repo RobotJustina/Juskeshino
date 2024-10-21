@@ -14,7 +14,8 @@ from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 
 
 POST_GRIP         = [0.38, 0.19, -0.01, 1.57, 0 , 1.05, 0.0 ] 
-
+PREPARE = [-1.2, 0.3,0,1.95,0.2,1.04,0]
+HOME         = [0, 0, 0, 0, 0 , 0.0, 0.0 ] 
 # ESTADOS
 INITIAL = 1
 CONFIG  = 2
@@ -26,6 +27,7 @@ PREPARE_ARM = 9
 LOOKING_GRIP = 10
 TAKE_OBJECT = 11
 POST_GRASP = 12 
+LEAVE_OBJECT = 13 
 
 
 def callback_take_object(msg):
@@ -63,19 +65,20 @@ def categorize_objs(name):
 
 
 def main():
+
     print("INITIALIZING GRIP TEST BY ITZEL..............ヾ(๑╹◡╹)ﾉ")
-    rospy.init_node("grip_test")
+    print("MODIFICATED BY ROMAN.........................:p")
+    rospy.init_node("GRIP_DEMO")
+    obj= rospy.get_param("~obj", "apple")
+    rospy.sleep(1)
+    print(obj)
     rate = rospy.Rate(10)
     global object_name
-    # Se subcribe a los servicios necesarios para manipulacion, navegacion,vision, etc...
-    rospy.Subscriber('/plannning/simple_task/take_object' ,String ,callback_take_object )
     global listener
     listener = tf.TransformListener()
 
     while not rospy.is_shutdown():
-        print("waiting for an object to be requested.............................ʕ•ᴥ•ʔ")
-        object_name_msg = rospy.wait_for_message('/plannning/simple_task/take_object' , String)
-        obj_target = object_name_msg.data
+        obj_target = obj
         print("OBJECT TARGET:____", obj_target)
         actual_obj = obj_target
         current_state = CONFIG
@@ -181,7 +184,7 @@ def main():
 
             elif(current_state == PREPARE_ARM):
                 print("ESTADO:___PREPARE_ARM..................")
-                JuskeshinoHardware.moveLeftArmWithTrajectory([-1.2, 0.3,0,1.85,0.2,1.04,0],10)#([-0.9, 0.3, 0.0 ,1.55, 0.0 , 1.34, 0.0], 10)
+                JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE,10)#([-0.9, 0.3, 0.0 ,1.55, 0.0 , 1.34, 0.0], 10)
                 print(obj.point_cloud)
                 if(obj.category == "BOWL"):
                     APERTURE = 0.6
@@ -223,9 +226,33 @@ def main():
                     JuskeshinoManipulation.dynamic_grasp_left_arm()
 
                 JuskeshinoHardware.moveLeftArmWithTrajectory(POST_GRIP ,15)
+                rospy.sleep(5)
+                current_state = LEAVE_OBJECT
+
+            elif(current_state == LEAVE_OBJECT):
+                print("ESTADO:___LEAVE_OBJECT..................")
+                JuskeshinoHardware.moveLeftArmWithTrajectory(resp ,15)
+                time.sleep(0.5)
+                if(obj.category == "BOWL"):
+                    APERTURE = 0.6
+                    JuskeshinoHardware.moveLeftGripper(APERTURE , 5.0)
+                else:
+                    APERTURE = 0.9
+                    JuskeshinoHardware.moveLeftGripper(APERTURE , 5.0)
+
+                
+                move_back =  0.19 
+                JuskeshinoNavigation.moveDist(-move_back , 10.0)
+                rospy.sleep(2)
+                JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE ,15)
+                rospy.sleep(2)
+                JuskeshinoHardware.moveLeftGripper(0.0 , 5.0)
+                rospy.sleep(2)
+                JuskeshinoHardware.moveLeftArmWithTrajectory(HOME ,15)
 
                 actual_obj = None
                 current_state = -1
+                rospy.signal_shutdown("Test ended")
                 break
     return 
 
