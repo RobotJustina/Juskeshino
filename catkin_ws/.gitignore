@@ -1,5 +1,6 @@
 devel/
 build/
+__pycache__/
 src/CMakeLists.txt
 .catkin_workspace
 src/hardware/realsense-ros/

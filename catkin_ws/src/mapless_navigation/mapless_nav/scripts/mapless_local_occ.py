@@ -7,7 +7,7 @@ import numpy as np
 import rospkg
 import torch
 
-from TorchModels import models
+from mapless_navigation.mapless_nav.scripts.TorchModels.utils import models
 
 package_path = rospkg.RosPack().get_path("mapless_nav")
 model_path = package_path + "/scripts/TorchModels/modelo.pth"
