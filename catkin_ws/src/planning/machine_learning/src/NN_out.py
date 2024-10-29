@@ -15,9 +15,13 @@ rospack = rospkg.RosPack()
 
 ##Get NN Model
 model_folder = rospack.get_path("machine_learning")
-#mired = architecture.Red_lin()
-mired = architecture.Reg()
-mired.load_state_dict(th.load(model_folder+"/src/Data_justina/modelo.pth"))
+# #mired = architecture.Red_lin()
+# mired = architecture.Reg()
+# mired.load_state_dict(th.load(model_folder+"/src/Data_justina/modelo.pth"))
+
+mired = architecture.CNN_B()
+mired.load_state_dict(th.load(model_folder+"/src/Data_gazebo/CNN_B.pth"))
+
 disp = 'cuda' if th.cuda.is_available() else 'cpu'
 mired.to(disp)
 ##Get cmd_vel command from LBG algorithm

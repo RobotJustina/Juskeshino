@@ -99,6 +99,7 @@ def entrena(modelo, fp, metrica, opt, entdl, valdl, n_epocas = 100):
 			'metrica_ent': np.zeros(n_epocas, dtype = np.float32),
 			'metrica_val': np.zeros(n_epocas, dtype = np.float32)}
 	for e in range(n_epocas):
+		print("epoc: ", e+1, "/", n_epocas)
 		# bucle de entrenamiento
 		modelo.train()
 		for lote, (Xlote, ylote) in enumerate(entdl):

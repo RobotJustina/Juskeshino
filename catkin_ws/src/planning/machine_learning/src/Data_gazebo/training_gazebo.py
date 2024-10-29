@@ -12,6 +12,8 @@ import rospy
 import rospkg
 from sklearn.model_selection import train_test_split
 
+import time
+
 rospack = rospkg.RosPack()
 Redes_folder = rospack.get_path("machine_learning") + "/src"
 sys.path.append(Redes_folder)
@@ -62,23 +64,31 @@ def main():
 	x_vad = th.tensor(x_vad, dtype=th.float32, device=disp)
 	y_vad = th.tensor(y_vad, dtype=th.float32, device=disp)
 
-	entdl = DataLoader(TensorDataset(x_ent, y_ent), batch_size=8, shuffle=True, drop_last=True)
-	valdl = DataLoader(TensorDataset(x_vad, y_vad), batch_size=1, shuffle=False, drop_last=False)
-	prudl = DataLoader(TensorDataset(x_pru, y_pru), batch_size=1, shuffle=False, drop_last=False)
+	batch = 32
+	learn_r = 4e-6
+	epochs = 10
+	print("batch:", batch)
+	print("lr:", learn_r)
+	print("epochs:", epochs)
+
+	entdl = DataLoader(TensorDataset(x_ent, y_ent), batch_size=batch, shuffle=True, drop_last=True)
+	valdl = DataLoader(TensorDataset(x_vad, y_vad), batch_size=batch, shuffle=False, drop_last=False)
+	prudl = DataLoader(TensorDataset(x_pru, y_pru), batch_size=batch, shuffle=False, drop_last=False)
 
 	##Last fully connected
 
-	mired = architecture.Red_conv(3)
+	mired = architecture.CNN_A()  # Red_conv(3)
 	#mired = architecture.Reg()
 	mired.to(disp)
-
+	t0 = time.time() # ><<<<<<<<<<<<
 	ecm = nn.MSELoss()
-	opt = AdamW(mired.parameters(), lr = mired.lr) #4e-3, 40e-6
+	opt = AdamW(mired.parameters(), lr = learn_r) #4e-3, 40e-6
 	#opt = AdamW(mired.parameters(), lr = 4e-5)
 
 	#hist = training_functions.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=19)
-	hist = training_functions.entrena(mired, ecm, training_functions.exactitud, opt, entdl, valdl, n_epocas=mired.epoch) #50
-
+	hist = training_functions.entrena(mired, ecm, training_functions.exactitud, opt, entdl, valdl, n_epocas=epochs) #50
+	tf = time.time() # ><<<<<<<<<<<<
+	print("time: ", tf - t0, "[s]")
 	training_functions.graficar(hist, entdl, valdl,"Red1")
 
 	#print("Prueba")
@@ -96,7 +106,7 @@ def main():
 	entdl = DataLoader(TensorDataset(x_ent, y_ent), batch_size=1, shuffle=False, drop_last=False)
 	training_functions.dataloader_eval(entdl, mired)
 
-	th.save(mired.state_dict(), data_folder+"/modelo_gazebo.pth")
+	th.save(mired.state_dict(), data_folder+"/CNN_A.pth")
 	plt.show()
 
 if __name__=="__main__":
