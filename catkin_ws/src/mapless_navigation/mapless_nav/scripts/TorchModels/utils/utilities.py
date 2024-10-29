@@ -2,7 +2,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from PIL import Image
+#from PIL import Image
 from sklearn.preprocessing import OneHotEncoder
 
 import glob
@@ -36,6 +36,7 @@ def removePattern(np_arr, condition):
     index = np.where( condition ) [0]
     np_arr = np.delete(np_arr, index, axis=0)
     return np_arr
+
 
 def one_hot_encode(data_Y, verbose=False):
     categories = np.unique(data_Y, axis=0, return_counts=True)
