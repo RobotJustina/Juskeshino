@@ -3,7 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
-#import pandas as pd
+from sklearn.preprocessing import OneHotEncoder
 
 import glob
 
@@ -36,3 +36,29 @@ def removePattern(np_arr, condition):
     index = np.where( condition ) [0]
     np_arr = np.delete(np_arr, index, axis=0)
     return np_arr
+
+def one_hot_encode(data_Y, verbose=False):
+    categories = np.unique(data_Y, axis=0, return_counts=True)
+    if verbose:
+        print("Categories:")
+        print(categories)
+    Y_labels = []
+    for cat in categories[0]:
+        Y_labels.append([str(cat)])
+
+    # Creating the encoder
+    enc = OneHotEncoder(handle_unknown='ignore')
+    enc.fit(Y_labels)  # Fitting the encoder to the data
+    y_one_hot = []
+    if verbose:
+        print("Processing data ...")
+    for cat in data_Y:
+        result = enc.transform([[str(cat)]]).toarray()[0]
+        y_one_hot.append(result)
+        
+    if verbose:
+        categories = np.unique(y_one_hot, axis=0, return_counts=True)
+        print("OneHot encoding:")
+        print(categories)
+
+    return y_one_hot

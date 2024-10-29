@@ -9,8 +9,11 @@ import numpy as np
 import utils.utilities as l_util 
 
 from sklearn.model_selection import train_test_split
+
 from torch.utils.data import TensorDataset, DataLoader
 from torch.optim import SGD, AdamW
+
+import pandas as pd
 
 import time
 
@@ -26,7 +29,9 @@ if torch.cuda.is_available():
 else:
     device = torch.device('cpu')
 
-
+"""
+Dataset
+"""
 # --- load files ---
 pkg_name = 'machine_learning' #'mapless_nav'
 pkg_path = rospkg.RosPack().get_path(pkg_name)
@@ -34,6 +39,7 @@ files_path = pkg_path + '/src/Data_gazebo/'
 data = l_util.load_data(files_path)
 print("Data shape:", data.shape)
 
+# --- prepare X(data), Y(labels) ---
 data_X = []
 data_Y = []
 data = l_util.removePattern(data, (data[:,6402]==0.) & (data[:, 6403] == 0.))
@@ -44,21 +50,22 @@ for info in data:
 
 data_X = np.asarray(data_X, dtype=object)
 data_Y = np.asarray(data_Y, dtype=np.float32)
-
 # show random sample
-#show_image_gray(data_X[np.random.randint(0,len(data_X)), 0])
+l_util.show_image_gray(data_X[np.random.randint(0,len(data_X)), 0])
 
-# --- prepare X(data), Y(labels) ---
-print(data_Y.shape)
-un = np.unique(data_Y, axis=0, return_counts=True)
-print(un)
-
-
+# CLASSIFICATION problem
+l_util.one_hot_encode(data_Y, verbose=True)
 
 """
-Parameters
+Hyperparameters
 """
 bathch_size = 4
 
 
-#train_test_split()
+# categories = {'Direction': ["1Left", "2Front", "3Right"]}
+
+# y = pd.DataFrame(categories)
+# print(y)
+
+# y = pd.get_dummies(y)
+# print(y)
