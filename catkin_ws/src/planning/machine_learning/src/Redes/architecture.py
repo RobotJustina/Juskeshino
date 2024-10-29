@@ -661,8 +661,6 @@ class Red3_div(nn.Module):
         return nn.functional.softmax(x, dim=1)
 
 
-
-
 class CNN_A(th.nn.Module):
     def __init__(self):
         super(CNN_A, self).__init__()
@@ -691,7 +689,7 @@ class CNN_A(th.nn.Module):
         vec = th.nn.functional.relu(self.vector(vec))
         # image
         x = x[:, 0:6400]
-        x = x.view(x.size(0),1,80,80)
+        x = x.view(x.size(0), 1, 80, 80)
 
         x = self.conv1(x)
         x = th.nn.functional.relu(x)
@@ -710,7 +708,7 @@ class CNN_A(th.nn.Module):
 
         x = th.flatten(x, 1)
         # concat inputs
-        x = th.cat((x, vec ), 1)
+        x = th.cat((x, vec), 1)
         x = self.flat2(x)
         x = th.nn.functional.relu(x)
         x = self.dropout_10(x)
@@ -723,14 +721,14 @@ class CNN_A(th.nn.Module):
         x = th.nn.functional.softmax(x, dim=1)
 
         return x
-    
+
 
 class CNN_B(th.nn.Module):
     def __init__(self):
         super(CNN_B, self).__init__()
 
         self.conv1 = th.nn.Conv2d(1, 6, 5)
-        #self.conv2 = th.nn.Conv2d(3, 8, 5)
+        # self.conv2 = th.nn.Conv2d(3, 8, 5)
         self.dropout_50 = th.nn.Dropout2d(p=0.5)
         self.conv3 = th.nn.Conv2d(6, 18, 3)
         self.dropout_40 = th.nn.Dropout(p=0.4)
@@ -743,7 +741,7 @@ class CNN_B(th.nn.Module):
         # merge
         self.flat2 = th.nn.Linear(42626, 16)
         self.dropout_20 = th.nn.Dropout(p=0.2)
-        #self.flat3 = th.nn.Linear(60, 32)
+        # self.flat3 = th.nn.Linear(60, 32)
         self.flat4 = nn.Linear(16, 3)
 
     def forward(self, x):
@@ -753,7 +751,7 @@ class CNN_B(th.nn.Module):
         vec = th.nn.functional.relu(self.vector(vec))
         # image
         x = x[:, 0:6400]
-        x = x.view(x.size(0),1,80,80)
+        x = x.view(x.size(0), 1, 80, 80)
 
         x = self.conv1(x)
         x = th.nn.functional.relu(x)
@@ -772,7 +770,7 @@ class CNN_B(th.nn.Module):
 
         x = th.flatten(x, 1)
         # concat inputs
-        x = th.cat((x, vec ), 1)
+        x = th.cat((x, vec), 1)
         x = self.flat2(x)
         x = th.nn.functional.relu(x)
         x = self.dropout_20(x)

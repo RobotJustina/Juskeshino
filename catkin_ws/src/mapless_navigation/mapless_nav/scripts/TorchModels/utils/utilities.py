@@ -30,3 +30,9 @@ def load_data(files_path='/data/'):
 def show_image_gray(img):   
     plt.imshow(img, cmap='gray') 
     plt.show()
+
+
+def removePattern(np_arr, condition):
+    index = np.where( condition ) [0]
+    np_arr = np.delete(np_arr, index, axis=0)
+    return np_arr
