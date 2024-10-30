@@ -81,7 +81,7 @@ class CNN_A(torch.nn.Module):
         self.flat2 = torch.nn.Linear(560002, 150)
         self.dropout_20 = torch.nn.Dropout(p=0.2)
         self.flat3 = torch.nn.Linear(150, 60)
-        self.flat4 = nn.Linear(60, 3)
+        self.flat4 = torch.nn.Linear(60, 3)
 
     def forward(self, x):
         # vector
@@ -143,7 +143,7 @@ class CNN_B(torch.nn.Module):
         self.flat2 = torch.nn.Linear(42626, 16)
         self.dropout_20 = torch.nn.Dropout(p=0.2)
         #self.flat3 = torch.nn.Linear(60, 32)
-        self.flat4 = nn.Linear(16, 3)
+        self.flat4 = torch.nn.Linear(16, 3)
 
     def forward(self, x):
         # vector
