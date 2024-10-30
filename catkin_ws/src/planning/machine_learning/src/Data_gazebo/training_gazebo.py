@@ -55,9 +55,6 @@ def main():
         data_ent, M_sal, test_size=0.3, shuffle=True, random_state=42)
     x_pru, x_vad, y_pru, y_vad = train_test_split(
         x_pru, y_pru, test_size=0.5, shuffle=True, random_state=42)
-    
-    print(type(x_ent))
-    print(type(y_ent))
 
     disp = 'cuda' if th.cuda.is_available() else 'cpu'
     x_ent = th.tensor(x_ent, dtype=th.float32, device=disp)
@@ -76,8 +73,6 @@ def main():
     print("lr:", learn_r)
     print("epochs:", epochs)
 
-    print(type(x_ent))
-    print(type(y_ent))
     entdl = DataLoader(TensorDataset(x_ent, y_ent),
                        batch_size=batch, shuffle=True, drop_last=True)
     valdl = DataLoader(TensorDataset(x_vad, y_vad),
@@ -87,39 +82,39 @@ def main():
 
     # Last fully connected
 
-    # mired = architecture.CNN_A()  # Red_conv(3)
-    # # mired = architecture.Reg()
-    # mired.to(disp)
-    # t0 = time.time()  # ><<<<<<<<<<<<
-    # ecm = nn.MSELoss()
-    # opt = AdamW(mired.parameters(), lr=learn_r)  # 4e-3, 40e-6
-    # # opt = AdamW(mired.parameters(), lr = 4e-5)
+    mired = architecture.CNN_A()  # Red_conv(3)
+    # mired = architecture.Reg()
+    mired.to(disp)
+    t0 = time.time()  # ><<<<<<<<<<<<
+    ecm = nn.MSELoss()
+    opt = AdamW(mired.parameters(), lr=learn_r)  # 4e-3, 40e-6
+    # opt = AdamW(mired.parameters(), lr = 4e-5)
 
-    # # hist = training_functions.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=19)
-    # hist = training_functions.entrena(
-    #     mired, ecm, training_functions.exactitud, opt, entdl, valdl, n_epocas=epochs)  # 50
-    # tf = time.time()  # ><<<<<<<<<<<<
-    # print("time: ", tf - t0, "[s]")
-    # training_functions.graficar(hist, entdl, valdl, "Red1")
+    # hist = training_functions.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=19)
+    hist = training_functions.entrena(
+        mired, ecm, training_functions.exactitud, opt, entdl, valdl, n_epocas=epochs)  # 50
+    tf = time.time()  # ><<<<<<<<<<<<
+    print("time: ", tf - t0, "[s]")
+    training_functions.graficar(hist, entdl, valdl, "Red1")
 
-    # # print("Prueba")
-    # # training_functions.dataloader_r2(prudl,mired)
-    # # print("validación")
-    # # training_functions.dataloader_r2(valdl,mired)
-    # # print("entrenamiento")
-    # # training_functions.dataloader_r2(entdl,mired)
-
-    # print("prueba")
-    # training_functions.dataloader_eval(prudl, mired)
+    # print("Prueba")
+    # training_functions.dataloader_r2(prudl,mired)
     # print("validación")
-    # training_functions.dataloader_eval(valdl, mired)
+    # training_functions.dataloader_r2(valdl,mired)
     # print("entrenamiento")
-    # entdl = DataLoader(TensorDataset(x_ent, y_ent),
-    #                    batch_size=1, shuffle=False, drop_last=False)
-    # training_functions.dataloader_eval(entdl, mired)
+    # training_functions.dataloader_r2(entdl,mired)
 
-    # th.save(mired.state_dict(), data_folder+"/CNN_A.pth")
-    # plt.show()
+    print("prueba")
+    training_functions.dataloader_eval(prudl, mired)
+    print("validación")
+    training_functions.dataloader_eval(valdl, mired)
+    print("entrenamiento")
+    entdl = DataLoader(TensorDataset(x_ent, y_ent),
+                       batch_size=1, shuffle=False, drop_last=False)
+    training_functions.dataloader_eval(entdl, mired)
+
+    th.save(mired.state_dict(), data_folder+"/CNN_A.pth")
+    plt.show()
 
 
 if __name__ == "__main__":
