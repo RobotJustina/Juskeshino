@@ -77,8 +77,6 @@ y_val = torch.tensor(y_val, dtype=torch.float32, device=device)
 y_test = torch.tensor(y_test, dtype=torch.float32, device=device)
 
 
-
-
 """
 Hyperparameters
 """
@@ -112,7 +110,6 @@ for epoch in range(epochs):
     for i, t_data in enumerate(train_loader, 0):
         x_inputs, y_labels = t_data[0].to(device), t_data[1].to(device)
         optimizer.zero_grad()
-
         predictions = model(x_inputs)
         loss_val = loss(predictions, y_labels)
         loss_val.backward()
@@ -123,11 +120,13 @@ for epoch in range(epochs):
             print(f'\tBatch[{i + 1}] loss: {running_loss/batch_size}', end='\r')
             running_loss = 0.0
     print()
+
 tf = time.time()
 #print()
 from datetime import timedelta
 t =  str(timedelta(seconds=tf - t0))[:-4]
 print('Training completed in:', t)
+
 
 """
 Save model info
@@ -135,5 +134,3 @@ Save model info
 # --- save the model ---
 save_path = './'+ model.name + '.pth'
 torch.save(model.state_dict(), save_path)
-
-data
