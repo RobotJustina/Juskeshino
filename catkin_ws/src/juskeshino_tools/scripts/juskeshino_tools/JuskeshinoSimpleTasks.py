@@ -4,8 +4,11 @@ import tf
 import numpy as np
 import time
 import math
+import cv2
 from vision_msgs.msg import *
+from vision_msgs.srv import *
 from geometry_msgs.msg import *
+from sensor_msgs.msg import PointCloud2
 from juskeshino_tools.JuskeshinoHardware import JuskeshinoHardware
 from juskeshino_tools.JuskeshinoNavigation import JuskeshinoNavigation
 from juskeshino_tools.JuskeshinoVision import JuskeshinoVision
@@ -84,11 +87,53 @@ class JuskeshinoSimpleTasks:
         timeout = ((abs(error_a) + abs(error_d))/0.5 + 1)
         print("JuskeshinoSimpleTasks.->Moving to align with table d="+str(error_d) + " and theta="+str(error_a))
         return JuskeshinoNavigation.moveDistAngle(error_d, error_a, timeout)
+
+
+                
+    def transformPoint(pointxyz, target_frame, source_frame):
+        listener = tf.TransformListener()
+        listener.waitForTransform(target_frame, source_frame, rospy.Time(), rospy.Duration(4.0))
+        obj_p = PointStamped()
+        obj_p.header.frame_id = source_frame
+        obj_p.header.stamp = rospy.Time(0)
+        obj_p.point = pointxyz
+        obj_p =  listener.transformPoint(target_frame, obj_p)
+        return obj_p.point
+        
+        
+
+
+    def transformPointCloud2(pc, target_frame, source_frame):
+        sensor_frame = source_frame
+        base_link = target_frame
+        # tranformar la nube de puntos al sistema  "base_link'
+        x_arr = pc['x']
+        y_arr = pc['y']
+        z_arr = pc['z']
+
+        i,j = 0,0
+        p = Point()
+        for i in range(480):
+            for j in range(640):
+                if np.isnan(x_arr[i,j]) or np.isnan(y_arr[i,j]) or np.isnan(z_arr[i,j]): print("punto nan")
+                else: 
+                    p.x, p.y, p.z = x_arr[i,j], y_arr[i,j] , z_arr[i,j]
+                    new_frame_p = JuskeshinoSimpleTasks.transformPoint(p, sensor_frame, base_link)
+                    x_arr[i,j], y_arr[i,j] , z_arr[i,j] = new_frame_p.x, new_frame_p.y, new_frame_p.z
+
+        new_pc = cv2.merge((np.asarray(x_arr),np.asarray(y_arr),np.asarray(z_arr)))
+
+        pc['x'] = x_arr
+        pc['y'] = y_arr
+        pc['z'] = z_arr
+
+        return new_pc 
     
 
     def GetClosestHumanPose(timeout):
         JuskeshinoVision.enableHumanPose(True)
         human_posess = rospy.wait_for_message("/vision/human_pose/human_pose_array", HumanCoordinatesArray, timeout=3.0)
+        point_cloud = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2, timeout=1.0)
         human_poses = human_posess.coordinates_array
         min_dist = 500
         if human_poses is None:
@@ -97,32 +142,21 @@ class JuskeshinoSimpleTasks:
 
         for person in human_poses:         
             for k in person.keypoints_array:
+                print(k.keypoint_name)
                 if "nose" in k.keypoint_name:
-                    [x, y, z] = JuskeshinoSimpleTasks.transformPoint( k.keypoint_coordinates.position.x ,
-                                                                      k.keypoint_coordinates.position.y, 
-                                                                      k.keypoint_coordinates.position.z, "base_link", human_posess.header.frame_id )
-                    dist = math.sqrt(x**2 + y**2)
+                    temp_point = Point()
+                    temp_point.x, temp_point.y, temp_point.z = k.keypoint_coordinates.position.x, k.keypoint_coordinates.position.y, k.keypoint_coordinates.position.z
+                    new_point = JuskeshinoSimpleTasks.transformPoint( temp_point, "base_link", human_posess.header.frame_id )
+                    print("frame id", human_posess.header.frame_id)
+                    dist = math.sqrt((new_point.x)**2 + (new_point.y)**2)
                     if dist < min_dist:
                         min_dist = dist
                         closest_human_id = person.person_id
                         closest_human_pose = person
-
         time.sleep(3)
         JuskeshinoVision.enableHumanPose(False)
-        print("JuskeshinoSimpleTask.GetHumanPoseArray->Nearest human id:____ ", closest_human_id)
-        return closest_human_pose
-
-
-                
-    def transformPoint(x,y,z, target_frame, source_frame):
-        listener = tf.TransformListener()
-        listener.waitForTransform(target_frame, source_frame, rospy.Time(), rospy.Duration(4.0))
-        obj_p = PointStamped()
-        obj_p.header.frame_id = source_frame
-        obj_p.header.stamp = rospy.Time(0)
-        obj_p.point.x, obj_p.point.y, obj_p.point.z = x,y,z
-        obj_p = listener.transformPoint(target_frame, obj_p)
-        return [obj_p.point.x, obj_p.point.y, obj_p.point.z]
+        print("JuskeshinoSimpleTask.GetClosestHumanPose->Nearest human id:____ ", closest_human_id)
+        return [closest_human_pose, human_posess.header.frame_id, point_cloud ]
     
     
     def handling_location_la(position_obj):     # Recibe un  objeto de tipo position extraido de un mensaje pose de ROS
