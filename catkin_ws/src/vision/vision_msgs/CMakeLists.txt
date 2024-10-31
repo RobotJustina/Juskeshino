@@ -25,6 +25,7 @@ add_message_files(
   VisionObject.msg
   VisionObjects.msg
   Person.msg
+  Gesture.msg
 )
 
 
