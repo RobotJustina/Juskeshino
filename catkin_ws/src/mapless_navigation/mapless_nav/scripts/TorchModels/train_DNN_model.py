@@ -92,7 +92,7 @@ model = nn_models.CNN_B()
 model.to(device)
 
 optimizer = AdamW(model.parameters(), lr=learn_r)
-loss = torch.nn.MSELoss() # CrossEntropyLoss()
+loss_fn = torch.nn.MSELoss() # CrossEntropyLoss()
 
 """
 Training
@@ -101,7 +101,7 @@ Training
 train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=batch_size, shuffle=True)
 valid_loader = DataLoader(TensorDataset(X_val, y_val), batch_size=batch_size, shuffle=True)
 test_loader = DataLoader(TensorDataset(X_test, y_test), batch_size=batch_size, shuffle=True)
-
+"""
 t0 = time.time()
 print("\nTraining model")
 for epoch in range(epochs):
@@ -125,12 +125,76 @@ tf = time.time()
 #print()
 from datetime import timedelta
 t =  str(timedelta(seconds=tf - t0))[:-4]
-print('Training completed in:', t)
+print('Training completed in:', t)time
+"""
+from datetime import datetime
+from torch.utils.tensorboard import SummaryWriter
 
+# Initializing in a separate cell so we can easily add more epochs to the same run
+timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+t0 = time.time()
+best_vloss = 1_000_000.
+print("\nTraining model")
+for epoch in range(epochs):
+    print(f'Epoch: {epoch+1}/{epochs}')
+
+    # Make sure gradient tracking is on, and do a pass over the data
+    model.train(True)
+    running_loss = 0.
+    train_loss = 0.
+
+    for i, t_data in enumerate(train_loader):
+        # Every data instance is an input + label pair
+        x_inputs, y_labels = t_data[0].to(device), t_data[1].to(device)
+        # Zero your gradients for every batch!
+        optimizer.zero_grad()
+        # Make predictions for this batch
+        predictions = model(x_inputs)
+        # Compute the loss and its gradients
+        loss_val = loss_fn(predictions, y_labels)
+        loss_val.backward()
+        # Adjust learning weights
+        optimizer.step()
+        # Gather data and report
+        running_loss += loss_val.item()
+        if i % (batch_size*10) == (batch_size*10)-1:
+            train_loss = running_loss / batch_size # loss per batch
+            print('   batch {} loss: {:.4f}'.format(i + 1, train_loss), end='\r')
+            tb_x = epoch * len(train_loader) + i + 1
+            running_loss = 0.
+    print()
+
+    running_vloss = 0.0
+    # Set the model to evaluation mode, disabling dropout and using population
+    # statistics for batch normalization.
+    model.eval()
+
+    # Disable gradient computation and reduce memory consumption.
+    with torch.no_grad():
+        for i, vdata in enumerate(valid_loader):
+            #vinputs, vlabels = vdata 
+            vinputs, vlabels = vdata[0].to(device), vdata[1].to(device)
+            voutputs = model(vinputs)
+            vloss = loss_fn(voutputs, vlabels)
+            running_vloss += vloss
+
+    avg_vloss = running_vloss / (i + 1)
+    print('   train loss: {:.3f}, valid loss: {:.3f}'.format(train_loss, avg_vloss))
+    # Track best performance, and save the model's state
+    if avg_vloss < best_vloss:
+        best_vloss = avg_vloss
+        model_path = 'model_{}_{}'.format(timestamp, epoch)
+        ##torch.save(model.state_dict(), model_path)
+
+tf = time.time()
+from datetime import timedelta
+t =  str(timedelta(seconds=tf - t0))[:-4]
+print('\nTraining completed in:', t)
 
 """
 Save model info
 """
-# --- save the model ---
-save_path = './'+ model.name + '.pth'
-torch.save(model.state_dict(), save_path)
+# # --- save the model ---
+# save_path = './'+ model.name + '.pth'
+# torch.save(model.state_dict(), save_path)
