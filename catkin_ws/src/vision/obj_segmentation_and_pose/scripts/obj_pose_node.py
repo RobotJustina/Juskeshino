@@ -19,19 +19,18 @@ MAXIMIUN_CUBE_SIZE  = 0.14
 
 def get_cv_mats_from_cloud_message(cloud_msg):
     img_xyz = ros_numpy.point_cloud2.pointcloud2_to_array(cloud_msg)  # dim 480 x 640 
-    rgb_array = img_xyz['rgb'].copy()     # Pass a copy of rgb float32, 480 x 640
-    rgb_array.dtype = np.uint32       # Config data type of elements from array
-    r,g,b = ((rgb_array >> 16) & 255), ((rgb_array >> 8) & 255), (rgb_array & 255)  # 480 x 640 c/u
-    img_bgr = cv2.merge((np.asarray(b,dtype='uint8'),np.asarray(g,dtype='uint8'),np.asarray(r,dtype='uint8')))
     if debug:
+        rgb_array = img_xyz['rgb'].copy()     # Pass a copy of rgb float32, 480 x 640
+        rgb_array.dtype = np.uint32       # Config data type of elements from array
+        r,g,b = ((rgb_array >> 16) & 255), ((rgb_array >> 8) & 255), (rgb_array & 255)  # 480 x 640 c/u
+        img_bgr = cv2.merge((np.asarray(b,dtype='uint8'),np.asarray(g,dtype='uint8'),np.asarray(r,dtype='uint8')))
         cv2.imshow("imagen reconstruida", img_bgr) #*****************
         cv2.waitKey(0)
-    cv_mats = np.zeros((480, 640, 3))
-    for i in range(480):
-        for j in range(640):
-            cv_mats[i,j][0] = img_xyz[i,j][0]
-            cv_mats[i,j][1] = img_xyz[i,j][1]
-            cv_mats[i,j][2] = img_xyz[i,j][2]
+
+    x = img_xyz['x'].copy()
+    y = img_xyz['y'].copy()
+    z = img_xyz['z'].copy()
+    cv_mats = cv2.merge((np.asarray(x),np.asarray(y),np.asarray(z)))
     return cv_mats
 
 
@@ -40,7 +39,6 @@ def get_object_xyz(cloud_xyz, mask):
     th, mask = cv2.threshold(mask, 0, 255, cv2.THRESH_BINARY)
     # Take xyz points only in mask and remove points with zero X
     obj_xyz = cloud_xyz[(mask == 255) & (cloud_xyz[:,:,2] > 0.1)].copy()
-    
     return obj_xyz
 
 
@@ -55,19 +53,26 @@ def imgmsg_to_cv2(img_array): # Entra imagen en forma de array
 
 
 def pca(xyz_points):    # pc del contorno mas cercano
+    print("z max", np.max(xyz_points[:, 2]))
+    print("z min", np.min(xyz_points[:, 2]))
+    print("x max", np.max(xyz_points[:, 0]))
+    print("x min", np.min(xyz_points[:, 0]))
+    print("y max", np.max(xyz_points[:, 1]))
+    print("y min", np.min(xyz_points[:, 1]))
+
+
     eig_val, eig_vect = np.linalg.eig(np.cov(np.transpose(xyz_points))) # Eigenvalues and eigenvectors from Point Cloud Cov Matrix
     idx = eig_val.argsort()
     eig_val  = eig_val[idx]
     eig_vect = np.transpose(np.transpose(eig_vect)[idx])
     pts_frame_PCA = np.transpose(np.dot(eig_vect, np.transpose(xyz_points)))
-    #pt_frame_PCA = np.transpose(np.dot(eig_vect, np.transpose(centrid)))
-    
-    #print("EigVal...........", eig_val)
+    print("H max", np.max(pts_frame_PCA[:, 2]))
+    print("H min", np.min(pts_frame_PCA[:, 2]))
     H = np.max(pts_frame_PCA[:, 2]) - np.min(pts_frame_PCA[:, 2])
     L = np.max(pts_frame_PCA[:, 1]) - np.min(pts_frame_PCA[:, 1])
     W = np.max(pts_frame_PCA[:, 0]) - np.min(pts_frame_PCA[:, 0])
     
-    size_obj = np.asarray([H, L,W])
+    size_obj = np.asarray([H, L, W])
     idx = size_obj.argsort()  # entrega el orden de las 3 componentes principale de menor a mayor 
     size_obj = size_obj[idx]
     # Los vectores de salida estan en el frame base_link
@@ -291,6 +296,7 @@ def callbackPoseObject(req):  # Request is a PointCloud2
     print("******************************")
     print("ObjPose node->CvMats shape: " , cv_mats.shape)
     print("ObjPose node->Objxyz shape:", obj_xyz.shape)
+    print("ObjPose node->Objxyz size:", obj_xyz.size)
     print("ObjPose node->OBJECT NAME:_____", req.name)
     centroid = np.mean(obj_xyz, axis=0)
     pca_vectors, eig_val, size_obj = pca(obj_xyz)
