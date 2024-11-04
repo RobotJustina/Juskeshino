@@ -180,6 +180,7 @@ def main():
 
 
             elif(current_state == PREPARE_ARM):
+                """
                 print("ESTADO:___PREPARE_ARM..................")
                 JuskeshinoHardware.moveLeftArmWithTrajectory([-1.2, 0.3,0,1.85,0.2,1.04,0],10)#([-0.9, 0.3, 0.0 ,1.55, 0.0 , 1.34, 0.0], 10)
                 print(obj.point_cloud)
@@ -190,6 +191,8 @@ def main():
                     APERTURE = 0.9
                     JuskeshinoHardware.moveLeftGripper(APERTURE , 5.0)
                 current_state = LOOKING_GRIP
+                """
+                break
 
 
 
