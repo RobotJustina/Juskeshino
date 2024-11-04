@@ -132,8 +132,7 @@ class JuskeshinoSimpleTasks:
 
     def GetClosestHumanPose(point_cloud ,timeout):
         JuskeshinoVision.enableHumanPose(True)
-        human_posess = rospy.wait_for_message("/vision/human_pose/human_pose_array", HumanCoordinatesArray, timeout=3.0)
-        #point_cloud = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2, timeout=1.0)
+        human_posess = rospy.wait_for_message("/vision/human_pose/human_pose_array", HumanCoordinatesArray, timeout=7.0)
         human_poses = human_posess.coordinates_array
         min_dist = 500
         if human_poses is None:
@@ -142,15 +141,14 @@ class JuskeshinoSimpleTasks:
         i = 0
         for person in human_poses:         
             for k in person.keypoints_array:
-                print(k.keypoint_name)
-                print("i", i)
+                #print("k name", k.keypoint_name)
                 if 1:#"nose" in k.keypoint_name:
                     temp_point = Point()
                     temp_point.x, temp_point.y, temp_point.z = k.keypoint_coordinates.position.x, k.keypoint_coordinates.position.y, k.keypoint_coordinates.position.z
                     new_point = JuskeshinoSimpleTasks.transformPoint( temp_point, "base_link", human_posess.header.frame_id )
-                    print(new_point)
+                    
                     #print("frame id", human_posess.header.frame_id)
-                    if "nose" in k.keypoint_name:
+                    if "r_sho" in k.keypoint_name:
                         dist = math.sqrt((new_point.x)**2 + (new_point.y)**2)
                         #k.keypoint_coordinates.position.x, k.keypoint_coordinates.position.y, k.keypoint_coordinates.position.z = new_point.x, new_point.y, new_point.z
                         if dist < min_dist:
@@ -160,7 +158,7 @@ class JuskeshinoSimpleTasks:
                     i = i+1
         time.sleep(3)
         JuskeshinoVision.enableHumanPose(False)
-        print("JuskeshinoSimpleTask.GetClosestHumanPose->Nearest human id:____ ", closest_human_id)
+        #print("JuskeshinoSimpleTask.GetClosestHumanPose->Nearest human id:____ ", closest_human_id)
         return [closest_human_pose, human_posess.header.frame_id ]
     
     

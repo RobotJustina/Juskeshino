@@ -31,24 +31,16 @@ def point_actual2point_target(pointxyz, f_actual, f_target):
     return new_pointxyz
 
 
-def transform_point(point_, matrix_transform):
-    x,y,z = point_.x, point_.y, point_.z
-    
-
-
-    return new_point
-
-
 
 def transformPointCloud2(pc):
-    #sensor_frame = 'realsense_link'
-    sensor_frame = 'camera_rgb_optical_frame'
-    base_link = 'base_link'
+    global listener
     # tranformar la nube de puntos al sistema  "base_link'
-    x_arr = pc['x']
-    y_arr = pc['y']
-    z_arr = pc['z']
-
+    new_pc = listener.transformPointCloud(BL, pc)
+    """
+    x_arr = new_pc['x']
+    y_arr = new_pc['y']
+    z_arr = new_pc['z']
+    
     i,j = 0,0
     p = Point()
     for i in range(480):
@@ -58,9 +50,10 @@ def transformPointCloud2(pc):
                 p.x, p.y, p.z = x_arr[i,j], y_arr[i,j] , z_arr[i,j]
                 new_frame_p = point_actual2point_target(p, sensor_frame, base_link)
                 x_arr[i,j], y_arr[i,j] , z_arr[i,j] = new_frame_p.x, new_frame_p.y, new_frame_p.z
-
+    
     new_pc = cv2.merge((np.asarray(x_arr),np.asarray(y_arr),np.asarray(z_arr)))
-
+    """
+    print("lalalalla")
     #pc['x'] = x_arr
     #pc['y'] = y_arr
     #pc['z'] = z_arr
@@ -138,6 +131,9 @@ def color_histogram(img_bgr, mask):
 def callback(req):
     global listener 
     pe_msg = HumanPoseEstimatorResultRequest()
+    print(type(req.cloud))
+    new_pc = transformPointCloud2(req.cloud) 
+
     arr_pc = ros_numpy.point_cloud2.pointcloud2_to_array(req.cloud)
 
     [closest_human_pose, frame_id] = JuskeshinoSimpleTasks.GetClosestHumanPose(arr_pc , 8)
@@ -156,7 +152,7 @@ def callback(req):
     new_pc = cv2.merge((np.asarray(x_pc),np.asarray(y_pc),np.asarray(z_pc)))
 
     # nube con respecto a base link **********************************************************************
-    new_pc = transformPointCloud2(copy_pc_array) 
+    #new_pc = transformPointCloud2(copy_pc_array) 
     #************************************************************************************
     # Asigna limites de distancia en x,yz para segmentar el torso y pierna***************
     # Hombros
@@ -178,7 +174,7 @@ def callback(req):
     point_r_elb  = point_actual2point_target(r_elb, SENSOR_FRAME ,BL)
     point_l_knee = point_actual2point_target(r_kne, SENSOR_FRAME ,BL)
 
-    print("l_knee", point_l_knee)
+    ##sprint("l_knee", point_l_knee)
     # TORSO
     # profundidad, medida experimental     
     x1_min = point_ra.x - 0.2
