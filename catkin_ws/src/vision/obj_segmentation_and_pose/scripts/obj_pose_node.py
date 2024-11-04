@@ -142,7 +142,7 @@ def object_pose(centroid, principal_component, second_component, size_obj, name_
             eje_x_obj = np.cross(eje_z_obj , eje_y_obj )
         else:
             if (c_obj == "BOX_VERTICAL"):
-                print("SECOND COMPONENT________________". second_component)
+                print("SECOND COMPONENT________________", second_component)
                 """ para box
                 if (size_obj.x >= MAXIMIUN_CUBE_SIZE):
                     if angle_2pc_x_bl < np.deg2rad(23):
