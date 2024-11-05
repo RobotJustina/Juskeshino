@@ -1,0 +1,4 @@
+sensor_msgs/PointCloud2 cloud
+uint16 gesture_id
+---
+vision_msgs/Person person 
