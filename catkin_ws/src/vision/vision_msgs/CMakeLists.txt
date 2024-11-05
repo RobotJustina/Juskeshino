@@ -31,7 +31,7 @@ add_message_files(
 
 add_service_files(
   FILES
-  
+  FindGesture.srv
   FaceRecog.srv
   FaceTrain.srv
   FindLines.srv
