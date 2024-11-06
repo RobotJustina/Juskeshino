@@ -38,14 +38,14 @@ POST_GRIP         = [0.38, 0.19, -0.01, 1.57, 0 , 0.35, 0.0 ]
 PREPARE_RA    = [-0.8, -0.1, 0.0, 1.3, 1.3,0, 0.0]
 
 # Locations
-OBJECTS_TABLE = "table11"#"bowl_table_robocup"#"objects_table_robocup"#"desk_justina"
-EAT_TABLE     = "table12"#"desk_takeshi" 
-LOCATIONS     = ["table12", "table12", "table12"]
+OBJECTS_TABLE = "location_desk_justina"#
+EAT_TABLE     = "desk_takeshi" 
+LOCATIONS     = ["location_desk_justina" , "location_desk_justina", "location_desk_justina"]
 
 
 # Objects
 BOWL   = "apple"#"pudding_box"#"potted_meat_can"#"apple"#"sausages"#"bowl"
-MILK   = "potted_meat_can"
+MILK   = "chips_can"
 CEREAL = "rubiks_cube"
 
 # Gripper_aperture
@@ -205,8 +205,8 @@ def main():
             JuskeshinoSimpleTasks.setNodeHandle()
             JuskeshinoHRI.setNodeHandle()
             JuskeshinoKnowledge.setNodeHandle()
-            if torso:
-                JuskeshinoHardware.moveTorso(0.10 , 10.0)
+            
+            JuskeshinoHardware.moveTorso(0.7 , 10.0)
             
             pila = [BOWL, CEREAL, MILK]
             count = 0
@@ -217,8 +217,8 @@ def main():
             grip_attempts = 0
             cycle = 0
             print("cycle:___", cycle)
-            mesa_alta = True
-            align_with_table = True
+        
+            
             current_state = START
 
 
@@ -243,15 +243,12 @@ def main():
 
         elif(current_state == BEGIN_CYCLE):
             print("ESTADO:__________BEGIN CYCLE.............")
-            print("mesa alta", mesa_alta)
             print("cycle:___", cycle)
             print("j:___", j)
             print("Actual object", pila[j])
             print("Actual locations", location_actual )
-            #JuskeshinoNavigation.moveDist(1.5,10)
-            JuskeshinoHRI.say("Could you please remove all the chairs on the table?")
-
-
+            #JuskeshinoNavigation.moveDist(1.5,10
+            #JuskeshinoHRI.say("Could you please remove all the chairs on the table?")
             current_state = MOVE_TO_LOCATION
 
 
@@ -260,7 +257,7 @@ def main():
 
         elif(current_state == MOVE_TO_LOCATION):
             print("ESTADO:___MOVE_TO_LOCATION..................")
-            #JuskeshinoHRI.say("I'm going to the "+ location_actual)
+            JuskeshinoHRI.say("I'm going to the "+ location_actual)
             location_atual = OBJECTS_TABLE
             if not JuskeshinoNavigation.getClose(OBJECTS_TABLE , 300): 
                 JuskeshinoHRI.say("Cannot get close to the "+ location_actual +" position")
@@ -269,16 +266,10 @@ def main():
 
             else:
                 print("SERVING BREAKFAST-> Se llego con exito a la locacion solicitada")
-
                 current_state = MOVE_HEAD
             time.sleep(0.5)
 
-            if cycle > 0:
-                JuskeshinoNavigation.moveDist(0.18,10)
-            
-            
-
-
+    
 
 
      
@@ -298,11 +289,7 @@ def main():
         elif(current_state == DETECT_OBJECT):
             print("ESTADO:____DETECT_OBJECT..................")
             try:
-                if (cycle < 1):
-                    tilt = -0.9
-                else:
-                    tilt = -0.7
-                [obj, img] = JuskeshinoSimpleTasks.object_search(actual_obj, tilt) #*************************************************
+                [obj, img] = JuskeshinoSimpleTasks.object_search(actual_obj, -1) #*************************************************
                 """
                 time.sleep(0.2)
                 [obj, img] = JuskeshinoVision.detectAndRecognizeObjectWithoutOrientation(actual_obj)
@@ -355,11 +342,8 @@ def main():
 
             time.sleep(0.2)
             try:
-                if (cycle < 1):
-                    tilt = -1.0
-                else:
-                    tilt = -0.7
-                [obj, img] = JuskeshinoSimpleTasks.object_search_orientation(actual_obj, tilt)
+              
+                [obj, img] = JuskeshinoSimpleTasks.object_search_orientation(actual_obj, -1)
                 #[obj, img] = JuskeshinoVision.detectAndRecognizeObject(actual_obj)   
                 #print("SB-PLN.->Detected object : " ,obj.id , obj.category, obj.object_state, obj.pose.position)
                 JuskeshinoHRI.say("I found" + actual_obj.replace("_", " "))
@@ -436,7 +420,7 @@ def main():
                 current_state = TAKE_OBJECT
             else:
                 grip_attempts = grip_attempts + 1
-                if grip_attempts < 16:
+                if grip_attempts < 4:
 
                     current_state = DETECT_OBJECT_ORIENTATION
 
@@ -445,7 +429,7 @@ def main():
                     print("SB-PLN.->No possible poses found")
                     #resp = resp.q
                 
-                    current_state = TAKE_OBJECT
+                    current_state = -1
 
                 
 
@@ -456,19 +440,19 @@ def main():
             print("ESTADO:___TAKE_OBJECT..................")
             JuskeshinoHardware.moveLeftArmWithTrajectory(resp ,15)
             time.sleep(0.5)
-            JuskeshinoHRI.say("Closing gripper")
             
-            J
             if (actual_obj == BOWL):
                 JuskeshinoManipulation.dynamic_grasp_left_arm(is_thin = True)
             else:
                 JuskeshinoManipulation.dynamic_grasp_left_arm()
             
             if(actual_obj != BOWL):
+                """
                 actual_position = rospy.wait_for_message("/hardware/left_arm/current_pose", Float64MultiArray, 5.0)
                 actual_position_arm = list(actual_position.data)
                 actual_position_arm[5] = actual_position_arm[5] + 1.57 
                 JuskeshinoHardware.moveLeftArmWithTrajectory(actual_position_arm , 10) 
+                """
             
 
             current_state = POST_GRASP
@@ -497,7 +481,6 @@ def main():
             if(actual_obj != BOWL):
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_TOP_GRIP, 10)
             """
-            
             current_state = GO_TO_KITCHEN
 
 

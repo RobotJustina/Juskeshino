@@ -1,7 +1,7 @@
 <launch>
   <arg name="debug" default="False"/>
-  <arg name="use_vosk" default="False"/>
-  <arg name="use_pot_fields" default="False"/>
+  <arg name="use_vosk" default="True"/>
+  <arg name="use_pot_fields" default="True"/>
   
   <param name="base_link_name" value="base_link"/>
   <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
@@ -11,8 +11,8 @@
   <include file="$(find surge_et_ambula)/launch/justina/hardware/justina_hardware.launch"/>
   
   <include file="$(find surge_et_ambula)/launch/justina/navigation.launch">
-    <arg name="static_map_file"  value="$(find config_files)/maps/LabBiorobotica.yaml"/>
-    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/LabBiorobotica.yaml"/>
+    <arg name="static_map_file"  value="$(find config_files)/maps/auditorio.yaml"/>
+    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/auditorio.yaml"/>
     <arg name="initial_pose_x" value="0.0"/>
     <arg name="initial_pose_y" value="0.0"/>
     <arg name="initial_pose_a" value="0.0"/>
@@ -69,4 +69,19 @@
   <include file="$(find surge_et_ambula)/launch/justina/planning.launch">
     <arg name="known_locations" value="$(find config_files)/navigation/auditorio_locations.yaml"/>
   </include>
+
+  <param name="file_name" value="/known_locations.yaml"/>
+  <include file="$(find ros_whisper_vosk)/launch/ros_vosk.launch"/>
+
+    <node pkg="face_recog"  name="face_recog" type="face_recog_server.py"/>
+  <node pkg="hmm_navigation"  name="pumas_nav_actionserver" type="pumas_nav_actionserver.py"/>
+  <node pkg="known_locations_tf_server"  name="known_locs" type="known_locs_node.py" output="screen" />
+  <node pkg="object_classification"  name="objs_reco" type="classification_server.py"  /> 
+  <node pkg="segmentation"  name="segmentation" type="segment_node.py"  />  
+  <includenode pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"/>
+  
+  <node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py" output="screen"/>
+
+  <node pkg="act_pln"  name="follow_demo" type="follow_demo.py" output="screen"/>
+
 </launch>

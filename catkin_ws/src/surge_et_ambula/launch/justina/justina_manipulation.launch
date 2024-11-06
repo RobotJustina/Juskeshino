@@ -19,6 +19,7 @@
   
   <node name="grasp_object" pkg="object_manipulation" type="graspping_node.py" output="screen"/>
 
-  <node name="grip_test" pkg="object_manipulation" type="demo_grasp.py"/>
+  <node name="grip_test" pkg="object_manipulation" type="demo_grasp.py"/> 
 
+  <node name="capture_node" pkg="object_manipulation" type="training_data_service.py"/>
 </launch>

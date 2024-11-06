@@ -25,12 +25,13 @@ add_message_files(
   VisionObject.msg
   VisionObjects.msg
   Person.msg
+  Gesture.msg
 )
 
 
 add_service_files(
   FILES
-  
+  FindGesture.srv
   FaceRecog.srv
   FaceTrain.srv
   FindLines.srv

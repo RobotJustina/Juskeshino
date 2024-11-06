@@ -143,5 +143,4 @@ class JuskeshinoVision:
         if (resp):
             print("Success ", resp.success)
             print(resp.message)
-    
 

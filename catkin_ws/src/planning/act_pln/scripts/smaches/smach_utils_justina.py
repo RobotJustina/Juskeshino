@@ -134,6 +134,10 @@ class Head:  # known as Gaze on Takeshi grasp_utils.py
             self.set_joint_values(head_pose=[0.7, 0.0])
         elif pose_name == 'face_to_face':
             self.set_joint_values(head_pose=[0.0, -0.1])
+        elif pose_name == 's_right':
+            self.set_joint_values(head_pose=[-0.3, 0.0])
+        elif pose_name == 's_left':
+            self.set_joint_values(head_pose=[0.3, 0.0])
 
     #def get_joint_values(self): 
 

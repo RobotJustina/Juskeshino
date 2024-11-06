@@ -115,7 +115,7 @@ def broadcaster_frame_object(frame, child_frame, pose):
 #***********FUNCIONES DE AGARRE DE OBJETOS********offset in rotation axis*************************************************************************************************************
 def generates_candidates(obj_pose, name_frame, step, offset, rotation_axis):    
     global debug, num_candidates
-    num_candidates = 4
+    num_candidates = 6
     j = 0
     if debug: marker_array_publish([obj_pose.position.x, obj_pose.position.y, obj_pose.position.z], 'object', 59, 56)
     grasp_candidates_quaternion = []
@@ -134,14 +134,14 @@ def generates_candidates(obj_pose, name_frame, step, offset, rotation_axis):
 
 def graspping_function():
     global category, size
-    #            |  category object   |  last point of  ,     | offset on the |  candidate        |  last point of the      | step°
-    #            |                    |  the 1st trajectory   | rotation axis |  pose names       |  2nd trajectory         |
-    object_dic = {"BOWL"            : [[-0.02 ,size.z/2 ,0.12], [0,-90 ,0]    , "BOWL_1", "BOWL_2", [-0.02 ,size.z/2 ,0.06] ,5,    5], 
-                  "PRISM_HORIZONTAL": [[0     ,0        ,0.12], [0,-90 ,0]    , "PH1"   , "PH2"   , [0     ,0        ,0.10] ,6,   -9], 
-                  "PRISM_VERTICAL"  : [[0.03     ,0     ,0   ], [-5,-5 ,0]    , "PV"    , "None"  , None                    ,6, None], 
-                  "CUBIC"           : [[0.09  ,0        ,0]   , [0,0   ,0]    , "CUBIC" , "None"  , None                    ,5, None], 
-                  "BOX_HORIZONTAL"  : [[0     ,size.z/2 ,0]   , [0,0   ,0]    , "BOX_H1", "BOX_H2", [0     ,size.z/2 ,0]    ,6,    5],
-                  "BOX_VERTICAL"    : [[0     ,size.z/2 ,0]   , [0,0   ,0]    , "BOX_V1", "BOX_V2", [0     ,size.z/2 ,0]    ,6,    5]}
+    #            |  category object   |  grip pont in frame   | offset on the |  candidate        |  last point of the      | step°
+    #            |                    |  'object'             | rotation axis |  pose names       |  2nd trajectory         |
+    object_dic = {"BOWL"            : [[-0.02 ,size.z/2 ,0.12], [0,-90 ,0]    , "BOWL_1", "BOWL_2", [-0.02 ,size.z/2 ,0.12] ,8,  -10], 
+                  "PRISM_HORIZONTAL": [[0     ,0        ,0.12], [0,-90 ,0]    , "PH1"   , "PH2"   , [0     ,0        ,0.08] ,8,  -10], 
+                  "PRISM_VERTICAL"  : [[0.09  ,0        ,0   ], [-5,-5 ,0]    , "PV"    , "None"  , None                    ,6, None], 
+                  "CUBIC"           : [[0.012  ,0        ,0  ], [0,0   ,0]    , "CUBIC" , "None"  , None                    ,5, None], 
+                  "BOX_HORIZONTAL"  : [[0.05  ,0 ,0          ], [0,0   ,0]    , "BOX_H1", "BOX_H2", [0     ,size.z/2 ,0]    ,6,    5],
+                  "BOX_VERTICAL"    : [[0.05  ,0 ,0          ], [0,0   ,0]    , "BOX_V1", "BOX_V2", [0     ,size.z/2 ,0]    ,6,    5]}
     
     object_info = object_dic[category]
     candidate_list = generates_candidates(generate_pose(object_info[0] , [0,0,0,1]) , object_info[2] , object_info[5], object_info[1] ,np.asarray([0,1,0]))

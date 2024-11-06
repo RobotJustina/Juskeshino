@@ -7,3 +7,4 @@ string emotion
 string race
 string shirt
 string pants
+vision_msgs/Gesture gesture
