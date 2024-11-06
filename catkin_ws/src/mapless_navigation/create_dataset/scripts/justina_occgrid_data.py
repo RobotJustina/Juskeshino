@@ -8,69 +8,30 @@ import rospkg
 import torch
 import math
 import tf
+import sys
 
-#from mapless_nav.scripts.TorchModels.utils import models
+# np.set_printoptions(threshold=sys.maxsize)
+np.set_printoptions(suppress=True)
+
+# from mapless_nav.scripts.TorchModels.utils import models
 
 package_path = rospkg.RosPack().get_path("mapless_nav")
-#model_path = package_path + "/scripts/TorchModels/modelo.pth"
-#print("model path: ", model_path)
-#model = models.Red_conv(3)
-#model.load_state_dict(torch.load(model_path))
-#disp = 'cuda' if torch.cuda.is_available() else 'cpu'
-#model.to(disp)
+# model_path = package_path + "/scripts/TorchModels/modelo.pth"
+# print("model path: ", model_path)
+# model = models.Red_conv(3)
+# model.load_state_dict(torch.load(model_path))
+# disp = 'cuda' if torch.cuda.is_available() else 'cpu'
+# model.to(disp)
 lin_vel_x, goal_x, goal_y = 0.0, 0.0, 0.0
 ang_vel_z = 1.0
 last_goal = [0, 0]
-
-
-# def occGridArrayCallback(msg):
-#     global model, disp, last_goal, lin_vel_x, ang_vel_z
-#     """
-#     simple_data = msg.data  # Default is a tuple (6400)
-#     print(len(simple_data))
-#     print(type(simple_data))
-#     """
-#     # Transform to List and concatenate
-#     data_list = list(msg.data)
-#     data_list += [0, 0]  # TODO: Concatenate las goal shape:(6402)
-
-#     # print("occ_g_list:", len(data_list))
-#     # print("data_list:", type(data_list))
-#     # print("---")
-#     # Transform to numpy arrray
-#     data_np = np.asarray(data_list)
-
-#     # print("data_np shape=", data_np.shape)
-#     # print("data_np:", type(data_np))
-    
-#     # Expand dims (1 batch, flat 6402)
-#     data_np = np.expand_dims(data_np, 0)
-#     # print("data_np shape=", data_np.shape)
-#     # print(">>")
-#     # Data to Torch tensor
-#     data_x_tensor = torch.tensor(data_np)
-#     # Select GPU/CPU and precision f32
-#     # data_x_tensor = data_x_tensor.to(torch.device(disp), torch.float32)
-    
-#     """
-#     model.eval()
-#     output = model(example_image)
-#     """
-
-#     # if(abs(last_goal[0])>0.2):
-#     #     with torch.no_grad():
-#     #         y_pred = model(data_x_tensor)
-#     #     y_pred = y_pred.cpu().numpy()
-#     #     lin_vel_x = y_pred[0,0]
-#     #     ang_vel_z = y_pred[0,1]
-#     # else:
-#     #     lin_vel_x = 0.0
-#     #     ang_vel_z = 0.0
+data_X = 0
 
 
 def goalCallback(msg):
-	global last_goal
-	last_goal = list(msg.data)
+    global last_goal
+    last_goal = list(msg.data)
+    #print(last_goal)
 
     
 def clickPointCallback(msg):
@@ -84,17 +45,14 @@ def target_direction():
     global listener
     global goal_x
     global goal_y
-    try:
-        ([x, y, z], rot) = listener.lookupTransform("odom", 'base_link', rospy.Time(0))
-        angle = 2*math.atan2(rot[2], rot[3])
-        angle = angle - 2*math.pi if angle > math.pi else angle
-        robot_x = x
-        robot_y = y
-        robot_a = angle
-    except:
-        robot_x = 0.0
-        robot_y = 0.0
-        robot_a = 0.0
+
+    ([x, y, z], rot) = listener.lookupTransform("odom", 'base_link', rospy.Time(0))
+    angle = 2*math.atan2(rot[2], rot[3])
+    angle = angle - 2*math.pi if angle > math.pi else angle
+    robot_x = x
+    robot_y = y
+    robot_a = angle
+
 
     ang_pos = math.atan2(goal_y-robot_y, goal_x-robot_x)
     distance = math.sqrt((goal_y-robot_y)**2 + (goal_x-robot_x)**2)
@@ -110,18 +68,27 @@ def target_direction():
     return [distance, angle]
 
 
+def occGridCallback(msg):#SingleConvModel()
+    global data_X
+    data = np.asarray(msg.data)
+    data = np.reshape(data, (msg.info.height, msg.info.width))
 
+    
+    other_features = np.zeros((msg.info.height, msg.info.width))
+    other_features[0, :2] = target_direction()
+    data_X = np.array([data, other_features], dtype=np.float32) # img(80x80) ch0, vet(2) ch2
 
-# TODO: Use this one to make a 80x80 matrix
-# def occGridCallback(msg):SingleConvModel()
-#     data = np.asarray(msg.data)
-
-#     print("occ_g:", data.shape)
+    # print("occ_g:", data.shape)
+    # print("data_X:", data_X.shape)
+    # print(data_X)
+    # print("___________________________________________")
+    # print("___________________________________________")
 
 
 def main():
     global lin_vel_x, ang_vel_z, listener
     global goal_x, goal_y
+    start = True
     rospy.init_node("justina_nav_data")
     rospy.loginfo("INITIALIZING justina_nav_data")
 
@@ -133,10 +100,16 @@ def main():
     rospy.Subscriber("/clicked_point", PointStamped, clickPointCallback)
     goal_pub = rospy.Publisher("/NN_goal", Float32MultiArray, queue_size=10)
     msg_pos = Float32MultiArray()
-    msg_pos.data = [0.0, 0.0]
+    
+    if start:
+        ([x, y, z], rot) = listener.lookupTransform("odom", 'base_link', rospy.Time(0))
+        goal_x, goal_y = x+.001, y+0.1
+        start = False
+
+    msg_pos.data = last_goal
     goal_pub.publish(msg_pos)
     
-    #loc_occ_sub = rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
+    rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
 
     cmd_vel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
     twist_msg = Twist()
@@ -160,3 +133,4 @@ def main():
 
 if __name__ == "__main__":
      main()
+     print()
