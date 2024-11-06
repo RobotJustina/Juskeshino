@@ -2,7 +2,7 @@
     
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
     <arg name="posx" value="3.75" />
-    <arg name="posy" value="11.0" />
+    <arg name="posy" value="12.0" />
     <arg name="yaw" default="-1.57"/>
     <arg name="world" value="$(arg world)"/>
   </include>
@@ -16,10 +16,14 @@
     <remap from="/vision/obj_reco/recognize_object" to="/vision/obj_segmentation/get_obj_pose"/>
   </node>
 
+  <node name="map_server" pkg="map_server" type="map_server" output="screen"
+        args="$(find config_files)/maps/AllBlank.yaml _frame_id:=odom">
+  </node>
+
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/>
   <!-- <include file="$(find surge_et_ambula)/launch/justina/vision.launch"/> -->
 
-  <node name="get_goal_point" pkg="machine_learning" type="get_goal_point.py"/>
+  <!-- <node name="get_goal_point" pkg="machine_learning" type="get_goal_point.py"/> -->
 
   <node name="local_occ_grid" pkg="local_occ_grid" type="local_occ_grid">
     <param name="use_lidar" value="true"/>

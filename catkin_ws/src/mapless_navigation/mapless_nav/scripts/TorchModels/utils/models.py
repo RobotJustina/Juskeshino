@@ -1,6 +1,49 @@
 #! /usr/bin/env python3
 import torch
 
+class Red_conv(torch.nn.Module):
+    def __init__(self, salida):
+        f1 = 32  # Mejor configuración f1 =32, l1=64, lr=8.1e-3, epoch=14
+        l1 = 128
+        expand = 32
+        super(Red_conv, self).__init__()
+        self.conv1 = torch.nn.Conv2d(1, f1, 3)
+        self.dropout1 = torch.nn.Dropout2d(p=0.5)
+        self.norm1 = torch.nn.GroupNorm(1, f1)
+
+        self.c1 = torch.nn.Linear(int(39*39*f1), l1)  # 27380
+        self.norm3 = torch.nn.LayerNorm(l1)
+        self.dropout3 = torch.nn.Dropout(p=0.5)
+
+        self.c2 = torch.nn.Linear(l1+expand, salida)
+
+        self.lr = 8.1e-3
+        self.epoch = 14
+
+        self.extra = torch.nn.Linear(2, expand)
+        self.extra_norm = torch.nn.LayerNorm(expand)
+
+    def forward(self, x):
+        pos = x[:, 6400:]
+        pos = self.extra(pos)
+        pos = torch.nn.functional.relu(self.extra_norm(pos))
+        x = x[:, 0:6400]
+        x = x.view(x.size(0), 1, 80, 80)
+
+        x = self.conv1(x)
+        x = torch.nn.functional.relu(self.norm1(x))
+        x = torch.nn.functional.avg_pool2d(x, kernel_size=2, stride=2)
+        x = self.dropout1(x)
+
+        x = torch.flatten(x, 1)
+        x = self.c1(x)
+        x = torch.nn.functional.relu(self.norm3(x))
+        x = self.dropout3(x)
+
+        x = torch.cat((x, pos), 1)
+        x = self.c2(x)
+        return torch.nn.functional.softmax(x, dim=1)
+    
 
 class SingleConvModel(torch.nn.Module):
     def __init__(self):

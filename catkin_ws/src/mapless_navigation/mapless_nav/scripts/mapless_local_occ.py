@@ -7,13 +7,13 @@ import numpy as np
 import rospkg
 import torch
 
-from mapless_navigation.mapless_nav.scripts.TorchModels.utils import models
+from TorchModels.utils import models
 
 package_path = rospkg.RosPack().get_path("mapless_nav")
 model_path = package_path + "/scripts/TorchModels/modelo.pth"
 print("model path: ", model_path)
-#model = models.SingleConvModel()
-model = models.Reg()
+model = models.Red_conv(3)
+#model = models.Reg()
 model.load_state_dict(torch.load(model_path))
 disp = 'cuda' if torch.cuda.is_available() else 'cpu'
 model.to(disp)

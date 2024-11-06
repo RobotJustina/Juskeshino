@@ -1,25 +1,23 @@
 #! /usr/bin/env python3
 
 import rospkg
-import torchvision.transforms as transforms
 import torch
-
-from sklearn.model_selection import train_test_split
+import torchvision.transforms as transforms
 from torch.utils.data import TensorDataset, DataLoader
 from torch.optim import SGD, AdamW
-
+from sklearn.model_selection import train_test_split
 import numpy as np
 import sys
 
 import utils.utilities as l_util 
 import utils.models as nn_models
-
+from datetime import datetime
 import time
 
-np.set_printoptions(threshold=sys.maxsize)
 
-
-# Enable GPU mode
+"""
+Enable GPU mode
+"""
 if torch.cuda.is_available():
     device = torch.device('cuda:0')
     print("device", device, "name: ", torch.cuda.get_device_name())
@@ -30,6 +28,8 @@ else:
 """
 Dataset
 """
+np.set_printoptions(threshold=sys.maxsize)
+
 # --- load files ---
 pkg_name = 'machine_learning' #'mapless_nav'
 pkg_path = rospkg.RosPack().get_path(pkg_name)
@@ -59,7 +59,7 @@ print("Data_X shape:", data_X.shape)
 #l_util.show_image_gray(data_X[np.random.randint(0,len(data_X)), 0])
 
 # CLASSIFICATION problem
-y_one_hot = l_util.one_hot_encode(data_Y, verbose=False)
+y_one_hot = l_util.one_hot_encode(data_Y, verbose=True)
 y_one_hot = np.asarray(y_one_hot, dtype=np.float32)
 
 # Normalization
@@ -101,34 +101,6 @@ Training
 train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=batch_size, shuffle=True)
 valid_loader = DataLoader(TensorDataset(X_val, y_val), batch_size=batch_size, shuffle=True)
 test_loader = DataLoader(TensorDataset(X_test, y_test), batch_size=batch_size, shuffle=True)
-"""
-t0 = time.time()
-print("\nTraining model")
-for epoch in range(epochs):
-    print(f'Epoch: {epoch+1}/{epochs}')
-    running_loss = 0.0
-    for i, t_data in enumerate(train_loader, 0):
-        x_inputs, y_labels = t_data[0].to(device), t_data[1].to(device)
-        optimizer.zero_grad()
-        predictions = model(x_inputs)
-        loss_val = loss(predictions, y_labels)
-        loss_val.backward()
-        optimizer.step()
-
-        running_loss += loss_val.item()
-        if i % (batch_size*10) == (batch_size*10)-1:
-            print(f'\tBatch[{i + 1}] loss: {running_loss/batch_size}', end='\r')
-            running_loss = 0.0
-    print()
-
-tf = time.time()
-#print()
-from datetime import timedelta
-t =  str(timedelta(seconds=tf - t0))[:-4]
-print('Training completed in:', t)time
-"""
-from datetime import datetime
-from torch.utils.tensorboard import SummaryWriter
 
 # Initializing in a separate cell so we can easily add more epochs to the same run
 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -196,5 +168,26 @@ print('\nTraining completed in:', t)
 Save model info
 """
 # # --- save the model ---
-# save_path = './'+ model.name + '.pth'
-# torch.save(model.state_dict(), save_path)
+save_path = './'+ model.name + '.pth'
+torch.save(model.state_dict(), save_path)
+
+
+"""
+Evaluation
+"""
+
+data_train_iter = iter(train_loader)
+images, labels = next(data_train_iter)
+model.eval()
+
+correct = 0
+total = 0
+with torch.no_grad():
+    for data in train_loader:
+        images, labels = data
+        pred_out = model(images)
+        _, predicted = torch.max(pred_out.data, 0)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
+
+print(f'Accuracy train: {100 * correct // total}%')
