@@ -11,8 +11,8 @@
   <include file="$(find surge_et_ambula)/launch/justina/hardware/justina_hardware.launch"/>
   
   <include file="$(find surge_et_ambula)/launch/justina/navigation.launch">
-    <arg name="static_map_file"  value="$(find config_files)/maps/rbc_2024.yaml"/>
-    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/rbc_2024.yaml"/>
+    <arg name="static_map_file"  value="$(find config_files)/maps/lab_20240513.yaml"/>
+    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/lab_20240513.yaml"/>
     <arg name="initial_pose_x" value="0.0"/>
     <arg name="initial_pose_y" value="0.0"/>
     <arg name="initial_pose_a" value="0.0"/>
@@ -36,7 +36,7 @@
     <arg name="max_linear_speed" default="0.7"/>
     <arg name="min_linear_speed" default="0.15"/>
     <arg name="max_angular_speed" default="0.8"/>
-    <arg name="linear_acceleration" default="0.25"/>
+    <arg name="linear_acceleration" default="0.45"/>
     <arg name="use_pot_fields" value="$(arg use_pot_fields)"/>
     <arg name="pot_fields_k_rej" value="2.5"/>
     <arg name="pot_fields_d0" default="1.0"/>

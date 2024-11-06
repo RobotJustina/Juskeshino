@@ -9,6 +9,7 @@ from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
 from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 from hri_msgs.msg import RecognizedSpeech
 import grammar_checker
+import numpy
 
 SM_INIT = 0
 SM_WAIT_FOR_DOOR = 10
@@ -26,14 +27,20 @@ ACTION_FOLLOW = 'follow'
 ACTION_SAY = 'say'
 ACTION_LEAVE_OBJECT = 'leave_object'
 ACTION_ANSWER = 'answer'
+ACTION_FIND_OBJECTS = 'find_objects'
 
+TOP_SHELF=[1.28, 0.04, 0.0, 2.45 , 0.0, -1.2, 0.0]
+MIDDLE_SHELF=[1.28, 0.0, 0.0, 2.15, 0.0, -1.2, 0.0]
+LOW_SHELF=[0.31, 0.1, -0.1, 0.35, 0.0, 1.16, 0.0]
 PREPARE_GRIP  = [-0.69, 0.2, 0, 1.55, 0, 1.16, 0]
 HOME=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-TABLE_TORSO_HEIGHT = 0.12
+HOLD_OBJ = [0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ]
+GET_CLOSE_TO_TABLE = 0.48
+TABLE_TORSO_HEIGHT = 0.15
 
 _objCompList = ['BIGGEST', 'LARGEST', 'SMALLEST', 'HEAVIEST', 'LIGHTEST', 'THINNEST']
 _objCompListAnswers = {'BIGGEST':'Big coke', 'LARGEST':'big coke', 'SMALLEST':'tic tac', 'HEAVIEST':'big coke', 'LIGHTEST':'lemon', 'THINNEST':'sponges'}
-questions = ['WHAT IS THE HIGHEST MOUNTAIN IN THE NETHERLANDS':'The Vaalserberg is the highest mountain in the Netherlands, although parts of the mountain belong to Belgium and Germany.',
+questions = {'WHAT IS THE HIGHEST MOUNTAIN IN THE NETHERLANDS':'The Vaalserberg is the highest mountain in the Netherlands, although parts of the mountain belong to Belgium and Germany.',
              'WHICH PAINTER CREATED THE NIGHT WATCH':'It was created by the dutch painter Rembrandt.',
              'WHAT IS THE LARGEST LAKE IN THE NETHERLANDS':'The largest lake in the Netherlands is the Ijsselmeer.',
              'WHO IS THE CURRENT BARON OF EINDHOVEN':'King Willem-Alexander of the Netherlands.',
@@ -42,7 +49,7 @@ questions = ['WHAT IS THE HIGHEST MOUNTAIN IN THE NETHERLANDS':'The Vaalserberg 
              'WHAT IS THE MASCOT FOR THE TWENTY TWENTY FOUR ROBOCUP MASCOT CALLED':'The official mascot for this years Robo Cup is called Robin.',
              'WHAT IS THE MASCOT FOR THE TWENTY THOUSAND AND TWENTY FOUR ROBOCUP MASCOT CALLED':'The official mascot for this years Robo Cup is called Robin.',
              'HOW LOW IS THE LOWEST POINT IN THE NETHERLANDS':'The lowest point of the Netherlands is minus six dot sixty seven meters below sea level. It is located close to the A twenty.',
-             'WHAT WAS THE DUTCH CURRENCY BEFORE THE EURO':' The guilder was the currency of the Netherlands before the euro was introduced in two thousand two'.]
+             'WHAT WAS THE DUTCH CURRENCY BEFORE THE EURO':' The guilder was the currency of the Netherlands before the euro was introduced in two thousand two'}
 def navigate(goal):
     goal = goal.lower().replace(" ", "_")
     goal_to_say = goal.lower().replace("_", " ")
@@ -63,7 +70,7 @@ def take(obj_name):
     obj_to_say = obj_name.lower()
     obj_name = obj_name.lower().replace(" ", "_")
     JuskeshinoHRI.say("I will try to find the " + obj_to_say) 
-    result = JuskeshinoSimpleTasks.object_search_orientation(obj_name)
+    result = JuskeshinoSimpleTasks.object_search_orientation(obj_name, -0.9)
     if result is None:
         print("GPSR.->Cannot find object ", obj_name)
         JuskeshinoHRI.say("I am sorry. I cannot find the " + obj_to_say)
@@ -109,17 +116,21 @@ def take(obj_name):
     
 def find_person(person_name):
     print("GPSR.->Trying to detect person: ", person_name)
-    JuskeshinoSimpleTasks.findHumanAndApproach(60)
+    JuskeshinoHRI.say("I will try to find " + person_name)
+    if not JuskeshinoSimpleTasks.findHumanAndApproach(60):
+        JuskeshinoHRI.say("I could not find any person. I will continue.")
 
 def find_gesture(gesture):
     print("GPSR.->Trying to detect the ", gesture)
     JuskeshinoHRI.say("I will try to find the " + gesture.replace("_", " "))
-    JuskeshinoSimpleTasks.findHumanAndApproach(60)
+    if not JuskeshinoSimpleTasks.findHumanAndApproach(60):
+        JuskeshinoHRI.say("I could not find any person. I will continue.")
 
 def find_clothes(clothes):
     print("GPSR.->Trying to detect the ", clothes)
     JuskeshinoHRI.say("I will try to find the " + clothes.replace("_", " "))
-    JuskeshinoSimpleTasks.findHumanAndApproach(60)
+    if not JuskeshinoSimpleTasks.findHumanAndApproach(60):
+        JuskeshinoHRI.say("I could not find any person. I will continue.")
 
 def follow(dest):
     dest_pose = JuskeshinoKnowledge.getKnownLocation(dest)
@@ -172,15 +183,15 @@ def say(text):
     else:
         JuskeshinoHRI.say(text)
 
-def leave_object():
+def leave_object(data):
     print("GPSR.->Leaving object")
     JuskeshinoHRI.say("I am going to leave the object")
-    JuskeshinoHardware.moveLeftArm([0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ])
+    JuskeshinoHardware.moveLeftArm([0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ], 10)
     JuskeshinoHardware.moveLeftGripper(0.8, 5.0)
     JuskeshinoHardware.moveLeftGripper(0.1, 5.0)
-    JuskeshinoHardware.moveLeftArm([0,0,0,0,0,0,0])
+    JuskeshinoHardware.moveLeftArm([0,0,0,0,0,0,0], 10)
 
-def answer_question():
+def answer_question(data):
     print("GPSR.->Answering a question")
     JuskeshinoHRI.say("Human, please make your question")
     cmd = JuskeshinoHRI.waitForNewSentence(10)
@@ -194,7 +205,11 @@ def answer_question():
         else:
             JuskeshinoHRI.say("Human, I could not hear you. I will continue with the test")
             
-    
+def find_objects(data):
+    print("GPSR.>Looking for objects")
+    JuskeshinoHRI.say("I am looking for objects")
+    result = JuskeshinoSimpleTasks.object_search_orientation('hagel', -0.9)
+            
 def main():
     print("INITIALIZING GPSR TEST Not in a Tenshily manner...")
     rospy.init_node("act_pln")
@@ -219,7 +234,8 @@ def main():
                        ACTION_FOLLOW: follow,
                        ACTION_SAY: say,
                        ACTION_LEAVE_OBJECT: leave_object,
-                       ACTION_ANSWER: answer_question}
+                       ACTION_ANSWER: answer_question,
+                       ACTION_FIND_OBJECTS: find_objects}
     cmd = grammar_checker.Command()
     while not rospy.is_shutdown():
         if state == SM_INIT:
@@ -231,7 +247,7 @@ def main():
             if JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(30):
                 print("GPSR.->Door opened detected")
                 JuskeshinoHRI.say("I can see now that the door is open")
-                JuskeshinoNavigation.moveDist(1.0, 5.0)
+                JuskeshinoNavigation.moveDist(1.5, 10.0)
                 navigate("start_position")
                 state = SM_WAITING_FOR_COMMAND
         elif state == SM_WAITING_FOR_COMMAND:
@@ -273,8 +289,8 @@ def main():
         elif state == SM_END:
             print("GPSR.->Command executed succesfully")
             JuskeshinoHRI.startSay("I have executed the command.")
-            navigate('start_location')
-            state = SM_INIT
+            navigate('start_position')
+            state = SM_WAITING_FOR_COMMAND
         rate.sleep()
 
 

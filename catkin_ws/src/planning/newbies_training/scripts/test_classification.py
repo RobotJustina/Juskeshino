@@ -26,7 +26,8 @@ PREPARE_GRIP  = [-0.69, 0.2, 0, 1.55, 0, 1.16, 0]
 HOME=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 HOLD_OBJ = [0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ]
 GET_CLOSE_TO_TABLE = 0.4
-TABLE_TORSO_HEIGHT = 0.12
+TABLE_TORSO_HEIGHT = 0.13
+
 
 def matching_objects(obj):
     category = ''
@@ -70,7 +71,7 @@ class RecognizeObjects(smach.State):
 
             if recog_objects is not None:        
                 for obj in recog_objects:
-                    obj=recog_objects[0]
+                    category, thinness, graspable, _ = matching_objects(obj.id)
                     print(f"Object of interest is {obj.id}")
                     x,y,z = obj.pose.position.x, obj.pose.position.y, obj.pose.position.z
                     x,y,z = JuskeshinoSimpleTasks.transformPoint(x,y,z, "shoulders_left_link", "base_link")
@@ -181,10 +182,11 @@ class GraspObject(smach.State):
                 JuskeshinoHRI.say("Object found correctly")
                 JuskeshinoHardware.moveLeftArmWithTrajectory(response.articular_trajectory,10)
                 success=JuskeshinoManipulation.dynamic_grasp_left_arm()
+                rospy.sleep(4)
                 JuskeshinoHardware.moveLeftArmWithTrajectory(HOLD_OBJ, 10)
                 JuskeshinoHRI.say("Verifying...")
                 JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
-                rospy.sleep(0.5)
+                rospy.sleep(2)
                 if not success:
                     JuskeshinoHRI.say("I couldn't grasp the " + obj.id )
                     return 'help'

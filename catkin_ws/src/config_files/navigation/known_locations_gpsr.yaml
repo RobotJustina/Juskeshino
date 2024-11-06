@@ -18,19 +18,34 @@ exit:
   y: 0.0
   theta: 0.0
   parent: home
-
+  
+hallway_cabinet:
+  x: 0.0
+  y: 0.0
+  theta: 0.0
+  parent: home
+kitchen_cabinet:
+  x: 0.0
+  y: 0.0
+  theta: 0.0
+  parent: home
+kitchen_counter:
+  x: 0.0
+  y: 0.0
+  theta: 0.0
+  parent: home
 bed:
   x: 8.4
   y: 8.4
   theta: 0.0
   parent: bedroom
-bedside_table:
+dinner_table:
   x: 8.4
   y: 7.4
   theta: 0.0
   parent: bedroom
 shelf:
-  x: 6.72
+ x: 6.72
   y: -1.36
   theta: -1.57
   parent: office
@@ -69,7 +84,7 @@ desk:
   y: 8.9
   theta: -1.57
   parent: office
-tv_stand:
+tv_table:
   x: 6.0
   y: 9.7
   theta: 0.0
@@ -94,7 +109,7 @@ bookshelf:
   y: -1.36
   theta: -1.57
   parent: office
-trashbin:
+trashcan:
   x: 8.4
   y: 0.1
   theta: 0.0
@@ -109,12 +124,12 @@ chairs:
   y: 9.05
   theta: -1.57
   parent: living_room
-coatrack:
+coathanger:
   x: 6.0
   y: 9.7
   theta: 0.0
   parent: living_room
-armchair:
+loungechair:
   x: 3.23
   y: 5.67
   theta: -1.57
@@ -124,7 +139,7 @@ desk_lamp:
   y: 6.13
   theta: 3.14
   parent: living_room
-waste_basket:
+coffee_table:
   x: 8.39
   y: 0.07
   theta: 1.57
@@ -134,7 +149,11 @@ lamp:
   y: 9.57
   theta: 0.0
   parent: bedroom
-
+couch:
+  x: 5.91
+  y: 9.57
+  theta: 0.0
+  parent: bedroom
 
 bedroom:
   x: 5.7

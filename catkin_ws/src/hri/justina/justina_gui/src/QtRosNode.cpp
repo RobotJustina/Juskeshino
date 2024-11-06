@@ -72,6 +72,7 @@ void QtRosNode::run()
     cltRecogObject         = n->serviceClient<vision_msgs::RecognizeObject >    ("/vision/obj_reco/detect_and_recognize_object");
     cltGetPointsAbovePlane = n->serviceClient<vision_msgs::PreprocessPointCloud>("/vision/get_points_above_plane");
     pubHumanPoseEnable     = n->advertise<std_msgs::Bool>("/vision/human_pose/enable", 1);
+
     pubTakeObject          = n->advertise<std_msgs::String>("/plannning/simple_task/take_object", 1);
 
     pubLegFinderEnable     = n->advertise<std_msgs::Bool>("/hri/leg_finder/enable", 1);

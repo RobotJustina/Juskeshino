@@ -1079,3 +1079,7 @@ class Roboclaw:
 		except:
 			return 0
 		return 1
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6166866463f8f0b4e6c1c123b79fdc18d079c3fa

@@ -166,70 +166,26 @@ class JuskeshinoNavigation:
     
 
 
-    def getCloseSuitableGripPositionLa(location, position_object, timeout):
+    def getCloseSuitableGripPositionLa(position_object, timeout):
         # La posición del objeto debe ser una lista [x,y,z] en coordenadas de 'map'
-        l_threshold_la       = 0.22
+        l_threshold_la       = 0.25
         r_threshold_la       = 0.11
-        # Se extrae la orientacion de la locacion
-        req = GetLocationRequest()
-        req.name = location
-        try:
-            resp = JuskeshinoNavigation.cltKnownLocation(req)
-            q = resp.location.pose.orientation
-            a = math.atan2(q.z, q.w)*2
-        except:
-            print("JuskeshinoNavigation.->Cannot get position for location " + location)
 
         if position_object[1] > l_threshold_la:     # Objeto a la izquierda
             mov_izq = (position_object[1] - l_threshold_la) 
             print("mov izq", mov_izq)
-            if abs(mov_izq) > 0.28:
-                new_point = [0 - 0.1, position_object[1]-0.2, 0]  # xyz
-                #print("new point", new_point)
 
-                listener = tf.TransformListener()
-                point_msg = PointStamped()  
-                point_msg.header.frame_id = 'base_link'   # frame de origen
-                point_msg.header.stamp = rospy.Time() # la ultima transformacion
-                point_msg.point.x = new_point[0]
-                point_msg.point.y = new_point[1]
-                point_msg.point.z = new_point[2]
-                #listener.waitForTransform('base_link' , 'map', rospy.Time(), rospy.Duration())
-                point_target_frame = listener.transformPoint('map', point_msg)
-                new_point_nav = point_target_frame.point.x, point_target_frame.point.y, point_target_frame.point.z
-                #print("new point nav izq", new_point_nav)
-                JuskeshinoNavigation.moveDist(-0.3, 5.0)
-                JuskeshinoNavigation.getCloseXYA(new_point_nav[0] , new_point_nav[1] , a, timeout)
-                return True, mov_izq
-            else:
-                JuskeshinoNavigation.moveLateral(mov_izq + 0.03, 5.0)
-                print("Movimiento lateral", mov_izq + 0.03)
-                return False, mov_izq
+            JuskeshinoNavigation.moveLateral(mov_izq + 0.03, 5.0)
+            print("Movimiento lateral", mov_izq + 0.03)
+            return False, mov_izq
 
         if position_object[1] < r_threshold_la:     # Objeto a la derecha
             mov_der = position_object[1] - r_threshold_la
             print("mov der", mov_der)
-            if abs(mov_der) > 0.28:
-                new_point = [0 - 0.1, position_object[1] - 0.2, 0]  # xyz
-                #print("new point", new_point)
-                listener = tf.TransformListener()
-                point_msg = PointStamped()  
-                point_msg.header.frame_id = 'base_link'   # frame de origen
-                point_msg.header.stamp = rospy.Time() # la ultima transformacion
-                point_msg.point.x = new_point[0]
-                point_msg.point.y = new_point[1]
-                point_msg.point.z = new_point[2]
-                listener.waitForTransform('base_link' , 'map', rospy.Time(0), rospy.Duration(1.0))
-                point_target_frame = listener.transformPoint('map', point_msg)
-                new_point_nav = [point_target_frame.point.x, point_target_frame.point.y, point_target_frame.point.z]
-                #print("new point nav der", new_point_nav)
-                JuskeshinoNavigation.moveDist(-0.3, 5.0)
-                JuskeshinoNavigation.getCloseXYA(new_point_nav[0] , new_point_nav[1] , a, timeout)
-                return True, mov_der
-            else:
-                JuskeshinoNavigation.moveLateral(mov_der - 0.03 , 10.0)
-                print("Movimiento lateral", mov_der -0.03)
-                return False, mov_der
+
+            JuskeshinoNavigation.moveLateral(mov_der - 0.03 , 10.0)
+            print("Movimiento lateral", mov_der -0.03)
+            return False, mov_der
             
         return False, 0
     

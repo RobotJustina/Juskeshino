@@ -17,6 +17,7 @@ from vision_msgs.srv import *
     la prenda.
 """
 
+
 def point_actual2point_target(pointxyz, f_actual, f_target):
     global pose_in, listener
     # Empaqueta msg, convierte orientacion de frame 'realsense_link' a frame 'base_link'
@@ -126,51 +127,8 @@ def color_histogram(img_bgr, mask):
 
 
 def callback(req):
-    global listener , pe_srv
+    global listener , pe_srv, pubHumanPoseEnable
 
-    pe_msg = HumanPoseEstimatorResultRequest()
-    msg = pe_srv(pe_msg)
-    # PARA JUSTINA
-    #pc = rospy.wait_for_message("/hardware/realsense/points", PointCloud2)
-    # PARA TAKESHI
-    pc = rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", PointCloud2)
-    arr_pc = ros_numpy.point_cloud2. pointcloud2_to_array(pc)
-
-    print(" Numero de personas detectadas: ",len(msg.coordinates_array.coordinates_array))
-    human_list = []
-    #print("humar array*********")
-    #print(human_array)
-
-    # filtrando arreglos vacios
-    for i in range(len(msg.coordinates_array.coordinates_array)):
-        if len(msg.coordinates_array.coordinates_array[i].keypoints_array) < 1:
-            print("Lista vacia")
-            continue
-
-        human = vision_msgs.msg._HumanCoordinates.HumanCoordinates()
-        human.keypoints_array = msg.coordinates_array.coordinates_array[i].keypoints_array
-        human_list.append(human)
-
-    print("longitud de lista nueva de personas", len(human_list))
-    #print(human_list)
-    person_dist_list = []
-    guy = human_list[0]
-    #print("GUY", guy.keypoints_array)
-    
-    if len(human_list) > 1:
-        # take the Euclidean distance from the nearest nose
-        for person in human_list:
-            x = person.keypoints_array[0].keypoint_coordinates.position.x
-            y = person.keypoints_array[0].keypoint_coordinates.position.y
-            z = person.keypoints_array[0].keypoint_coordinates.position.z
-            person_dist = np.sqrt((x**2 + y**2 + z**2))
-            person_dist_list.append(person_dist)
-
-        print("DISTANCIAS", person_dist_list)
-        min_dist =  min(person_dist_list)
-        print("distancia minima: ", min_dist)
-        human_idx = person_dist_list.index(min_dist)
-        guy = human_list[human_idx]
 
     #msg.coordinates_array.coordinates_array[0])#coordinates_array[0].keypoints_array[2].keypoint_coordinates.position)
     # Extrayendo valores rgb de la nube de puntos
@@ -195,16 +153,9 @@ def callback(req):
     keypoint3 = guy.keypoints_array[3].keypoint_coordinates.position  
 
     # rodillas
-    """
+    
     keypoint4 = Point() #l_knee
     keypoint4 = guy.keypoints_array[12].keypoint_coordinates.position  
-    """
-
-    base_link = 'base_link'
-    #sensor_frame = 'realsense_link'
-    
-    #sensor_frame = 'head_rgbd_sensor_gazebo_frame'
-    sensor_frame = 'head_rgbd_sensor_link'
 
     point_ra     = point_actual2point_target(keypoint1, sensor_frame ,base_link)
     point_la     = point_actual2point_target(keypoint2, sensor_frame ,base_link)
@@ -225,7 +176,7 @@ def callback(req):
     z1_max = point_ra.z
 
     # PANTS 
-    """
+    
     x2_min = point_l_knee.x 
     x2_max = point_l_knee.x + 0.09
     # derecha = max,   izquierdo = min
@@ -234,15 +185,15 @@ def callback(req):
     # altura de rodilla + 0,1 m
     z2_min = point_l_knee.z  
     z2_max = point_l_knee.z + 0.2
-    """
+    
 
     min_valor_torso = np.array([x1_min, y1_min, z1_min]) 
     max_valor_torso = np.array([x1_max, y1_max, z1_max])
 
-    """
+    
     min_valor_leg_l = np.array([x2_min, y2_min, z2_min]) 
     max_valor_leg_l = np.array([x2_max, y2_max, z2_max])
-    """
+    
 
     # rango de la matriz de coordenadas
     torso_mask = cv2.inRange(new_pc , min_valor_torso, max_valor_torso)
@@ -267,33 +218,25 @@ def callback(req):
     #print("color pants", color_pants)
 
     #color_clothes = [hsv_shirt, hsv_pants]
-
+    """
     resp = FindPersonResponse()
-    resp.person.shirt = color_shirt
-    resp.person.pants = 'color_pants'
+    #resp.person.shirt = color_shirt
+    #resp.person.pants = 'color_pants'
+    
     
     return resp
-
+    
 
 def main():
-    global pe_srv, listener
+    global pe_srv, listener, pubHumanPoseEnable
     print("Node that detects the color of a human's clothing.......(๑╹ω╹๑ )")
     rospy.init_node("clothes_color_srv")
-    rospy.Service("/vision/obj_segmentation_and_pose/clothes_color", FindPerson, callback) 
 
-    rospy.wait_for_service("/pose_estimator_srv")
-    pe_srv = rospy.ServiceProxy("/pose_estimator_srv", HumanPoseEstimatorResult)
-    
-    #pe_msg = HumanPoseEstimatorResultRequest()
-    listener = tf.TransformListener()
-
-  
+    pubHumanPoseEnable = rospy.Publisher("/vision/human_pose/enable" , bool, queue_size=1)
+    #rospy.Service("/vision/obj_segmentation_and_pose/clothes_color", FindPerson, callback)     
+    #listener = tf.TransformListener()
     loop = rospy.Rate(10)
     while not rospy.is_shutdown():
-        
-        #clothes_color_srv(pe_srv(pe_msg))
-
-
 
         loop.sleep()
 

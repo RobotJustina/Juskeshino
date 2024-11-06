@@ -16,22 +16,25 @@ def get_vision_object(img, label, confidence, frame_id, x0, y0, x1, y1, cloud):
     global remove_background, threshold1, threshold2
     mask = numpy.zeros((img.shape[0], img.shape[1]), dtype=numpy.uint8)
     mask[y0:y1, x0:x1] = 255
+
     if remove_background:
         print("Not removing bg")
         gray  = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         canny = cv2.Canny(gray, threshold1, threshold2)
         canny = cv2.bitwise_and(canny,mask)
         kernel = np.ones((3, 3), np.uint8)
-        dilated = cv2.dilate(canny,kernel)
-        eroded = cv2.erode(dilated,kernel)
-        contours, hierarchy = cv2.findContours(eroded, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        dilated = cv2.dilate(canny,kernel, iterations=7)
+        eroded = cv2.erode(dilated,kernel, iterations=5)
+        contours, hierarchy = cv2.findContours(eroded, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
         mask = numpy.zeros(eroded.shape, dtype=numpy.uint8)
         mask = cv2.bitwise_or(eroded, mask)
         for i in range(len(contours)):
             cv2.drawContours(mask, contours, i, 255, -1)
-        mask = cv2.erode(mask,kernel)
+
+        mask = cv2.erode(mask, kernel )
 
     display_img = cv2.bitwise_and(img, cv2.cvtColor(mask,cv2.COLOR_GRAY2BGR))
+
     bridge = CvBridge()
     msg = VisionObject()
     msg.header.frame_id = frame_id
@@ -152,7 +155,7 @@ def main():
     global device, model, min_confidence, result_img, pub_obj, remove_background, threshold1, threshold2
     print("INITIALIZING OBJECT CLASSIFICATION in an Oscarly manner...")
     rospy.init_node("object_classification")
-    model_name = rospy.get_param("~model", "ycb.pt")
+    model_name = rospy.get_param("~model", "TaRJustv3_ycb.pt")
     min_confidence = rospy.get_param("~min_confidence", 0.5)
     remove_background = rospy.get_param("~rm_bg", True)
     threshold1 = rospy.get_param('~threshold1', 50)

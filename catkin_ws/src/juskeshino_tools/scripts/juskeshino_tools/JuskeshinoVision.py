@@ -12,8 +12,7 @@ class JuskeshinoVision:
         JuskeshinoVision.cltTrainObject             = rospy.ServiceProxy("/vision/obj_reco/detect_and_train_object",        TrainObject         )
         JuskeshinoVision.cltDetectRecogObjects      = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_objects",   RecognizeObjects    )
         JuskeshinoVision.cltDetectRecogObject       = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_object",    RecognizeObject     )
-        JuskeshinoVision.cltGetObjectPose           = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose_with_orientation",  RecognizeObject     ) 
-        JuskeshinoVision.cltGetObjectPoseWithoutOrientation           = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose_without_orientation",  RecognizeObject     )
+        JuskeshinoVision.cltGetObjectPose           = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose",  RecognizeObject     ) 
         JuskeshinoVision.cltGetPointsAbovePlane     = rospy.ServiceProxy("/vision/get_points_above_plane",                  PreprocessPointCloud)
         JuskeshinoVision.cltFindPersons             = rospy.ServiceProxy('/vision/face_reco_pkg/recognize_face/names',      FaceRecog           )
         JuskeshinoVision.cltTrainPersons            = rospy.ServiceProxy("/vision/face_reco_pkg/training_face/name",        FaceTrain           )
@@ -51,6 +50,7 @@ class JuskeshinoVision:
         msg = Bool()
         msg.data = enable
         JuskeshinoVision.pubHumanPoseEnable.publish(msg)
+        return
 
     def findTableEdge():
         req = FindLinesRequest()
@@ -78,6 +78,7 @@ class JuskeshinoVision:
         req.name = name
         try:
             resp = JuskeshinoVision.cltDetectRecogObject(req)
+            #print(resp.recog_object.point_cloud)
             reqObjPose = RecognizeObjectRequest()
             reqObjPose.point_cloud = resp.recog_object.point_cloud
             reqObjPose.image       = resp.recog_object.image
