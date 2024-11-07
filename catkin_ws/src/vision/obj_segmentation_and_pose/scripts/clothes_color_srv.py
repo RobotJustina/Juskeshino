@@ -32,15 +32,16 @@ def point_actual2point_target(pointxyz, f_actual, f_target):
 
 
 
+
 def transformPointCloud2(pc):
-    global listener
+    #sensor_frame = 'realsense_link'
+    sensor_frame = 'camera_rgb_optical_frame'
+    base_link = 'base_link'
     # tranformar la nube de puntos al sistema  "base_link'
-    new_pc = listener.transformPointCloud(BL, pc)
-    """
-    x_arr = new_pc['x']
-    y_arr = new_pc['y']
-    z_arr = new_pc['z']
-    
+    x_arr = pc['x']
+    y_arr = pc['y']
+    z_arr = pc['z']
+
     i,j = 0,0
     p = Point()
     for i in range(480):
@@ -50,10 +51,9 @@ def transformPointCloud2(pc):
                 p.x, p.y, p.z = x_arr[i,j], y_arr[i,j] , z_arr[i,j]
                 new_frame_p = point_actual2point_target(p, sensor_frame, base_link)
                 x_arr[i,j], y_arr[i,j] , z_arr[i,j] = new_frame_p.x, new_frame_p.y, new_frame_p.z
-    
+
     new_pc = cv2.merge((np.asarray(x_arr),np.asarray(y_arr),np.asarray(z_arr)))
-    """
-    print("lalalalla")
+
     #pc['x'] = x_arr
     #pc['y'] = y_arr
     #pc['z'] = z_arr
@@ -131,10 +131,15 @@ def color_histogram(img_bgr, mask):
 def callback(req):
     global listener 
     pe_msg = HumanPoseEstimatorResultRequest()
-    print(type(req.cloud))
-    new_pc = transformPointCloud2(req.cloud) 
 
-    arr_pc = ros_numpy.point_cloud2.pointcloud2_to_array(req.cloud)
+    clt_transform = rospy.ServiceProxy("/vision/point_cloud_to_base_link", PreprocessPointCloud)
+    req_trans = PreprocessPointCloudRequest()
+    req_trans.input_cloud = req.cloud
+    resp_trans = clt_transform(req_trans)
+    cloud = resp_trans.output_cloud
+
+
+    arr_pc = ros_numpy.point_cloud2.pointcloud2_to_array(cloud)
 
     [closest_human_pose, frame_id] = JuskeshinoSimpleTasks.GetClosestHumanPose(arr_pc , 8)
 
@@ -174,7 +179,7 @@ def callback(req):
     point_r_elb  = point_actual2point_target(r_elb, SENSOR_FRAME ,BL)
     point_l_knee = point_actual2point_target(r_kne, SENSOR_FRAME ,BL)
 
-    ##sprint("l_knee", point_l_knee)
+    print("l_knee", point_l_knee)
     # TORSO
     # profundidad, medida experimental     
     x1_min = point_ra.x - 0.2
@@ -195,20 +200,7 @@ def callback(req):
     z2_min = point_l_knee.z  
     z2_max = point_l_knee.z + 0.2
     
-    """
-    m_v_t = Point()
-    m_v_t.x, m_v_t.y, m_v_t.z = x1_min, y1_min, z1_min
-    min_v_t_camera_frame   = point_actual2point_target(m_v_t , BL, SENSOR_FRAME)
-    max_v_t = Point()
-    max_v_t.x, max_v_t.y, max_v_t.z = x1_max, y1_max, z1_max
-    max_v_t_camera_frame   = point_actual2point_target(max_v_t , BL, SENSOR_FRAME)
-    min2 = Point()
-    min2.x, min2.y, min2.z = x1_min, y1_min, z1_min
-    min2_camera_frame   = point_actual2point_target(m_v_t , BL, SENSOR_FRAME)
-    max2 = Point()
-    max2.x, max2.y, max2.z = x1_max, y1_max, z1_max
-    max2_t_camera_frame   = point_actual2point_target(max_v_t , BL, SENSOR_FRAME)
-    """
+
 
     # limites en base link frame
     lower_bound_shirt = np.array([x1_min, y1_min, z1_min])
@@ -236,6 +228,11 @@ def callback(req):
 
     print("color shirt", color_shirt)
     print("color pants", color_pants)
+
+    img_bgr = cv2.putText(img_bgr ,"color T-shirt:"+str(color_shirt),(200,150),cv2.FONT_HERSHEY_SIMPLEX,0.9,(0,0,0),3)
+    img_bgr = cv2.putText(img_bgr ,"color Pants  :"+str(color_pants),(200,350),cv2.FONT_HERSHEY_SIMPLEX,0.9,(0,0,0),3)
+    cv2.imshow("Clothes Color - Recognition Result", img_bgr)
+    cv2.waitKey(0)
 
     #color_clothes = [hsv_shirt, hsv_pants]
     
