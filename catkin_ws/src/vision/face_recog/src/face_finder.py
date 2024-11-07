@@ -115,8 +115,8 @@ def main():
     rospy.init_node("face_finder")
     rospy.Subscriber('/camera/depth_registered/recognize' ,String ,callback_recognize )
     rospy.Subscriber("/camera/depth_registered/rgb/image_raw", Image, callback_image) # Simulación
-    #rospy.Subscriber("/camera/rgb/image_color", Image, callback_image) # Real
-    rospy.Subscriber("/camera/depth_registered/points", PointCloud2, callback_pointcloud)
+    rospy.Subscriber("/camera/rgb/image_color", Image, callback_image) # Real
+    #rospy.Subscriber("/camera/depth_registered/points", PointCloud2, callback_pointcloud)
     rospy.wait_for_message('/camera/depth_registered/recognize' , String)
     loop = rospy.Rate(2)
     while not rospy.is_shutdown():
