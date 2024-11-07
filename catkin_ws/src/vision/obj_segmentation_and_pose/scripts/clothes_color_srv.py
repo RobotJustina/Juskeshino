@@ -35,12 +35,12 @@ def clothes_color(hsv):
     s = hsv[1]  # 255
     v = hsv[2]  # 255
     
-    if (s <= 5): # de negro a blanco
-        if (s < 11):
-            if (v >= 0 )  and (v < 27) : color = 'black'
-            if (h >= 27 ) and (v < 92) : color = 'gray'
-            else: color = 'white'
-        return color
+    if (s <= 40): # de negro a blanco
+        
+        if (v >= 0 )  and (v < 27) : color = 'black'
+        if (h >= 27 ) and (v < 92) : color = 'gray'
+        else: color = 'white'
+        
     else:
         if (h >= 0  ) and (h < 10 ): color = 'red'
         if (h >= 10 ) and (h < 25 ): color = 'orange'
@@ -76,6 +76,7 @@ def color_histogram(img_bgr, mask):
 def callback(req):
     global listener 
     pe_msg = HumanPoseEstimatorResultRequest()
+    
     clt_transform = rospy.ServiceProxy("/vision/point_cloud_to_base_link", PreprocessPointCloud)
     req_trans = PreprocessPointCloudRequest()
     req_trans.input_cloud = req.cloud
@@ -160,7 +161,9 @@ def callback(req):
 
         hsv_shirt = color_histogram(img_bgr, torso_mask)
         hsv_pants = color_histogram(img_bgr, leg_l_mask)
-        print("hist: ", hsv_shirt)
+        print("hist: t shirt ", hsv_shirt)
+        print("hist: pants ", hsv_pants)
+
 
         color_shirt = clothes_color(hsv_shirt)
         color_pants = clothes_color(hsv_pants)
@@ -196,7 +199,9 @@ def main():
 
     listener = tf.TransformListener()
     loop = rospy.Rate(10)
+
     while not rospy.is_shutdown():
+        
 
         loop.sleep()
 

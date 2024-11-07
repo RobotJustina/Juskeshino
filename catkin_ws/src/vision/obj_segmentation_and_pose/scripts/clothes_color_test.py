@@ -2,6 +2,7 @@
 
 import rospy
 import numpy as np
+import time
 import tf.transformations as tft
 from sensor_msgs.msg import PointCloud2, Image
 from geometry_msgs.msg import PointStamped, PoseStamped, Point, Pose
@@ -15,11 +16,12 @@ def main():
     print("Test node color of clothes.........ʕ•ᴥ•ʔ")
     rospy.init_node("clothes_color_test")
 
-    rospy.wait_for_service("/vision/obj_segmentation_and_pose/clothes_color")
+    rospy.wait_for_service("/vision/clothes_color")
     fp_srv = rospy.ServiceProxy("/vision/clothes_color", FindPerson)
 
     #mensaje*****************************************************************
     fp_msg = FindPersonRequest()
+    time.sleep(7)
     fp_msg.cloud = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2, timeout=5.0)
 
     resp = fp_srv(fp_msg)

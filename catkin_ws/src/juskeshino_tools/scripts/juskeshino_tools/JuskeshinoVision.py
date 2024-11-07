@@ -8,6 +8,7 @@ class JuskeshinoVision:
     def setNodeHandle():
         print("JuskeshinoVision.->Setting ros node...")
         JuskeshinoVision.cltFindLines               = rospy.ServiceProxy("/vision/line_finder/find_table_edge",             FindLines           )
+        
         JuskeshinoVision.cltFindHoriPlanes          = rospy.ServiceProxy("/vision/line_finder/find_horizontal_plane_ransac",FindPlanes          )
         JuskeshinoVision.cltTrainObject             = rospy.ServiceProxy("/vision/obj_reco/detect_and_train_object",        TrainObject         )
         JuskeshinoVision.cltDetectRecogObjects      = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_objects",   RecognizeObjects    )
@@ -16,9 +17,7 @@ class JuskeshinoVision:
         JuskeshinoVision.cltGetPointsAbovePlane     = rospy.ServiceProxy("/vision/get_points_above_plane",                  PreprocessPointCloud)
         JuskeshinoVision.cltFindPersons             = rospy.ServiceProxy('/vision/face_reco_pkg/recognize_face/names',      FaceRecog           )
         JuskeshinoVision.cltTrainPersons            = rospy.ServiceProxy("/vision/face_reco_pkg/training_face/name",        FaceTrain           )
-
         JuskeshinoVision.pubHumanPoseEnable         = rospy.Publisher("/vision/human_pose/enable", Bool, queue_size=1)
-
         rospy.Subscriber("/vision/human_pose_estimation/human_detector_bool", Bool ,JuskeshinoVision.callbackHumanBool)
         rospy.Subscriber("/vision/human_pose_estimation/pointing_hand/status", Bool ,JuskeshinoVision.callbackPointingHand)
         
@@ -32,7 +31,6 @@ class JuskeshinoVision:
             loop.sleep()
         return True
     
-
 
     def callbackPointingHand(msg):
         JuskeshinoVision.pointing_hand = msg
