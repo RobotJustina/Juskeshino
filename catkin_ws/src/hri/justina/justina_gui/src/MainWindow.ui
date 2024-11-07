@@ -45,7 +45,7 @@ QRadioButton::indicator{
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="tabGeneral">
      <attribute name="title">
@@ -1216,6 +1216,29 @@ Human Pose Det</string>
       <property name="text">
        <string>Enable
 Follow Human</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="visBtnFindPerson">
+      <property name="geometry">
+       <rect>
+        <x>500</x>
+        <y>150</y>
+        <width>121</width>
+        <height>51</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Find Person</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="visTxtFindPersonName">
+      <property name="geometry">
+       <rect>
+        <x>500</x>
+        <y>220</y>
+        <width>131</width>
+        <height>25</height>
+       </rect>
       </property>
      </widget>
     </widget>

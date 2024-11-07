@@ -70,6 +70,7 @@ void QtRosNode::run()
     cltTrainObject         = n->serviceClient<vision_msgs::TrainObject>         ("/vision/obj_reco/detect_and_train_object");
     cltRecogObjects        = n->serviceClient<vision_msgs::RecognizeObjects>    ("/vision/obj_reco/detect_and_recognize_objects");
     cltRecogObject         = n->serviceClient<vision_msgs::RecognizeObject >    ("/vision/obj_reco/detect_and_recognize_object");
+    cltFindPerson          = n->serviceClient<vision_msgs::FindPerson>          ("/vision/find_person");
     cltGetPointsAbovePlane = n->serviceClient<vision_msgs::PreprocessPointCloud>("/vision/get_points_above_plane");
     pubHumanPoseEnable     = n->advertise<std_msgs::Bool>("/vision/human_pose/enable", 1);
 
@@ -483,6 +484,24 @@ bool QtRosNode::call_recognize_object(std::string name)
     return success;
 }
 
+bool QtRosNode::call_find_person()
+{
+    vision_msgs::FindPerson srv;
+    boost::shared_ptr<sensor_msgs::PointCloud2 const> ptr;
+    ptr = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/camera/depth_registered/points", ros::Duration(1.0));
+    if(ptr==NULL)
+    {
+        std::cout << "JustinaGUI.->Cannot get point cloud before calling find person service..." << std::endl;
+        return false;
+    }
+    srv.request.cloud=*ptr;
+    bool success = cltFindPerson.call(srv);
+    if(success)
+        std::cout << "JustinaGUI.->FoundPerson: " << srv.response.person.id << std::endl;
+    else    
+        std::cout << "JustinaGui.->Cannot Find Person" << std::endl;
+    return success;
+}
 
 void QtRosNode::call_take_object(std::string name)
 {

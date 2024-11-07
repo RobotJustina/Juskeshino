@@ -100,6 +100,7 @@ def identify(known, unknown):
         k+=1
     k=0
     return unknown
+
 def callback_recognize(msg):
     print("Reconocimiento iniciado")
 def main():
