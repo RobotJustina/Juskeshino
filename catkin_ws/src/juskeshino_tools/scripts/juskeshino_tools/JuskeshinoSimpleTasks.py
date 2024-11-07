@@ -102,32 +102,6 @@ class JuskeshinoSimpleTasks:
         
         
 
-
-    def transformPointCloud2(pc, target_frame, source_frame):
-        sensor_frame = source_frame
-        base_link = target_frame
-        # tranformar la nube de puntos al sistema  "base_link'
-        x_arr = pc['x']
-        y_arr = pc['y']
-        z_arr = pc['z']
-
-        i,j = 0,0
-        p = Point()
-        for i in range(480):
-            for j in range(640):
-                if np.isnan(x_arr[i,j]) or np.isnan(y_arr[i,j]) or np.isnan(z_arr[i,j]): print("punto nan")
-                else: 
-                    p.x, p.y, p.z = x_arr[i,j], y_arr[i,j] , z_arr[i,j]
-                    new_frame_p = JuskeshinoSimpleTasks.transformPoint(p, sensor_frame, base_link)
-                    x_arr[i,j], y_arr[i,j] , z_arr[i,j] = new_frame_p.x, new_frame_p.y, new_frame_p.z
-
-        new_pc = cv2.merge((np.asarray(x_arr),np.asarray(y_arr),np.asarray(z_arr)))
-
-        pc['x'] = x_arr
-        pc['y'] = y_arr
-        pc['z'] = z_arr
-
-        return new_pc 
     
 
     def GetClosestHumanPose(point_cloud ,timeout):
