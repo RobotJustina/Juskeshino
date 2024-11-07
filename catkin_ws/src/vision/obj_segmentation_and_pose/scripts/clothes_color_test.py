@@ -16,7 +16,7 @@ def main():
     rospy.init_node("clothes_color_test")
 
     rospy.wait_for_service("/vision/obj_segmentation_and_pose/clothes_color")
-    fp_srv = rospy.ServiceProxy("/vision/obj_segmentation_and_pose/clothes_color", FindPerson)
+    fp_srv = rospy.ServiceProxy("/vision/clothes_color", FindPerson)
 
     #mensaje*****************************************************************
     fp_msg = FindPersonRequest()
