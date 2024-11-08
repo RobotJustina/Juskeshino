@@ -6,31 +6,27 @@ from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Twist, PointStamped
 import numpy as np
 import rospkg
-import torch
 import math
 import tf
 import sys
+from datetime import datetime
 
-# np.set_printoptions(threshold=sys.maxsize)
+#np.set_printoptions(threshold=sys.maxsize)
 np.set_printoptions(suppress=True)
 
-# from mapless_nav.scripts.TorchModels.utils import models
-
 package_path = rospkg.RosPack().get_path("mapless_nav")
-# model_path = package_path + "/scripts/TorchModels/modelo.pth"
-# print("model path: ", model_path)
-# model = models.Red_conv(3)
-# model.load_state_dict(torch.load(model_path))
-# disp = 'cuda' if torch.cuda.is_available() else 'cpu'
-# model.to(disp)
+save_path = package_path + "/scripts/TorchModels/data/"
+file_name = "data_dep1"
+
 lin_vel_x, goal_x, goal_y = 0.0, 0.0, 0.0
 ang_vel_z = 1.0
 last_goal = [0.0, 0.0]
-data_X = []
-data_Y = []
+data_X = [0.0, 0.0]
+data_Y = [0.0, 0.0]
 cmd_vel_pub = None
 recording = False
 y_button = 0
+
 
 def clickPointCallback(msg):
     global goal_x, goal_y
@@ -70,15 +66,17 @@ def occGridCallback(msg):
     global data_X
     data = np.asarray(msg.data)
     data = np.reshape(data, (msg.info.height, msg.info.width))
-    other_features = np.zeros((msg.info.height, msg.info.width))
-    other_features[0, :2] = target_direction()
-    # img(80x80) ch0, vet(2) ch2
-    data_X = np.array([data, other_features], dtype=np.float32)
+    other_features = np.zeros(msg.info.height)
+    other_features[:2] = target_direction()
+    other_features[2:4] = data_Y
+    # mat(81x80) ch0 80x80=occ_grid, mat[81]=vect(80) 
+    data_X = np.vstack((data, other_features))
 
 
 def cmdVelCallback(msg):
     global data_Y
     data_Y = [msg.linear.x, msg.angular.z]
+    #print("\n", data_Y)
     
 
 def stopCallback(msg):
@@ -123,17 +121,11 @@ def main():
 
     msg_pos.data = target_direction()
     goal_pub.publish(msg_pos)
-
     
-    
-    
-    loop = rospy.Rate(20)
+    loop = rospy.Rate(4)
+    npz_data = []
+    save_data = False
     while not rospy.is_shutdown():
-        # TODO: Delete
-        #cmd_vel_pub.publish(twist_msg)
-        # twist_msg.linear.x = lin_vel_x
-        # twist_msg.angular.z = ang_vel_z
-        #cmd_vel_pub.publish(twist_msg)
         msg_pos.data = target_direction()
         goal_pub.publish(msg_pos)
         d, th = target_direction()
@@ -141,19 +133,31 @@ def main():
         x, y, a = get_position()
         #print(f"(Distancia, Angulo)= ({x:.3f}, {y:.3f}, {a:.3f})", end='\r')
 
-        str = f"(Distancia, Angulo)= ({d:.3f}, {th:.3f})"
-        str += f" || Posicion actual = ({x:.3f}, {y:.3f}, {a:.3f})"
+        cad = f"(Distancia, Angulo)= ({d:.3f}, {th:.3f})"
+        cad += f" || Posicion actual = ({x:.3f}, {y:.3f}, {a:.3f})"
         if recording:
-            str += " Recording * "
+            cad += " Recording * "
+            npz_data.append(data_X)
+            save_data = True
         else:
-            str += " No recording"
-        print(str, end='\r')
+            if save_data:
+                date_time = str(datetime.now())
+                date_time = date_time.replace(" ", "_")
+                date_time = date_time.replace(":", "-")[:-7]
+                path = save_path + file_name + "_" + date_time
+                print("\nSave .npz", path)
+                print("Samples:", len(npz_data))
+                npz_data = np.asarray(npz_data)
+                np.savez(path,data=npz_data)
+                npz_data = []
+                save_data = False
 
-
-
-        loop.sleep
+            cad += " No recording"
+            
+        print(cad, end='\r')
+        #print(cad)
+        loop.sleep()
     
-
 
 if __name__ == "__main__":
      main()
