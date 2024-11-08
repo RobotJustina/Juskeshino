@@ -21,8 +21,8 @@ def main():
 
     #mensaje*****************************************************************
     fp_msg = FindPersonRequest()
-    time.sleep(7)
-    fp_msg.cloud = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2, timeout=5.0)
+    time.sleep(3)
+    fp_msg.cloud = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2, timeout=10.0)
 
     resp = fp_srv(fp_msg)
 
@@ -31,11 +31,6 @@ def main():
   
     loop = rospy.Rate(10)
     while not rospy.is_shutdown():
-        pc = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2, timeout=5.0)
-        fp_msg.cloud = pc
-
-        resp = fp_srv(fp_msg)
-        print("*****lolo**",resp)
 
         loop.sleep()
 

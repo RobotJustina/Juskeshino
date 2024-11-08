@@ -77,6 +77,7 @@ public:
     ros::ServiceClient cltRecogObjects;
     ros::ServiceClient cltRecogObject;
     ros::ServiceClient cltGetPointsAbovePlane;
+    ros::ServiceClient cltClothesColor;
     ros::ServiceClient cltFindPerson;
     tf::TransformListener tf_listener;
     
@@ -141,6 +142,7 @@ public:
 
 
     bool call_get_points_above_plane();
+    bool call_get_clothes_color();
     void publish_enable_human_pose_detection(bool enable);
     void publish_enable_human_following(bool enable);
 signals:

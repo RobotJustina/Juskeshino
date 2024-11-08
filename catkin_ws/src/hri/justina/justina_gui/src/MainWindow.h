@@ -21,7 +21,6 @@ class MainWindow;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
@@ -111,6 +110,7 @@ public slots:
     void visRecognizeObjectsClicked();
     void visGetPointsAbovePlaneClicked();
     void visEnableHumanPoseClicked();
+    void visClothesColorClicked();
 
     void hriEnableFollowHumanClicked();
 private:

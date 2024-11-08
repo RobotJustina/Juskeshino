@@ -1241,6 +1241,19 @@ Follow Human</string>
        </rect>
       </property>
      </widget>
+     <widget class="QPushButton" name="visBtnClothesColor">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>220</y>
+        <width>121</width>
+        <height>51</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Clothes color</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tabSimpleTasks">
      <attribute name="title">

@@ -108,6 +108,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(ui->visTxtRecognizeObject, SIGNAL(returnPressed()), this, SLOT(visRecognizeObjectReturnPressed()));
     QObject::connect(ui->visBtnPointsAbovePlane, SIGNAL(clicked()), this, SLOT(visGetPointsAbovePlaneClicked()));
     QObject::connect(ui->visBtnEnableHumanPose, SIGNAL(clicked()), this, SLOT(visEnableHumanPoseClicked()));
+    QObject::connect(ui->visBtnClothesColor, SIGNAL(clicked()), this, SLOT(visClothesColorClicked()));
 
     QObject::connect(ui->hriBtnEnableFollowHuman, SIGNAL(clicked()), this, SLOT(hriEnableFollowHumanClicked()));
 }
@@ -895,6 +896,13 @@ void MainWindow::visEnableHumanPoseClicked()
     if(enable) ui->visBtnEnableHumanPose->setText("Disable\nHuman Pose Det");
     else ui->visBtnEnableHumanPose->setText("Enable\nHuman Pose Det");
     qtRosNode->publish_enable_human_pose_detection(enable);
+}
+
+
+
+void MainWindow::visClothesColorClicked()
+{
+    qtRosNode->call_get_clothes_color();
 }
 
 void MainWindow::hriEnableFollowHumanClicked()

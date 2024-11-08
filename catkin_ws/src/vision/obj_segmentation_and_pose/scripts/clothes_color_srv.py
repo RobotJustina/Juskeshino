@@ -74,7 +74,7 @@ def color_histogram(img_bgr, mask):
 
 
 def callback(req):
-    global listener 
+    global listener , img_bgr
     pe_msg = HumanPoseEstimatorResultRequest()
     
     clt_transform = rospy.ServiceProxy("/vision/point_cloud_to_base_link", PreprocessPointCloud)
@@ -173,8 +173,6 @@ def callback(req):
 
         img_bgr = cv2.putText(img_bgr ,"color T-shirt:"+str(color_shirt),(200,150),cv2.FONT_HERSHEY_SIMPLEX,0.9,(0,0,0),3)
         img_bgr = cv2.putText(img_bgr ,"color Pants  :"+str(color_pants),(200,350),cv2.FONT_HERSHEY_SIMPLEX,0.9,(0,0,0),3)
-        cv2.imshow("Clothes Color - Recognition Result", img_bgr)
-        cv2.waitKey(0)
 
         resp = FindPersonResponse()
         resp.person.shirt = color_shirt
@@ -182,7 +180,7 @@ def callback(req):
         
         return resp
     else:
-        resp = FindPersonResponse()
+        resp = FindPersonResponse()                                             
         resp.person.shirt = None
         resp.person.pants = None
         print("Clothes_color_srv.-> Error identifying person, please call service again........................")
@@ -190,19 +188,20 @@ def callback(req):
 
 
 def main():
-    global listener
+    global listener, img_bgr
     print("Node that detects the color of a human's clothing.......(๑╹ω╹๑ )")
     rospy.init_node("clothes_color_srv")
     rospy.Service("/vision/clothes_color", FindPerson, callback) 
     JuskeshinoSimpleTasks.setNodeHandle()
     JuskeshinoVision.setNodeHandle()
+    img_bgr = np.zeros((480, 640, 3), np.uint8)
 
     listener = tf.TransformListener()
     loop = rospy.Rate(10)
 
     while not rospy.is_shutdown():
-        
-
+        cv2.imshow("Clothes Color - Recognition Result", img_bgr)
+        cv2.waitKey(10)
         loop.sleep()
 
 if __name__ == '__main__':

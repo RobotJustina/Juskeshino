@@ -72,6 +72,7 @@ void QtRosNode::run()
     cltRecogObject         = n->serviceClient<vision_msgs::RecognizeObject >    ("/vision/obj_reco/detect_and_recognize_object");
     cltFindPerson          = n->serviceClient<vision_msgs::FindPerson>          ("/vision/find_person");
     cltGetPointsAbovePlane = n->serviceClient<vision_msgs::PreprocessPointCloud>("/vision/get_points_above_plane");
+    cltClothesColor        = n->serviceClient<vision_msgs::FindPerson>          ("/vision/clothes_color");
     pubHumanPoseEnable     = n->advertise<std_msgs::Bool>("/vision/human_pose/enable", 1);
 
     pubTakeObject          = n->advertise<std_msgs::String>("/plannning/simple_task/take_object", 1);
@@ -510,19 +511,6 @@ void QtRosNode::call_take_object(std::string name)
 
     std::cout << "JustinaGUI.->Take object**************************************************" << std::endl;
     
-    /*
-    vision_msgs::RecognizeObject srv;
-    boost::shared_ptr<sensor_msgs::PointCloud2 const> ptr;
-    ptr = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/camera/depth_registered/points", ros::Duration(1.0));
-    if(ptr==NULL)
-    {
-        std::cout << "JustinaGUI.->Cannot get point cloud before calling train object service..." << std::endl;
-        return false;
-    }
-    
-    srv.request.point_cloud = *ptr;
-    srv.request.name = name;
-    */
     pubTakeObject.publish(msg);
     msg.data = " ";
     pubTakeObject.publish(msg);
@@ -548,6 +536,24 @@ void QtRosNode::publish_enable_human_pose_detection(bool enable)
     msg.data = enable;
     pubHumanPoseEnable.publish(msg);
 }
+
+
+
+bool QtRosNode::call_get_clothes_color()
+{
+    vision_msgs::FindPerson srv;
+    boost::shared_ptr<sensor_msgs::PointCloud2 const> ptr;
+    ptr = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/camera/depth_registered/points", ros::Duration(1.0));
+    if(ptr==NULL)
+    {
+        std::cout << "JustinaGUI.->Cannot get point cloud before calling preprocess object service..." << std::endl;
+        return false;
+    }
+    srv.request.cloud = *ptr;
+    return cltClothesColor.call(srv);
+}
+
+
 
 void QtRosNode::publish_enable_human_following(bool enable)
 {
