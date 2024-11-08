@@ -1,6 +1,7 @@
-#!/usr/bin/env python3
+#! /usr/bin/env python3
 import rospy
 from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Empty
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Twist, PointStamped
 import numpy as np
@@ -27,7 +28,9 @@ ang_vel_z = 1.0
 last_goal = [0.0, 0.0]
 data_X = []
 data_Y = []
-
+cmd_vel_pub = None
+recording = False
+y_button = 0
 
 def clickPointCallback(msg):
     global goal_x, goal_y
@@ -78,9 +81,25 @@ def cmdVelCallback(msg):
     data_Y = [msg.linear.x, msg.angular.z]
     
 
+def stopCallback(msg):
+    twist_msg = Twist()
+    twist_msg.linear.x = 0.0
+    twist_msg.angular.z = 0.0
+    cmd_vel_pub.publish(twist_msg)
+
+
+def recordCallback(msg):
+    global recording, y_button
+    if y_button > 1:
+        recording = not recording
+        y_button = 0
+    y_button += 1
+
+
 def main():
     global lin_vel_x, ang_vel_z, listener
-    global goal_x, goal_y
+    global goal_x, goal_y, cmd_vel_pub
+    global recording, y_button
     start = True
     rospy.init_node("justina_nav_data")
     rospy.loginfo("INITIALIZING justina_nav_data")
@@ -91,7 +110,10 @@ def main():
     rospy.Subscriber("/clicked_point", PointStamped, clickPointCallback)
     rospy.Subscriber("/cmd_vel", Twist, cmdVelCallback)
     rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
+    rospy.Subscriber("/stop", Empty, stopCallback)  # Button (B)
+    rospy.Subscriber("/hardware/robot_state/skip_state", Empty, recordCallback)  # Button (Y)
     goal_pub = rospy.Publisher("/NN_goal", Float32MultiArray, queue_size=10)
+    cmd_vel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
     msg_pos = Float32MultiArray()
     
     if start:
@@ -103,13 +125,15 @@ def main():
     goal_pub.publish(msg_pos)
 
     
+    
+    
     loop = rospy.Rate(20)
     while not rospy.is_shutdown():
         # TODO: Delete
-        # cmd_vel_pub.publish(twist_msg)
+        #cmd_vel_pub.publish(twist_msg)
         # twist_msg.linear.x = lin_vel_x
         # twist_msg.angular.z = ang_vel_z
-        # cmd_vel_pub.publish(twist_msg)
+        #cmd_vel_pub.publish(twist_msg)
         msg_pos.data = target_direction()
         goal_pub.publish(msg_pos)
         d, th = target_direction()
@@ -119,7 +143,12 @@ def main():
 
         str = f"(Distancia, Angulo)= ({d:.3f}, {th:.3f})"
         str += f" || Posicion actual = ({x:.3f}, {y:.3f}, {a:.3f})"
-        #print(str, end='\r')
+        if recording:
+            str += " Recording * "
+        else:
+            str += " No recording"
+        print(str, end='\r')
+
 
 
         loop.sleep

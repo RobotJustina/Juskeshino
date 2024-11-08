@@ -32,4 +32,13 @@
     <param name="point_cloud_topic" value="/camera/depth_registered/points"/>
   </node>
 
+  <node name="joy" pkg="joy" type="joy_node" output="screen">
+    <remap from="/joy"      to="/hardware/joy"/>
+  </node>
+ 
+  <node name="joystick_teleop_improved" pkg="joystick_teleop" type="joystick_teleop_node_improved.py" output="screen" >
+    <remap from="/hardware/mobile_base/cmd_vel"      to="/cmd_vel"/>
+  </node>
+
+
 </launch>
