@@ -100,9 +100,9 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(ui->visBtnFindPerson, SIGNAL(clicked()), this, SLOT(visFindPersonClicked()));
     
 
-    QObject::connect(ui->tksTxtTakeObject, SIGNAL(returnPressed()), this, SLOT(visTakeObjectReturnPressed()));
+    QObject::connect(ui->tksTxtTakeObject, SIGNAL(returnPressed()), this, SLOT(tksTakeObjectReturnPressed()));
     QObject::connect(ui->tksBtnMemorizePerson, SIGNAL(returnPressed()), this, SLOT(tksMemorizePersonReturnPressed()));
-    QObject::connect(ui->visBtnClothesColor, SIGNAL(clicked()), this, SLOT(tksRecognizePersonClicked()));
+    QObject::connect(ui->tksBtnRecognizePerson, SIGNAL(clicked()), this, SLOT(tksRecognizePersonClicked()));
     
 
     
@@ -881,7 +881,7 @@ void MainWindow::visFindPersonClicked()
     qtRosNode->call_find_person();
 }
 
-void MainWindow::visTakeObjectReturnPressed()
+void MainWindow::tksTakeObjectReturnPressed()
 {
     qtRosNode->call_take_object(ui->tksTxtTakeObject->text().toStdString());
 }
@@ -890,7 +890,6 @@ void MainWindow::tksMemorizePersonReturnPressed()
 {
     qtRosNode->call_memorize_person(ui->tksBtnMemorizePerson->text().toStdString());
 }
-
 
 void MainWindow::tksRecognizePersonClicked()
 {

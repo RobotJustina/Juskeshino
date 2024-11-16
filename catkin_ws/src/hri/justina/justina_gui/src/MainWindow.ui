@@ -1262,8 +1262,8 @@ Follow Human</string>
      <widget class="QPushButton" name="tksBtnApproachTable">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>20</y>
+        <x>530</x>
+        <y>230</y>
         <width>111</width>
         <height>51</height>
        </rect>
@@ -1276,8 +1276,8 @@ Table</string>
      <widget class="QLineEdit" name="tksTxtTakeObject">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>110</y>
+        <x>40</x>
+        <y>70</y>
         <width>113</width>
         <height>25</height>
        </rect>
@@ -1286,27 +1286,14 @@ Table</string>
      <widget class="QLabel" name="label_6">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>90</y>
+        <x>40</x>
+        <y>40</y>
         <width>111</width>
         <height>16</height>
        </rect>
       </property>
       <property name="text">
        <string>Take Object:</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="tksBtnTakeObject">
-      <property name="geometry">
-       <rect>
-        <x>140</x>
-        <y>100</y>
-        <width>71</width>
-        <height>41</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Take</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_9">
@@ -1327,8 +1314,8 @@ Table</string>
      <widget class="QPushButton" name="tksBtnRecognizePerson">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>260</y>
+        <x>40</x>
+        <y>200</y>
         <width>111</width>
         <height>51</height>
        </rect>
@@ -1341,21 +1328,21 @@ Person</string>
      <widget class="QLabel" name="label_10">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>170</y>
+        <x>40</x>
+        <y>120</y>
         <width>141</width>
         <height>51</height>
        </rect>
       </property>
       <property name="text">
-       <string>Memorize Person</string>
+       <string>Memorize Person:</string>
       </property>
      </widget>
      <widget class="QLineEdit" name="tksBtnMemorizePerson">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>210</y>
+        <x>40</x>
+        <y>160</y>
         <width>113</width>
         <height>25</height>
        </rect>
@@ -3666,7 +3653,6 @@ Person</string>
   <tabstop>visTxtRecognizeObject</tabstop>
   <tabstop>tksBtnApproachTable</tabstop>
   <tabstop>tksTxtTakeObject</tabstop>
-  <tabstop>tksBtnTakeObject</tabstop>
   <tabstop>laBtnXm</tabstop>
   <tabstop>laBtnXp</tabstop>
   <tabstop>laBtnYp</tabstop>

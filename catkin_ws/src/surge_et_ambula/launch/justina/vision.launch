@@ -28,7 +28,7 @@
    
   <node name="object_pose" pkg="obj_segmentation_and_pose" type="obj_pose_node.py" output="screen"/>
   <node name="clothes_color_srv" pkg="obj_segmentation_and_pose" type="clothes_color_srv.py" output="screen"/>
-  
+  <node name="face_recognition_node" pkg="face_reco_pkg" type="recog_face_node.py" output="screen"/> 
   <node name="human_pose_estimator" pkg="human_pose_estimation" type="streaming_keypoints" output="screen"/>
 
   <node name="object_classification" pkg="object_classification" type="obj_classification_node.py" output="screen">

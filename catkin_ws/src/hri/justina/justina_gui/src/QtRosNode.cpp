@@ -537,12 +537,10 @@ bool QtRosNode::call_memorize_person(std::string name)
 bool QtRosNode::call_recognize_person()
 {
     vision_msgs::FaceRecog srv;
-
-
     std::cout << "JustinaGUI.-> A request was made to the facial recognition service..." << std::endl;
 
-    //srv.request.is_face_recognition_enabled = true;
-    return true;//cltRecognizeFace.call(srv);
+    srv.request.is_face_recognition_enabled = true;
+    return cltRecognizeFace.call(srv);
 }
 
 

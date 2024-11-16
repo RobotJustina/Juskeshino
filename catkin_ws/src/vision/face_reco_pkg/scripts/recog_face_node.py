@@ -18,6 +18,7 @@ CAMERA_TOPIC_JUSTINA = '/camera/depth_registered/rgb/image_raw'
 
 
 def face_rec(cv_image, known_face_encodings, known_face_names):
+        global img
         rgb_image = cv.cvtColor(cv_image, cv.COLOR_BGR2RGB)
         face_locations = face_recognition.face_locations(rgb_image)
         face_encodings = face_recognition.face_encodings(rgb_image, face_locations)
@@ -39,26 +40,19 @@ def face_rec(cv_image, known_face_encodings, known_face_names):
             cv.rectangle(cv_image, (left, top), (right, bottom), (0, 255, 0), 2)
             cv.putText(cv_image, str(name), (left, top - 10), cv.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
 
-        cv.imshow("Image Window", cv_image)
-        cv.waitKey(0)
+        img = cv_image
+
         
 
 
 def load_known_faces():
         rospack = rospkg.RosPack()
         Image_path = rospack.get_path("face_reco_pkg") + "/Train_faces/Image/"
-        print("PATH", Image_path)
         known_face_encodings = []
         known_face_names = []
 
-
-
-        print("***", os.listdir(Image_path))
-
         for filename in os.listdir(Image_path):
-            print("file name", filename)
-            name = os.path.splitext(filename)[0]                        #
-            print ("name is:______", filename)
+            name = os.path.splitext(filename)[0]   
             image_path = os.path.join(Image_path , filename) 
             image = face_recognition.load_image_file(image_path)       
             try:
@@ -124,17 +118,15 @@ def handle_face_training(cv_image, req):
     # Guardar la imagen y las codificaciones de la cara en disco
     if size == 1:
         # Guardar la imagen J
-        print("if**")
         cv.imwrite(os.path.expanduser('~/Juskeshino/catkin_ws/src/vision/face_reco_pkg/Train_faces/Image/'+req.name.data+'.jpg'), cv_image)
         # Guardar las codificaciones de la cara en un archivo de texto
         with open(os.path.expanduser('~/Juskeshino/catkin_ws/src/vision/face_reco_pkg/Train_faces/Text/'+req.name.data+'.txt'), 'a') as f:
             np.savetxt(f, face_encodings[0])
         response.success = True
-        response.message = "Cara entrenada con exito con el nombre " + req.name.data
+        print("Face Recognition Node.->Iface successfully trained with the name: ", req.name.data)
     else: 
-        print("else**")
         response.success = False
-        response.message = "No hay un invitado o hay mas de uno en la escena. " 
+        print("There is no guest or there is more than one in the scene....")
     return response
     
 
@@ -156,6 +148,7 @@ def callbackTrainingFace(req):
 
 
 def main():
+    global img
     print("INITIALIZING FACE RECOGNITION AND TRAIN NODE.......ʕ•ᴥ•ʔ")
     rospy.init_node('face_recognition_node')
 
@@ -163,7 +156,10 @@ def main():
     rospy.Service('/vision/face_reco_pkg/training_face'  , FaceTrain,  callbackTrainingFace)
     
     loop = rospy.Rate(30)
+    img = np.zeros((480, 640, 3), np.uint8)
     while not rospy.is_shutdown():
+        cv.imshow("Face recognition", img)
+        cv.waitKey(10)
         loop.sleep()
 
 if __name__ == '__main__':
