@@ -72,7 +72,11 @@ void QtRosNode::run()
     cltRecogObject         = n->serviceClient<vision_msgs::RecognizeObject >    ("/vision/obj_reco/detect_and_recognize_object");
     cltFindPerson          = n->serviceClient<vision_msgs::FindPerson>          ("/vision/find_person");
     cltGetPointsAbovePlane = n->serviceClient<vision_msgs::PreprocessPointCloud>("/vision/get_points_above_plane");
+
     cltClothesColor        = n->serviceClient<vision_msgs::FindPerson>          ("/vision/clothes_color");
+    cltTrainingFace        = n->serviceClient<vision_msgs::FaceTrain>           ("/vision/face_reco_pkg/training_face");
+    cltRecognizeFace       = n->serviceClient<vision_msgs::FaceRecog>           ("/vision/face_reco_pkg/recognize_face");
+
     pubHumanPoseEnable     = n->advertise<std_msgs::Bool>("/vision/human_pose/enable", 1);
 
     pubTakeObject          = n->advertise<std_msgs::String>("/plannning/simple_task/take_object", 1);
@@ -515,6 +519,33 @@ void QtRosNode::call_take_object(std::string name)
     msg.data = " ";
     pubTakeObject.publish(msg);
 }
+
+
+
+bool QtRosNode::call_memorize_person(std::string name)
+{
+    vision_msgs::FaceTrain srv;
+    std_msgs::String msg;
+    msg.data = name;
+    std::cout << "JustinaGUI.-> A request was made to the memorize person service..." << std::endl;
+    std::cout << "JustinaGUI.-> NAME..." << msg << std::endl;
+    srv.request.name = msg;
+    return cltTrainingFace.call(srv);
+}
+
+
+bool QtRosNode::call_recognize_person()
+{
+    vision_msgs::FaceRecog srv;
+
+
+    std::cout << "JustinaGUI.-> A request was made to the facial recognition service..." << std::endl;
+
+    //srv.request.is_face_recognition_enabled = true;
+    return true;//cltRecognizeFace.call(srv);
+}
+
+
 
 bool QtRosNode::call_get_points_above_plane()
 {

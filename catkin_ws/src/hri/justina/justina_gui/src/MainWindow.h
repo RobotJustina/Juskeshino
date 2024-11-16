@@ -104,6 +104,8 @@ public slots:
 
 
     void visTakeObjectReturnPressed();
+    void tksMemorizePersonReturnPressed();
+    void tksRecognizePersonClicked();
 
 
     void visRecognizeObjectReturnPressed();

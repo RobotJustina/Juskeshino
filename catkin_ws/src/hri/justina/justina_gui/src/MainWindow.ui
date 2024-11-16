@@ -45,7 +45,7 @@ QRadioButton::indicator{
      </rect>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="tabGeneral">
      <attribute name="title">
@@ -1309,24 +1309,10 @@ Table</string>
        <string>Take</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="tksBtnApproachTable_2">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>170</y>
-        <width>111</width>
-        <height>51</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Memorize
-Person</string>
-      </property>
-     </widget>
      <widget class="QLabel" name="label_9">
       <property name="geometry">
        <rect>
-        <x>20</x>
+        <x>540</x>
         <y>290</y>
         <width>121</width>
         <height>101</height>
@@ -1336,6 +1322,43 @@ Person</string>
        <string>　　∧,,∧ 
 　 (,,・∀・) 
 ～(_ｕ,ｕﾉ</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="tksBtnRecognizePerson">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>260</y>
+        <width>111</width>
+        <height>51</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Recognize
+Person</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_10">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>170</y>
+        <width>141</width>
+        <height>51</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Memorize Person</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="tksBtnMemorizePerson">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>210</y>
+        <width>113</width>
+        <height>25</height>
+       </rect>
       </property>
      </widget>
     </widget>
@@ -3644,7 +3667,6 @@ Person</string>
   <tabstop>tksBtnApproachTable</tabstop>
   <tabstop>tksTxtTakeObject</tabstop>
   <tabstop>tksBtnTakeObject</tabstop>
-  <tabstop>tksBtnApproachTable_2</tabstop>
   <tabstop>laBtnXm</tabstop>
   <tabstop>laBtnXp</tabstop>
   <tabstop>laBtnYp</tabstop>

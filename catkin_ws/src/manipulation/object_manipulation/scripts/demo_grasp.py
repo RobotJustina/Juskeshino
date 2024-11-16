@@ -190,9 +190,9 @@ def main():
                 else:
                     APERTURE = 0.9
                     JuskeshinoHardware.moveLeftGripper(APERTURE , 5.0)
+                
                 current_state = LOOKING_GRIP
                 
-                break
 
 
 

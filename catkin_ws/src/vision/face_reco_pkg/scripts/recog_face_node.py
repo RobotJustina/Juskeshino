@@ -12,7 +12,8 @@ from cv_bridge import CvBridge, CvBridgeError
 from vision_msgs.srv import *
 from vision_msgs.msg import *
 
-CAMERA_TOPIC_JUSTINA = '/camera/depth_registered/rgb/image_raw'
+CAMERA_TOPIC_JUSTINA = '/camera/depth_registered/rgb/image_raw' 
+#'/usb_cam/image_raw'#
 
 
 
@@ -158,8 +159,8 @@ def main():
     print("INITIALIZING FACE RECOGNITION AND TRAIN NODE.......ʕ•ᴥ•ʔ")
     rospy.init_node('face_recognition_node')
 
-    rospy.Service('/vision/face_reco_pkg/recognize_face/names', FaceRecog, callbackRecognizeFace)
-    rospy.Service('/vision/face_reco_pkg/training_face/name'  , FaceTrain,  callbackTrainingFace)
+    rospy.Service('/vision/face_reco_pkg/recognize_face', FaceRecog, callbackRecognizeFace)
+    rospy.Service('/vision/face_reco_pkg/training_face'  , FaceTrain,  callbackTrainingFace)
     
     loop = rospy.Rate(30)
     while not rospy.is_shutdown():

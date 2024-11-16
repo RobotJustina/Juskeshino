@@ -101,6 +101,8 @@ MainWindow::MainWindow(QWidget *parent) :
     
 
     QObject::connect(ui->tksTxtTakeObject, SIGNAL(returnPressed()), this, SLOT(visTakeObjectReturnPressed()));
+    QObject::connect(ui->tksBtnMemorizePerson, SIGNAL(returnPressed()), this, SLOT(tksMemorizePersonReturnPressed()));
+    QObject::connect(ui->visBtnClothesColor, SIGNAL(clicked()), this, SLOT(tksRecognizePersonClicked()));
     
 
     
@@ -884,6 +886,16 @@ void MainWindow::visTakeObjectReturnPressed()
     qtRosNode->call_take_object(ui->tksTxtTakeObject->text().toStdString());
 }
 
+void MainWindow::tksMemorizePersonReturnPressed()
+{
+    qtRosNode->call_memorize_person(ui->tksBtnMemorizePerson->text().toStdString());
+}
+
+
+void MainWindow::tksRecognizePersonClicked()
+{
+    qtRosNode->call_recognize_person();
+}
 
 void MainWindow::visGetPointsAbovePlaneClicked()
 {
@@ -904,6 +916,8 @@ void MainWindow::visClothesColorClicked()
 {
     qtRosNode->call_get_clothes_color();
 }
+
+
 
 void MainWindow::hriEnableFollowHumanClicked()
 {

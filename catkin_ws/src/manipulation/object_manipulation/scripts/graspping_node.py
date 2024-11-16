@@ -139,7 +139,7 @@ def graspping_function():
     object_dic = {"BOWL"            : [[-0.02 ,size.z/2 ,0.12], [0,-90 ,0]    , "BOWL_1", "BOWL_2", [-0.02 ,size.z/2 ,0.12] ,8,  -10], 
                   "PRISM_HORIZONTAL": [[0     ,0        ,0.12], [0,-90 ,0]    , "PH1"   , "PH2"   , [0     ,0        ,0.08] ,8,  -10], 
                   "PRISM_VERTICAL"  : [[0.09  ,0        ,0   ], [-5,-5 ,0]    , "PV"    , "None"  , None                    ,6, None], 
-                  "CUBIC"           : [[0.012  ,0        ,0  ], [0,0   ,0]    , "CUBIC" , "None"  , None                    ,5, None], 
+                  "CUBIC"           : [[0.1  ,0        ,0  ], [0,0   ,0]    , "CUBIC" , "None"  , None                    ,5, None], 
                   "BOX_HORIZONTAL"  : [[0.05  ,0 ,0          ], [0,0   ,0]    , "BOX_H1", "BOX_H2", [0     ,size.z/2 ,0]    ,6,    5],
                   "BOX_VERTICAL"    : [[0.05  ,0 ,0          ], [0,0   ,0]    , "BOX_V1", "BOX_V2", [0     ,size.z/2 ,0]    ,6,    5]}
     
