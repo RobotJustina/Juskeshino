@@ -12,8 +12,10 @@ from cv_bridge import CvBridge, CvBridgeError
 from vision_msgs.srv import *
 from vision_msgs.msg import *
 
-CAMERA_TOPIC_JUSTINA = '/camera/depth_registered/rgb/image_raw' 
-#'/usb_cam/image_raw'#
+CAMERA_TOPIC_JUSTINA = '/camera/rgb/image_color'
+# real                               '/camera/rgb/image_color'
+# simulacion justina_gazebo          '/camera/depth_registered/rgb/image_raw' 
+# simulacion justina_gazebo_lab      '/usb_cam/image_raw'
 
 
 
