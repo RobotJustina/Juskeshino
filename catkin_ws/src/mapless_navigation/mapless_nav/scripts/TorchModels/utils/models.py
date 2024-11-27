@@ -221,7 +221,7 @@ class CNN_B(torch.nn.Module):
         x = self.dropout_20(x)
         # x = self.flat3(x)
         # x = torch.nn.functional.relu(x)
-        x = self.dropout_20(x)
+        # x = self.dropout_20(x)
         x = self.flat4(x)
         x = torch.nn.functional.relu(x)
 

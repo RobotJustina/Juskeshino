@@ -26,7 +26,7 @@ data_Y = [0.0, 0.0]
 cmd_vel_pub = None
 recording = False
 y_button = 0
-
+category_y = True
 
 def clickPointCallback(msg):
     global goal_x, goal_y
@@ -75,7 +75,13 @@ def occGridCallback(msg):
 
 def cmdVelCallback(msg):
     global data_Y
-    data_Y = [msg.linear.x, msg.angular.z]
+    x = msg.linear.x
+    z = msg.angular.z
+    if category_y:
+        if x > 0.5 and z < 0.2:
+            data_Y = [x, z]    
+    else:
+        data_Y = [x, z]
     #print("\n", data_Y)
     
 
@@ -97,7 +103,7 @@ def recordCallback(msg):
 def main():
     global lin_vel_x, ang_vel_z, listener
     global goal_x, goal_y, cmd_vel_pub
-    global recording, y_button
+    global recording, y_button, category_y
     start = True
     rospy.init_node("justina_nav_data")
     rospy.loginfo("INITIALIZING justina_nav_data")

@@ -31,16 +31,30 @@ Dataset
 np.set_printoptions(threshold=sys.maxsize)
 
 # --- load files ---
-pkg_name = 'mapless_nav'
+pkg_name = 'machine_learning' #'mapless_nav'
 pkg_path = rospkg.RosPack().get_path(pkg_name)
-files_path = pkg_path + '/scripts/TorchModels/data/'
-files_path += "data_dep1_*.npz"
-data_X, data_Y = l_util.load_data_matrix(files_path, shape=[81, 80])  # 81x80
+files_path = pkg_path + '/src/Data_gazebo/'
+data = l_util.load_data(files_path)  # 6404
+print("Data shape:", data.shape)
 
+# --- prepare X(data), Y(labels) ---
+data_X = []
+data_Y = []
+data = l_util.removePattern(data, (data[:,6402]==0.) & (data[:, 6403] == 0.))
+count = 0
+for info in data:
+    image = np.reshape(info[:-4], (80, 80))
+    vect = np.zeros((80, 80))
+    vect[0, :2] = info[-4:-2]
+    #data_X.append([image, info[-4:-2]])  # img(80x80), vet(2)
+    data_X.append([image, vect])  # img(80x80) ch0, vet(2) ch2
+    data_Y.append(info[-2:])
 
-
+data_X = np.asarray(data_X, dtype=np.float32)
+data_Y = np.asarray(data_Y, dtype=np.float32)
 print("Data_X shape:", data_X.shape)
-print("Data_Y shape:", data_Y.shape)
+print("Data_y shape:", data_Y.shape)
+
 ## print(data_X[0, 1, 0, :2])  # show vector
 # show random sample
 #l_util.show_image_gray(data_X[np.random.randint(0,len(data_X)), 0])
