@@ -19,9 +19,9 @@ Redes_folder = rospack.get_path("machine_learning") + "/src"
 sys.path.append(Redes_folder)
 
 rospy.init_node("training_gazebo")
-np.random.seed(42)
-th.manual_seed(42)
-th.cuda.manual_seed(42)
+# np.random.seed(42)
+# th.manual_seed(42)
+# th.cuda.manual_seed(42)
 th.backends.cudnn.deterministic = True
 #th.backends.cudnn.benchmark = False
 
@@ -64,8 +64,8 @@ def main():
 	x_vad = th.tensor(x_vad, dtype=th.float32, device=disp)
 	y_vad = th.tensor(y_vad, dtype=th.float32, device=disp)
 
-	batch = 32
-	learn_r = 4e-6
+	batch = 16
+	learn_r = 1e-3 # 1e-3
 	epochs = 10
 	print("batch:", batch)
 	print("lr:", learn_r)
@@ -77,7 +77,7 @@ def main():
 
 	##Last fully connected
 
-	mired = architecture.CNN_A()  # Red_conv(3)
+	mired = architecture.CNN_B()  # Red_conv(3)
 	#mired = architecture.Reg()
 	mired.to(disp)
 	t0 = time.time() # ><<<<<<<<<<<<
@@ -106,7 +106,7 @@ def main():
 	entdl = DataLoader(TensorDataset(x_ent, y_ent), batch_size=1, shuffle=False, drop_last=False)
 	training_functions.dataloader_eval(entdl, mired)
 
-	th.save(mired.state_dict(), data_folder+"/CNN_A.pth")
+	th.save(mired.state_dict(), data_folder+"/CNN_B.pth")
 	plt.show()
 
 if __name__=="__main__":
