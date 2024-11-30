@@ -65,8 +65,8 @@ def main():
 	y_vad = th.tensor(y_vad, dtype=th.float32, device=disp)
 
 	batch = 16
-	learn_r = 1e-3 # 1e-3
-	epochs = 10
+	learn_r = 1e-3 # 1e-3 4e-6 
+	epochs = 40
 	print("batch:", batch)
 	print("lr:", learn_r)
 	print("epochs:", epochs)
