@@ -12,7 +12,7 @@ from cv_bridge import CvBridge, CvBridgeError
 from vision_msgs.srv import *
 from vision_msgs.msg import *
 
-CAMERA_TOPIC_JUSTINA = '/camera/rgb/image_color'
+CAMERA_TOPIC_JUSTINA = '/usb_cam/image_raw'
 # real                               '/camera/rgb/image_color'
 # simulacion justina_gazebo          '/camera/depth_registered/rgb/image_raw' 
 # simulacion justina_gazebo_lab      '/usb_cam/image_raw'
@@ -54,7 +54,7 @@ def load_known_faces():
         known_face_names = []
 
         for filename in os.listdir(Image_path):
-            name = os.path.splitext(filename)[0]   
+            name = os.path.splitext(filename)#[0]   
             image_path = os.path.join(Image_path , filename) 
             image = face_recognition.load_image_file(image_path)       
             try:

@@ -13,7 +13,9 @@ from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
 from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 
 
-POST_GRIP         = [0.38, 0.19, -0.01, 1.57, 0 , 1.05, 0.0 ] 
+POST_GRIP  = [0.38 , 0.19, -0.01, 1.57, 0.0, 1.05, 0.0] 
+PREPARE    = [-0.69, 0.20, 0.0  , 1.55, 0.0, 1.16, 0.0]
+HOMEE      = [0.0  , 0.0 , 0.0  , 0.0 , 0.0, 0.0 , 0.0]
 
 # ESTADOS
 INITIAL = 1
@@ -26,6 +28,7 @@ PREPARE_ARM = 9
 LOOKING_GRIP = 10
 TAKE_OBJECT = 11
 POST_GRASP = 12 
+HOME =13
 
 
 def callback_take_object(msg):
@@ -226,10 +229,20 @@ def main():
                     JuskeshinoManipulation.dynamic_grasp_left_arm()
 
                 JuskeshinoHardware.moveLeftArmWithTrajectory(POST_GRIP ,15)
+                current_state = HOME
+
+
+            elif(current_state == HOME):
+                print("ESTADO:___HOME..................")
+                JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE ,15)
+                print("homee")
+                JuskeshinoHardware.moveLeftArmWithTrajectory(HOMEE ,15)
 
                 actual_obj = None
                 current_state = -1
                 break
+
+
     return 
 
 if __name__ == "__main__":
