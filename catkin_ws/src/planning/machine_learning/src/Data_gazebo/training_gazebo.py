@@ -20,9 +20,9 @@ Redes_folder = rospack.get_path("machine_learning") + "/src"
 sys.path.append(Redes_folder)
 
 rospy.init_node("training_gazebo")
-np.random.seed(42)
-th.manual_seed(42)
-th.cuda.manual_seed(42)
+# np.random.seed(42)
+# th.manual_seed(42)
+# th.cuda.manual_seed(42)
 th.backends.cudnn.deterministic = True
 # th.backends.cudnn.benchmark = False
 from Redes import training_functions
@@ -66,36 +66,32 @@ def main():
     x_vad = th.tensor(x_vad, dtype=th.float32, device=disp)
     y_vad = th.tensor(y_vad, dtype=th.float32, device=disp)
 
-    batch = 32
-    learn_r = 4e-6
-    epochs = 1
-    print("batch:", batch)
-    print("lr:", learn_r)
-    print("epochs:", epochs)
+	batch = 16
+	learn_r = 1e-3 # 1e-3 4e-6 
+	epochs = 40
+	print("batch:", batch)
+	print("lr:", learn_r)
+	print("epochs:", epochs)
 
-    entdl = DataLoader(TensorDataset(x_ent, y_ent),
-                       batch_size=batch, shuffle=True, drop_last=True)
-    valdl = DataLoader(TensorDataset(x_vad, y_vad),
-                       batch_size=batch, shuffle=False, drop_last=False)
-    prudl = DataLoader(TensorDataset(x_pru, y_pru),
-                       batch_size=batch, shuffle=False, drop_last=False)
+	entdl = DataLoader(TensorDataset(x_ent, y_ent), batch_size=batch, shuffle=True, drop_last=True)
+	valdl = DataLoader(TensorDataset(x_vad, y_vad), batch_size=batch, shuffle=False, drop_last=False)
+	prudl = DataLoader(TensorDataset(x_pru, y_pru), batch_size=batch, shuffle=False, drop_last=False)
 
-    # Last fully connected
+	##Last fully connected
 
-    mired = architecture.CNN_A()  # Red_conv(3)
-    # mired = architecture.Reg()
-    mired.to(disp)
-    t0 = time.time()  # ><<<<<<<<<<<<
-    ecm = nn.MSELoss()
-    opt = AdamW(mired.parameters(), lr=learn_r)  # 4e-3, 40e-6
-    # opt = AdamW(mired.parameters(), lr = 4e-5)
+	mired = architecture.CNN_B()  # Red_conv(3)
+	#mired = architecture.Reg()
+	mired.to(disp)
+	t0 = time.time() # ><<<<<<<<<<<<
+	ecm = nn.MSELoss()
+	opt = AdamW(mired.parameters(), lr = learn_r) #4e-3, 40e-6
+	#opt = AdamW(mired.parameters(), lr = 4e-5)
 
-    # hist = training_functions.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=19)
-    hist = training_functions.entrena(
-        mired, ecm, training_functions.exactitud, opt, entdl, valdl, n_epocas=epochs)  # 50
-    tf = time.time()  # ><<<<<<<<<<<<
-    print("time: ", tf - t0, "[s]")
-    training_functions.graficar(hist, entdl, valdl, "Red1")
+	#hist = training_functions.entrena(mired, ecm, nn.functional.mse_loss, opt, entdl, valdl, n_epocas=19)
+	hist = training_functions.entrena(mired, ecm, training_functions.exactitud, opt, entdl, valdl, n_epocas=epochs) #50
+	tf = time.time() # ><<<<<<<<<<<<
+	print("time: ", tf - t0, "[s]")
+	training_functions.graficar(hist, entdl, valdl,"Red1")
 
     # print("Prueba")
     # training_functions.dataloader_r2(prudl,mired)
@@ -104,18 +100,16 @@ def main():
     # print("entrenamiento")
     # training_functions.dataloader_r2(entdl,mired)
 
-    print("prueba")
-    training_functions.dataloader_eval(prudl, mired)
-    print("validación")
-    training_functions.dataloader_eval(valdl, mired)
-    print("entrenamiento")
-    entdl = DataLoader(TensorDataset(x_ent, y_ent),
-                       batch_size=1, shuffle=False, drop_last=False)
-    training_functions.dataloader_eval(entdl, mired)
+	print("prueba")
+	training_functions.dataloader_eval(prudl, mired)
+	print("validación")
+	training_functions.dataloader_eval(valdl, mired)
+	print("entrenamiento")
+	entdl = DataLoader(TensorDataset(x_ent, y_ent), batch_size=1, shuffle=False, drop_last=False)
+	training_functions.dataloader_eval(entdl, mired)
 
-    th.save(mired.state_dict(), data_folder+"/CNN_A.pth")
-    plt.show()
+	th.save(mired.state_dict(), data_folder+"/CNN_B.pth")
+	plt.show()
 
-
-if __name__ == "__main__":
-    main()
+if __name__=="__main__":
+	main()
