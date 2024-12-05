@@ -170,10 +170,9 @@ class CNN_A(torch.nn.Module):
 class CNN_B(torch.nn.Module):
     def __init__(self):
         super(CNN_B, self).__init__()
-        self.name = 'CNN_B'
 
         self.conv1 = torch.nn.Conv2d(1, 6, 5)
-        #self.conv2 = torch.nn.Conv2d(3, 8, 5)
+        # self.conv2 = torch.nn.Conv2d(3, 8, 5)
         self.dropout_50 = torch.nn.Dropout2d(p=0.5)
         self.conv3 = torch.nn.Conv2d(6, 18, 3)
         self.dropout_40 = torch.nn.Dropout(p=0.4)
@@ -186,17 +185,17 @@ class CNN_B(torch.nn.Module):
         # merge
         self.flat2 = torch.nn.Linear(42626, 16)
         self.dropout_20 = torch.nn.Dropout(p=0.2)
-        #self.flat3 = torch.nn.Linear(60, 32)
+        # self.flat3 = torch.nn.Linear(60, 32)
         self.flat4 = torch.nn.Linear(16, 3)
 
     def forward(self, x):
         # vector
-        vec = x[:, 1, 0, :2]  # x[:, 6400:]
+        vec = x[:, 6400:]
         vec = self.vector(vec)
         vec = torch.nn.functional.relu(self.vector(vec))
         # image
-        x = x[:, 0]  # x[:, 0:6400]
-        x = x.view(x.size(0),1,80,80)
+        x = x[:, 0:6400]
+        x = x.view(x.size(0), 1, 80, 80)
 
         x = self.conv1(x)
         x = torch.nn.functional.relu(x)
@@ -215,13 +214,13 @@ class CNN_B(torch.nn.Module):
 
         x = torch.flatten(x, 1)
         # concat inputs
-        x = torch.cat((x, vec ), 1)
+        x = torch.cat((x, vec), 1)
         x = self.flat2(x)
         x = torch.nn.functional.relu(x)
         x = self.dropout_20(x)
         # x = self.flat3(x)
         # x = torch.nn.functional.relu(x)
-        # x = self.dropout_20(x)
+        x = self.dropout_20(x)
         x = self.flat4(x)
         x = torch.nn.functional.relu(x)
 

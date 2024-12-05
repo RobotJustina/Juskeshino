@@ -10,100 +10,76 @@ import torch
 from TorchModels.utils import models
 
 package_path = rospkg.RosPack().get_path("mapless_nav")
-model_path = package_path + "/scripts/TorchModels/modelo.pth"
+model_path = package_path + "/scripts/TorchModels/CNN_B.pth"
 print("model path: ", model_path)
-model = models.Red_conv(3)
-#model = models.Reg()
+model = models.CNN_B()
 model.load_state_dict(torch.load(model_path))
 disp = 'cuda' if torch.cuda.is_available() else 'cpu'
 model.to(disp)
-lin_vel_x = 0.0
-ang_vel_z = 1.0
-last_goal = [0, 0]
+C=np.asarray([[0.3, 0.0], [0.0, 0.5],[0.0, -0.5]])
+last_goal=[0,0]
+rospack = rospkg.RosPack()
+init_time=-1.0
+linx=0.0
+angz=0.0
 
-def occGridArrayCallback(msg):
-    global model, disp, last_goal, lin_vel_x, ang_vel_z
-    """
-    simple_data = msg.data  # Default is a tuple (6400)
-    print(len(simple_data))
-    print(type(simple_data))
-    """
-    # Transform to List and concatenate
-    data_list = list(msg.data)
-    data_list += [0, 0]  # TODO: Concatenate las goal shape:(6402)
+def callback_grid(msg):
+	global model, last_goal, disp, linx, angz, C, init_time
+	grid=list(msg.data)
+	entrada=grid+last_goal
+	entrada = np.asarray(entrada)
+	entrada = np.expand_dims(entrada, axis=0)
+	x_ent=torch.tensor(entrada)
+	x_ent=x_ent.to(torch.device(disp), torch.float32)
+	if(abs(last_goal[0])>0.3):
+		with torch.no_grad():
+			y_pred = model(x_ent)
+		y_pred =y_pred.cpu().numpy()
+		index=int(np.argmax(y_pred))
+		linx=C[index,0]
+		angz=C[index,1]
+	else:
+		#linx=0.0
+		#angz=0.0
+		if(init_time!=-1.0 and (linx+angz)>0):
+			tiempo=rospy.get_time()
+			print(f"inicio: {init_time}, {tiempo}")
+			tiempo=tiempo-init_time
+			print(f"Time: {tiempo}")
+			init_time=-1.0
+		linx=0.0
+		angz=0.0
 
-    # print("occ_g_list:", len(data_list))
-    # print("data_list:", type(data_list))
-    # print("---")
-    # Transform to numpy arrray
-    data_np = np.asarray(data_list)
-
-    # print("data_np shape=", data_np.shape)
-    # print("data_np:", type(data_np))
-    
-    # Expand dims (1 batch, flat 6402)
-    data_np = np.expand_dims(data_np, 0)
-    # print("data_np shape=", data_np.shape)
-    # print(">>")
-    # Data to Torch tensor
-    data_x_tensor = torch.tensor(data_np)
-    # Select GPU/CPU and precision f32
-    data_x_tensor = data_x_tensor.to(torch.device(disp), torch.float32)
-    
-    """
-    model.eval()
-    output = model(example_image)
-    """
-
-    if(abs(last_goal[0])>0.2):
-        with torch.no_grad():
-            y_pred = model(data_x_tensor)
-        y_pred = y_pred.cpu().numpy()
-        lin_vel_x = y_pred[0,0]
-        ang_vel_z = y_pred[0,1]
-    else:
-        lin_vel_x = 0.0
-        ang_vel_z = 0.0
-
-
-def goalCallback(msg):
+def callback_goal(msg):
 	global last_goal
-	last_goal = list(msg.data)
+	last_goal=list(msg.data)
 
-
-def clickPointCallback(msg):
-     print("New goal")
-
-# TODO: Use this one to make a 80x80 matrix
-# def occGridCallback(msg):SingleConvModel()
-#     data = np.asarray(msg.data)
-
-#     print("occ_g:", data.shape)
-
+def callback_point(msg):
+	global init_time
+	init_time=rospy.get_time()
+	#print(f"Init time: {init_time}")
+	print(f"New goal: {msg.point.x, msg.point.y}")
 
 def main():
-    global lin_vel_x, ang_vel_z
+	global linx, angz
+	rospy.init_node("NN_out")
+	rospy.Subscriber("/NN_goal", Float32MultiArray, callback_goal)
+	rospy.Subscriber("/clicked_point", PointStamped, callback_point)
+	rospy.Subscriber("/local_occ_grid_array", Float32MultiArray, callback_grid)
+	#pub_cmd = rospy.Publisher("/hardware/mobile_base/cmd_vel", Twist  , queue_size=10)
+	pub_cmd = rospy.Publisher("/cmd_vel", Twist  , queue_size=10)
+	print("NN_out has been started")
+	loop = rospy.Rate(20)
+	msg=Twist()
+	while not rospy.is_shutdown():
+		#pub_cmd.publish(msg)
+		msg.linear.x=linx
+		msg.angular.z=angz
+		pub_cmd.publish(msg)
+		loop.sleep()
 
-    rospy.init_node("mapless_local_occupancy")
-    rospy.loginfo("INITIALIZING MAPLESS LOCAL OCCUPANCY")
-
-    rospy.Subscriber("/local_occ_grid_array", Float32MultiArray, occGridArrayCallback)
-    rospy.Subscriber("/NN_goal", Float32MultiArray, goalCallback)
-    rospy.Subscriber("/clicked_point", PointStamped, clickPointCallback)
-
-    # TODO: DELETE
-    #loc_occ_sub = rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
-
-    cmd_vel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
-    twist_msg = Twist()
-
-    loop = rospy.Rate(20)
-    while not rospy.is_shutdown():
-        cmd_vel_pub.publish(twist_msg)
-        twist_msg.linear.x = lin_vel_x
-        twist_msg.angular.z = ang_vel_z
-        cmd_vel_pub.publish(twist_msg)
-        loop.sleep     
-
-if __name__ == "__main__":
-     main()
+if __name__ == '__main__':
+	try:
+		main()
+	except rospy.ROSInterruptException:
+		pass

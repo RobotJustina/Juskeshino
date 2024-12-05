@@ -23,7 +23,7 @@
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/>
   <!-- <include file="$(find surge_et_ambula)/launch/justina/vision.launch"/> -->
 
-  <!-- <node name="get_goal_point" pkg="machine_learning" type="get_goal_point.py"/> -->
+  <node name="get_goal_point" pkg="mapless_nav" type="get_goal_point.py"/>
 
   <node name="local_occ_grid" pkg="local_occ_grid" type="local_occ_grid">
     <param name="use_lidar" value="true"/>
@@ -31,14 +31,5 @@
     <param name="laser_scan_topic" value="/hardware/scan"/>
     <param name="point_cloud_topic" value="/camera/depth_registered/points"/>
   </node>
-
-  <node name="joy" pkg="joy" type="joy_node" output="screen">
-    <remap from="/joy"      to="/hardware/joy"/>
-  </node>
- 
-  <node name="joystick_teleop_improved" pkg="joystick_teleop" type="joystick_teleop_node_improved.py" output="screen" >
-    <remap from="/hardware/mobile_base/cmd_vel"      to="/cmd_vel"/>
-  </node>
-
 
 </launch>
