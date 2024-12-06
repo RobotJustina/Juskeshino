@@ -1,9 +1,13 @@
 <launch>
+  <arg name="posx" default="3.75" />
+  <arg name="posy" default="12.0" />
+  <arg name="yaw" default="-1.57"/>
+  <arg name="world" default="appartment"/>
     
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
-    <arg name="posx" value="3.75" />
-    <arg name="posy" value="12.0" />
-    <arg name="yaw" default="-1.57"/>
+    <arg name="posx" value="$(arg posx)" />
+    <arg name="posy" value="$(arg posy)" />
+    <arg name="yaw" default="$(arg yaw)"/>
     <arg name="world" value="$(arg world)"/>
   </include>
   
