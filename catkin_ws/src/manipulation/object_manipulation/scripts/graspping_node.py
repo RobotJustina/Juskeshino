@@ -135,15 +135,16 @@ def generates_candidates(obj_pose, name_frame, step, offset, rotation_axis):
 def graspping_function():
     global category, size
     #            |  category object   |  grip pont in frame   | offset on the |  candidate        |  last point of the      | step°
-    #            |                    |  'object'             | rotation axis |  pose names       |  2nd trajectory         |
+    #            |                    |  'object'             | rotation axis |  frame names      |  2nd trajectory         |
     object_dic = {"BOWL"            : [[-0.02 ,size.z/2 ,0.14], [0,-90 ,0]    , "BOWL_1", "BOWL_2", [-0.02 ,size.z/2 ,0.12] ,8,  -10], 
                   "PRISM_HORIZONTAL": [[0     ,0        ,0.12], [0,-90 ,0]    , "PH1"   , "PH2"   , [0     ,0        ,0.08] ,8,  -10], 
                   "PRISM_VERTICAL"  : [[0.09  ,0        ,0   ], [-5,-5 ,0]    , "PV"    , "None"  , None                    ,6, None], 
-                  "CUBIC"           : [[0.1  ,0         ,0   ], [0,0   ,0]    , "CUBIC" , "None"  , None                    ,5, None], 
-                  "BOX_HORIZONTAL"  : [[0.05  ,0 ,0          ], [0,0   ,0]    , "BOX_H1", "BOX_H2", [0     ,0        ,0.00]    ,6,    5],
-                  "BOX_VERTICAL"    : [[0.05  ,0 ,0          ], [0,0   ,0]    , "BOX_V1", "BOX_V2", [0     ,0        ,0.00]    ,6,    5]}
+                  "CUBIC"           : [[0.1   ,0        ,0   ], [0,0   ,0]    , "CUBIC" , "None"  , None                    ,5, None], 
+                  "BOX_HORIZONTAL"  : [[0.00  ,0 ,0          ], [0,0   ,0]    , "BOX_H1", "BOX_H2", [0     ,0        ,0.00] ,6,    5],
+                  "BOX_VERTICAL"    : [[0.00  ,0 ,0          ], [0,0   ,0]    , "BOX_V1", "BOX_V2", [0     ,0        ,0.00] ,6,    5]}
     
     object_info = object_dic[category]
+    # generates_candidates(                             object pose,                    name frame,       step,           offset,      rotation_axis
     candidate_list = generates_candidates(generate_pose(object_info[0] , [0,0,0,1]) , object_info[2] , object_info[5], object_info[1] ,np.asarray([0,1,0]))
     first_trajectory, c_ft, graspable =  evaluating_possibility_grip(candidate_list , )
 
@@ -165,8 +166,8 @@ def graspping_function():
             
             candidate_list = generates_candidates( generate_pose(object_info[4] , [0,0,0,1]) , object_info[3], object_info[6], [0,0,0], np.asarray([0,1,0]))
             second_trajectory, c_ft_2, graspable_2 =  evaluating_possibility_grip(candidate_list, guess)
-            if not graspable_2:
-                return second_trajectory, c_ft_2, graspable_2
+            if not graspable_2: return second_trajectory, c_ft_2, graspable_2
+
             first_trajectory.points = first_trajectory.points + second_trajectory.points
             return first_trajectory , c_ft_2, graspable_2
     return first_trajectory , c_ft, graspable

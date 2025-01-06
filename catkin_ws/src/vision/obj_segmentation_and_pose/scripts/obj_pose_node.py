@@ -99,7 +99,7 @@ def object_pose(centroid, principal_component, second_component, size_obj, name_
     print("angulo del objeto respecto de la superficie: ", np.rad2deg(angle_obj))
     
     # ************************************************************************************************
-    if ((angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150))):  # Si el objeto es horizontal
+    if ((angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150)) or (c_obj == 'BOWL')):  # Si el objeto es horizontal
         #if (size_obj.x > MAXIMIUN_CUBE_SIZE):        # Si el objeto es
             # Realiza agarre superior
         obj_state = 'horizontal'
@@ -115,7 +115,7 @@ def object_pose(centroid, principal_component, second_component, size_obj, name_
         if second_component[2] < 0: 
             second_component = -1 * second_component    # sc no puede ser un vector negativo
             
-        if(c_obj == "PRISM_HORIZONTAL"):#((size_obj.x /size_obj.z) > 1.333) and ((size_obj.x /size_obj.y) > 1.333):    # Objeto prismatico
+        if(c_obj == "PRISM_HORIZONTAL"):   # Objeto prismatico
             eje_x_obj = np.asarray([principal_component[0] , principal_component[1], 0], dtype=np.float64)#principal_component 
             eje_z_obj = eje_z # 'base_link'
             eje_y_obj = np.cross(eje_z_obj , eje_x_obj )
