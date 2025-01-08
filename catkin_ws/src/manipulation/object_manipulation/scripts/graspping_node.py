@@ -136,12 +136,12 @@ def graspping_function():
     global category, size
     #            |  category object   |  last point of  ,     | offset on the |  candidate        |  last point of the      | step°
     #            |                    |  the 1st trajectory   | rotation axis |  pose names       |  2nd trajectory         |
-    object_dic = {"BOWL"            : [[-0.02 ,size.z/2 ,0.12], [0,-90 ,0]    , "BOWL_1", "BOWL_2", [-0.02 ,size.z/2 ,0.06] ,5,    5], 
+    object_dic = {"BOWL"            : [[-0.02 ,size.z/2 ,0.15], [0,-90 ,0]    , "BOWL_1", "BOWL_2", [-0.02 ,size.z/2 ,0.1] ,5,    5], 
                   "PRISM_HORIZONTAL": [[0     ,0        ,0.12], [0,-90 ,0]    , "PH1"   , "PH2"   , [0     ,0        ,0.10] ,6,   -9], 
-                  "PRISM_VERTICAL"  : [[0.03     ,0     ,0   ], [-5,-5 ,0]    , "PV"    , "None"  , None                    ,6, None], 
+                  "PRISM_VERTICAL"  : [[0.0   ,0     ,0.06   ], [-5,-5 ,0]    , "PV"    , "None"  , None                    ,6, None], 
                   "CUBIC"           : [[0.09  ,0        ,0]   , [0,0   ,0]    , "CUBIC" , "None"  , None                    ,5, None], 
-                  "BOX_HORIZONTAL"  : [[0     ,size.z/2 ,0]   , [0,0   ,0]    , "BOX_H1", "BOX_H2", [0     ,size.z/2 ,0]    ,6,    5],
-                  "BOX_VERTICAL"    : [[0     ,size.z/2 ,0]   , [0,0   ,0]    , "BOX_V1", "BOX_V2", [0     ,size.z/2 ,0]    ,6,    5]}
+                  "BOX_HORIZONTAL"  : [[0     ,0 ,0.07]   , [0,0   ,0]    , "BOX_H1", "BOX_H2", [0     ,size.z/2 ,0]    ,6,    5],
+                  "BOX_VERTICAL"    : [[0     ,0 ,0.07]   , [0,0   ,0]    , "BOX_V1", "BOX_V2", [0     ,size.z/2 ,0]    ,6,    5]}
     
     object_info = object_dic[category]
     candidate_list = generates_candidates(generate_pose(object_info[0] , [0,0,0,1]) , object_info[2] , object_info[5], object_info[1] ,np.asarray([0,1,0]))
@@ -149,7 +149,7 @@ def graspping_function():
 
     print("GRASPABLE?", graspable)
     if graspable:
-        if (category == "CUBIC") or (category == "PRISM_VERTICAL"): 
+        if (category == "CUBIC") or (category == "PRISM_VERTICAL"):#  or (category == "BOWL"): 
             print("Return one trajectory")
             return first_trajectory, c_ft, graspable
         else:

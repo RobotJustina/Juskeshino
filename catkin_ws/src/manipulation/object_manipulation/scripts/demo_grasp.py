@@ -225,7 +225,7 @@ def main():
                 else:
                     JuskeshinoManipulation.dynamic_grasp_left_arm()
 
-                JuskeshinoHardware.moveLeftArmWithTrajectory(POST_GRIP ,15)
+                #JuskeshinoHardware.moveLeftArmWithTrajectory(POST_GRIP ,15)
 
                 actual_obj = None
                 current_state = -1

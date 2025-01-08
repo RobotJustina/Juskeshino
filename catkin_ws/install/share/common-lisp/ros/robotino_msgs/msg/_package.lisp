@@ -1,0 +1,15 @@
+(cl:defpackage robotino_msgs-msg
+  (:use )
+  (:export
+   "<ANALOGREADINGS>"
+   "ANALOGREADINGS"
+   "<DIGITALREADINGS>"
+   "DIGITALREADINGS"
+   "<ENCODERREADINGS>"
+   "ENCODERREADINGS"
+   "<MOTORREADINGS>"
+   "MOTORREADINGS"
+   "<POWERREADINGS>"
+   "POWERREADINGS"
+  ))
+
