@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 import rospy
 from std_msgs.msg import Float32MultiArray
-from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Twist, PointStamped
 import numpy as np
 import rospkg

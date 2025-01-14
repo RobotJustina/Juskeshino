@@ -105,8 +105,8 @@ def main():
     global goal_x, goal_y, cmd_vel_pub
     global recording, y_button, category_y
     start = True
-    rospy.init_node("justina_nav_data")
-    rospy.loginfo("INITIALIZING justina_nav_data")
+    rospy.init_node("justina_occgrid_data")
+    rospy.loginfo("INITIALIZING justina_occgrid_data")
 
     listener = tf.TransformListener()
     listener.waitForTransform("odom", "base_link", rospy.Time(), rospy.Duration(4.0))
