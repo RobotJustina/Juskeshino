@@ -234,9 +234,9 @@ def main():
 
             elif(current_state == HOME):
                 print("ESTADO:___HOME..................")
-                JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE ,15)
+                #JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE ,15)
                 print("homee")
-                JuskeshinoHardware.moveLeftArmWithTrajectory(HOMEE ,15)
+                #JuskeshinoHardware.moveLeftArmWithTrajectory(HOMEE ,15)
 
                 actual_obj = None
                 current_state = -1

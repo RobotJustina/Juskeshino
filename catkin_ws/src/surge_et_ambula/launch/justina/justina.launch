@@ -67,6 +67,6 @@
   <node pkg="rostopic" type="rostopic" name="rostopic_pub_node" output="screen" args="pub $(arg topic_name) std_msgs/Bool 'data: true'" />
 
   <include file="$(find surge_et_ambula)/launch/justina/planning.launch">
-    <arg name="known_locations" value="$(find config_files)/navigation/auditorio_locations.yaml"/>
+    <arg name="known_locations" value="$(find config_files)/navigation/known_locations_gpsr.yaml"/>
   </include>
 </launch>

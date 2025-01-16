@@ -260,7 +260,7 @@ def object_category(size_obj, obj_state, name_obj):  # estima la forma geometric
             print("H-> BOWL")
             return "BOWL", True
         else:
-            if((size_obj.x /size_obj.z) > 1.4) and ((size_obj.x /size_obj.y) > 1.4) and ((size_obj.y /size_obj.z) < 1.4) and (size_obj.x > MAXIMIUN_CUBE_SIZE):#or ((size_obj.y < 0.15) and ((size_obj.x /size_obj.y) > 1.4) ):   # barra
+            if((size_obj.x /size_obj.z) > 1.5) and ((size_obj.x /size_obj.y) > 1.5) and ((size_obj.y /size_obj.z) < 1.4) and (size_obj.x > MAXIMIUN_CUBE_SIZE):#or ((size_obj.y < 0.15) and ((size_obj.x /size_obj.y) > 1.4) ):   # barra
                 print("H-> PRISM_H")
                 return "PRISM_HORIZONTAL", True
             else:

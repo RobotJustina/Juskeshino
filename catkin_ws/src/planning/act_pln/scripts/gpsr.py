@@ -91,7 +91,7 @@ def take(obj_name):
     manip_method = rospy.get_param("~manip_method")
     if manip_method == "best":
         # EXECUTE TRAJECTORY
-        [response, success] = JuskeshinoManipulation.GripLa(obj)
+        [response, success] = JuskeshinoManipulation.GripLa(found_obj)
     else:
         response = JuskeshinoManipulation.laIk([x,y,z, 0,-1.5,0])
         success = not (response is None or response is False)
@@ -108,10 +108,10 @@ def take(obj_name):
     JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
     rospy.sleep(0.5)
     if not success:
-        JuskeshinoHRI.say("I couldn't grasp the " + obj.id )
+        JuskeshinoHRI.say("I couldn't grasp the " + found_obj.id )
         return 'help'
     else:
-        JuskeshinoHRI.say("I took correctly the " + obj.id )
+        JuskeshinoHRI.say("I took correctly the " + found_obj.id )
         return 'succed'
     
 def find_person(person_name):
@@ -129,8 +129,12 @@ def find_gesture(gesture):
 def find_clothes(clothes):
     print("GPSR.->Trying to detect the ", clothes)
     JuskeshinoHRI.say("I will try to find the " + clothes.replace("_", " "))
-    if not JuskeshinoSimpleTasks.findHumanAndApproach(60):
-        JuskeshinoHRI.say("I could not find any person. I will continue.")
+
+    [shirt_color, pants_color] = JuskeshinoVision.clothes_color()
+
+    JuskeshinoHRI.say("I found a person with a " + shirt_color + " shirt and " + pants_color + " pants")
+
+    #JuskeshinoHRI.say("I could not find any person. I will continue.")
 
 def follow(dest):
     dest_pose = JuskeshinoKnowledge.getKnownLocation(dest)
@@ -150,6 +154,8 @@ def follow(dest):
                 JuskeshinoHRI.say("Human, I could not found you. I am sorry.")
                 JuskeshinoHRI.enableLegFinder(False)
                 return
+            
+
     JuskeshinoHRI.enableHumanFollower(True)
     if no_destination:
         JuskeshinoHRI.say("Human, I found you. Please say. Robot stop following me. When you want me to stop following you")
@@ -237,19 +243,25 @@ def main():
                        ACTION_ANSWER: answer_question,
                        ACTION_FIND_OBJECTS: find_objects}
     cmd = grammar_checker.Command()
+
+
     while not rospy.is_shutdown():
         if state == SM_INIT:
             print("GPSR.->Starting GPSR Test")
             state = SM_WAIT_FOR_DOOR
+
+
         elif state == SM_WAIT_FOR_DOOR:
             print("GPSR.->Waiting for the door to be opened. ")
             JuskeshinoHRI.say("I'm waiting for the door to be open")
             if JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(30):
                 print("GPSR.->Door opened detected")
                 JuskeshinoHRI.say("I can see now that the door is open")
-                JuskeshinoNavigation.moveDist(1.5, 10.0)
+                JuskeshinoNavigation.moveDist(0.08, 10.0)
                 navigate("start_position")
                 state = SM_WAITING_FOR_COMMAND
+
+
         elif state == SM_WAITING_FOR_COMMAND:
             print("GPSR.->Waiting for command")
             JuskeshinoHRI.say("Please tell me what do you want me to do")
@@ -264,6 +276,8 @@ def main():
                 JuskeshinoHRI.say(cmd.sentence)
                 JuskeshinoHRI.say("Please answer robot yes or robot no.")
                 state = SM_WAIT_FOR_CONFIRMATION
+
+
         elif state == SM_WAIT_FOR_CONFIRMATION:
             print("GPSR.->Waiting for confirmation")
             sentence = JuskeshinoHRI.waitForNewSentence(10)
@@ -276,6 +290,7 @@ def main():
                 print("GPSR.->Received cancelation. ")
                 JuskeshinoHRI.say("O K.")
                 state = SM_WAITING_FOR_COMMAND
+                
 
         elif state == SM_EXECUTE:
             print("Executing action number ", current_action)

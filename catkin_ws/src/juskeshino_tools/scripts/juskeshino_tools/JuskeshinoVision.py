@@ -8,15 +8,16 @@ class JuskeshinoVision:
     def setNodeHandle():
         print("JuskeshinoVision.->Setting ros node...")
         JuskeshinoVision.cltFindLines               = rospy.ServiceProxy("/vision/line_finder/find_table_edge",             FindLines           )
-        
         JuskeshinoVision.cltFindHoriPlanes          = rospy.ServiceProxy("/vision/line_finder/find_horizontal_plane_ransac",FindPlanes          )
         JuskeshinoVision.cltTrainObject             = rospy.ServiceProxy("/vision/obj_reco/detect_and_train_object",        TrainObject         )
         JuskeshinoVision.cltDetectRecogObjects      = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_objects",   RecognizeObjects    )
         JuskeshinoVision.cltDetectRecogObject       = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_object",    RecognizeObject     )
-        JuskeshinoVision.cltGetObjectPose           = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose",  RecognizeObject     ) 
+        JuskeshinoVision.cltGetObjectPose           = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose",           RecognizeObject     ) 
         JuskeshinoVision.cltGetPointsAbovePlane     = rospy.ServiceProxy("/vision/get_points_above_plane",                  PreprocessPointCloud)
         JuskeshinoVision.cltFindPersons             = rospy.ServiceProxy('/vision/face_reco_pkg/recognize_face/names',      FaceRecog           )
         JuskeshinoVision.cltTrainPersons            = rospy.ServiceProxy("/vision/face_reco_pkg/training_face/name",        FaceTrain           )
+        JuskeshinoVision.cltClothesColor            = rospy.ServiceProxy("/vision/clothes_color",                           FindPerson          )
+
         JuskeshinoVision.pubHumanPoseEnable         = rospy.Publisher("/vision/human_pose/enable", Bool, queue_size=1)
         rospy.Subscriber("/vision/human_pose_estimation/human_detector_bool", Bool ,JuskeshinoVision.callbackHumanBool)
         rospy.Subscriber("/vision/human_pose_estimation/pointing_hand/status", Bool ,JuskeshinoVision.callbackPointingHand)
@@ -59,6 +60,19 @@ class JuskeshinoVision:
         except:
             print("JuskeshinoVision.->Cannot find table edge :'(")
             return None
+    
+    def clothes_color():
+        req = FindPerson()
+        req.cloud = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2, timeout=1.0)
+        try:
+            resp = JuskeshinoVision.cltClothesColor(req)
+            return [resp.person.shirt, resp.person.pants]
+        except:
+            print("JuskeshinoVision.->Cannot detect and recognize clothes color")
+            return [None, None]
+
+
+    
 
     def detectAndRecognizeObjects():
         req = RecognizeObjectsRequest()
