@@ -91,18 +91,7 @@ class SingleConvModel(torch.nn.Module):
         x = self.lin2(x)
         x = torch.nn.functional.tanh(x)
         x = self.lin3(x)
-
         return x
-
-    def printMessage(self):
-        print(">>>>>>>>>>>>>>Test message")
-
-
-"""
-    torch.nn.Conv2d(in_channels, out_channels, kernel_size, stride=1,
-    padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros',
-    device=None, dtype=None)
-"""
 
 
 class CNN_A(torch.nn.Module):
@@ -163,7 +152,6 @@ class CNN_A(torch.nn.Module):
         x = torch.nn.functional.relu(x)
 
         x = torch.nn.functional.softmax(x, dim=1)
-
         return x
     
 
@@ -220,10 +208,9 @@ class CNN_B(torch.nn.Module):
         x = self.dropout_20(x)
         # x = self.flat3(x)
         # x = torch.nn.functional.relu(x)
-        x = self.dropout_20(x)
+        # x = self.dropout_20(x)
         x = self.flat4(x)
         x = torch.nn.functional.relu(x)
 
         x = torch.nn.functional.softmax(x, dim=1)
-
         return x

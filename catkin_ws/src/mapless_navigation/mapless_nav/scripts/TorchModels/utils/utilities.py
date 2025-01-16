@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 #from PIL import Image
 from sklearn.preprocessing import OneHotEncoder
-
 import glob
 
 
@@ -23,7 +22,6 @@ def load_data(files_path='/data/'):
             count+=1
         else:
             data=np.concatenate((data, temp), axis=0)
-
     return data
 
 
@@ -59,7 +57,6 @@ def load_data_matrix(files_path='/data/', shape=[100, 100]):
         
     data_X = np.asarray(data_X, dtype=np.float32)
     data_Y = np.asarray(data_Y, dtype=np.float32)
-
     return data_X, data_Y
 
 
@@ -97,5 +94,4 @@ def one_hot_encode(data_Y, verbose=False):
         categories = np.unique(y_one_hot, axis=0, return_counts=True)
         print("OneHot encoding:")
         print(categories)
-
     return y_one_hot

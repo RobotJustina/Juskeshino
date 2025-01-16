@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /TF1/Frames1
         - /Path1/Offset1
+        - /Map2
       Splitter Ratio: 0.5
     Tree Height: 346
   - Class: rviz/Selection
@@ -74,7 +75,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.03999999910593033
       Style: Flat Squares
-      Topic: "/laser_mod"
+      Topic: /laser_mod
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -510,6 +511,16 @@ Visualization Manager:
       Topic: /Path_robot
       Unreliable: false
       Value: true
+    - Alpha: 0.699999988079071
+      Class: rviz/Map
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: true
+      Name: Map
+      Topic: /local_occ_grid_2
+      Unreliable: false
+      Use Timestamp: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -538,7 +549,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 14.509140014648438
+      Distance: 28.899898529052734
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -546,17 +557,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 8.100361824035645
-        Y: 6.553802967071533
-        Z: -2.286893367767334
+        X: 0.22943592071533203
+        Y: 0.11002679169178009
+        Z: -3.7500855922698975
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5597963333129883
+      Pitch: 1.2947968244552612
       Target Frame: <Fixed Frame>
-      Yaw: 4.72357702255249
+      Yaw: 6.208585262298584
     Saved: ~
 Window Geometry:
   Displays:
@@ -577,4 +588,4 @@ Window Geometry:
     collapsed: true
   Width: 1528
   X: 72
-  Y: 133
+  Y: 105
