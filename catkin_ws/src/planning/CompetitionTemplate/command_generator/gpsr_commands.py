@@ -60,10 +60,12 @@ class CommandGenerator:
     }
 
     connector_list = ["and"]
+
     gesture_person_list = ["waving person", "person raising their left arm", "person raising their right arm",
                            "person pointing to the left", "person pointing to the right"]
     pose_person_list = ["sitting person", "standing person", "lying person"]
-    # Ugly...
+    # Ugly...2
+    
     gesture_person_plural_list = ["waving persons", "persons raising their left arm", "persons raising their right arm",
                                   "persons pointing to the left", "persons pointing to the right"]
     pose_person_plural_list = ["sitting persons", "standing persons", "lying persons"]

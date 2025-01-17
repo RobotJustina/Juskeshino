@@ -105,13 +105,13 @@ class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
-        self.time_out = 30
+        self.time_out = 2
         self.attempts = 2
 
     def execute(self, userdata):
         self.tries += 1
         if self.tries == 1:
-            self.time_out = 30
+            self.time_out = 2
             print("\n")
             rospy.logwarn('--> STATE <: Navigate to Door')
             print("Navigating door")
@@ -133,7 +133,7 @@ class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
             if self.tries < self.attempts-1:
                 rospy.logerr('Navigation Failed, retrying')
                 voice.talk('Navigation Failed, retrying')
-            self.time_out = 25
+            self.time_out = 2
             return 'tries'
         else:
             return 'failed'
@@ -296,7 +296,7 @@ class New_face(smach.State):
 
         print(confirmation)
         confirmation = confirmation.split(' ')
-        confirm = match_speech(confirmation, "robot yes") #userdata.confirm_list
+        confirm = match_speech(confirmation[-1], "yes") #userdata.confirm_list
         if confirm:
             userdata.name = name
             print(f'Nice to Meet You {userdata.name}')
