@@ -10,9 +10,19 @@ from sensor_msgs.msg import PointCloud2
 import sensor_msgs.point_cloud2 as pc2utils
 import numpy.lib.recfunctions as rf
 import regnetmodule as rm
+import grasp_utils as gu
+import tf.transformations as tft
+
 
 DUMMY_FIELD_PREFIX = '__'
 PROCESSED_PC_PATH = REGNET_PATH + '/ros'
+
+def debug_type(obj, obj_name):
+    print(obj_name + "Object characteristics:")
+    print(obj)
+    print(obj.shape)
+    print(obj.dtype)
+    print(type(obj))
 
 def callback_pc2(msg):
     global pc2
@@ -21,7 +31,8 @@ def callback_pc2(msg):
 def main():
     global pc2
     refinedModule = RegnetModule()
-    testfile()
+    #testfile()
+    refinedModule.start_module()
     pc2 = PointCloud2()
     print("Starting regnet test node")
     rospy.init_node("regnet_node")
@@ -38,6 +49,10 @@ def main():
 
         torch.cuda.empty_cache()
         grasp_stage2, select_grasp_class, select_grasp_score, select_grasp_class_stage2, output_score = refinedModule.process_pcd(pc_torch)
+        #debug_type(grasp_stage2, "Grasp stage")
+        mat, gso = gu.inv_transform_grasp(grasp_stage2)
+        debug_type(mat, "Output Matrix")
+        #debug_type(gso, "Output Grasp score ori")
         refinedModule.save_processed_grasps(pc_back, color_back, grasp_stage2, select_grasp_class, select_grasp_score, select_grasp_class_stage2, output_score, processed_pc_save_path)
         
         print(pc2.fields)
@@ -49,10 +64,10 @@ def ros_pc2_to_nparray(pc):
     rgb = ros_numpy.point_cloud2.split_rgb_field(data)
     
     dt2 = np.dtype([('x', '<f4'), ('y', '<f4'), ('z', '<f4'), ('r', '<f4'), ('g', '<f4'), ('b', '<f4')])
-    print(rgb)
-    print(rgb.shape)
-    print(rgb.dtype)
-    print(type(rgb))
+    #print(rgb)
+    #print(rgb.shape)
+    #print(rgb.dtype)
+    #print(type(rgb))
     
     rgb = np.asarray(rgb).astype(dt2)
     rgb['r'] = np.divide(rgb['r'], 255)
@@ -63,19 +78,19 @@ def ros_pc2_to_nparray(pc):
     
     rgb = rgb[~np.isnan(rgb).any(axis=1)]
     
-    print("Unstructured numpy array characteristics")
-    print(rgb)
-    print(rgb.shape)
-    print(rgb.dtype)
-    print(type(rgb))
+    #print("Unstructured numpy array characteristics")
+    #print(rgb)
+    #print(rgb.shape)
+    #print(rgb.dtype)
+    #print(type(rgb))
     
-    print("Element characteristics")
-    print(rgb[0,0], type(rgb[0,0]))
-    print(rgb[0,1], type(rgb[0,1]))
-    print(rgb[0,2], type(rgb[0,2]))
-    print(rgb[0,3], type(rgb[0,3]))
-    print(rgb[0,4], type(rgb[0,4]))
-    print(rgb[0,5], type(rgb[0,5]))
+    #print("Element characteristics")
+    #print(rgb[0,0], type(rgb[0,0]))
+    #print(rgb[0,1], type(rgb[0,1]))
+    #print(rgb[0,2], type(rgb[0,2]))
+    #print(rgb[0,3], type(rgb[0,3]))
+    #print(rgb[0,4], type(rgb[0,4]))
+    #print(rgb[0,5], type(rgb[0,5]))
     
     return rgb
 

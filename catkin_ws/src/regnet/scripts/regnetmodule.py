@@ -84,6 +84,12 @@ class RegnetModule():
     def save_processed_grasps(self, pc_back, color_back, grasp_stage2, select_grasp_class, select_grasp_score, select_grasp_class_stage2, output_score, grasp_save_path):           
         record_stage2 = utils.eval_notruth(pc_back, color_back, grasp_stage2, select_grasp_class, select_grasp_score, select_grasp_class_stage2, output_score, self.eval_params, grasp_save_path)
         
+    def start_module(self):
+        print("---------------Testing file with model epoch:", resume_epoch-1, "------------------")
+        score_model.eval()
+        region_model.eval()
+        torch.set_grad_enabled(False)
+    
     def test_file(self, epoch, pc_path, open3d_data=True):
         print("---------------Testing file with model epoch:", epoch, "------------------")
         score_model.eval()
