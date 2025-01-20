@@ -170,13 +170,14 @@ class JuskeshinoVision:
     def train_face(image, name):
         """writes request message and requests trainface service
                 /face_recog pkg"""
+        rospy.sleep(3)
         req = RecognizeFaceRequest()
         strings = Strings()
         string_msg = String()
         string_msg.data = name
         req.Ids.ids.append(string_msg)
 
-        img_msg = JuskeshinoVision.bridge.cv2_to_imgmsg(image)
+        img_msg = image#JuskeshinoVision.bridge.cv2_to_imgmsg(image)
         req.in_.image_msgs.append(img_msg)
         res = JuskeshinoVision.train_new_face(req)
 
@@ -184,14 +185,14 @@ class JuskeshinoVision:
 
     def wait_for_face(timeout=10 , name='', lap_camera=False):
         
-        rospy.sleep(0.3)
+        rospy.sleep(3)
         
         start_time = rospy.get_time()
         strings=Strings()
         string_msg= String()
         string_msg.data='Anyone'
         while rospy.get_time() - start_time < timeout:
-            cloud = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2, timeout=3.0)
+            cloud = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2, timeout=7.0)
             array = ros_numpy.numpify(cloud)
             img = array['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
 

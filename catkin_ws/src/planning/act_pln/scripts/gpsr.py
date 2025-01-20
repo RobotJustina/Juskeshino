@@ -8,6 +8,7 @@ from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
 from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
 from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 from hri_msgs.msg import RecognizedSpeech
+from sensor_msgs.msg import Image
 import grammar_checker
 import numpy
 
@@ -237,10 +238,20 @@ def main():
                        ACTION_ANSWER: answer_question,
                        ACTION_FIND_OBJECTS: find_objects}
     cmd = grammar_checker.Command()
+    """
+    img = rospy.wait_for_message("/camera/rgb/image_color", Image, timeout=3.0)
+    print("antes")
+    JuskeshinoVision.train_face(img, 'Itzel')
+    print("despues")
+    """
+    JuskeshinoVision.wait_for_face(10 , '' , False)
     while not rospy.is_shutdown():
+
+
+        """
         if state == SM_INIT:
             print("GPSR.->Starting GPSR Test")
-            state = SM_WAIT_FOR_DOOR
+            state = SM_WAIT_FOR_DOOR        
         elif state == SM_WAIT_FOR_DOOR:
             print("GPSR.->Waiting for the door to be opened. ")
             JuskeshinoHRI.say("I'm waiting for the door to be open")
@@ -291,6 +302,7 @@ def main():
             JuskeshinoHRI.startSay("I have executed the command.")
             navigate('start_position')
             state = SM_WAITING_FOR_COMMAND
+        """
         rate.sleep()
 
 
