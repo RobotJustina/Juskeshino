@@ -33,15 +33,33 @@ def processFeedback(feedback):
         mp += ", " + str(feedback.mouse_point.z)
         mp += " in frame " + feedback.header.frame_id
 
+<<<<<<< HEAD
     if feedback.event_type == InteractiveMarkerFeedback.POSE_UPDATE:
         rospy.loginfo(s + ": pose changed")
 
+=======
+    if feedback.event_type == InteractiveMarkerFeedback.BUTTON_CLICK:
+        rospy.loginfo(s + ": button click" + mp + ".")
+    elif feedback.event_type == InteractiveMarkerFeedback.MENU_SELECT:
+        rospy.loginfo(s + ": menu item " +
+                      str(feedback.menu_entry_id) + " clicked" + mp + ".")
+    elif feedback.event_type == InteractiveMarkerFeedback.POSE_UPDATE:
+        rospy.loginfo(s + ": pose changed")
+    elif feedback.event_type == InteractiveMarkerFeedback.MOUSE_DOWN:
+        rospy.loginfo(s + ": mouse down" + mp + ".")
+    elif feedback.event_type == InteractiveMarkerFeedback.MOUSE_UP:
+        rospy.loginfo(s + ": mouse up" + mp + ".")
+>>>>>>> 77d66db696dbefefbfe0de9ae07fe9c938b63bf8
     server.applyChanges()
 
 
 def makeMarkerControl(msg):
     control = InteractiveMarkerControl()
     control.always_visible = True
+<<<<<<< HEAD
+=======
+
+>>>>>>> 77d66db696dbefefbfe0de9ae07fe9c938b63bf8
     marker = Marker()
     marker.type = Marker.SPHERE
     marker.scale.x = msg.scale * 0.1
@@ -53,6 +71,10 @@ def makeMarkerControl(msg):
     marker.color.a = 1.0
     control.markers.append(marker)
     msg.controls.append(control)
+<<<<<<< HEAD
+=======
+
+>>>>>>> 77d66db696dbefefbfe0de9ae07fe9c938b63bf8
     return control
 
 
@@ -112,6 +134,17 @@ if __name__ == "__main__":
     rospy.Timer(rospy.Duration(0.01), frameCallback)
     server = InteractiveMarkerServer("basic_controls")
 
+<<<<<<< HEAD
+=======
+    menu_handler.insert("First Entry", callback=processFeedback)
+    menu_handler.insert("Second Entry", callback=processFeedback)
+    sub_menu_handle = menu_handler.insert("Submenu")
+    menu_handler.insert("First Entry", parent=sub_menu_handle,
+                        callback=processFeedback)
+    menu_handler.insert(
+        "Second Entry", parent=sub_menu_handle, callback=processFeedback)
+
+>>>>>>> 77d66db696dbefefbfe0de9ae07fe9c938b63bf8
     position = Point(0, 0, 0)
     createMarker(InteractiveMarkerControl.NONE, position)
     server.applyChanges()
