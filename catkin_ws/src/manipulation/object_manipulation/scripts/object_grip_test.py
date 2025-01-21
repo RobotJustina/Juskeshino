@@ -95,8 +95,8 @@ def main():
     rospy.Subscriber('/manipulation/grasp/grasp_status' ,String ,callback_grasp_status)
     rospy.Subscriber('/left_arm_grip_left_sensor' ,ContactsState ,callback_left_grip_sensor)
     rospy.Subscriber('/left_arm_grip_right_sensor' ,ContactsState ,callback_right_grip_sensor)
-    rospy.wait_for_service('/manipulation/grasp/capture')
-    capture = rospy.ServiceProxy('/manipulation/grasp/capture', DataCapture)
+    rospy.wait_for_service('/manipulation/grasp/data_capture_service')
+    capture = rospy.ServiceProxy('/manipulation/grasp/data_capture_service', DataCapture)
     pub_object = rospy.Publisher("/plannning/simple_task/take_object", String, queue_size=10)
     pub_la = rospy.Publisher("/hardware/left_arm/goal_pose", Float64MultiArray, queue_size=10)
     pub_hd = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=10)
@@ -108,15 +108,15 @@ def main():
         num_loops += 1
         if grasp_trajectory_found:
             grasp_trajectory_found = False
-            msg_capture.data = "Found_grasp"
-            print(capture(msg_capture))
+            msg_capture = "Found_grasp"
+            print(capture(msg_capture).capture_status)
             rospy.sleep(17)
             if left_gripper_made_contact and right_gripper_made_contact:
                 print("Object successfully grasped")
-                msg_capture.data = "Save_successful_grasp"
+                msg_capture = "Save_successful_grasp"
             else:
-                msg_capture.data = "Save_grasp"
-            print(capture(msg_capture))
+                msg_capture = "Save_grasp"
+            print(capture(msg_capture).capture_status)
             reset_simulation()
         if num_loops > 80:
             reset_simulation()

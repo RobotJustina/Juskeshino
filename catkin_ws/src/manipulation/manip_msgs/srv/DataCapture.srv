@@ -1,8 +1,8 @@
-std_msgs/String capture_info
+string capture_info
 ---
-std_msgs/String capture_status
+string capture_status
 sensor_msgs/PointCloud2 pointcloud
 geometry_msgs/Pose obj_relative_pose
-geometry_msgs/Pose head_pose
-std_msgs/Float64MultiArray final_grasp_q
-std_msgs/String obj_type
+float64[] head_pose_q
+float64[] final_grasp_q
+string obj_type
