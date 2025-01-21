@@ -19,7 +19,7 @@ class JuskeshinoHardware:
         JuskeshinoHardware.pubTorso      = rospy.Publisher("/hardware/torso/goal_pose", Float64, queue_size=1)
         JuskeshinoHardware.pubLaGoalQ    = rospy.Publisher("/hardware/left_arm/goal_pose", Float64MultiArray, queue_size=1)
         JuskeshinoHardware.pubRaGoalQ    = rospy.Publisher("/hardware/right_arm/goal_pose", Float64MultiArray, queue_size=1)
-        JuskeshinoHardware.pubLaGoalTraj = rospy.Publisher("/manipulation/la_q_trajectory", JointTrajectory, queue_size=1)
+        JuskeshinoHardware.pubLaGoalTraj = rospy.Publisher("/manipulation/la_q_trajectory", JointTrajectory, queue_size=1, latch = True)
         JuskeshinoHardware.pubRaGoalTraj = rospy.Publisher("/manipulation/ra_q_trajectory", JointTrajectory, queue_size=1)
         JuskeshinoHardware.pubHdGoalQ    = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=1)
         JuskeshinoHardware.pubLaGoalGrip = rospy.Publisher("/hardware/left_arm/goal_gripper", Float64, queue_size=1)
