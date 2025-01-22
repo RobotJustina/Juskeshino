@@ -1,7 +1,0 @@
-float64 dist
----
-float64 x		#World coords w.r.t. map  
-float64 y
-float64 z
-
-

@@ -6,15 +6,11 @@ from std_msgs.msg import *
 from sensor_msgs.msg import PointCloud2, Image as ImageMsg
 from vision_msgs.srv import *
 from vision_msgs.msg import *
-from face_recog.msg import *
-from face_recog.srv import *
 
 class JuskeshinoVision:
     def setNodeHandle():
         print("JuskeshinoVision.->Setting ros node...")
 
-        JuskeshinoVision.recognize_face             = rospy.ServiceProxy('recognize_face', RecognizeFace) 
-        JuskeshinoVision.train_new_face             = rospy.ServiceProxy('new_face', RecognizeFace) 
         #JuskeshinoVision.cltFindLines               = rospy.ServiceProxy("/vision/line_finder/find_table_edge",             FindLines           )
         #JuskeshinoVision.cltFindHoriPlanes          = rospy.ServiceProxy("/vision/line_finder/find_horizontal_plane_ransac",FindPlanes          )
         #JuskeshinoVision.cltTrainObject             = rospy.ServiceProxy("/vision/obj_reco/detect_and_train_object",        TrainObject         )
@@ -22,8 +18,8 @@ class JuskeshinoVision:
         JuskeshinoVision.cltDetectRecogObject       = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_object",    RecognizeObject     )
         JuskeshinoVision.cltGetObjectPose           = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose",  RecognizeObject     ) 
         #JuskeshinoVision.cltGetPointsAbovePlane     = rospy.ServiceProxy("/vision/get_points_above_plane",                  PreprocessPointCloud)
-        JuskeshinoVision.cltFindPersons             = rospy.ServiceProxy('/vision/face_reco_pkg/recognize_face/names',      FaceRecog           )
-        JuskeshinoVision.cltTrainPersons            = rospy.ServiceProxy("/vision/face_reco_pkg/training_face/name",        FaceTrain           )
+        JuskeshinoVision.cltFindPersons             = rospy.ServiceProxy('/vision/face_reco_pkg/recognize_face/names',      FindPerson           )
+        JuskeshinoVision.cltTrainPersons            = rospy.ServiceProxy("/vision/face_reco_pkg/training_face/name",        FindPerson           )
         JuskeshinoVision.cltClothesColor            = rospy.ServiceProxy("/vision/clothes_color",                           FindPerson          )
 
         JuskeshinoVision.pubHumanPoseEnable         = rospy.Publisher("/vision/human_pose/enable", Bool, queue_size=1)

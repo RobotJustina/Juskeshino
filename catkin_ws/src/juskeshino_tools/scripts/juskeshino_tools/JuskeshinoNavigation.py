@@ -1,8 +1,10 @@
 import math
 import rospy
 import tf
+import numpy
 from std_msgs.msg import Empty, Float32, Float32MultiArray
 from std_srvs.srv import Trigger, TriggerRequest
+from nav_msgs.srv import GetMap
 from geometry_msgs.msg import PoseStamped, PointStamped
 from actionlib_msgs.msg import GoalStatus
 from planning_msgs.srv import *
@@ -210,6 +212,41 @@ class JuskeshinoNavigation:
         except:
             return None
 
+    def isPointInFreeSpace(x,y):
+        rospy.wait_for_service('/map_augmenter/get_augmented_map')
+        grid_map = rospy.ServiceProxy("/map_augmenter/get_augmented_map", GetMap)().map
+        map_info = grid_map.info
+        width, height, res = map_info.width, map_info.height, map_info.resolution
+        grid_map = numpy.reshape(numpy.asarray(grid_map.data, dtype='int'), (height, width))
+        cx = int((x - map_info.origin.position.x)/res)
+        cy = int((y - map_info.origin.position.y)/res)
+        return grid_map[cy, cx] >= 0  and grid_map[cy, cx] < 40
+
+    def findSuitableNearPointInFreeSpace(x,y):
+        #Finds a point in free space nearest to x,y
+        [rx, ry, ra] = JuskeshinoNavigation.getRobotPoseWrtMap()
+        a = math.atan2(ry - y, rx - x)
+        N = 10
+        theta_candidates = [a + 2*math.pi/N*i for i in range(N)]
+        r_candidates = [1.0, 1.5, 2.0]
+
+        rospy.wait_for_service('/map_augmenter/get_augmented_map')
+        grid_map = rospy.ServiceProxy("/map_augmenter/get_augmented_map", GetMap)().map
+        map_info = grid_map.info
+        width, height, res = map_info.width, map_info.height, map_info.resolution
+        grid_map = numpy.reshape(numpy.asarray(grid_map.data, dtype='int'), (height, width))
+        print("JuskeshinoNavigation.->Finding suitable pose for ", x, y)
+        for r in r_candidates:
+            for theta in theta_candidates:
+                xg = x + r*math.cos(theta)
+                yg = y + r*math.sin(theta)
+                cx = int((xg - map_info.origin.position.x)/res)
+                cy = int((yg - map_info.origin.position.y)/res)
+                print("Testing: ", xg, yg, cx, cy, grid_map[cy, cx] >= 0  and grid_map[cy, cx] < 40)
+                if grid_map[cy, cx] >= 0  and grid_map[cy, cx] < 40:
+                    return xg, yg, (2*math.pi + theta)%(2*math.pi)-math.pi 
+        return None, None, None
+            
     def stopNavigation():
         msg = Empty()
         JuskeshinoNavigation.pubNavigationStop.publish(msg)

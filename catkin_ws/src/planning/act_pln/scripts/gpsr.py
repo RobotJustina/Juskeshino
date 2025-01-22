@@ -118,7 +118,7 @@ def take(obj_name):
 def find_person(person_name):
     print("GPSR.->Trying to detect person: ", person_name)
     JuskeshinoHRI.say("I will try to find " + person_name)
-    if not JuskeshinoSimpleTasks.findHumanAndApproach(60):
+    if not JuskeshinoSimpleTasks.findHumanAndApproach(90):
         JuskeshinoHRI.say("I could not find any person. I will continue.")
 
 def find_gesture(gesture):
@@ -238,17 +238,9 @@ def main():
                        ACTION_ANSWER: answer_question,
                        ACTION_FIND_OBJECTS: find_objects}
     cmd = grammar_checker.Command()
-    """
-    img = rospy.wait_for_message("/camera/rgb/image_color", Image, timeout=3.0)
-    print("antes")
-    JuskeshinoVision.train_face(img, 'Itzel')
-    print("despues")
-    """
-    JuskeshinoVision.wait_for_face(10 , '' , False)
+
     while not rospy.is_shutdown():
-
-
-        """
+        
         if state == SM_INIT:
             print("GPSR.->Starting GPSR Test")
             state = SM_WAIT_FOR_DOOR        
@@ -302,7 +294,7 @@ def main():
             JuskeshinoHRI.startSay("I have executed the command.")
             navigate('start_position')
             state = SM_WAITING_FOR_COMMAND
-        """
+        
         rate.sleep()
 
 

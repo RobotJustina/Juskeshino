@@ -1,8 +1,0 @@
-std_msgs/Float32  height
----
-Floats poses
-Floats quats 
-Image im_out
-Floats heights 
-Floats widths
-Floats poses_corr

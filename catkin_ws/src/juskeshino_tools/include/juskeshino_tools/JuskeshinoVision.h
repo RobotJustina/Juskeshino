@@ -15,8 +15,8 @@
 #include "sensor_msgs/PointCloud2.h"
 #include "sensor_msgs/Image.h"
 #include "vision_msgs/FindLines.h"
+#include "vision_msgs/RecognizeObject.h"
 #include "vision_msgs/RecognizeObjects.h"
-#include "vision_msgs/TrainObject.h"
 
 class JuskeshinoVision
 {

@@ -1,3 +1,3 @@
-string keypoint_name
-geometry_msgs/Pose keypoint_coordinates
+string id
+geometry_msgs/Pose pose
 float64 confidence

@@ -21,6 +21,9 @@ class JuskeshinoSimpleTasks:
         print("JuskeshinoSimpleTasks.->Setting ROS node...")
         return True
 
+    #
+    # Tasks related to starting sequences for robocup tests
+    #
     def waitForTheDoorToBeOpen(timeout):
         attempts = int(timeout/0.1)
         loop = rospy.Rate(10)
@@ -66,7 +69,10 @@ class JuskeshinoSimpleTasks:
             [answer, cmd] = JuskeshinoSimpleTasks.waitForSentenceAndConfirm(timeout)
         JuskeshinoHRI.say("Ok. I'm going to " +  cmd)
         return cmd
-            
+
+    #
+    # Tasks related to object recognition
+    #
     def alignWithTable():
         if not JuskeshinoHardware.moveHead(0,-1,3):
             if not JuskeshinoHardware.moveHead(0,-1,3):
@@ -87,9 +93,7 @@ class JuskeshinoSimpleTasks:
         timeout = ((abs(error_a) + abs(error_d))/0.5 + 1)
         print("JuskeshinoSimpleTasks.->Moving to align with table d="+str(error_d) + " and theta="+str(error_a))
         return JuskeshinoNavigation.moveDistAngle(error_d, error_a, timeout)
-
-
-                
+            
     def transformPoint(pointxyz, target_frame, source_frame):
         listener = tf.TransformListener()
         listener.waitForTransform(target_frame, source_frame, rospy.Time(), rospy.Duration(4.0))
@@ -101,40 +105,53 @@ class JuskeshinoSimpleTasks:
         return obj_p.point
         
         
-
-    
-
-    def GetClosestHumanPose(point_cloud ,timeout):
+    #
+    # Tasks related to finding and recognizing people
+    #
+    def getClosestPerson():
         JuskeshinoVision.enableHumanPose(True)
-        human_posess = rospy.wait_for_message("/vision/human_pose/human_pose_array", HumanCoordinatesArray, timeout=7.0)
-        human_poses = human_posess.coordinates_array
-        min_dist = 500
-        if human_poses is None:
+        msg_persons = rospy.wait_for_message("/vision/human_pose/human_pose_array", Persons, timeout=7.0)
+        print("JuskeshinoSimpleTasks.->Got " + str(len(msg_persons.persons)) + " persons")
+        if msg_persons is None or len(msg_persons.persons) < 1:
             JuskeshinoVision.enableHumanPose(False)
-            return [None, None]
-        i = 0
-        for person in human_poses:         
-            for k in person.keypoints_array:
-                #print("k name", k.keypoint_name)
-                if 1:#"nose" in k.keypoint_name:
-                    temp_point = Point()
-                    temp_point.x, temp_point.y, temp_point.z = k.keypoint_coordinates.position.x, k.keypoint_coordinates.position.y, k.keypoint_coordinates.position.z
-                    new_point = JuskeshinoSimpleTasks.transformPoint( temp_point, "base_link", human_posess.header.frame_id )
-                    
-                    #print("frame id", human_posess.header.frame_id)
-                    if "r_sho" in k.keypoint_name:
-                        dist = math.sqrt((new_point.x)**2 + (new_point.y)**2)
-                        #k.keypoint_coordinates.position.x, k.keypoint_coordinates.position.y, k.keypoint_coordinates.position.z = new_point.x, new_point.y, new_point.z
-                        if dist < min_dist:
-                            min_dist = dist
-                            closest_human_id = person.person_id
-                            closest_human_pose = person
-                    i = i+1
-        time.sleep(3)
+            return None 
+
+        min_dist = 1000
+        closest_person = None
+        for person in msg_persons.persons:
+            p = Point(x=person.pose.position.x, y=person.pose.position.y, z=person.pose.position.z)
+            p = JuskeshinoSimpleTasks.transformPoint( p, "base_link", msg_persons.header.frame_id )
+            d = math.sqrt(p.x**2 + p.y**2 + p.z**2)
+            if(d < min_dist):
+                min_dist = d
+                closest_person = person
         JuskeshinoVision.enableHumanPose(False)
-        #print("JuskeshinoSimpleTask.GetClosestHumanPose->Nearest human id:____ ", closest_human_id)
-        return [closest_human_pose, human_posess.header.frame_id ]
-    
+        return closest_person
+                
+                
+    def findHumanAndApproach(timeout):
+        head_poses = [[0,-0.1], [0.5, -0.1], [-0.5, -0.1], [1,-0.1], [-1,-0.1], [1.5,-0.1], [-1.5, -0.1]]
+        for [pan,tilt] in head_poses:
+            JuskeshinoHardware.moveHead(pan, tilt, 3)
+            timeout -= 3
+            person = JuskeshinoSimpleTasks.getClosestPerson()
+            if person is not None:
+                break
+        if person is None:
+            print("JuskeshinoSimpleTasks.->Cannot find any person.")
+            return False
+        print("JuskeshinoSimpleTasks.->Found closest person at " + str([person.pose.position.x, person.pose.position.y, person.pose.position.z]))
+        p = Point(x=person.pose.position.x, y=person.pose.position.y, z=person.pose.position.z) #Person point
+        p = JuskeshinoSimpleTasks.transformPoint( p, "map", person.header.frame_id ) #wrt map
+        xg, yg, ag = JuskeshinoNavigation.findSuitableNearPointInFreeSpace(p.x, p.y)
+        if xg is None or yg is None or ag is None:
+            print("JuskeshinoSimpleTasks.->Cannot approach to person. ")
+            return False
+        if not JuskeshinoNavigation.getCloseXYA(xg, yg, ag, timeout):
+            print("JuskeshinoSimpleTasks.->Cannot approach to person.")
+            return False
+        JuskeshinoHardware.moveHead(0,0,3.0)
+        return True
     
     def handling_location_la(position_obj):     # Recibe un  objeto de tipo position extraido de un mensaje pose de ROS
         l_threshold_la       = 0.26
@@ -213,7 +230,4 @@ class JuskeshinoSimpleTasks:
         else:
             print("JuskeshinoSimpleTask.->Objeto detectado ")
             return [obj, img]
-
-
-
-
+        

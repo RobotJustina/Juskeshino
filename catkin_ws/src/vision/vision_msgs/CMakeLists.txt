@@ -20,11 +20,10 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   Keypoint.msg
-  HumanCoordinates.msg
-  HumanCoordinatesArray.msg
   VisionObject.msg
   VisionObjects.msg
   Person.msg
+  Persons.msg
   Gesture.msg
 )
 
@@ -32,15 +31,12 @@ add_message_files(
 add_service_files(
   FILES
   FindGesture.srv
-  FaceRecog.srv
-  FaceTrain.srv
   FindLines.srv
   FindPlanes.srv
-  HumanPoseEstimatorResult.srv
   RecognizeObjects.srv
   RecognizeObject.srv
-  TrainObject.srv
   FindPerson.srv
+  FindPersons.srv
   PreprocessPointCloud.srv
 )
 

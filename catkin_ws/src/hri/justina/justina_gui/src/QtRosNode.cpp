@@ -67,15 +67,14 @@ void QtRosNode::run()
         
     cltFindLines           = n->serviceClient<vision_msgs::FindLines>           ("/vision/line_finder/find_table_edge");
     cltFindHoriPlanes      = n->serviceClient<vision_msgs::FindPlanes>          ("/vision/line_finder/find_horizontal_plane_ransac");
-    cltTrainObject         = n->serviceClient<vision_msgs::TrainObject>         ("/vision/obj_reco/detect_and_train_object");
+    cltTrainObject         = n->serviceClient<vision_msgs::RecognizeObject>     ("/vision/obj_reco/detect_and_train_object");
     cltRecogObjects        = n->serviceClient<vision_msgs::RecognizeObjects>    ("/vision/obj_reco/detect_and_recognize_objects");
     cltRecogObject         = n->serviceClient<vision_msgs::RecognizeObject >    ("/vision/obj_reco/detect_and_recognize_object");
     cltFindPerson          = n->serviceClient<vision_msgs::FindPerson>          ("/vision/find_person");
     cltGetPointsAbovePlane = n->serviceClient<vision_msgs::PreprocessPointCloud>("/vision/get_points_above_plane");
-
     cltClothesColor        = n->serviceClient<vision_msgs::FindPerson>          ("/vision/clothes_color");
-    cltTrainingFace        = n->serviceClient<vision_msgs::FaceTrain>           ("/vision/face_reco_pkg/training_face");
-    cltRecognizeFace       = n->serviceClient<vision_msgs::FaceRecog>           ("/vision/face_reco_pkg/recognize_face");
+    cltTrainingFace        = n->serviceClient<vision_msgs::FindPerson>          ("/vision/face_reco_pkg/training_face");
+    cltRecognizeFace       = n->serviceClient<vision_msgs::FindPerson>          ("/vision/face_reco_pkg/recognize_face");
 
     pubHumanPoseEnable     = n->advertise<std_msgs::Bool>("/vision/human_pose/enable", 1);
 
@@ -429,7 +428,7 @@ bool QtRosNode::call_find_horizontal_planes()
 
 bool QtRosNode::call_train_object(std::string name)
 {
-    vision_msgs::TrainObject srv;
+    vision_msgs::RecognizeObject srv;
     boost::shared_ptr<sensor_msgs::PointCloud2 const> ptr;
     ptr = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/camera/depth_registered/points", ros::Duration(1.0));
     if(ptr==NULL)
@@ -438,7 +437,7 @@ bool QtRosNode::call_train_object(std::string name)
         return false;
     }
     srv.request.point_cloud = *ptr;
-    srv.request.name = name;
+    srv.request.id = name;
     return cltTrainObject.call(srv);
 }
 
@@ -480,12 +479,12 @@ bool QtRosNode::call_recognize_object(std::string name)
         return false;
     }
     srv.request.point_cloud = *ptr;
-    srv.request.name = name;
+    srv.request.id = name;
     bool success = cltRecogObject.call(srv);
     if(success)
         std::cout << "JustinaGUI.->Found " << srv.response.recog_object.id << " at " << srv.response.recog_object.pose << std::endl;
     else
-        std::cout << "JustinaGUI.->Cannot find " << srv.request.name << std::endl;
+        std::cout << "JustinaGUI.->Cannot find " << srv.request.id << std::endl;
     return success;
 }
 
@@ -524,22 +523,18 @@ void QtRosNode::call_take_object(std::string name)
 
 bool QtRosNode::call_memorize_person(std::string name)
 {
-    vision_msgs::FaceTrain srv;
-    std_msgs::String msg;
-    msg.data = name;
-    std::cout << "JustinaGUI.-> A request was made to the memorize person service..." << std::endl;
-    std::cout << "JustinaGUI.-> NAME..." << msg << std::endl;
-    srv.request.name = msg;
+    vision_msgs::FindPerson srv;
+    std::cout << "JustinaGUI.-> A request was made to the memorize person service... name: " <<name << std::endl;
+    srv.request.id = name;
     return cltTrainingFace.call(srv);
 }
 
 
 bool QtRosNode::call_recognize_person()
 {
-    vision_msgs::FaceRecog srv;
+    vision_msgs::FindPerson srv;
     std::cout << "JustinaGUI.-> A request was made to the facial recognition service..." << std::endl;
 
-    srv.request.is_face_recognition_enabled = true;
     return cltRecognizeFace.call(srv);
 }
 

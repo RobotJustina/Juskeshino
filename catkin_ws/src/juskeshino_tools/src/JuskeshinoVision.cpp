@@ -21,7 +21,7 @@ bool JuskeshinoVision::setNodeHandle(ros::NodeHandle* nh)
     //Services for object recognition
     JuskeshinoVision::cltRecogObjects = nh->serviceClient<vision_msgs::RecognizeObjects>("/vision/obj_reco/recognize_objects");
     //Services for training objects
-    JuskeshinoVision::cltTrainObject = nh->serviceClient<vision_msgs::TrainObject>("/vision/obj_reco/train_object");
+    JuskeshinoVision::cltTrainObject = nh->serviceClient<vision_msgs::RecognizeObject>("/vision/obj_reco/train_object");
 
     JuskeshinoVision::is_node_set = true;
 
@@ -67,10 +67,10 @@ bool JuskeshinoVision::recognizeObject(std::string name, vision_msgs::VisionObje
 //Methods for object training
 bool JuskeshinoVision::trainObject(std::string name)
 {
-    vision_msgs::TrainObject srv;
+    vision_msgs::RecognizeObject srv;
     boost::shared_ptr<sensor_msgs::PointCloud2 const> ptr;
     ptr = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/hardware/kinect/rgbd_wrt_robot", ros::Duration(1.0));
     srv.request.point_cloud = *ptr;
-    srv.request.name = name;
+    srv.request.id = name;
     return cltTrainObject.call(srv);
 }
