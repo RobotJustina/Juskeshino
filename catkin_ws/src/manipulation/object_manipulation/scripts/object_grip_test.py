@@ -38,7 +38,7 @@ def callback_grasp_status(msg):
     else:
         grasp_trajectory_found = False
         grasp_attempts += 1
-        reset_simulation()
+        #reset_simulation()
 
 def callback_left_grip_sensor(msg):
     global left_gripper_made_contact, obj

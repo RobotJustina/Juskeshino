@@ -11,7 +11,7 @@ from std_msgs.msg import String, Float64MultiArray
 from gazebo_msgs.srv import GetModelState
 from geometry_msgs.msg import Point
 
-
+REAL_GRASP_ATTEMPT = False
 
 
 
@@ -23,7 +23,7 @@ def callback_capture(req):
     resp                   = DataCaptureResponse()
     resp.capture_status    = "Saved_grasp"
     resp.pointcloud       = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
-    resp.obj_relative_pose = get_object_relative_pose("apple","justina").pose
+    resp.obj_relative_pose = get_object_relative_pose("apple","justina::camera_link").pose
     resp.head_pose_q         = hd.data
     resp.final_grasp_q     = articular_array
     resp.obj_type          = "apple"
@@ -34,17 +34,12 @@ def callback_capture(req):
     
 
 def main():
-    global pc2, hd, obj_pos, grasp_traj, obj_shape, status, trajectory_found, sem, flag_mutex, get_object_relative_pose
-    trajectory_found = False
+    global pc2, hd, obj_pos, grasp_traj, obj_shape, status, trajectory_found, get_object_relative_pose
     pc2 = PointCloud2()
-    #hd = np.array([0.0,0.0])
-    #hd.astype(np.float64)
-    hd = Float64MultiArray()
-    sem = [False] * 2
-    flag_mutex = Lock()
+    hd = []
     obj_pos= Point() 
     grasp_traj = JointTrajectory()
-    obj_shape = String()
+    obj_shape = 'apple'
     status = "Data saved successfully"
     print("Starting training data capture node")
     rospy.init_node("data_capture_node")
