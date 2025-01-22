@@ -114,5 +114,8 @@
     <parent link="kinect_base"/>
     <child link="kinect_link"/>
   </joint-->
+  <gazebo reference='camera_link_connect'>
+    <preserveFixedJoint>true</preserveFixedJoint>
+  </gazebo>
 </robot>
   
