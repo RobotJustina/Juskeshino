@@ -5,17 +5,36 @@ import numpy as np
 import ros_numpy
 import glob
 import torch
+import tf2_ros
 from regnetmodule import RegnetModule, REGNET_PATH
 from sensor_msgs.msg import PointCloud2
+from geometry_msgs.msg import PointStamped,  Point, Pose, Vector3
 import sensor_msgs.point_cloud2 as pc2utils
 import numpy.lib.recfunctions as rf
 import regnetmodule as rm
 import grasp_utils as gu
 import tf.transformations as tft
+import geometry_msgs.msg
 
 
 DUMMY_FIELD_PREFIX = '__'
 PROCESSED_PC_PATH = REGNET_PATH + '/ros'
+
+def broadcaster_frame_object(frame, child_frame, pose):   # Emite la transformacion en el frame base_link,
+    #br = tf2_ros.TransformBroadcaster()
+    br =  tf2_ros.StaticTransformBroadcaster()
+    t = geometry_msgs.msg.TransformStamped()
+    t.header.frame_id = frame
+    t.child_frame_id = child_frame 
+    t.header.stamp = rospy.Time.now()
+    t.transform.translation.x = pose.position.x
+    t.transform.translation.y = pose.position.y
+    t.transform.translation.z = pose.position.z
+    t.transform.rotation.x = pose.orientation.x
+    t.transform.rotation.y = pose.orientation.y
+    t.transform.rotation.z = pose.orientation.z
+    t.transform.rotation.w = pose.orientation.w
+    br.sendTransform(t)
 
 def debug_type(obj, obj_name):
     print(obj_name + "Object characteristics:")
@@ -40,6 +59,16 @@ def main():
     loop = rospy.Rate(0.2)
     torch.cuda.empty_cache()
     pc_num = 0
+    obj_pose = Pose()
+    obj_pose.position.x, obj_pose.position.y, obj_pose.position.z = 0, 0, 0
+    obj_pose.orientation.x = 0
+    obj_pose.orientation.y = 0
+    obj_pose.orientation.z = 0
+    obj_pose.orientation.w = 1.0
+    broadcaster_frame_object("base_link", "object", obj_pose)
+
+
+
     while not rospy.is_shutdown():
         rospy.sleep(1)
         pc_num = pc_num + 1
