@@ -80,8 +80,13 @@ def main():
         grasp_stage2, select_grasp_class, select_grasp_score, select_grasp_class_stage2, output_score = refinedModule.process_pcd(pc_torch)
         #debug_type(grasp_stage2, "Grasp stage")
         mat, gso = gu.inv_transform_grasp(grasp_stage2)
+        lr = np.zeros((1,4), dtype=float)
+        lr[0] = [0.0, 0.0, 0.0, 1.0]
         debug_type(mat, "Output Matrix")
         #debug_type(gso, "Output Grasp score ori")
+        htmtx = np.zeros((len(mat),1,4,4), dtype=float)
+        for i in range(len(mat)): htmtx[i,0] = np.r_[mat[i,0],lr]
+        debug_type(htmtx,"Homogenous transform matrix of grasp matrix")
         refinedModule.save_processed_grasps(pc_back, color_back, grasp_stage2, select_grasp_class, select_grasp_score, select_grasp_class_stage2, output_score, processed_pc_save_path)
         
         print(pc2.fields)
