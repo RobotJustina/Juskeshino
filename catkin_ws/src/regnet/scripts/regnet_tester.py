@@ -82,11 +82,27 @@ def main():
         mat, gso = gu.inv_transform_grasp(grasp_stage2)
         lr = np.zeros((1,4), dtype=float)
         lr[0] = [0.0, 0.0, 0.0, 1.0]
-        debug_type(mat, "Output Matrix")
+        #debug_type(mat, "Output Matrix")
         #debug_type(gso, "Output Grasp score ori")
         htmtx = np.zeros((len(mat),1,4,4), dtype=float)
         for i in range(len(mat)): htmtx[i,0] = np.r_[mat[i,0],lr]
-        debug_type(htmtx,"Homogenous transform matrix of grasp matrix")
+        #debug_type(htmtx,"Homogenous transform matrix of grasp matrix")
+        grasp_q = tft.quaternion_from_matrix(htmtx[0,0])
+        print(grasp_q)
+        grasp_pose = Pose()
+        grasp_pose.position.x = htmtx[0,0,0,3]
+        grasp_pose.position.y = htmtx[0,0,1,3]
+        grasp_pose.position.z = htmtx[0,0,2,3]
+        grasp_pose.orientation.x = grasp_q[0]
+        grasp_pose.orientation.y = grasp_q[1]
+        grasp_pose.orientation.z = grasp_q[2]
+        grasp_pose.orientation.w = grasp_q[3]
+        print(htmtx[0,0])
+        print(grasp_pose)
+
+        broadcaster_frame_object("camera_rgb_optical_frame","grasp_frame",grasp_pose)
+
+
         refinedModule.save_processed_grasps(pc_back, color_back, grasp_stage2, select_grasp_class, select_grasp_score, select_grasp_class_stage2, output_score, processed_pc_save_path)
         
         print(pc2.fields)
