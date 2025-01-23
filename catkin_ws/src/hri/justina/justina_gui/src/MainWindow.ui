@@ -45,7 +45,7 @@ QRadioButton::indicator{
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="tabGeneral">
      <attribute name="title">
@@ -1221,10 +1221,10 @@ Follow Human</string>
      <widget class="QPushButton" name="visBtnFindPerson">
       <property name="geometry">
        <rect>
-        <x>500</x>
-        <y>150</y>
-        <width>121</width>
-        <height>51</height>
+        <x>520</x>
+        <y>230</y>
+        <width>101</width>
+        <height>31</height>
        </rect>
       </property>
       <property name="text">
@@ -1234,8 +1234,8 @@ Follow Human</string>
      <widget class="QLineEdit" name="visTxtFindPersonName">
       <property name="geometry">
        <rect>
-        <x>500</x>
-        <y>220</y>
+        <x>380</x>
+        <y>230</y>
         <width>131</width>
         <height>25</height>
        </rect>
@@ -1252,6 +1252,19 @@ Follow Human</string>
       </property>
       <property name="text">
        <string>Clothes color</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="visBtnFindPersons">
+      <property name="geometry">
+       <rect>
+        <x>520</x>
+        <y>270</y>
+        <width>101</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Find People</string>
       </property>
      </widget>
     </widget>

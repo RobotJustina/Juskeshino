@@ -101,18 +101,17 @@ public slots:
     void visFindHoriPlanesClicked();
     void visTrainObjectReturnPressed();
     void visFindPersonClicked();
-
-
-    void tksTakeObjectReturnPressed();
-    void tksMemorizePersonReturnPressed();
-    void tksRecognizePersonClicked();
-
-
+    void visFindPersonsClicked();
     void visRecognizeObjectReturnPressed();
     void visRecognizeObjectsClicked();
     void visGetPointsAbovePlaneClicked();
     void visEnableHumanPoseClicked();
     void visClothesColorClicked();
+
+
+    void tksTakeObjectReturnPressed();
+    void tksMemorizePersonReturnPressed();
+    void tksRecognizePersonClicked();
 
     void hriEnableFollowHumanClicked();
 private:

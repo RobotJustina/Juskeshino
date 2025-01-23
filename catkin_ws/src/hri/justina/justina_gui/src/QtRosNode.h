@@ -26,6 +26,7 @@
 #include "vision_msgs/RecognizeObject.h"
 #include "vision_msgs/PreprocessPointCloud.h"
 #include "vision_msgs/FindPerson.h"
+#include "vision_msgs/FindPersons.h"
 #include "hri_msgs/RecognizedSpeech.h"
 #include "planning_msgs/GetLocation.h"
 
@@ -80,6 +81,7 @@ public:
     ros::ServiceClient cltTrainingFace;
     ros::ServiceClient cltRecognizeFace;
     ros::ServiceClient cltFindPerson;
+    ros::ServiceClient cltFindPersons;
     tf::TransformListener tf_listener;
     
     geometry_msgs::Twist cmd_vel;
@@ -132,8 +134,8 @@ public:
     bool call_train_object(std::string name);
     bool call_recognize_objects();
     bool call_recognize_object(std::string name);
-    bool call_find_person();
-
+    bool call_find_person(std::string name);
+    bool call_find_persons();
 
 
 
