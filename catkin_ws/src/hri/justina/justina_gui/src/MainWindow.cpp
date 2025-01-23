@@ -97,6 +97,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(ui->visBtnFindLines, SIGNAL(clicked()), this, SLOT(visFindLinesClicked()));
     QObject::connect(ui->visBtnFindHoriPlanes, SIGNAL(clicked()), this, SLOT(visFindHoriPlanesClicked()));
     QObject::connect(ui->visTxtTrainObject, SIGNAL(returnPressed()), this, SLOT(visTrainObjectReturnPressed()));
+    QObject::connect(ui->visBtnTrainPerson, SIGNAL(clicked()), this, SLOT(visTrainPersonClicked()));
     QObject::connect(ui->visBtnFindPerson, SIGNAL(clicked()), this, SLOT(visFindPersonClicked()));
     QObject::connect(ui->visBtnFindPersons, SIGNAL(clicked()), this, SLOT(visFindPersonsClicked()));
     
@@ -877,6 +878,11 @@ void MainWindow::visRecognizeObjectsClicked()
     qtRosNode->call_recognize_objects();
 }
 
+void MainWindow::visTrainPersonClicked()
+{
+    qtRosNode->call_train_person(ui->visTxtTrainPersonName->text().toStdString());
+}
+
 void MainWindow::visFindPersonClicked()
 {
     qtRosNode->call_find_person(ui->visTxtFindPersonName->text().toStdString());
@@ -894,12 +900,12 @@ void MainWindow::tksTakeObjectReturnPressed()
 
 void MainWindow::tksMemorizePersonReturnPressed()
 {
-    qtRosNode->call_memorize_person(ui->tksBtnMemorizePerson->text().toStdString());
+    //qtRosNode->call_memorize_person(ui->tksBtnMemorizePerson->text().toStdString());
 }
 
 void MainWindow::tksRecognizePersonClicked()
 {
-    qtRosNode->call_recognize_person();
+    //qtRosNode->call_recognize_person();
 }
 
 void MainWindow::visGetPointsAbovePlaneClicked()

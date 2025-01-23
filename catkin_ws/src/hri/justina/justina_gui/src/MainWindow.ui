@@ -1267,6 +1267,29 @@ Follow Human</string>
        <string>Find People</string>
       </property>
      </widget>
+     <widget class="QPushButton" name="visBtnTrainPerson">
+      <property name="geometry">
+       <rect>
+        <x>520</x>
+        <y>320</y>
+        <width>101</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Train Person</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="visTxtTrainPersonName">
+      <property name="geometry">
+       <rect>
+        <x>380</x>
+        <y>320</y>
+        <width>131</width>
+        <height>25</height>
+       </rect>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tabSimpleTasks">
      <attribute name="title">
