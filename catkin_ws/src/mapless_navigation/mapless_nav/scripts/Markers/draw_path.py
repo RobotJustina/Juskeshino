@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import rospy
-from geometry_msgs.msg import Point, PointStamped
+from geometry_msgs.msg import Point, PointStamped, PoseStamped
+from nav_msgs.msg import Path
+from std_msgs.msg import Header
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
@@ -9,6 +11,7 @@ x = [2.1, 4.2, 4.8, 6.1, 8.0, 10.2, 12.5, 11.0, 10.7]
 y = [2.5, 4.0, 6.1, 7.5, 6.5, 6.1, 5.0, 4.7, 5.5]
 
 path_points = []
+
 
 def pointCallback(msg):
     global goal_x
@@ -49,23 +52,47 @@ def splineCurve():
     ax.set_ylabel("y")
     plt.show()
 
+
+def smoothPath():
+    pass
+
+def get_path(path):
+    for p in path_points:
+        print(p)
+        pose_stamped = PoseStamped()
+        pose_stamped.pose.position.x = p.x
+        pose_stamped.pose.position.y = p.y
+        pose_stamped.pose.position.z = 0.0
+        path.poses.append(pose_stamped)
+
+    return path
+        
+
 if __name__ == '__main__':
     global goal_pub
-
+    
     rospy.init_node('show_path')
     
     rospy.Subscriber('/clicked_point', PointStamped, pointCallback)
     goal_pub = rospy.Publisher("/goal", Point, queue_size=10)
     rospy.Subscriber('/goal', Point, callback)
 
-    rate = rospy.Rate(5)  # hz
-    
+    path_pub = rospy.Publisher('/goal_path', Path, queue_size=10)
+    path = Path()
+    path.header = Header(frame_id='odom')
+
     for i in range(len(x)):
         point = Point(x[i], y[i], 0)
-        path_points.append()
+        path_points.append(point)
+        # print("add point:")
+        # print(point)
 
+    path = get_path(path)
+
+    rate = rospy.Rate(5)  # hz
     while not rospy.is_shutdown():
         splineCurve()
+        path_pub.publish(path)
         rate.sleep()
 
     #rospy.spin()

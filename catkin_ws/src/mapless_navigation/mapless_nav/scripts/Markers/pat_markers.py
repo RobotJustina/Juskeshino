@@ -1,49 +1,40 @@
 #!/usr/bin/env python
 import rospy
+import tf
 from interactive_markers.interactive_marker_server import InteractiveMarkerFeedback, InteractiveMarkerServer
 from interactive_markers.menu_handler import MenuHandler
 from visualization_msgs.msg import InteractiveMarkerControl, Marker, InteractiveMarker
-from geometry_msgs.msg import Point, PointStamped
+from geometry_msgs.msg import Point, PointStamped, PoseStamped
+from nav_msgs.msg import Path
+from std_msgs.msg import Header
 import sys
 import termios
 import tty
 from select import select
+from scipy.interpolate import interp1d
+import matplotlib.pyplot as plt
+import numpy as np
 
 
-server = None
+marker_server = None
 menu_handler = MenuHandler()
 counter = 0
 nodes_count = 0
-nodes = []
 
 
 def processFeedback(feedback):
+    global path
     s = "Marker '" + feedback.marker_name
     s += "' / control '" + feedback.control_name + "'"
     if feedback.event_type == InteractiveMarkerFeedback.POSE_UPDATE:
         x = round(feedback.pose.position.x, 2)
         y = round(feedback.pose.position.y, 2)
         p = str(x) + ", " + str(y)
+        print('', end='\r')
         rospy.loginfo(s + ": pose changed to (" + p + ", 0.0)")
-
-    server.applyChanges()
-
-
-def makeMarkerControl(msg):
-    control = InteractiveMarkerControl()
-    control.always_visible = True
-    marker = Marker()
-    marker.type = Marker.SPHERE
-    marker.scale.x = msg.scale * 0.1
-    marker.scale.y = msg.scale * 0.1
-    marker.scale.z = msg.scale * 0.1
-    marker.color.r = 0.8
-    marker.color.g = 0.8
-    marker.color.b = 0.2
-    marker.color.a = 1.0
-    control.markers.append(marker)
-    msg.controls.append(control)
-    return control
+        path = getPath()
+    # TODO: Delete
+    # marker_server.applyChanges()
 
 
 def createMarker(interaction_mode, position):
@@ -89,25 +80,23 @@ def createMarker(interaction_mode, position):
     control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
     int_marker.controls.append(control)
     int_marker.scale = 0.4
-    server.insert(int_marker, processFeedback)
+    marker_server.insert(int_marker, processFeedback)
+    marker_server.applyChanges()
     return int_marker
 
 
 def globalGoalCallback(msg):
-    global goal_x
-    global goal_y
-    global nodes_count
+    global goal_x, goal_y
+    global path, nodes_count
     goal_x = msg.point.x
     goal_y = msg.point.y
-    # rospy.DEBUG("CLIKED POINT>>>")
 
     position = Point(round(goal_x, 2), round(goal_y, 2), 0)
     nodes_count += 1
-    marker_n = createMarker(InteractiveMarkerControl.NONE, position)
-    server.applyChanges()
-    nodes.append(marker_n)
+    createMarker(InteractiveMarkerControl.NONE, position)
     print(f"Clicked ({goal_x:.2f}, {goal_y:.2f}, 0)")
     print("\rnodes: ", nodes_count)
+    path = getPath()
 
 
 def getKey(set, timeout):
@@ -125,22 +114,100 @@ def getKey(set, timeout):
 def removeNodes():
     global nodes_count
     if nodes_count > 0:
-        server.erase("path_node_" + str(nodes_count))
-        server.applyChanges()
+        marker_server.erase("path_node_" + str(nodes_count))
+        marker_server.applyChanges()
         nodes_count -= 1
     else:
         print("\rnodes not found",)
 
 
+def getPath():
+    path = Path()
+    path.header = Header(frame_id='odom')
+    if nodes_count > 0:
+        x, y, _, rot = getRobotPoseOdom()
+        pose = PoseStamped()
+        pose.pose.position.x = x
+        pose.pose.position.y = y
+        pose.pose.position.z = 0.0
+        pose.pose.orientation.x = rot[0]
+        pose.pose.orientation.y = rot[1]
+        pose.pose.orientation.z = rot[2]
+        pose.pose.orientation.w = rot[3]
+        path.poses.append(pose)
+        for i in range(1, nodes_count + 1):
+            pose = PoseStamped()
+            mark_name = "path_node_" + str(i)
+            # print(mark_name)
+            marker = marker_server.get(mark_name)
+            pose.pose = marker.pose
+            # print(marker.pose)
+            # print(type(marker.pose))
+            # print(type(pose))
+            # print('->ps')
+            # print(pose)
+            # print()
+            path.poses.append(pose)
+    return path
+
+
+def splineCurve():
+    global path
+    x = []
+    y = []
+    for p in path.poses:
+        x.append(p.pose.position.x)
+        y.append(p.pose.position.y)
+    
+    x = np.expand_dims(x, axis=0)
+    y = np.expand_dims(y, axis=0)
+    print(x.shape)
+    print(y.shape)
+    xy = np.vstack((x, y))
+    print(xy.shape)
+    N = nodes_count+1
+    print("n", nodes_count)
+    t = np.linspace(0, 1, N)
+
+    spline = interp1d(t, xy, kind="quadratic", bounds_error=False)
+
+    t_fine = np.linspace(0, 1, N**2) # N**2
+    x_fine, y_fine = spline(t_fine)
+    print(x_fine)
+    print(x_fine.shape)
+
+    path = Path()
+    path.header = Header(frame_id='odom')
+    for i in range(len(x_fine)):
+        pose = PoseStamped()
+        pose.pose.position.x = round(x_fine[i], 2)
+        pose.pose.position.y = round(y_fine[i], 2)
+        path.poses.append(pose)
+    return path
+
+
+def getRobotPoseOdom():
+    listener = tf.TransformListener()
+    listener.waitForTransform(
+        'odom', 'base_link', rospy.Time(0), rospy.Duration(1.0))
+    ([x, y, z], rot) = listener.lookupTransform(
+        'odom', 'base_link', rospy.Time(0))
+    return [x, y, z, rot]
+
+
 if __name__ == "__main__":
-    set = termios.tcgetattr(sys.stdin)
+    global path
+
     rospy.init_node("path_controls")
 
-    key_timeout = rospy.get_param("~key_timeout", 0.5)
-
-    server = InteractiveMarkerServer("path_controls")
-    # goal_pub = rospy.Publisher("/goal", Point, queue_size=10)
     rospy.Subscriber('/clicked_point', PointStamped, globalGoalCallback)
+    path_pub = rospy.Publisher('/goal_path', Path, queue_size=10)
+
+    set = termios.tcgetattr(sys.stdin)
+    key_timeout = rospy.get_param("~key_timeout", 0.5)
+    marker_server = InteractiveMarkerServer("path_controls")
+    path = Path()
+    path.header = Header(frame_id='odom')
 
     rate = rospy.Rate(5)  # hz
     while not rospy.is_shutdown():
@@ -155,20 +222,27 @@ if __name__ == "__main__":
             print(key + "- remove node")
             removeNodes()
             print("\rnodes: ", nodes_count)
+            path = getPath()
         elif key == 'c':
             # print(key + "- remove all nodes")
             rospy.logwarn(key + "- remove all nodes")
             for i in range(nodes_count):
                 removeNodes()
             print("\rnodes: ", nodes_count)
-        elif key == 'p':
-            print(key + "- generate path")
+            path = getPath()
 
+        elif key == 'v':
+            rospy.logwarn(key + "- path preview")
+            path = splineCurve()
+
+            #print(getRobotPoseOdom())
+            
         else:
             print('', end="\r")  # clear whole line
             sys.stdout.write('\x1b[2K')
             # print('', end='\r')
 
+        path_pub.publish(path)
         rate.sleep()
 
     # rospy.spin()
