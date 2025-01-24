@@ -9,4 +9,5 @@ string race
 string shirt
 string pants
 vision_msgs/Gesture gesture
+vision_msgs/Gesture body_pose  #Standing, sitting, lying
 vision_msgs/Keypoint[] skeleton
