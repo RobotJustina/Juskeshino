@@ -15,7 +15,6 @@ from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 marker_server = None
 menu_handler = MenuHandler()
 counter = 0
@@ -24,6 +23,7 @@ nodes_count = 0
 
 def processFeedback(feedback):
     global path
+
     s = "Marker '" + feedback.marker_name
     s += "' / control '" + feedback.control_name + "'"
     if feedback.event_type == InteractiveMarkerFeedback.POSE_UPDATE:
@@ -33,8 +33,6 @@ def processFeedback(feedback):
         print('', end='\r')
         rospy.loginfo(s + ": pose changed to (" + p + ", 0.0)")
         path = getPath()
-    # TODO: Delete
-    # marker_server.applyChanges()
 
 
 def createMarker(interaction_mode, position):
@@ -88,9 +86,9 @@ def createMarker(interaction_mode, position):
 def globalGoalCallback(msg):
     global goal_x, goal_y
     global path, nodes_count
+    
     goal_x = msg.point.x
     goal_y = msg.point.y
-
     position = Point(round(goal_x, 2), round(goal_y, 2), 0)
     nodes_count += 1
     createMarker(InteractiveMarkerControl.NONE, position)
@@ -101,12 +99,12 @@ def globalGoalCallback(msg):
 
 def getKey(set, timeout):
     tty.setraw(sys.stdin.fileno())
-    # sys.stdin.read() returns a string on Linux
     rlist, _, _ = select([sys.stdin], [], [], timeout)
     if rlist:
         key = sys.stdin.read(1)
     else:
         key = ''
+
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, set)
     return key
 
@@ -138,27 +136,22 @@ def getPath():
         for i in range(1, nodes_count + 1):
             pose = PoseStamped()
             mark_name = "path_node_" + str(i)
-            # print(mark_name)
             marker = marker_server.get(mark_name)
             pose.pose = marker.pose
-            # print(marker.pose)
-            # print(type(marker.pose))
-            # print(type(pose))
-            # print('->ps')
-            # print(pose)
-            # print()
             path.poses.append(pose)
+
     return path
 
 
 def splineCurve():
     global path
+
     x = []
     y = []
     for p in path.poses:
         x.append(p.pose.position.x)
         y.append(p.pose.position.y)
-    
+
     x = np.expand_dims(x, axis=0)
     y = np.expand_dims(y, axis=0)
     print(x.shape)
@@ -168,10 +161,8 @@ def splineCurve():
     N = nodes_count+1
     print("n", nodes_count)
     t = np.linspace(0, 1, N)
-
     spline = interp1d(t, xy, kind="quadratic", bounds_error=False)
-
-    t_fine = np.linspace(0, 1, N**2) # N**2
+    t_fine = np.linspace(0, 1, N**2)
     x_fine, y_fine = spline(t_fine)
     print(x_fine)
     print(x_fine.shape)
@@ -183,6 +174,7 @@ def splineCurve():
         pose.pose.position.x = round(x_fine[i], 2)
         pose.pose.position.y = round(y_fine[i], 2)
         path.poses.append(pose)
+
     return path
 
 
@@ -231,16 +223,16 @@ if __name__ == "__main__":
             print("\rnodes: ", nodes_count)
             path = getPath()
 
-        elif key == 'v':
+        elif key == 'p':
             rospy.logwarn(key + "- path preview")
             path = splineCurve()
 
-            #print(getRobotPoseOdom())
-            
+        elif key == 'n':
+            rospy.logwarn(key + "- navigate")
+
         else:
             print('', end="\r")  # clear whole line
             sys.stdout.write('\x1b[2K')
-            # print('', end='\r')
 
         path_pub.publish(path)
         rate.sleep()
