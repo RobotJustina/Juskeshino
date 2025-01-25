@@ -46,8 +46,8 @@
 
   <include file="$(find surge_et_ambula)/launch/justina/justina_manipulation.launch"/>
   
-  <!-- <include file="$(find surge_et_ambula)/launch/justina/vision.launch"> -->
-  <!-- </include> -->
+  <include file="$(find surge_et_ambula)/launch/justina/vision.launch"> 
+  </include>
 
   <include file="$(find surge_et_ambula)/launch/justina/hri.launch">
     <arg name="use_vosk" value="$(arg use_vosk)"/>

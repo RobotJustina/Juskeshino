@@ -1,0 +1,5 @@
+vision_msgs/VisionObject obj                 #Object to be manipulated
+---
+trajectory_msgs/JointTrajectory trajectory   #Trajectory to grasp object (either cartesian or articular)
+bool graspable                               #graspable by the gripper
+geometry_msgs/PoseStamped effector_pose      #Position and orientation that final effector should reach to grasp object

@@ -1,7 +1,4 @@
 <launch>  
-  <!-- <node name="object_pose" pkg="obj_segmentation_and_pose" type="obj_pose_node.py" output="screen"/> -->
-  <!-- <node name="clothes_color_srv" pkg="obj_segmentation_and_pose" type="clothes_color_srv.py" output="screen"/> -->
-  <!-- <node name="face_recognition_node" pkg="face_reco_pkg" type="recog_face_node.py" output="screen"/>  -->
   <node name="skeleton_detector" pkg="skeleton_detector" type="skeleton_detector_node" output="screen"/>
   <node name="cloud_preprocessing" pkg="pc_preprocessing" type="pc_preprocessing_node" output="screen"/>
 
@@ -10,5 +7,8 @@
     <param name="min_confidence" value="0.7"/>
     <param name="rm_bg" value="True"/>
   </node>
+
+  <node name="color_clothes_srv" pkg="color_clothes" type="color_clothes.py" output="screen"/>
+  <node name="object_pose_estimator" pkg="obj_pose_estimator" type="obj_pose_estimator_node.py" output="screen"/>
 
 </launch>

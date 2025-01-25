@@ -1,6 +1,0 @@
-vision_msgs/VisionObject recog_object                    
----
-trajectory_msgs/JointTrajectory articular_trajectory
-bool graspable                               #graspable by the gripper
-geometry_msgs/PoseStamped pose_stamped                      #Centroid and orientation
-float64[] q	# Send generic trajectory
