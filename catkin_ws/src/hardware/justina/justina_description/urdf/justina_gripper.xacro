@@ -1,0 +1,136 @@
+<?xml version="1.0"?>
+<robot name="justina_gripper" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find justina_description)/urdf/justina_gripper.gazebo"/>
+
+  <link name="left_arm_link7">
+    <visual>
+      <origin xyz="-0.01 0 -0.03" rpy = "0 0 0"/>
+      <geometry> 
+        <box size = "0.06 0.03525 0.03525"/> 
+      </geometry>
+      <material name = "la_material"><color rgba="1.0 0.5 0 1"/></material>
+    </visual>
+    <visual>
+      <origin xyz="0 0 -0.055" rpy = "0 0 0"/>
+      <geometry> 
+        <box size = "0.03 0.1 0.03"/> 
+      </geometry>
+      <material name = "la_material"><color rgba="1.0 0.5 0 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="-0.01 0 -0.03" rpy = "0 0 0"/>
+      <geometry> 
+        <box size = "0.06 0.03525 0.03525"/> 
+      </geometry>
+      <surface>
+	<contact>
+	  <collide_bitmask>0x01</collide_bitmask>
+	</contact>
+      </surface>
+    </collision>
+    <collision>
+      <origin xyz="0 0 -0.055" rpy = "0 0 0"/>
+      <geometry> 
+        <box size = "0.03 0.1 0.03"/> 
+      </geometry>
+      <surface>
+	<contact>
+	  <collide_bitmask>0x01</collide_bitmask>
+	</contact>
+      </surface>
+    </collision>
+    <inertial>
+      <origin xyz="-0.01 0 -0.05" rpy = "0 0 0"/>
+      <mass value="0.125"/>
+      <inertia
+        ixx="0.0015" ixy="0.0" ixz="0.0"
+        iyy="0.002175" iyz="0.0"
+        izz="0.003075"/>
+    </inertial>
+  </link>
+  
+  <link name="left_arm_grip_left">
+    <visual>
+      <origin xyz="0 0 -0.065" rpy = "0 0 0"/>
+      <geometry> 
+        <box size = "0.04 0.005 0.09"/> 
+      </geometry>
+      <material name = "la_material"><color rgba="1.0 0.5 0 1"/></material>
+    </visual>
+    <collision name = 'left_arm_grip_left_collision'>
+      <origin xyz="0 0 -0.065" rpy = "0 0 0"/>
+      <geometry> 
+        <box size = "0.04 0.005 0.09"/> 
+      </geometry>
+      <surface>
+	<contact>
+	  <collide_bitmask>0x01</collide_bitmask>
+	</contact>
+      </surface>
+    </collision>
+    <inertial>
+      <origin xyz="0 0 -0.065" rpy = "0 0 0"/>
+      <mass value="0.125"/>
+      <inertia
+        ixx="0.0015" ixy="0.0" ixz="0.0"
+        iyy="0.002175" iyz="0.0"
+        izz="0.003075"/>
+    </inertial>
+  </link>
+  
+  <link name="left_arm_grip_right">
+    <visual>
+      <origin xyz="0 0 -0.065" rpy = "0 0 0"/>
+      <geometry> 
+        <box size = "0.04 0.005 0.09"/> 
+      </geometry>
+      <material name = "la_material"><color rgba="1.0 0.5 0 1"/></material>
+    </visual>
+    <collision name = 'left_arm_grip_right_collision'>
+      <origin xyz="0 0 -0.065" rpy = "0 0 0"/>
+      <geometry> 
+        <box size = "0.04 0.005 0.09"/> 
+      </geometry>
+      <surface>
+	<contact>
+	  <collide_bitmask>0x01</collide_bitmask>
+	</contact>
+      </surface>
+    </collision>
+    <inertial>
+      <origin xyz="0 0 -0.065" rpy = "0 0 0"/>
+      <mass value="0.125"/>
+      <inertia
+        ixx="0.0015" ixy="0.0" ixz="0.0"
+        iyy="0.002175" iyz="0.0"
+        izz="0.003075"/>
+    </inertial>
+  </link>
+  
+  <link name="left_arm_grip_center"/>
+
+  <joint name="la_grip_left" type="revolute">
+    <origin xyz="0 0.04 -0.06" rpy="0 0 0"/>
+    <parent link="left_arm_link7"/> 
+    <child link="left_arm_grip_left"/>
+    <axis xyz="1 0 0" />
+    <dynamics damping ="0.1" />
+    <limit effort="3.0" velocity="3.0" lower="-0.3" upper="1.5"/>
+  </joint>
+  
+  <joint name="la_grip_right" type="revolute">
+    <origin xyz="0 -0.04 -0.06" rpy="0 0 0"/>
+    <parent link="left_arm_link7"/> 
+    <child link="left_arm_grip_right"/>
+    <axis xyz="-1 0 0" />
+    <dynamics damping ="0.1" />
+    <limit effort="3.0" velocity="3.0" lower="-0.3" upper="1.5"/>
+  </joint>
+  
+  <joint name="la_grip_center_joint" type="fixed">
+    <origin xyz="0 0 -0.12" rpy="0 0 0"/>
+    <parent link="left_arm_link7"/> 
+    <child link="left_arm_grip_center"/> 
+  </joint>
+  
+</robot>  
