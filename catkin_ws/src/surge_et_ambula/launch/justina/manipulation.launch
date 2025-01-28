@@ -19,8 +19,8 @@
   </node>
   <node name="trajectory_planner" pkg="trajectory_planner" type="trajectory_planner.py" output="screen"/>
 
-  <node name="grasp_object" pkg="object_manipulation" type="graspping_node.py" output="screen"/>
+  <node name="grip_candidates_generator" pkg="object_manipulation" type="grip_candidates_generator.py" output="screen"/>
 
-  <node name="grip_test" pkg="object_manipulation" type="demo_grasp.py"/>
+  <node name="pick_up_obj" pkg="simple_tasks" type="pick_up_obj.py" output="screen"/>
 
 </launch>
