@@ -10,6 +10,7 @@
 #include "vision_msgs/Keypoint.h"
 #include "vision_msgs/Gesture.h"
 #include "visualization_msgs/Marker.h"
+#include "visualization_msgs/MarkerArray.h"
 #include "pcl_conversions/pcl_conversions.h"
 #include "cv_bridge/cv_bridge.h"
 #include "tf/transform_listener.h"
@@ -23,6 +24,9 @@ SkeletonDetector *sk_detector;
 SkeletonTracker* sk_tracker;
 ros::Publisher  pub_persons;
 ros::Publisher  pub_marker;
+ros::Publisher  pub_marker_gestures;
+float dist_hip_wrist; //Min dist from hip to wrist to infer a pointing gesture
+
 const std::vector<std::string> kpt_names{"nose", "neck", "r_sho", "r_elb", "r_wri", "l_sho", "l_elb", "l_wri",
         "r_hip", "r_knee", "r_ank", "l_hip", "l_knee", "l_ank",	"r_eye", "l_eye","r_ear", "l_ear"};
 
@@ -38,7 +42,8 @@ Eigen::Affine3d get_transform_to_baselink(std::string link_name)
 void get_body_poses(vision_msgs::Persons& msg)
 {
     Eigen::Affine3d tf = get_transform_to_baselink(msg.header.frame_id);
-    for(int i=0; i < msg.persons.size(); i++){
+    for(int i=0; i < msg.persons.size(); i++)
+    {
         for(int j=0; j<msg.persons[i].skeleton.size(); j++)
             if(msg.persons[i].skeleton[j].id == "nose"){
                 Eigen::Vector3d v(msg.persons[i].skeleton[j].pose.position.x, msg.persons[i].skeleton[j].pose.position.y, msg.persons[i].skeleton[j].pose.position.z);
@@ -49,6 +54,66 @@ void get_body_poses(vision_msgs::Persons& msg)
             }
     }
 }
+
+void get_gestures(vision_msgs::Persons& msg)
+{
+    Eigen::Affine3d tf = get_transform_to_baselink(msg.header.frame_id);
+    for(int i=0; i < msg.persons.size(); i++)
+    {
+        std::map<std::string, vision_msgs::Keypoint> kp;
+        for(int j=0; j<msg.persons[i].skeleton.size(); j++)
+        {
+            Eigen::Vector3d v(msg.persons[i].skeleton[j].pose.position.x, msg.persons[i].skeleton[j].pose.position.y, msg.persons[i].skeleton[j].pose.position.z);
+            v = tf*v;
+            kp[msg.persons[i].skeleton[j].id] = msg.persons[i].skeleton[j];
+            kp[msg.persons[i].skeleton[j].id].pose.position.x = v.x();
+            kp[msg.persons[i].skeleton[j].id].pose.position.y = v.y();
+            kp[msg.persons[i].skeleton[j].id].pose.position.z = v.z();
+        }
+        //If there is no, at least, neck and hips, then cannot calculate main body plane
+        if(kp.find("l_hip")==kp.end() || kp.find("r_hip")==kp.end() || kp.find("neck")==kp.end())
+            continue;
+        Eigen::Vector3d v_neck_l_hip(kp["neck"].pose.position.x - kp["l_hip"].pose.position.x,
+                                     kp["neck"].pose.position.y - kp["l_hip"].pose.position.y,
+                                     kp["neck"].pose.position.z - kp["l_hip"].pose.position.z);
+        Eigen::Vector3d v_neck_r_hip(kp["neck"].pose.position.x - kp["r_hip"].pose.position.x,
+                                     kp["neck"].pose.position.y - kp["r_hip"].pose.position.y,
+                                     kp["neck"].pose.position.z - kp["r_hip"].pose.position.z);
+        Eigen::Vector3d body_normal = v_neck_l_hip.cross(v_neck_r_hip).normalized();
+        
+        //If there is no left wrist or nose, then cannot get gesture for right arm
+        if(kp.find("l_wri")==kp.end() || kp.find("nose")==kp.end())
+            continue;
+        if(kp["l_wri"].pose.position.z > kp["nose"].pose.position.z)
+        {
+            msg.persons[i].gesture.id = vision_msgs::Gesture::RISING_LEFT;
+            std::cout << "Found rising left" << std::endl;
+            continue;
+        }
+        Eigen::Vector3d v_l_wri_l_hip(kp["l_wri"].pose.position.x - kp["l_hip"].pose.position.x,
+                                       kp["l_wri"].pose.position.y - kp["l_hip"].pose.position.y, 0);
+        double d_wri_hip = (v_l_wri_l_hip - (v_l_wri_l_hip.dot(body_normal))*body_normal).norm();
+        if(d_wri_hip > dist_hip_wrist)//Wrist is far enough from hip to infer a pointing gesture
+        {
+            msg.persons[i].gesture.id = vision_msgs::Gesture::POINTING_LEFT;
+            if(kp.find("l_sho")!=kp.end())//Left shoulder is found
+            {
+                Eigen::Vector3d v_wri_sho(kp["l_wri"].pose.position.x - kp["l_sho"].pose.position.x,
+                                          kp["l_wri"].pose.position.y - kp["l_sho"].pose.position.y,
+                                          kp["l_wri"].pose.position.z - kp["l_sho"].pose.position.z);
+                double d = -kp["l_wri"].pose.position.z/v_wri_sho.z();
+                Eigen::Vector3d intersection(kp["l_wri"].pose.position.x + d*v_wri_sho.x(),
+                                             kp["l_wri"].pose.position.y + d*v_wri_sho.y(),
+                                             kp["l_wri"].pose.position.z + d*v_wri_sho.z());
+                intersection = tf.inverse()*intersection;
+                msg.persons[i].gesture.coordinate.pose.position.x = intersection.x();
+                msg.persons[i].gesture.coordinate.pose.position.y = intersection.y();
+                msg.persons[i].gesture.coordinate.pose.position.z = intersection.z();
+                msg.persons[i].gesture.coordinate.header.frame_id = msg.header.frame_id;
+            }
+        }
+    }
+}    
 
 visualization_msgs::Marker get_human_pose_markers(vision_msgs::Persons& msg)
 {
@@ -77,6 +142,38 @@ visualization_msgs::Marker get_human_pose_markers(vision_msgs::Persons& msg)
             mrk.points.push_back(p);
         }
     return mrk;
+}
+
+visualization_msgs::MarkerArray get_gesture_markers(vision_msgs::Persons& msg)
+{
+    visualization_msgs::MarkerArray mrks;
+    for(size_t i=0; i < msg.persons.size(); i++)
+    {
+        if(msg.persons[i].gesture.id != vision_msgs::Gesture::POINTING_LEFT &&
+           msg.persons[i].gesture.id != vision_msgs::Gesture::POINTING_RIGHT)
+            continue;
+        visualization_msgs::Marker mrk;
+        mrk.header.frame_id = msg.header.frame_id;
+        mrk.header.stamp = ros::Time::now();
+        mrk.ns = "human_pose";
+        mrk.id = i+1;
+        mrk.type = visualization_msgs::Marker::ARROW;
+        mrk.action = visualization_msgs::Marker::ADD;
+        mrk.points.resize(2);
+        mrk.points[0].x = msg.persons[i].pose.position.x;
+        mrk.points[0].y = msg.persons[i].pose.position.y;
+        mrk.points[0].z = msg.persons[i].pose.position.z;
+        mrk.points[1].x = msg.persons[i].gesture.coordinate.pose.position.x;
+        mrk.points[1].y = msg.persons[i].gesture.coordinate.pose.position.y;
+        mrk.points[1].z = msg.persons[i].gesture.coordinate.pose.position.z;
+        mrk.scale.x = 0.1;
+        mrk.scale.y = 0.12;
+        mrk.scale.z = 0.1;
+        mrk.color.a = 0.8;
+        mrk.color.r = 1.0;
+        mrks.markers.push_back(mrk);
+    }
+    return mrks;
 }
 
 void callback_cloud(const sensor_msgs::PointCloud2::ConstPtr& pcl_topic)
@@ -153,10 +250,12 @@ void callback_cloud(const sensor_msgs::PointCloud2::ConstPtr& pcl_topic)
         else if(msg_persons.persons[j].body_pose.id == vision_msgs::Gesture::SITTING) str = "Sitting";
         else str = "Lying";
         cv::putText(image, str, cv::Point(skeletons[j].bbox.x, skeletons[j].bbox.y), cv::FONT_HERSHEY_COMPLEX, 0.6, cv::Scalar(0,255,0));
-    }   
+    }
+    get_gestures(msg_persons);
     
     pub_persons.publish(msg_persons);
     pub_marker.publish(get_human_pose_markers(msg_persons));
+    pub_marker_gestures.publish(get_gesture_markers(msg_persons));
     cv::imshow("HumanPoseEstimator",image);
     cv::waitKey(1);
 }
@@ -183,6 +282,7 @@ int main(int argc, char** argv)
     ros::NodeHandle n;
     nh = &n;
     ros::Rate loop(10);
+    ros::param::param<float>("~dist_hip_wrist", dist_hip_wrist,  0.01);
 
     std::string path = ros::package::getPath("skeleton_detector");
     std::stringstream ss;
@@ -194,6 +294,7 @@ int main(int argc, char** argv)
 
     pub_persons = n.advertise<vision_msgs::Persons>("/vision/human_pose/human_pose_array", 1);
     pub_marker  = n.advertise<visualization_msgs::Marker>("/vision/human_pose/human_pose_marker", 1);
+    pub_marker_gestures = n.advertise<visualization_msgs::MarkerArray>("/vision/human_pose/human_gestures", 1);
     ros::Subscriber sub_enable  = n.subscribe("/vision/human_pose/enable", 1, callback_enable);
 
     while(ros::ok())

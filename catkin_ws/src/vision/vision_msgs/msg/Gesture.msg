@@ -10,6 +10,8 @@ uint16 RECEIVING_RIGHT=7
 uint16 SITTING=8
 uint16 STANDING=9
 uint16 LYING=10
+uint16 RISING_RIGHT=11
+uint16 RISING_LEFT=12
 
 uint16 id # One of the previous predefined values
 geometry_msgs/PoseStamped coordinate #Relevant pose data depending on the gesture type
