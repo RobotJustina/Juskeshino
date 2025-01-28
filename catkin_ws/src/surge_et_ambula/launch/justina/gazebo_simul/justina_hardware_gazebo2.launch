@@ -16,16 +16,40 @@
   <arg name="posy" default="5.0"/>
   <arg name="posz" default="0.05"/>
   <arg name="yaw" default="1.57"/>
-
+  
   <node name="robot_spawn" pkg="gazebo_ros" type="spawn_model" output="screen"
         args="-urdf -param robot_description -model justina -x $(arg posx) -y $(arg posy) -z $(arg posz) -Y $(arg yaw)"/>
+  
+
+  <param name="gripper_description" command="xacro $(find justina_description)/urdf/justina_gripper.xacro robot_namespace:=gm"/>
+
+  <node name="gripper_spawn" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-urdf -param gripper_description -model justina_gripper -x 3 -y 2.3 -z 1.1 -J gr_la_grip_left 0.707 -J gr_la_grip_right 0.707"/>     
+  
+  <group ns="gm">
+  <node name="gripper_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+    <remap from="robot_description" to="gripper_description"/>
+    <param name="use_tf_static" value="true"/>
+    <param name="tf_prefix" value="gm"/>
+  </node>
+  <node pkg="tf" type="static_transform_publisher" name="static_tf_gripper_publisher" args="0 0 0 0 0 0 1 map gr_left_arm_link7 100"/>
+  </group>
+
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
     <param name="use_tf_static" value="false"/>
+    
   </node>
+
   <node name="topic_resender" pkg="gazebo_envs" type="topic_resender.py" output="screen"/>
   <node name="omni_base_control" pkg="gazebo_envs" type="omni_base_gazebo_control.py" output="screen">
     <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
   </node>
-  <node name="tf_camera_connect" pkg="tf" type="static_transform_publisher" args="0 0 0 -1.5708 0 -1.5708 camera_link camera_rgb_optical_frame 30"/>
   <!--realsense_link-->
+  
+  
+
+
+
+  
+  
 </launch>

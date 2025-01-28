@@ -2,7 +2,7 @@
 <robot name="justina_gripper" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:include filename="$(find justina_description)/urdf/justina_gripper.gazebo"/>
 
-  <link name="left_arm_link7">
+  <link name="gr_left_arm_link7">
     <visual>
       <origin xyz="-0.01 0 -0.03" rpy = "0 0 0"/>
       <geometry> 
@@ -49,7 +49,7 @@
     </inertial>
   </link>
   
-  <link name="left_arm_grip_left">
+  <link name="gr_left_arm_grip_left">
     <visual>
       <origin xyz="0 0 -0.065" rpy = "0 0 0"/>
       <geometry> 
@@ -57,7 +57,7 @@
       </geometry>
       <material name = "la_material"><color rgba="1.0 0.5 0 1"/></material>
     </visual>
-    <collision name = 'left_arm_grip_left_collision'>
+    <collision name = 'gr_left_arm_grip_left_collision'>
       <origin xyz="0 0 -0.065" rpy = "0 0 0"/>
       <geometry> 
         <box size = "0.04 0.005 0.09"/> 
@@ -78,7 +78,7 @@
     </inertial>
   </link>
   
-  <link name="left_arm_grip_right">
+  <link name="gr_left_arm_grip_right">
     <visual>
       <origin xyz="0 0 -0.065" rpy = "0 0 0"/>
       <geometry> 
@@ -86,7 +86,7 @@
       </geometry>
       <material name = "la_material"><color rgba="1.0 0.5 0 1"/></material>
     </visual>
-    <collision name = 'left_arm_grip_right_collision'>
+    <collision name = 'gr_left_arm_grip_right_collision'>
       <origin xyz="0 0 -0.065" rpy = "0 0 0"/>
       <geometry> 
         <box size = "0.04 0.005 0.09"/> 
@@ -107,30 +107,30 @@
     </inertial>
   </link>
   
-  <link name="left_arm_grip_center"/>
+  <link name="gr_left_arm_grip_center"/>
 
-  <joint name="la_grip_left" type="revolute">
+  <joint name="gr_la_grip_left" type="revolute">
     <origin xyz="0 0.04 -0.06" rpy="0 0 0"/>
-    <parent link="left_arm_link7"/> 
-    <child link="left_arm_grip_left"/>
+    <parent link="gr_left_arm_link7"/> 
+    <child link="gr_left_arm_grip_left"/>
     <axis xyz="1 0 0" />
     <dynamics damping ="0.1" />
     <limit effort="3.0" velocity="3.0" lower="-0.3" upper="1.5"/>
   </joint>
   
-  <joint name="la_grip_right" type="revolute">
+  <joint name="gr_la_grip_right" type="revolute">
     <origin xyz="0 -0.04 -0.06" rpy="0 0 0"/>
-    <parent link="left_arm_link7"/> 
-    <child link="left_arm_grip_right"/>
+    <parent link="gr_left_arm_link7"/> 
+    <child link="gr_left_arm_grip_right"/>
     <axis xyz="-1 0 0" />
     <dynamics damping ="0.1" />
     <limit effort="3.0" velocity="3.0" lower="-0.3" upper="1.5"/>
   </joint>
   
-  <joint name="la_grip_center_joint" type="fixed">
+  <joint name="gr_la_grip_center_joint" type="fixed">
     <origin xyz="0 0 -0.12" rpy="0 0 0"/>
-    <parent link="left_arm_link7"/> 
-    <child link="left_arm_grip_center"/> 
+    <parent link="gr_left_arm_link7"/> 
+    <child link="gr_left_arm_grip_center"/> 
   </joint>
-  
+
 </robot>  

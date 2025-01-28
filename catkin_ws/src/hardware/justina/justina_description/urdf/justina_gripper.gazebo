@@ -1,34 +1,34 @@
 <?xml version="1.0"?>
 <robot name="justina_gripper" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-<transmission name="la_grip_left_transmission">
+<transmission name="gr_la_grip_left_transmission">
     <type>transmission_interface/SimpleTransmission</type>
-    <joint name="la_grip_left">
+    <joint name="gr_la_grip_left">
       <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
-    <actuator name="la_grip_left_motor">
+    <actuator name="gr_la_grip_left_motor">
       <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>      
   </transmission>
-  <transmission name="la_grip_right_transmission">
+  <transmission name="gr_la_grip_right_transmission">
     <type>transmission_interface/SimpleTransmission</type>
-    <joint name="la_grip_right">
+    <joint name="gr_la_grip_right">
       <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
-    <actuator name="la_grip_right_motor">
+    <actuator name="gr_la_grip_right_motor">
       <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>      
   </transmission>
 
-  <gazebo reference="left_arm_link7">
+  <gazebo reference="gr_left_arm_link7">
     <material>Gazebo/Orange</material>
     <turnGravityOff>1</turnGravityOff>
     <kinematic> true </kinematic>
   </gazebo>
 
-  <gazebo reference="left_arm_grip_left">
+  <gazebo reference="gr_left_arm_grip_left">
     <material>Gazebo/Orange</material>
     <turnGravityOff>1</turnGravityOff>
     <kinematic> true </kinematic>
@@ -47,20 +47,20 @@
       </ode>
     </torsional>
     
-    <sensor name="left_arm_grip_left_sensor" type="contact">
+    <sensor name="gr_left_arm_grip_left_sensor" type="contact">
         <alwaysOn>true</alwaysOn>
         <updateRate>0.000000015</updateRate>
         <contact>
             <collision>left_arm_grip_left_collision_collision</collision>
         </contact>
-        <plugin name="left_arm_grip_left_bumper_controller" filename="libgazebo_ros_bumper.so">
+        <plugin name="gr_left_arm_grip_left_bumper_controller" filename="libgazebo_ros_bumper.so">
             <bumperTopicName>left_arm_grip_left_sensor</bumperTopicName>
             <frameName>left_arm_grip_left_sensor</frameName>
         </plugin>
     </sensor>
     
   </gazebo>
-  <gazebo reference="left_arm_grip_right">
+  <gazebo reference="gr_left_arm_grip_right">
     <material>Gazebo/Orange</material>
     <turnGravityOff>1</turnGravityOff>
     <kinematic> true </kinematic>
@@ -78,16 +78,21 @@
         <slip>0</slip>
       </ode>
     </torsional>
-    <sensor name="left_arm_grip_right_sensor" type="contact">
+    <sensor name="gr_left_arm_grip_right_sensor" type="contact">
         <alwaysOn>true</alwaysOn>
         <updateRate>0.000000015</updateRate>
         <contact>
             <collision>left_arm_grip_right_collision_collision</collision>
         </contact>
-        <plugin name="left_arm_grip_right_bumper_controller" filename="libgazebo_ros_bumper.so">
+        <plugin name="gr_left_arm_grip_right_bumper_controller" filename="libgazebo_ros_bumper.so">
             <bumperTopicName>left_arm_grip_right_sensor</bumperTopicName>
             <frameName>left_arm_grip_right_sensor</frameName>
         </plugin>
     </sensor>
   </gazebo>
+
+  <gazebo reference='gr_la_grip_center_joint'>
+    <preserveFixedJoint>true</preserveFixedJoint>
+  </gazebo>
+
 </robot>

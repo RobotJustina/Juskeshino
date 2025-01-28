@@ -6,19 +6,17 @@
 
   <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
   <arg name="world" default="obj_grip_test"/> 
-  <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
+  <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo2.launch">
     <arg name="posx"  value="2.46"/>
     <arg name="posy"  value="1.46"/>
     <arg name="posz"  value="0.06"/>
     <arg name="yaw"   value="1.57"/>
     <arg name="world" value="$(arg world)"/>
   </include>
-  <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/>
-
-  <param name="gripper_model" command="xacro $(find justina_description)/urdf/justina_gripper.xacro"/>
-  <node name="gripper_spawn" pkg="gazebo_ros" type="spawn_model" output="screen"
-        args="-urdf -param gripper_model -model justina_gripper -x 3 -y 2.3 -z 1.1 -J la_grip_left 0.707 -J la_grip_right 0.707"/>     
-
+  
+ <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/>
+  
+  
   <include file="$(find surge_et_ambula)/launch/justina/navigation.launch">
     <arg name="static_map_file"  value="$(find config_files)/maps/$(arg map_name).yaml"/>
     <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/$(arg map_name).yaml"/>
@@ -55,5 +53,9 @@
 
   <include file="$(find surge_et_ambula)/launch/justina/hri.launch">
     <arg name="use_vosk" value="$(arg use_vosk)"/>
+  </include>
+  
+  <include file="$(find surge_et_ambula)/launch/justina/planning.launch">
+    <arg name="known_locations" value="$(find config_files)/navigation/$(arg locations).yaml"/>
   </include>
 </launch>
