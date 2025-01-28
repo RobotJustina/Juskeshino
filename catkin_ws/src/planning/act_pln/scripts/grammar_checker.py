@@ -683,7 +683,12 @@ def tellPrsInfoInLoc(cmd):
     success = tellVerb(cmd) and 'ME THE' in cmd.sentence and personInfoList(cmd) and 'OF THE PERSON' in cmd.sentence and inRoom_atLoc(cmd)
     if success:
         goal_location = get_pattern(cmd, (_roomNames + _locationNames))
-        actions = [['navigate', goal_location], ['find_person', ''], ['say', 'the person is William']]
+        if 'NAME' in cmd.sentence:
+            actions = [['navigate', goal_location], ['find_person', 'name'], ['say', 'var_found_person']]
+        elif 'POSE' in cmd.sentence:
+            actions = [['navigate', goal_location], ['find_body_pose', ''], ['say', 'var_found_body_pose']]
+        else:
+            actions = [['navigate', goal_location], ['find_gesture', ''], ['say', 'var_found_gesture']]
         cmd.actions = actions
     else:
         cmd.actions = prev_actions

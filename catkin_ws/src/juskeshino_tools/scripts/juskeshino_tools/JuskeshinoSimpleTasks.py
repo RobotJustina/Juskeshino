@@ -112,10 +112,9 @@ class JuskeshinoSimpleTasks:
         JuskeshinoVision.enableHumanPose(True)
         msg_persons = rospy.wait_for_message("/vision/human_pose/human_pose_array", Persons, timeout=7.0)
         print("JuskeshinoSimpleTasks.->Got " + str(len(msg_persons.persons)) + " persons")
+        JuskeshinoVision.enableHumanPose(False)
         if msg_persons is None or len(msg_persons.persons) < 1:
-            JuskeshinoVision.enableHumanPose(False)
             return None 
-
         min_dist = 1000
         closest_person = None
         for person in msg_persons.persons:
@@ -125,9 +124,9 @@ class JuskeshinoSimpleTasks:
             if(d < min_dist):
                 min_dist = d
                 closest_person = person
-        JuskeshinoVision.enableHumanPose(False)
         return closest_person
-                
+
+    
                 
     def findHumanAndApproach(timeout):
         head_poses = [[0,-0.1], [0.5, -0.1], [-0.5, -0.1], [1,-0.1], [-1,-0.1], [1.5,-0.1], [-1.5, -0.1]]
@@ -152,6 +151,49 @@ class JuskeshinoSimpleTasks:
             return False
         JuskeshinoHardware.moveHead(0,0,3.0)
         return True
+
+    def findHumanBodyPose(body_pose):
+        print("JuskeshinoSimpleTasks:.->Trying to find human body pose: ", body_pose)
+        if "standing" in body_pose.lower():
+            body_pose = vision_msgs.Gesture.STANDING
+        elif "sitting" in body_pose.lower():
+            body_pose = vision_msgs.Gesture.SITTING
+        else:
+            body_pose = vision_msgs.Gesture.LYING
+        JuskeshinoVision.enableHumanPose(True)
+        msg_persons = rospy.wait_for_message("/vision/human_pose/human_pose_array", Persons, timeout=7.0)
+        print("JuskeshinoSimpleTasks.->Got " + str(len(msg_persons.persons)) + " persons")
+        if msg_persons is None or len(msg_persons.persons) < 1:
+            return None
+        for person in msg_persons.person:
+            if person.body_pose == body_pose:
+                return person
+        return None
+
+    def findHumanWithBodyPoseAndApproach(body_pose, timeout):
+        head_poses = [[0,-0.1], [0.5, -0.1], [-0.5, -0.1], [1,-0.1], [-1,-0.1], [1.5,-0.1], [-1.5, -0.1]]
+        for [pan,tilt] in head_poses:
+            JuskeshinoHardware.moveHead(pan, tilt, 3)
+            timeout -= 3
+            person = JuskeshinoSimpleTasks.findHumanBodyPose(body_pose)
+            if person is not None:
+                break
+        if person is None:
+            print("JuskeshinoSimpleTasks.->Cannot find a " + body_pose + " person")
+            return False
+        print("JuskeshinoSimpleTasks.->Found person with body pose at " + str([person.pose.position.x, person.pose.position.y, person.pose.position.z]))
+        p = Point(x=person.pose.position.x, y=person.pose.position.y, z=person.pose.position.z) #Person point
+        p = JuskeshinoSimpleTasks.transformPoint( p, "map", person.header.frame_id ) #wrt map
+        xg, yg, ag = JuskeshinoNavigation.findSuitableNearPointInFreeSpace(p.x, p.y)
+        if xg is None or yg is None or ag is None:
+            print("JuskeshinoSimpleTasks.->Cannot approach to person. ")
+            return False
+        if not JuskeshinoNavigation.getCloseXYA(xg, yg, ag, timeout):
+            print("JuskeshinoSimpleTasks.->Cannot approach to person.")
+            return False
+        JuskeshinoHardware.moveHead(0,0,3.0)
+        return True
+        
     
     def handling_location_la(position_obj):     # Recibe un  objeto de tipo position extraido de un mensaje pose de ROS
         l_threshold_la       = 0.26
@@ -169,9 +211,6 @@ class JuskeshinoSimpleTasks:
             JuskeshinoNavigation.moveLateral(mov_der , 5.0)
             time.sleep(0.2)
             return 
-            
-    
-
 
     def object_search(name_obj, tilt):
         JuskeshinoHardware.moveHead(0,tilt, 10)
@@ -201,8 +240,6 @@ class JuskeshinoSimpleTasks:
             print("JuskeshinoSimpleTask.->Objeto detectado ")
             return [obj, img]
         
-
-
         
     def object_search_orientation(name_obj, tilt):
         JuskeshinoHardware.moveHead(0,tilt, 5)

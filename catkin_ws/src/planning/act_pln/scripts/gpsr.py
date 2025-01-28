@@ -22,6 +22,7 @@ SM_END = 1000
 ACTION_NAVIGATE = 'navigate'
 ACTION_TAKE = 'take'
 ACTION_FIND_PERSON = 'find_person'
+ACTION_FIND_BODY_POSE = 'find_body_pose'
 ACTION_FIND_GESTURE = 'find_gesture'
 ACTION_FIND_CLOTHES = 'find_clothes'
 ACTION_FOLLOW = 'follow'
@@ -117,12 +118,21 @@ def take(obj_name):
     
 def find_person(person_name):
     print("GPSR.->Trying to detect person: ", person_name)
-    JuskeshinoHRI.say("I will try to find " + person_name)
+    JuskeshinoHRI.say("I will try to find " + (person_name if person_name != "" else " a person"))
     if not JuskeshinoSimpleTasks.findHumanAndApproach(90):
         JuskeshinoHRI.say("I could not find any person. I will continue.")
 
+def find_body_pose(body_pose):
+    print("GPSR.->Trying to find the body pose: ", body_pose)
+    if body_pose == "":
+        JuskeshinoHRI.say("I will try to detect the body pose")
+    else:
+        JuskeshinoHRI.say("I will try to detect the " + body_pose)
+    
+    
+
 def find_gesture(gesture):
-    print("GPSR.->Trying to detect the ", gesture)
+    print("GPSR.->Trying to detect the gesture: ", gesture)
     JuskeshinoHRI.say("I will try to find the " + gesture.replace("_", " "))
     if not JuskeshinoSimpleTasks.findHumanAndApproach(60):
         JuskeshinoHRI.say("I could not find any person. I will continue.")
