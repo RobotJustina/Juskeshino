@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <robot name="justina_gripper" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
 <transmission name="gr_la_grip_left_transmission">
