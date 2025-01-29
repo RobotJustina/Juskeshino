@@ -108,9 +108,11 @@ class JuskeshinoSimpleTasks:
     #
     # Tasks related to finding and recognizing people
     #
-    def getClosestPerson():
+    def getClosestPerson(gesture=None, body_pose=None):
         JuskeshinoVision.enableHumanPose(True)
         msg_persons = rospy.wait_for_message("/vision/human_pose/human_pose_array", Persons, timeout=7.0)
+        msg_persons = rospy.wait_for_message("/vision/human_pose/human_pose_array", Persons, timeout=7.0)
+        #msg_persons = rospy.wait_for_message("/vision/human_pose/human_pose_array", Persons, timeout=7.0)
         print("JuskeshinoSimpleTasks.->Got " + str(len(msg_persons.persons)) + " persons")
         JuskeshinoVision.enableHumanPose(False)
         if msg_persons is None or len(msg_persons.persons) < 1:
@@ -118,6 +120,10 @@ class JuskeshinoSimpleTasks:
         min_dist = 1000
         closest_person = None
         for person in msg_persons.persons:
+            if gesture is not None and person.gesture.id != gesture:
+                continue
+            if body_pose is not None and person.body_pose.id != body_pose:
+                continue
             p = Point(x=person.pose.position.x, y=person.pose.position.y, z=person.pose.position.z)
             p = JuskeshinoSimpleTasks.transformPoint( p, "base_link", msg_persons.header.frame_id )
             d = math.sqrt(p.x**2 + p.y**2 + p.z**2)
@@ -125,32 +131,30 @@ class JuskeshinoSimpleTasks:
                 min_dist = d
                 closest_person = person
         return closest_person
-
-    
                 
-    def findHumanAndApproach(timeout):
+    def findHumanAndApproach(timeout, gesture=None, body_pose=None):
         head_poses = [[0,-0.1], [0.5, -0.1], [-0.5, -0.1], [1,-0.1], [-1,-0.1], [1.5,-0.1], [-1.5, -0.1]]
         for [pan,tilt] in head_poses:
             JuskeshinoHardware.moveHead(pan, tilt, 3)
             timeout -= 3
-            person = JuskeshinoSimpleTasks.getClosestPerson()
+            person = JuskeshinoSimpleTasks.getClosestPerson(gesture, body_pose)
             if person is not None:
                 break
         if person is None:
             print("JuskeshinoSimpleTasks.->Cannot find any person.")
-            return False
+            return False, None
         print("JuskeshinoSimpleTasks.->Found closest person at " + str([person.pose.position.x, person.pose.position.y, person.pose.position.z]))
         p = Point(x=person.pose.position.x, y=person.pose.position.y, z=person.pose.position.z) #Person point
         p = JuskeshinoSimpleTasks.transformPoint( p, "map", person.header.frame_id ) #wrt map
         xg, yg, ag = JuskeshinoNavigation.findSuitableNearPointInFreeSpace(p.x, p.y)
         if xg is None or yg is None or ag is None:
             print("JuskeshinoSimpleTasks.->Cannot approach to person. ")
-            return False
+            return False, person
         if not JuskeshinoNavigation.getCloseXYA(xg, yg, ag, timeout):
             print("JuskeshinoSimpleTasks.->Cannot approach to person.")
-            return False
+            return False, person
         JuskeshinoHardware.moveHead(0,0,3.0)
-        return True
+        return True, person
 
     def findHumanBodyPose(body_pose):
         print("JuskeshinoSimpleTasks:.->Trying to find human body pose: ", body_pose)

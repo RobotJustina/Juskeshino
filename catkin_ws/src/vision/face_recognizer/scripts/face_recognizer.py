@@ -9,6 +9,7 @@ import ros_numpy
 import datetime
 from cv_bridge import CvBridge
 from vision_msgs.srv import *
+from vision_msgs.msg import *
 
 def cloud_to_img_and_xyz(msg_cloud):
     arr = ros_numpy.point_cloud2.pointcloud2_to_array(msg_cloud)
@@ -74,9 +75,14 @@ def callback_find_persons(req):
     for loc in face_locations:
         cv2.rectangle(img_result, (loc[1], loc[0]), (loc[3], loc[2]), (0,255,0), 2)
     matches = match_encodings(known_names, known_patterns, encodings)
+    resp = FindPersonsResponse()
     for i,(m,d) in enumerate(matches):
         cv2.putText(img_result, m+" " +str(d)[0:5], (face_locations[i][3], face_locations[i][0]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0), 1, cv2.LINE_AA)
-    #print("Matches: ", matches)
+        person = Person()
+        person.name = m
+        person.id = m
+        resp.persons.append(person)
+    return resp
     
 
 def load_dataset(path):

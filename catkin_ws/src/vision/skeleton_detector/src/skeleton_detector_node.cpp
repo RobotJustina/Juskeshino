@@ -81,13 +81,13 @@ void get_gestures(vision_msgs::Persons& msg)
                                      kp["neck"].pose.position.z - kp["r_hip"].pose.position.z);
         Eigen::Vector3d body_normal = v_neck_l_hip.cross(v_neck_r_hip).normalized();
         
-        //If there is no left wrist or nose, then cannot get gesture for right arm
+        //If there is no left wrist or nose, then cannot get gesture for left arm
         if(kp.find("l_wri")==kp.end() || kp.find("nose")==kp.end())
             continue;
         if(kp["l_wri"].pose.position.z > kp["nose"].pose.position.z)
         {
-            msg.persons[i].gesture.id = vision_msgs::Gesture::RISING_LEFT;
-            std::cout << "Found rising left" << std::endl;
+            msg.persons[i].gesture.id = vision_msgs::Gesture::RAISING_LEFT;
+            std::cout << "Found raising left" << std::endl;
             continue;
         }
         Eigen::Vector3d v_l_wri_l_hip(kp["l_wri"].pose.position.x - kp["l_hip"].pose.position.x,
@@ -105,6 +105,37 @@ void get_gestures(vision_msgs::Persons& msg)
                 Eigen::Vector3d intersection(kp["l_wri"].pose.position.x + d*v_wri_sho.x(),
                                              kp["l_wri"].pose.position.y + d*v_wri_sho.y(),
                                              kp["l_wri"].pose.position.z + d*v_wri_sho.z());
+                intersection = tf.inverse()*intersection;
+                msg.persons[i].gesture.coordinate.pose.position.x = intersection.x();
+                msg.persons[i].gesture.coordinate.pose.position.y = intersection.y();
+                msg.persons[i].gesture.coordinate.pose.position.z = intersection.z();
+                msg.persons[i].gesture.coordinate.header.frame_id = msg.header.frame_id;
+            }
+        }
+        //If there is no right wrist of nose, then cannot get gesture for right arm
+        if(kp.find("r_wri")==kp.end() || kp.find("nose")==kp.end())
+            continue;
+        if(kp["r_wri"].pose.position.z > kp["nose"].pose.position.z)
+        {
+            msg.persons[i].gesture.id = vision_msgs::Gesture::RAISING_RIGHT;
+            std::cout << "Found raising right" << std::endl;
+            continue;
+        }
+        Eigen::Vector3d v_r_wri_r_hip(kp["r_wri"].pose.position.x - kp["r_hip"].pose.position.x,
+                                       kp["r_wri"].pose.position.y - kp["r_hip"].pose.position.y, 0);
+        d_wri_hip = (v_r_wri_r_hip - (v_r_wri_r_hip.dot(body_normal))*body_normal).norm();
+        if(d_wri_hip > dist_hip_wrist)//Wrist is far enough from hip to infer a pointing gesture
+        {
+            msg.persons[i].gesture.id = vision_msgs::Gesture::POINTING_RIGHT;
+            if(kp.find("r_sho")!=kp.end())//Left shoulder is found
+            {
+                Eigen::Vector3d v_wri_sho(kp["r_wri"].pose.position.x - kp["r_sho"].pose.position.x,
+                                          kp["r_wri"].pose.position.y - kp["r_sho"].pose.position.y,
+                                          kp["r_wri"].pose.position.z - kp["r_sho"].pose.position.z);
+                double d = -kp["r_wri"].pose.position.z/v_wri_sho.z();
+                Eigen::Vector3d intersection(kp["r_wri"].pose.position.x + d*v_wri_sho.x(),
+                                             kp["r_wri"].pose.position.y + d*v_wri_sho.y(),
+                                             kp["r_wri"].pose.position.z + d*v_wri_sho.z());
                 intersection = tf.inverse()*intersection;
                 msg.persons[i].gesture.coordinate.pose.position.x = intersection.x();
                 msg.persons[i].gesture.coordinate.pose.position.y = intersection.y();
@@ -149,9 +180,6 @@ visualization_msgs::MarkerArray get_gesture_markers(vision_msgs::Persons& msg)
     visualization_msgs::MarkerArray mrks;
     for(size_t i=0; i < msg.persons.size(); i++)
     {
-        if(msg.persons[i].gesture.id != vision_msgs::Gesture::POINTING_LEFT &&
-           msg.persons[i].gesture.id != vision_msgs::Gesture::POINTING_RIGHT)
-            continue;
         visualization_msgs::Marker mrk;
         mrk.header.frame_id = msg.header.frame_id;
         mrk.header.stamp = ros::Time::now();
@@ -163,15 +191,43 @@ visualization_msgs::MarkerArray get_gesture_markers(vision_msgs::Persons& msg)
         mrk.points[0].x = msg.persons[i].pose.position.x;
         mrk.points[0].y = msg.persons[i].pose.position.y;
         mrk.points[0].z = msg.persons[i].pose.position.z;
-        mrk.points[1].x = msg.persons[i].gesture.coordinate.pose.position.x;
-        mrk.points[1].y = msg.persons[i].gesture.coordinate.pose.position.y;
-        mrk.points[1].z = msg.persons[i].gesture.coordinate.pose.position.z;
         mrk.scale.x = 0.1;
         mrk.scale.y = 0.12;
         mrk.scale.z = 0.1;
         mrk.color.a = 0.8;
         mrk.color.r = 1.0;
-        mrks.markers.push_back(mrk);
+        if(msg.persons[i].gesture.id == vision_msgs::Gesture::POINTING_LEFT ||
+           msg.persons[i].gesture.id == vision_msgs::Gesture::POINTING_RIGHT)
+        {
+            mrk.points[1].x = msg.persons[i].gesture.coordinate.pose.position.x;
+            mrk.points[1].y = msg.persons[i].gesture.coordinate.pose.position.y;
+            mrk.points[1].z = msg.persons[i].gesture.coordinate.pose.position.z;
+            mrks.markers.push_back(mrk);
+        }else if(msg.persons[i].gesture.id == vision_msgs::Gesture::RAISING_LEFT)
+        {
+            int idx=-1;
+            for(int j=0; j < msg.persons[i].skeleton.size(); j++)
+                if(msg.persons[i].skeleton[j].id == "l_wri")
+                    idx = i;
+            if(idx > 0){
+                mrk.points[1].x = msg.persons[i].skeleton[idx].pose.position.x;
+                mrk.points[1].y = msg.persons[i].skeleton[idx].pose.position.y;
+                mrk.points[1].z = msg.persons[i].skeleton[idx].pose.position.z;
+                mrks.markers.push_back(mrk);
+            }
+        }else if(msg.persons[i].gesture.id == vision_msgs::Gesture::RAISING_RIGHT)
+        {
+            int idx=-1;
+            for(int j=0; j < msg.persons[i].skeleton.size(); j++)
+                if(msg.persons[i].skeleton[j].id == "r_wri")
+                    idx = i;
+            if(idx > 0){
+                mrk.points[1].x = msg.persons[i].skeleton[idx].pose.position.x;
+                mrk.points[1].y = msg.persons[i].skeleton[idx].pose.position.y;
+                mrk.points[1].z = msg.persons[i].skeleton[idx].pose.position.z;
+                mrks.markers.push_back(mrk);
+            }
+        }
     }
     return mrks;
 }

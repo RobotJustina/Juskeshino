@@ -18,7 +18,7 @@ class JuskeshinoVision:
         JuskeshinoVision.cltDetectRecogObject       = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_object",    RecognizeObject     )
         JuskeshinoVision.cltGetObjectPose           = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose",  RecognizeObject     ) 
         #JuskeshinoVision.cltGetPointsAbovePlane     = rospy.ServiceProxy("/vision/get_points_above_plane",                  PreprocessPointCloud)
-        JuskeshinoVision.cltFindPersons             = rospy.ServiceProxy('/vision/face_reco_pkg/recognize_face/names',      FindPerson           )
+        JuskeshinoVision.cltFindPersons             = rospy.ServiceProxy('/vision/face_recog/find_persons',      FindPersons           )
         JuskeshinoVision.cltTrainPersons            = rospy.ServiceProxy("/vision/face_reco_pkg/training_face/name",        FindPerson           )
         JuskeshinoVision.cltClothesColor            = rospy.ServiceProxy("/vision/clothes_color",                           FindPerson          )
 
@@ -150,7 +150,14 @@ class JuskeshinoVision:
             print("JuskeshinoVision.->vacio")
             vector_vacio = resp.names
             return vector_vacio
-    
+
+    def findFace():
+        req = FindPersonsRequest()
+        req.cloud = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2, timeout=1.0)
+        resp = JuskeshinoVision.cltFindPersons.call(req)
+        for person in resp.persons:
+            return person.name
+        return None
     
     def trainingPerson(person):
         print("JuskeshinoVision.->Train person: ", person)
