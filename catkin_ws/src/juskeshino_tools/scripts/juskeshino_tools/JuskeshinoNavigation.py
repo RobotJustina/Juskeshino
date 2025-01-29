@@ -20,14 +20,14 @@ class JuskeshinoNavigation:
         JuskeshinoNavigation.pubMvnPlnGetCloseXYA   = rospy.Publisher("/move_base_simple/goal", PoseStamped, queue_size=10)
         JuskeshinoNavigation.pubNavigationStop      = rospy.Publisher("/navigation/stop", Empty, queue_size=10)
         JuskeshinoNavigation.tfListener = tf.TransformListener()
-        JuskeshinoNavigation._stop = False;
+        JuskeshinoNavigation._stop = False
         JuskeshinoNavigation._navigation_status = GoalStatus()
         JuskeshinoNavigation._simple_move_status = GoalStatus()
-        JuskeshinoNavigation._navigation_status.status  = GoalStatus.PENDING;
-        JuskeshinoNavigation._simple_move_status.status = GoalStatus.PENDING;
+        JuskeshinoNavigation._navigation_status.status  = GoalStatus.PENDING
+        JuskeshinoNavigation._simple_move_status.status = GoalStatus.PENDING
         
         loop = rospy.Rate(10)
-        counter = 3;
+        counter = 3
         while not rospy.is_shutdown() and counter > 0:
             counter-=1
             loop.sleep()
@@ -38,12 +38,12 @@ class JuskeshinoNavigation:
         return JuskeshinoNavigation._simple_move_status.status == GoalStatus.SUCCEEDED
 
     def isGlobalGoalReached():
-        return JuskeshinoNavigation._navigation_status.status == GoalStatus.SUCCEEDED;
+        return JuskeshinoNavigation._navigation_status.status == GoalStatus.SUCCEEDED
 
     def waitForLocalGoalReached(timeout):
-        JuskeshinoNavigation._stop = False;
-        JuskeshinoNavigation._simple_move_status.status = GoalStatus.PENDING;
-        attempts = int(timeout/0.1);
+        JuskeshinoNavigation._stop = False
+        JuskeshinoNavigation._simple_move_status.status = GoalStatus.PENDING
+        attempts = int(timeout/0.1)
         loop = rospy.Rate(10)
         while (not rospy.is_shutdown() and JuskeshinoNavigation._simple_move_status.status == GoalStatus.PENDING and
                not JuskeshinoNavigation._stop and attempts >= 0):
@@ -55,7 +55,7 @@ class JuskeshinoNavigation:
             loop.sleep()
             attempts -=1
 
-        JuskeshinoNavigation._stop = False; #This flag is set True in the subscriber callback
+        JuskeshinoNavigation._stop = False #This flag is set True in the subscriber callback
         return JuskeshinoNavigation._simple_move_status.status == GoalStatus.SUCCEEDED
 
     def waitForGlobalGoalReached(timeout):
@@ -98,7 +98,7 @@ class JuskeshinoNavigation:
     def startMoveDist(distance):
         msg = Float32()
         msg.data = distance
-        JuskeshinoNavigation._simple_move_status.status = GoalStatus.PENDING;
+        JuskeshinoNavigation._simple_move_status.status = GoalStatus.PENDING
         JuskeshinoNavigation.pubSimpleMoveDist.publish(msg)
         rospy.sleep(0.1)
 
@@ -135,7 +135,7 @@ class JuskeshinoNavigation:
     #These methods use the mvn_pln node.
     def startGetCloseXYA(x, y, angle):
         msg = PoseStamped()
-        msg.header.frame_id = "map";
+        msg.header.frame_id = "map"
         msg.pose.position.x = x
         msg.pose.position.y = y
         msg.pose.position.z = 0
@@ -143,7 +143,22 @@ class JuskeshinoNavigation:
         msg.pose.orientation.y = 0
         msg.pose.orientation.z = math.sin(angle/2)
         msg.pose.orientation.w = math.cos(angle/2)
-        JuskeshinoNavigation._navigation_status.status = GoalStatus.PENDING;
+        JuskeshinoNavigation._navigation_status.status = GoalStatus.PENDING
+        JuskeshinoNavigation.pubMvnPlnGetCloseXYA.publish(msg)
+        rospy.sleep(0.1)
+
+    #These methods use the mvn_pln node.
+    def startGetCloseXYAOdom(x, y, angle):
+        msg = PoseStamped()
+        msg.header.frame_id = "odom"
+        msg.pose.position.x = x
+        msg.pose.position.y = y
+        msg.pose.position.z = 0
+        msg.pose.orientation.x = 0
+        msg.pose.orientation.y = 0
+        msg.pose.orientation.z = math.sin(angle/2)
+        msg.pose.orientation.w = math.cos(angle/2)
+        JuskeshinoNavigation._navigation_status.status = GoalStatus.PENDING
         JuskeshinoNavigation.pubMvnPlnGetCloseXYA.publish(msg)
         rospy.sleep(0.1)
 
@@ -184,7 +199,7 @@ class JuskeshinoNavigation:
         JuskeshinoNavigation._stop = True
 
     def callbackNavigationStatus(msg):
-        JuskeshinoNavigation._navigation_status = msg;
+        JuskeshinoNavigation._navigation_status = msg
 
     def callbackSimpleMoveStatus(msg):
-        JuskeshinoNavigation._simple_move_status = msg;
+        JuskeshinoNavigation._simple_move_status = msg

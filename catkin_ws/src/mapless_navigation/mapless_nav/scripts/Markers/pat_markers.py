@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import rospy
 import tf
 from interactive_markers.interactive_marker_server import InteractiveMarkerFeedback, InteractiveMarkerServer
@@ -14,12 +14,15 @@ from select import select
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 import numpy as np
+from juskeshino_tools.JuskeshinoNavigation import JuskeshinoNavigation
+from general_utils import files_utils
+import math
 
 marker_server = None
 menu_handler = MenuHandler()
 counter = 0
 nodes_count = 0
-
+splin_path = False
 
 def processFeedback(feedback):
     global path
@@ -86,7 +89,7 @@ def createMarker(interaction_mode, position):
 def globalGoalCallback(msg):
     global goal_x, goal_y
     global path, nodes_count
-    
+
     goal_x = msg.point.x
     goal_y = msg.point.y
     position = Point(round(goal_x, 2), round(goal_y, 2), 0)
@@ -117,6 +120,25 @@ def removeNodes():
         nodes_count -= 1
     else:
         print("\rnodes not found",)
+
+
+def clear_nodes():
+    global path
+    for i in range(nodes_count):
+        removeNodes()
+    print("\rnodes: ", nodes_count)
+    path = getPath()
+    path_pub.publish(path)
+    splin_path = False
+
+
+def getRobotPoseOdom():
+    listener = tf.TransformListener()
+    listener.waitForTransform(
+        'odom', 'base_link', rospy.Time(0), rospy.Duration(1.0))
+    ([x, y, z], rot) = listener.lookupTransform(
+        'odom', 'base_link', rospy.Time(0))
+    return [x, y, z, rot]
 
 
 def getPath():
@@ -178,22 +200,41 @@ def splineCurve():
     return path
 
 
-def getRobotPoseOdom():
-    listener = tf.TransformListener()
-    listener.waitForTransform(
-        'odom', 'base_link', rospy.Time(0), rospy.Duration(1.0))
-    ([x, y, z], rot) = listener.lookupTransform(
-        'odom', 'base_link', rospy.Time(0))
-    return [x, y, z, rot]
-
+def navigate():
+    global path
+    pt = Path()
+    #pt.poses
+    first = False
+    count = 0
+    for p in path.poses:
+        if first:
+            pass
+            #first = False
+        else:    
+            print(type(p))
+            print(p)
+            rot = p.pose.orientation
+            a = 2*math.atan2(rot.z, rot.w)
+            a = a - 2*math.pi if a > math.pi else a
+            JuskeshinoNavigation.startGetCloseXYAOdom(p.pose.position.x, p.pose.position.y, a)
+            count += 1
+            first = True
+    print(count)
 
 if __name__ == "__main__":
     global path
 
     rospy.init_node("path_controls")
+    jn = JuskeshinoNavigation()
+    
+    JuskeshinoNavigation.setNodeHandle()
 
     rospy.Subscriber('/clicked_point', PointStamped, globalGoalCallback)
+    # /simple_move/goal_path # /goal_path
     path_pub = rospy.Publisher('/goal_path', Path, queue_size=10)
+    # /simple_move/goal_path # /goal_path
+    goal_path_pub = rospy.Publisher(
+        '/mapless/goal_path', Path, queue_size=10)
 
     set = termios.tcgetattr(sys.stdin)
     key_timeout = rospy.get_param("~key_timeout", 0.5)
@@ -209,6 +250,7 @@ if __name__ == "__main__":
         if key == 'q':
             print(key)
             rospy.logwarn("Exit selected")
+            clear_nodes()
             rospy.signal_shutdown('')
         elif key == 'r':
             print(key + "- remove node")
@@ -216,20 +258,27 @@ if __name__ == "__main__":
             print("\rnodes: ", nodes_count)
             path = getPath()
         elif key == 'c':
-            # print(key + "- remove all nodes")
             rospy.logwarn(key + "- remove all nodes")
-            for i in range(nodes_count):
-                removeNodes()
-            print("\rnodes: ", nodes_count)
-            path = getPath()
-
+            clear_nodes()
         elif key == 'p':
             rospy.logwarn(key + "- path preview")
-            path = splineCurve()
-
+            
+            path = getPath()
+            print(nodes_count)
+            if nodes_count > 1:
+                path = splineCurve()
+            x, y, a = JuskeshinoNavigation.getRobotPoseWrtOdom()
+            print(x, y, a)
+            # JuskeshinoNavigation.startGetCloseXYAOdom(x+1, y+0.5, a)
+            #JuskeshinoNavigation.moveDist(-0.3, 10)
+            goal_path_pub.publish(path)
+            
         elif key == 'n':
             rospy.logwarn(key + "- navigate")
-
+            # #navigate()
+            # a = 2*math.atan2(.02, 0)
+            # a = a - 2*math.pi if a > math.pi else a
+            # JuskeshinoNavigation.startMoveDistAngle(.2, a)
         else:
             print('', end="\r")  # clear whole line
             sys.stdout.write('\x1b[2K')

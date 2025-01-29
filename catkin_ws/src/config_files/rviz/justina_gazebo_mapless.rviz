@@ -4,6 +4,7 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /TF1
         - /TF1/Frames1
         - /PointStamped1
         - /Path1
@@ -371,10 +372,12 @@ Visualization Manager:
           Value: false
         left_wheel_link:
           Value: true
+        map:
+          Value: false
         neck_link:
           Value: false
         odom:
-          Value: false
+          Value: true
         realsense_link:
           Value: true
         right_arm_grip_center:
@@ -414,57 +417,58 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        odom:
-          base_link:
-            base_center:
-              back_wheel_link:
-                {}
-              base_torso_support:
-                {}
-              laser_link:
-                {}
-              laser_link_rear:
-                {}
-              left_wheel_link:
-                {}
-              right_wheel_link:
-                {}
-            torso_link:
-              spine_link:
-                head_link1:
-                  head_link2:
-                    neck_link:
-                      camera_link:
-                        realsense_link:
-                          {}
-                shoulders_left_link:
-                  left_arm_link1:
-                    left_arm_link2:
-                      left_arm_link3:
-                        left_arm_link4:
-                          left_arm_link5:
-                            left_arm_link6:
-                              left_arm_link7:
-                                left_arm_grip_center:
-                                  {}
-                                left_arm_grip_left:
-                                  {}
-                                left_arm_grip_right:
-                                  {}
-                shoulders_right_link:
-                  right_arm_link1:
-                    right_arm_link2:
-                      right_arm_link3:
-                        right_arm_link4:
-                          right_arm_link5:
-                            right_arm_link6:
-                              right_arm_link7:
-                                right_arm_grip_center:
-                                  {}
-                                right_arm_grip_left:
-                                  {}
-                                right_arm_grip_right:
-                                  {}
+        map:
+          odom:
+            base_link:
+              base_center:
+                back_wheel_link:
+                  {}
+                base_torso_support:
+                  {}
+                laser_link:
+                  {}
+                laser_link_rear:
+                  {}
+                left_wheel_link:
+                  {}
+                right_wheel_link:
+                  {}
+              torso_link:
+                spine_link:
+                  head_link1:
+                    head_link2:
+                      neck_link:
+                        camera_link:
+                          realsense_link:
+                            {}
+                  shoulders_left_link:
+                    left_arm_link1:
+                      left_arm_link2:
+                        left_arm_link3:
+                          left_arm_link4:
+                            left_arm_link5:
+                              left_arm_link6:
+                                left_arm_link7:
+                                  left_arm_grip_center:
+                                    {}
+                                  left_arm_grip_left:
+                                    {}
+                                  left_arm_grip_right:
+                                    {}
+                  shoulders_right_link:
+                    right_arm_link1:
+                      right_arm_link2:
+                        right_arm_link3:
+                          right_arm_link4:
+                            right_arm_link5:
+                              right_arm_link6:
+                                right_arm_link7:
+                                  right_arm_grip_center:
+                                    {}
+                                  right_arm_grip_left:
+                                    {}
+                                  right_arm_grip_right:
+                                    {}
       Update Interval: 0
       Value: true
     - Alpha: 0.699999988079071
@@ -559,7 +563,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.4552597999572754
+      Distance: 14.754809379577637
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -567,17 +571,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -2.3886544704437256
-        Y: -1.3856866359710693
-        Z: -0.06259903311729431
+        X: -2.161820650100708
+        Y: -0.6360093951225281
+        Z: -0.6782251596450806
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8047974705696106
+      Pitch: 0.6997975707054138
       Target Frame: <Fixed Frame>
-      Yaw: 0.0903601124882698
+      Yaw: 6.278545379638672
     Saved: ~
 Window Geometry:
   Displays:
