@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  ros_whisper_vosk
 )
 
 ## System dependencies are found with CMake's conventions
@@ -107,7 +108,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES act_pln
-#  CATKIN_DEPENDS geometry_msgs juskeshino_tools roscpp rospy std_msgs
+  CATKIN_DEPENDS geometry_msgs juskeshino_tools roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
 

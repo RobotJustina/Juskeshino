@@ -276,9 +276,10 @@ if __name__ == "__main__":
         elif key == 'n':
             rospy.logwarn(key + "- navigate")
             # #navigate()
-            # a = 2*math.atan2(.02, 0)
-            # a = a - 2*math.pi if a > math.pi else a
-            # JuskeshinoNavigation.startMoveDistAngle(.2, a)
+            a = 2*math.atan2(.02, 0)
+            a = a - 2*math.pi if a > math.pi else a
+            JuskeshinoNavigation.startMoveDistAngle(0, a)
+            #JuskeshinoNavigation.startMoveDist(1)
         else:
             print('', end="\r")  # clear whole line
             sys.stdout.write('\x1b[2K')

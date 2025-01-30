@@ -68,6 +68,8 @@
     <param name="point_cloud_topic" value="/camera/depth_registered/points"/>
   </node>
 
+  
+
   <node name="local_occ_grid_secondary" pkg="local_occ_grid" type="local_occ_grid_secondary">
     <param name="use_lidar" value="true"/>
     <param name="use_cloud" value="true"/>
@@ -82,5 +84,9 @@
   <node name="joystick_teleop_improved" pkg="joystick_teleop" type="joystick_teleop_node_improved.py" output="screen">
     <remap from="/hardware/mobile_base/cmd_vel" to="/cmd_vel"/>
   </node>
+
+
+  <node pkg="hmm_navigation"  name="pumas_nav_actionserver" type="pumas_nav_actionserver.py"/>
+  
 
 </launch>
