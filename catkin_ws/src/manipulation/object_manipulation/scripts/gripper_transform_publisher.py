@@ -35,6 +35,24 @@ class DynamicTFBroadcaster:
             tfm = tf.msg.tfMessage([t])
             self.pub_tf.publish(tfm)
 
+            rospy.sleep(0.01)
+
+            pose = get_object_relative_pose("apple","justina::camera_link").pose
+            t = geometry_msgs.msg.TransformStamped()
+            t.header.frame_id = "camera_link"
+            t.header.stamp = rospy.Time.now()
+            t.child_frame_id = "object_frame"
+            t.transform.translation.x = pose.position.x
+            t.transform.translation.y = pose.position.y
+            t.transform.translation.z = pose.position.z
+            t.transform.rotation.x = pose.orientation.x
+            t.transform.rotation.y = pose.orientation.y
+            t.transform.rotation.z = pose.orientation.z
+            t.transform.rotation.w = pose.orientation.w
+
+            tfm = tf.msg.tfMessage([t])
+            self.pub_tf.publish(tfm)
+
 
 if __name__ == '__main__':
     global get_object_relative_pose
