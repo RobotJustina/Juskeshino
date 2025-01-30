@@ -14,9 +14,9 @@ class JuskeshinoVision:
         #JuskeshinoVision.cltFindLines               = rospy.ServiceProxy("/vision/line_finder/find_table_edge",             FindLines           )
         #JuskeshinoVision.cltFindHoriPlanes          = rospy.ServiceProxy("/vision/line_finder/find_horizontal_plane_ransac",FindPlanes          )
         #JuskeshinoVision.cltTrainObject             = rospy.ServiceProxy("/vision/obj_reco/detect_and_train_object",        TrainObject         )
-        JuskeshinoVision.cltDetectRecogObjects      = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_objects",   RecognizeObjects    )
-        JuskeshinoVision.cltDetectRecogObject       = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_object",    RecognizeObject     )
-        JuskeshinoVision.cltGetObjectPose           = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose",  RecognizeObject     ) 
+        JuskeshinoVision.cltDetectRecogObjects = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_objects",   RecognizeObjects) 
+        JuskeshinoVision.cltDetectRecogObject  = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_object",    RecognizeObject )
+        JuskeshinoVision.cltGetObjectPose      = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose",  RecognizeObject     ) 
         #JuskeshinoVision.cltGetPointsAbovePlane     = rospy.ServiceProxy("/vision/get_points_above_plane",                  PreprocessPointCloud)
         JuskeshinoVision.cltFindPersons             = rospy.ServiceProxy('/vision/face_recog/find_persons',      FindPersons           )
         JuskeshinoVision.cltTrainPersons            = rospy.ServiceProxy("/vision/face_reco_pkg/training_face/name",        FindPerson           )
@@ -83,7 +83,7 @@ class JuskeshinoVision:
         req = RecognizeObjectsRequest()
         req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2, timeout=1.0)
         try:
-            resp = JuskeshinoVision.cltDetectRecogObjects(req)
+            resp = JuskeshinoVision.cltDetectRecogObjects(req) #Service attended in obj_classification_node
             return [resp.recog_objects, resp.image]
         except:
             print("JuskeshinoVision.->Cannot detect and recognize objects :'(")
@@ -92,34 +92,43 @@ class JuskeshinoVision:
     def detectAndRecognizeObject(name):
         req = RecognizeObjectRequest()
         req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2, timeout=1.0)
-        req.name = name
+        req.id = name
+        resp = RecognizeObjectResponse()
         try:
-            resp = JuskeshinoVision.cltDetectRecogObject(req)
-            #print(resp.recog_object.point_cloud)
-            reqObjPose = RecognizeObjectRequest()
-            reqObjPose.point_cloud = resp.recog_object.point_cloud
-            reqObjPose.image       = resp.recog_object.image
-            reqObjPose.obj_mask    = resp.recog_object.obj_mask
-            reqObjPose.name        = resp.recog_object.id
-            respObjPose = JuskeshinoVision.cltGetObjectPose(reqObjPose)
-            return [respObjPose.recog_object, resp.image]
+            print("JuskeshinoVision.->Trying to recognize object: " + name)
+            resp = JuskeshinoVision.cltDetectRecogObject(req) #Service attended in obj_classification_node
         except:
             print("JuskeshinoVision.->Cannot detect and recognize object '" + name + "'")
             return [None, None]
-
-    def getObjectOrientation(obj): #A vision object is expected
+        
         reqObjPose = RecognizeObjectRequest()
-        reqObjPose.point_cloud = obj.point_cloud
-        reqObjPose.image       = obj.image
-        reqObjPose.obj_mask    = obj.obj_mask
-        respObjPose = JuskeshinoVision.cltGetObjectPose(reqObjPose)
-        newObj = obj
-        newObj.object_state = respObjPose.recog_object.object_state
-        newObj.category = respObjPose.recog_object.category
-        newObj.graspable = respObjPose.recog_object.graspable
-        newObj.size = respObjPose.recog_object.size
-        newObj.pose = respObjPose.recog_object.pose
-        return newObj
+        reqObjPose.point_cloud = resp.recog_object.point_cloud
+        reqObjPose.image       = resp.recog_object.image
+        reqObjPose.mask        = resp.recog_object.obj_mask
+        reqObjPose.id          = resp.recog_object.id
+        try:
+            print("JuskeshinoVision.->Trying estimate " + name + " orientation")
+            respObjPose = JuskeshinoVision.cltGetObjectPose(reqObjPose) #Service attended in obj_pose_estimator_node.py
+            respObjPose.recog_object.id = resp.recog_object.id
+            respObjPose.recog_object.header = resp.recog_object.header
+            return [respObjPose.recog_object, resp.image]
+        except:
+            print("JuskeshinoVision.->Cannot estimate orientation of '" + name + "'")
+            return [None, None]
+
+    # def getObjectOrientation(obj): #A vision object is expected
+    #     reqObjPose = RecognizeObjectRequest()
+    #     reqObjPose.point_cloud = obj.point_cloud
+    #     reqObjPose.image       = obj.image
+    #     reqObjPose.obj_mask    = obj.obj_mask
+    #     respObjPose = JuskeshinoVision.cltGetObjectPose(reqObjPose)
+    #     newObj = obj
+    #     newObj.object_state = respObjPose.recog_object.object_state
+    #     newObj.category = respObjPose.recog_object.category
+    #     newObj.graspable = respObjPose.recog_object.graspable
+    #     newObj.size = respObjPose.recog_object.size
+    #     newObj.pose = respObjPose.recog_object.pose
+    #     return newObj
         
 
     def detectAndRecognizeObjectWithoutOrientation(name):

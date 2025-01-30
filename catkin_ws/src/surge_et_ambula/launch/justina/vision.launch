@@ -10,5 +10,7 @@
 
   <node name="color_clothes_srv" pkg="color_clothes" type="color_clothes.py" output="screen"/>
   <node name="object_pose_estimator" pkg="obj_pose_estimator" type="obj_pose_estimator_node.py" output="screen"/>
-
+  <node name="face_recognizer" pkg="face_recognizer" type="face_recognizer.py" output="screen">
+    <param name="dataset" value="$(find config_files)/faces_for_recognition"/>
+  </node>
 </launch>

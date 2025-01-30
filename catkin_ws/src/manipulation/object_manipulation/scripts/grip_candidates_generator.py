@@ -202,19 +202,19 @@ def evaluating_possibility_grip(candidate_q_list, guess = None ):
 
 def callback(req):
     global listener, category, size, gs_pub
-    resp = BestGraspTrajResponse() 
-    category = req.recog_object.category
-    size = req.recog_object.size
-    trajectory_pose_graspable, pose, graspable = graspping_function() #[ req.recog_object.category]()
+    resp = GetGraspingTrajectoryResponse() 
+    category = req.obj.category
+    size = req.obj.size
+    trajectory_pose_graspable, pose, graspable = graspping_function() #[ req.obj.category]()
     if graspable:
         print("Best_Grasp_Node.-> SUITABLE POSE FOR OBJECT MANIPULATION......")
         gs_pub.publish("SUCCESS")
         broadcaster_frame_object('shoulders_left_link', 'suitable_pose' , pose)
-        resp.articular_trajectory = trajectory_pose_graspable  # Retorna trayectoria en el espacio articular
+        resp.trajectory = trajectory_pose_graspable  # Retorna trayectoria en el espacio articular
         pose_stamped = PoseStamped()
         pose_stamped.header.frame_id = 'shoulders_left_link'
         pose_stamped.pose = pose
-        resp.pose_stamped = pose_stamped
+        resp.effector_pose = pose_stamped
         resp.graspable = True
         return resp
     else: 
@@ -229,7 +229,7 @@ def main():
     debug = True
     print("Node to grab objects based on their orientation by ITZEL..............ʕ•ᴥ•ʔ")
     rospy.init_node("grip_candidates_generator")
-    rospy.Service("/manipulation/grip_candidates_generator", BestGraspTraj, callback)
+    rospy.Service("/manipulation/grip_candidates_generator", GetGraspingTrajectory, callback)
     rospy.wait_for_service( '/manipulation/la_ik_trajectory' )
     ik_srv           = rospy.ServiceProxy( '/manipulation/la_ik_trajectory' , InverseKinematicsPose2Traj )
     marker_pub       = rospy.Publisher("/vision/object_recognition/markers",  Marker, queue_size = 10) 

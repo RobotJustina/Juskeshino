@@ -8,7 +8,9 @@ from juskeshino_tools.JuskeshinoHRI import JuskeshinoHRI
 from juskeshino_tools.JuskeshinoManipulation import JuskeshinoManipulation
 from juskeshino_tools.JuskeshinoKnowledge import JuskeshinoKnowledge
 from hri_msgs.msg import RecognizedSpeech
+from vision_msgs.msg import *
 from sensor_msgs.msg import Image
+from geometry_msgs.msg import Point
 import grammar_checker
 import numpy
 
@@ -68,9 +70,9 @@ def navigate(goal):
     JuskeshinoHRI.say("I arrived to the " + goal_to_say)
 
 def take(obj_name):
-    print("GPRS.->Trying to take object: ", obj_name)
     obj_to_say = obj_name.lower()
     obj_name = obj_name.lower().replace(" ", "_")
+    print("GPRS.->Trying to take object: ", obj_name)
     JuskeshinoHRI.say("I will try to find the " + obj_to_say) 
     result = JuskeshinoSimpleTasks.object_search_orientation(obj_name, -0.9)
     if result is None:
@@ -80,21 +82,27 @@ def take(obj_name):
     found_obj, img = result
     print("GPSR.->Found Object: ", found_obj.id, found_obj.pose)
     JuskeshinoHRI.say("I found the " + obj_to_say)
-    JuskeshinoSimpleTasks.handling_location_la(found_obj.pose.position)
+    JuskeshinoSimpleTasks.handling_location_la(found_obj.pose.position) #moves the robot laterally to align with object
 
     x,y,z=found_obj.pose.position.x, found_obj.pose.position.y, found_obj.pose.position.z
-    x,y,z = JuskeshinoSimpleTasks.transformPoint(x,y,z, "shoulders_left_link", "base_link")
+    p = JuskeshinoSimpleTasks.transformPoint(Point(x,y,z), "shoulders_left_link", "base_link")
+    x,y,z = p.x, p.y, p.z
     JuskeshinoHRI.say("I am ready to pick the "+ obj_to_say)
-    JuskeshinoHardware.moveTorso(TABLE_TORSO_HEIGHT , timeout = 5.0)
+    try:
+        JuskeshinoHardware.moveTorso(TABLE_TORSO_HEIGHT , timeout = 5.0)
+    except:
+        pass
     rospy.sleep(1)
     JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
     JuskeshinoHardware.moveLeftGripper(0.7, 100.0)
     
-    manip_method = rospy.get_param("~manip_method")
+    manip_method = rospy.get_param("~manip_method", "best")
     if manip_method == "best":
+        print("GPSR.->Using 'best' method to manipulate")
         # EXECUTE TRAJECTORY
-        [response, success] = JuskeshinoManipulation.GripLa(obj)
+        [response, success] = JuskeshinoManipulation.GripLa(found_obj)
     else:
+        print("GPSR.->Using simple method to manipulate")
         response = JuskeshinoManipulation.laIk([x,y,z, 0,-1.5,0])
         success = not (response is None or response is False)
     if not success:
@@ -103,24 +111,30 @@ def take(obj_name):
         JuskeshinoHardware.moveLeftArmWithTrajectory(HOME, 10)
         return
     
-    JuskeshinoHardware.moveLeftArmWithTrajectory(response.articular_trajectory,10)
+    JuskeshinoHardware.moveLeftArmWithTrajectory(response.trajectory,10)
     success=JuskeshinoManipulation.dynamic_grasp_left_arm()
     JuskeshinoHardware.moveLeftArmWithTrajectory(HOLD_OBJ, 10)
-    JuskeshinoHRI.say("Verifying...")
     JuskeshinoHardware.moveLeftArmWithTrajectory(PREPARE_GRIP, 10)
     rospy.sleep(0.5)
     if not success:
-        JuskeshinoHRI.say("I couldn't grasp the " + obj.id )
+        JuskeshinoHRI.say("I couldn't grasp the " + obj_to_say )
         return 'help'
     else:
-        JuskeshinoHRI.say("I took correctly the " + obj.id )
+        JuskeshinoHRI.say("I took correctly the " + obj_to_say )
         return 'succed'
     
 def find_person(person_name):
     print("GPSR.->Trying to detect person: ", person_name)
-    JuskeshinoHRI.say("I will try to find " + (person_name if person_name != "" else " a person"))
+    JuskeshinoHRI.say("I will try to find " + (person_name if person_name != "" and person_name!="name" else " a person"))
     if not JuskeshinoSimpleTasks.findHumanAndApproach(90):
         JuskeshinoHRI.say("I could not find any person. I will continue.")
+        return
+    name = JuskeshinoVision.findFace()
+    if name is None or name == "":
+        JuskeshinoHRI.say("I could not find any person")
+    else:
+        JuskeshinoHRI.say("I found " + name)
+        
 
 def find_body_pose(body_pose):
     print("GPSR.->Trying to find the body pose: ", body_pose)
@@ -128,14 +142,32 @@ def find_body_pose(body_pose):
         JuskeshinoHRI.say("I will try to detect the body pose")
     else:
         JuskeshinoHRI.say("I will try to detect the " + body_pose)
-    
-    
+        
 
 def find_gesture(gesture):
-    print("GPSR.->Trying to detect the gesture: ", gesture)
-    JuskeshinoHRI.say("I will try to find the " + gesture.replace("_", " "))
-    if not JuskeshinoSimpleTasks.findHumanAndApproach(60):
+    print("GPSR.->Trying to detect the gesture: ", ("Any" if gesture == "" or gesture is None else gesture))
+    if gesture == "" or gesture is None:
+        JuskeshinoHRI.say("I will try to find a gesturing person")
+    else:
+        JuskeshinoHRI.say("I will try to find the " + gesture.replace("_", " ").lower())
+
+    if "raising" in gesture.lower() and "left" in gesture.lower(): gesture_id = Gesture.RAISING_LEFT
+    elif "raising" in gesture.lower() and "right" in gesture.lower(): gesture_id = Gesture.RAISING_RIGHT
+    else: gesture_id = None
+        
+    success, person = JuskeshinoSimpleTasks.findHumanAndApproach(60, gesture=gesture_id)
+    if not success or person is None:
         JuskeshinoHRI.say("I could not find any person. I will continue.")
+        return
+    if person.gesture.id == Gesture.POINTING_LEFT: str_gesture = "pointing to the left"
+    elif person.gesture.id == Gesture.POINTING_RIGHT: str_gesture = "pointing to the right"
+    elif person.gesture.id == Gesture.RAISING_LEFT: str_gesture = "raising its left hand"
+    elif person.gesture.id == Gesture.RAISING_RIGHT: str_gesture = "raising its right hand"
+    else: str_gesture = "not doing any gesture"
+    if gesture == "" or gesture is None:
+        JuskeshinoHRI.say("The person is  " + str_gesture)
+    else:
+        JuskeshinoHRI.say("I found the " + gesture.replace("_", " ").lower())
 
 def find_clothes(clothes):
     print("GPSR.->Trying to detect the ", clothes)
@@ -188,6 +220,8 @@ def follow(dest):
     
 
 def say(text):
+    if text == 'var_found_gesture' or text=="var_found_person":
+        return
     print("GPSR.->Saying ", text)
     if text in _objCompList:        
         JuskeshinoHRI.say("The " + text + " object is the " + _objCompListAnswers[text])
@@ -197,9 +231,11 @@ def say(text):
 def leave_object(data):
     print("GPSR.->Leaving object")
     JuskeshinoHRI.say("I am going to leave the object")
+    JuskeshinoHardware.moveLeftArm([-0.68, 0.19, -0.02, 1.47, 0 , 1.1, 0.0 ], 10)
     JuskeshinoHardware.moveLeftArm([0.38, 0.19, -0.01, 1.57, 0 , 0.25, 0.0 ], 10)
     JuskeshinoHardware.moveLeftGripper(0.8, 5.0)
     JuskeshinoHardware.moveLeftGripper(0.1, 5.0)
+    JuskeshinoHardware.moveLeftArm([-0.68, 0.19, -0.02, 1.47, 0 , 1.1, 0.0 ], 10)
     JuskeshinoHardware.moveLeftArm([0,0,0,0,0,0,0], 10)
 
 def answer_question(data):
@@ -235,7 +271,8 @@ def main():
     JuskeshinoManipulation.setNodeHandle()
     JuskeshinoKnowledge.setNodeHandle()
     # rospy.Subscriber("/hri/sp_rec/recognized", RecognizedSpeech, callback_sp_rec)
-    state = SM_INIT
+    #state = SM_INIT
+    state = SM_WAITING_FOR_COMMAND
     current_action = 0
     hardwired_tasks = {ACTION_NAVIGATE: navigate,
                        ACTION_TAKE: take,
@@ -260,7 +297,7 @@ def main():
             if JuskeshinoSimpleTasks.waitForTheDoorToBeOpen(30):
                 print("GPSR.->Door opened detected")
                 JuskeshinoHRI.say("I can see now that the door is open")
-                JuskeshinoNavigation.moveDist(1.5, 10.0)
+                #JuskeshinoNavigation.moveDist(1.5, 10.0)
                 navigate("start_position")
                 state = SM_WAITING_FOR_COMMAND
         elif state == SM_WAITING_FOR_COMMAND:
@@ -270,6 +307,7 @@ def main():
             cmd.actions = []
             cmd.sentence = JuskeshinoHRI.waitForNewSentence(15)
             cmdType = grammar_checker.getCommnandType(cmd)
+            print(cmd, cmdType)
             if cmd != '' and cmd is not None and cmdType is not None:
                 print("GPSR.->Recognized command: ", cmd.sentence, "  of Type: ", cmdType)
                 print("GPSR.->List of actions: ", cmd.actions)
@@ -277,6 +315,8 @@ def main():
                 JuskeshinoHRI.say(cmd.sentence)
                 JuskeshinoHRI.say("Please answer robot yes or robot no.")
                 state = SM_WAIT_FOR_CONFIRMATION
+            else:
+                print("GPSR.->Grammar checker could not parse sentence :'(")
         elif state == SM_WAIT_FOR_CONFIRMATION:
             print("GPSR.->Waiting for confirmation")
             sentence = JuskeshinoHRI.waitForNewSentence(10)
@@ -301,7 +341,7 @@ def main():
 
         elif state == SM_END:
             print("GPSR.->Command executed succesfully")
-            JuskeshinoHRI.startSay("I have executed the command.")
+            JuskeshinoHRI.say("I have executed the command.")
             navigate('start_position')
             state = SM_WAITING_FOR_COMMAND
         

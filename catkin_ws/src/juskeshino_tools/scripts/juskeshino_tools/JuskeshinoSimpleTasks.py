@@ -205,13 +205,13 @@ class JuskeshinoSimpleTasks:
         
         if position_obj.y > l_threshold_la:     # Objeto a la izquierda
             mov_izq = position_obj.y - l_threshold_la
-            print("mov izq", mov_izq)
+            print("JuskeshinoSimpleTasks.->mov izq", mov_izq)
             JuskeshinoNavigation.moveLateral(mov_izq , 5.0)
             return 
 
         if position_obj.y < r_threshold_la:     # Objeto a la derecha
             mov_der = position_obj.y - r_threshold_la
-            print("mov der", mov_der)
+            print("JuskeshinoSimpleTasks.->mov der", mov_der)
             JuskeshinoNavigation.moveLateral(mov_der , 5.0)
             time.sleep(0.2)
             return 
@@ -247,7 +247,7 @@ class JuskeshinoSimpleTasks:
         
     def object_search_orientation(name_obj, tilt):
         JuskeshinoHardware.moveHead(0,tilt, 5)
-        print("JuskeshinoSimpleTask.->Primer intento")
+        print("JuskeshinoSimpleTask.->First attempt to detect " + name_obj)
         [obj, img] = JuskeshinoVision.detectAndRecognizeObject(name_obj)
 
         if obj == None: # si no reconocio el objeto

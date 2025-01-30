@@ -99,7 +99,8 @@ def object_pose(centroid, principal_component, second_component, size_obj, name_
     print("angulo del objeto respecto de la superficie: ", np.rad2deg(angle_obj))
     
     # ************************************************************************************************
-    if ((angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150)) or (c_obj == 'BOWL')):  # Si el objeto es horizontal
+    #if ((angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150)) or (c_obj == 'BOWL')):  # Si el objeto es horizontal
+    if ((angle_obj < np.deg2rad(30)) or (angle_obj > np.deg2rad(150))):  # Si el objeto es horizontal
         #if (size_obj.x > MAXIMIUN_CUBE_SIZE):        # Si el objeto es
             # Realiza agarre superior
         obj_state = 'horizontal'
@@ -289,7 +290,7 @@ def object_category(size_obj, obj_state, name_obj):  # estima la forma geometric
 
 def callbackPoseObject(req):  # Request is a PointCloud2
     cv_mats= get_cv_mats_from_cloud_message(req.point_cloud)
-    obj_xyz = get_object_xyz(cv_mats , req.obj_mask)
+    obj_xyz = get_object_xyz(cv_mats , req.mask)
 
     print("******************************")
     print("**    OBJECT INFORMATION    **")
@@ -297,10 +298,10 @@ def callbackPoseObject(req):  # Request is a PointCloud2
     print("ObjPose node->CvMats shape: " , cv_mats.shape)
     print("ObjPose node->Objxyz shape:", obj_xyz.shape)
     print("ObjPose node->Objxyz size:", obj_xyz.size)
-    print("ObjPose node->OBJECT NAME:_____", req.name)
+    print("ObjPose node->OBJECT NAME:_____", req.id)
     centroid = np.mean(obj_xyz, axis=0)
     pca_vectors, eig_val, size_obj = pca(obj_xyz)
-    obj_pose, axis_x_obj, obj_state, c_obj, graspable = object_pose(centroid, pca_vectors[0], pca_vectors[1], size_obj, req.name )
+    obj_pose, axis_x_obj, obj_state, c_obj, graspable = object_pose(centroid, pca_vectors[0], pca_vectors[1], size_obj, req.id)
     
 
     print("ObjPose node->CENTROID:____", centroid)

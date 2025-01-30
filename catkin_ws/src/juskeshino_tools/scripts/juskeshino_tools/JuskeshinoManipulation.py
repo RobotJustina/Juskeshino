@@ -12,7 +12,7 @@ class JuskeshinoManipulation:
     def setNodeHandle():
     	# Se subcribe a los servicios necesarios para manipulacion de objetos
         rospy.wait_for_service("/manipulation/grip_candidates_generator")
-        #JuskeshinoManipulation.cltGripLa = rospy.ServiceProxy("/manipulation/grip_candidates_generator", GetGraspingTrajectory )
+        JuskeshinoManipulation.cltGripLa = rospy.ServiceProxy("/manipulation/grip_candidates_generator", GetGraspingTrajectory )
 
         rospy.wait_for_service("/manipulation/la_ik_trajectory")
         JuskeshinoManipulation.cltIkLaPose = rospy.ServiceProxy("/manipulation/la_ik_trajectory", InverseKinematicsPose2Traj )
@@ -56,7 +56,7 @@ class JuskeshinoManipulation:
 
     def GripLa(vision_obj):
         req = GetGraspingTrajectoryRequest()
-        req.recog_object = vision_obj
+        req.obj = vision_obj
         resp = JuskeshinoManipulation.cltGripLa(req)      # Pasa la peticion al servicio de manipulacion y retorna la respuesta
         if resp.graspable:
             return [resp, True]

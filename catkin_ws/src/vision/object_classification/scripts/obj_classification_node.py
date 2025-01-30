@@ -12,6 +12,9 @@ from yolov5.models.experimental import attempt_load
 from yolov5.utils.general import *
 import torch
 
+remap_obj_names = {'potted_meat_can':'pringles',
+                   'tomato_soup_can':'tuna'}
+
 def get_vision_object(img, label, confidence, frame_id, x0, y0, x1, y1, cloud):
     global remove_background, threshold1, threshold2
     mask = numpy.zeros((img.shape[0], img.shape[1]), dtype=numpy.uint8)
@@ -74,7 +77,7 @@ def get_vision_object(img, label, confidence, frame_id, x0, y0, x1, y1, cloud):
 
 def callback_recognize_object(req):
     global device, model, min_confidence, result_img, pub_obj
-    print("ObjRecoYolo.->Requested recognize object: " + req.name)
+    print("ObjRecoYolo.->Requested recognize object: " + req.id)
     clt_transform = rospy.ServiceProxy("/vision/point_cloud_to_base_link", PreprocessPointCloud)
     req_trans = PreprocessPointCloudRequest()
     req_trans.input_cloud = req.point_cloud
@@ -103,7 +106,9 @@ def callback_recognize_object(req):
                 x1 = int(x1.cpu().tolist())
                 y1 = int(y1.cpu().tolist())
                 name = model.names[int(cls.cpu().tolist())]
-                if req.name == name:
+                if name in remap_obj_names.keys():
+                    name = remap_obj_names[name]
+                if req.id == name:
                     msg, obj_img = get_vision_object(cv_img, name, confidence, "base_link", x0, y0, x1, y1, cloud)
                     result_img = obj_img
                     result_img = cv2.putText(result_img, name+" "+str(confidence)[:4],(x0,y0-2),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),1)
@@ -143,7 +148,9 @@ def callback_recognize_objects(req):
                 y0 = int(y0.cpu().tolist())
                 x1 = int(x1.cpu().tolist())
                 y1 = int(y1.cpu().tolist())
-                name = model.names[int(cls.cpu().tolist())] 
+                name = model.names[int(cls.cpu().tolist())]
+                if name in remap_obj_names.keys():
+                    name = remap_obj_names[name]
                 msg, obj_img = get_vision_object(cv_img, name, confidence, "base_link",x0, y0, x1, y1, cloud)
                 result_img = cv2.bitwise_or(obj_img, result_img)
                 result_img = cv2.putText(result_img, name+" "+str(confidence)[:4],(x0,y0-2),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),1)
@@ -165,7 +172,7 @@ def main():
     device = select_device('')
     print("ObjClassification.->Loading model: " + model_name)
     model  = attempt_load(model_name, device)
-    print("ObjClassification.->Loaded model")
+    print("ObjClassification.->Loaded model with labels: ", model.names)
     result_img = numpy.zeros((512, 512, 3), numpy.uint8)
     
     rospy.Service("/vision/obj_reco/detect_and_recognize_objects", RecognizeObjects, callback_recognize_objects)

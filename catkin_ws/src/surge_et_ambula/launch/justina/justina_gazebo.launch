@@ -44,9 +44,9 @@
     <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
   </node>
 
-  <include file="$(find surge_et_ambula)/launch/justina/justina_manipulation.launch"/>
+  <include file="$(find surge_et_ambula)/launch/justina/manipulation.launch"/>
   
-  <include file="$(find surge_et_ambula)/launch/justina/vision.launch"> 
+  <include file="$(find surge_et_ambula)/launch/justina/vision.launch">
   </include>
 
   <include file="$(find surge_et_ambula)/launch/justina/hri.launch">
