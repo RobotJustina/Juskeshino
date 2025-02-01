@@ -13,7 +13,7 @@
     <arg name="yaw"   value="1.57"/>
     <arg name="world" value="$(arg world)"/>
   </include>
-  <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/>
+  <!-- <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/> -->
   
   <include file="$(find surge_et_ambula)/launch/justina/navigation.launch">
     <arg name="static_map_file"  value="$(find config_files)/maps/$(arg map_name).yaml"/>
@@ -45,8 +45,8 @@
   </node>
 
   <include file="$(find surge_et_ambula)/launch/justina/justina_manipulation.launch"/>
-  <include file="$(find surge_et_ambula)/launch/justina/vision.launch">
+  <!-- <include file="$(find surge_et_ambula)/launch/justina/vision.launch">
     <arg name="debug"         value="$(arg debug)"/>
-  </include>
+  </include> -->
 
 </launch>

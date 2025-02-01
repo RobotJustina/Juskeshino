@@ -19,9 +19,7 @@
   <group ns="gm">
   <param name="gripper_description" command="xacro $(find justina_description)/urdf/justina_gripper.xacro"/>
 
-  <node name="gripper_joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui" respawn="true">
-    <remap from="robot_description" to="gripper_description"/>
-  </node>
+  
   <node name="gripper_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
     <remap from="robot_description" to="gripper_description"/>
     <param name="tf_prefix" value="gm"/>

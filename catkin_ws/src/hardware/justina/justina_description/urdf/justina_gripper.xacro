@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <robot name="justina_gripper" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:include filename="$(find justina_description)/urdf/justina_gripper.gazebo"/>
 

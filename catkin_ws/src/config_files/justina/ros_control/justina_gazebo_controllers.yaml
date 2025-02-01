@@ -95,3 +95,17 @@
     type: effort_controllers/JointPositionController
     joint: ra_grip_right
     pid: {d: 0.48, i: 11.32, p: 20.55}
+
+/gm:
+  #Gripper controlers
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 50
+  gr_la_grip_left_controller:
+    type: effort_controllers/JointPositionController
+    joint: gr_la_grip_left
+    pid: {d: 0.48, i: 5.49, p: 20.55}
+  gr_la_grip_right_controller:
+    type: effort_controllers/JointPositionController
+    joint: gr_la_grip_right
+    pid: {d: 0.48, i: 11.32, p: 20.55}

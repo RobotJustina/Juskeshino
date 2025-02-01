@@ -91,8 +91,11 @@
     </sensor>
   </gazebo>
 
-  <gazebo reference='gr_la_grip_center_joint'>
-    <preserveFixedJoint>true</preserveFixedJoint>
+  <gazebo>
+    <plugin filename="libgazebo_ros_control.so" name="gripper_ros_control">
+      <robotNamespace>/gm</robotNamespace>
+      <robotParam>/gripper_description</robotParam>
+    </plugin>
   </gazebo>
 
 </robot>

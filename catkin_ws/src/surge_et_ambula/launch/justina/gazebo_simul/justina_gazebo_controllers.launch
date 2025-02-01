@@ -6,4 +6,10 @@
                                             la_grip_right_controller ra_1_controller ra_2_controller ra_3_controller
                                             ra_4_controller ra_5_controller ra_6_controller ra_7_controller ra_grip_left_controller
                                             ra_grip_right_controller torso_controller joint_state_controller"/>
+  <group ns="gm">
+  <param name="robot_description" command="xacro $(find justina_description)/urdf/justina_gripper.xacro"/>
+  <node name="gripper_controller_spawner" pkg="controller_manager" type="spawner" respawn="true"
+        output="screen" ns="/gm" args="gr_la_grip_left_controller gr_la_grip_right_controller joint_state_controller">
+  </node>
+  </group>
 </launch>
