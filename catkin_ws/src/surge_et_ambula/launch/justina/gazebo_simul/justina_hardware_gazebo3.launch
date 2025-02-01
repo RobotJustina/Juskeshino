@@ -14,14 +14,10 @@
   <param name="gripper_description" command="xacro $(find justina_description)/urdf/justina_gripper.xacro"/>
 
   <node name="gripper_spawn" pkg="gazebo_ros" type="spawn_model" output="screen"
-        args="-urdf -param gripper_description -model justina_gripper -x 3 -y 2.3 -z 1.1"/>
+        args="-urdf -param gripper_description -model justina_gripper -x 3 -y 2.3 -z 1.1 -J gr_la_grip_left 0.707 -J gr_la_grip_right 0.707"/>
   
   <group ns="gm">
   <param name="gripper_description" command="xacro $(find justina_description)/urdf/justina_gripper.xacro"/>
-
-  <node name="gripper_joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui" respawn="true">
-    <remap from="robot_description" to="gripper_description"/>
-  </node>
   <node name="gripper_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
     <remap from="robot_description" to="gripper_description"/>
     <param name="tf_prefix" value="gm"/>
