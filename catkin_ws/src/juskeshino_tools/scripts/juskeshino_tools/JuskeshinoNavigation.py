@@ -88,7 +88,7 @@ class JuskeshinoNavigation:
 
     def getRobotPoseWrtOdom():
         listener = tf.TransformListener()
-        listener.waitForTransform('odom', 'base_link', rospy.Time(0), rospy.Duration(1.0))
+        listener.waitForTransform('odom', 'base_link', rospy.Time(0), rospy.Duration(4.0))
         ([x, y, z], rot) = listener.lookupTransform('odom', 'base_link', rospy.Time(0))
         a = 2*math.atan2(rot[2], rot[3])
         a = a - 2*math.pi if a > math.pi else a
@@ -136,21 +136,6 @@ class JuskeshinoNavigation:
     def startGetCloseXYA(x, y, angle):
         msg = PoseStamped()
         msg.header.frame_id = "map"
-        msg.pose.position.x = x
-        msg.pose.position.y = y
-        msg.pose.position.z = 0
-        msg.pose.orientation.x = 0
-        msg.pose.orientation.y = 0
-        msg.pose.orientation.z = math.sin(angle/2)
-        msg.pose.orientation.w = math.cos(angle/2)
-        JuskeshinoNavigation._navigation_status.status = GoalStatus.PENDING
-        JuskeshinoNavigation.pubMvnPlnGetCloseXYA.publish(msg)
-        rospy.sleep(0.1)
-
-    #These methods use the mvn_pln node.
-    def startGetCloseXYAOdom(x, y, angle):
-        msg = PoseStamped()
-        msg.header.frame_id = "odom"
         msg.pose.position.x = x
         msg.pose.position.y = y
         msg.pose.position.z = 0

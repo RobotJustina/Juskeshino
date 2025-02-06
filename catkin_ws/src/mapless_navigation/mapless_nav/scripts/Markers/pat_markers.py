@@ -269,17 +269,20 @@ if __name__ == "__main__":
                 path = splineCurve()
             x, y, a = JuskeshinoNavigation.getRobotPoseWrtOdom()
             print(x, y, a)
-            # JuskeshinoNavigation.startGetCloseXYAOdom(x+1, y+0.5, a)
-            #JuskeshinoNavigation.moveDist(-0.3, 10)
-            goal_path_pub.publish(path)
+            path_pub.publish(path)
             
         elif key == 'n':
             rospy.logwarn(key + "- navigate")
-            # #navigate()
-            a = 2*math.atan2(.02, 0)
-            a = a - 2*math.pi if a > math.pi else a
-            JuskeshinoNavigation.startMoveDistAngle(0, a)
-            #JuskeshinoNavigation.startMoveDist(1)
+
+            path = getPath()
+            print(nodes_count)
+            if nodes_count > 1:
+                path = splineCurve()
+            x, y, a = JuskeshinoNavigation.getRobotPoseWrtOdom()
+            print(x, y, a)
+            path_pub.publish(path)
+            goal_path_pub.publish(path)
+
         else:
             print('', end="\r")  # clear whole line
             sys.stdout.write('\x1b[2K')

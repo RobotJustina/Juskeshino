@@ -6,8 +6,6 @@ Panels:
       Expanded:
         - /TF1
         - /TF1/Frames1
-        - /PointStamped1
-        - /Path1
         - /Path1/Offset1
       Splitter Ratio: 0.5
     Tree Height: 288
@@ -351,7 +349,7 @@ Visualization Manager:
         laser_link_rear:
           Value: false
         left_arm_grip_center:
-          Value: true
+          Value: false
         left_arm_grip_left:
           Value: false
         left_arm_grip_right:
@@ -383,21 +381,21 @@ Visualization Manager:
         right_arm_grip_center:
           Value: false
         right_arm_grip_left:
-          Value: true
+          Value: false
         right_arm_grip_right:
-          Value: true
+          Value: false
         right_arm_link1:
-          Value: true
+          Value: false
         right_arm_link2:
-          Value: true
+          Value: false
         right_arm_link3:
-          Value: true
+          Value: false
         right_arm_link4:
-          Value: true
+          Value: false
         right_arm_link5:
-          Value: true
+          Value: false
         right_arm_link6:
-          Value: true
+          Value: false
         right_arm_link7:
           Value: false
         right_wheel_link:
@@ -563,7 +561,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 14.754809379577637
+      Distance: 4.552732467651367
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -571,17 +569,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -2.161820650100708
-        Y: -0.6360093951225281
-        Z: -0.6782251596450806
+        X: -10.618077278137207
+        Y: -1.9601709842681885
+        Z: 0.09892671555280685
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6997975707054138
+      Pitch: 0.8347967267036438
       Target Frame: <Fixed Frame>
-      Yaw: 6.278545379638672
+      Yaw: 6.243561267852783
     Saved: ~
 Window Geometry:
   Displays:
