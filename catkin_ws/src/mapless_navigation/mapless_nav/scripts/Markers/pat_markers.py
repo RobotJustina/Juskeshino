@@ -24,6 +24,7 @@ counter = 0
 nodes_count = 0
 splin_path = False
 
+
 def processFeedback(feedback):
     global path
 
@@ -35,10 +36,10 @@ def processFeedback(feedback):
         p = str(x) + ", " + str(y)
         print('', end='\r')
         rospy.loginfo(s + ": pose changed to (" + p + ", 0.0)")
-        path = getPath()
+        path = get_flat_path()
 
 
-def createMarker(interaction_mode, position):
+def create_marker(interaction_mode, position):
     int_marker = InteractiveMarker()
     int_marker.header.frame_id = "odom"
     int_marker.pose.position = position
@@ -94,13 +95,13 @@ def globalGoalCallback(msg):
     goal_y = msg.point.y
     position = Point(round(goal_x, 2), round(goal_y, 2), 0)
     nodes_count += 1
-    createMarker(InteractiveMarkerControl.NONE, position)
+    create_marker(InteractiveMarkerControl.NONE, position)
     print(f"Clicked ({goal_x:.2f}, {goal_y:.2f}, 0)")
     print("\rnodes: ", nodes_count)
-    path = getPath()
+    path = get_flat_path()
 
 
-def getKey(set, timeout):
+def get_key(set, timeout):
     tty.setraw(sys.stdin.fileno())
     rlist, _, _ = select([sys.stdin], [], [], timeout)
     if rlist:
@@ -112,8 +113,9 @@ def getKey(set, timeout):
     return key
 
 
-def removeNodes():
+def remove_nodes():
     global nodes_count
+
     if nodes_count > 0:
         marker_server.erase("path_node_" + str(nodes_count))
         marker_server.applyChanges()
@@ -124,28 +126,46 @@ def removeNodes():
 
 def clear_nodes():
     global path
-    for i in range(nodes_count):
-        removeNodes()
+    for _ in range(nodes_count):
+        remove_nodes()
     print("\rnodes: ", nodes_count)
-    path = getPath()
+    path = get_flat_path()
     path_pub.publish(path)
-    splin_path = False
 
 
-def getRobotPoseOdom():
+def get_robot_pose_odom():
     listener = tf.TransformListener()
-    listener.waitForTransform(
-        'odom', 'base_link', rospy.Time(0), rospy.Duration(1.0))
-    ([x, y, z], rot) = listener.lookupTransform(
-        'odom', 'base_link', rospy.Time(0))
+    listener.waitForTransform('odom', 'base_link', rospy.Time(0), rospy.Duration(1.0))
+    ([x, y, z], rot) = listener.lookupTransform('odom', 'base_link', rospy.Time(0))
     return [x, y, z, rot]
 
 
-def getPath():
+def restart_path(p):
+    while True:
+        [x, y, _, rot] = get_robot_pose_odom()
+        theta = 2*math.atan2(rot[2], rot[3])
+        if abs(theta) > math.pi:
+            theta = theta - (np.sign(theta)*2*math.pi)
+        pos = p.pose.position
+        dx = pos.x - x
+        dy = pos.y - y
+        angle_to_goal = math.atan2(dy, dx)
+        delta_angle = angle_to_goal - theta
+        if abs(delta_angle) > math.pi:
+            delta_angle = delta_angle - (np.sign(delta_angle)*2*math.pi)
+        JuskeshinoNavigation.startMoveDistAngle(0, delta_angle)
+        if abs(delta_angle) < 1.2:
+            JuskeshinoNavigation.startMoveDistAngle(0, 0)
+            break
+    JuskeshinoNavigation.startMoveDist(0.5)
+    rospy.sleep(1.5)
+
+
+def get_flat_path():
     path = Path()
     path.header = Header(frame_id='odom')
     if nodes_count > 0:
-        x, y, _, rot = getRobotPoseOdom()
+        x, y, _, rot = get_robot_pose_odom()
         pose = PoseStamped()
         pose.pose.position.x = x
         pose.pose.position.y = y
@@ -161,11 +181,10 @@ def getPath():
             marker = marker_server.get(mark_name)
             pose.pose = marker.pose
             path.poses.append(pose)
-
     return path
 
 
-def splineCurve():
+def spline_curve():
     global path
 
     x = []
@@ -176,18 +195,12 @@ def splineCurve():
 
     x = np.expand_dims(x, axis=0)
     y = np.expand_dims(y, axis=0)
-    print(x.shape)
-    print(y.shape)
     xy = np.vstack((x, y))
-    print(xy.shape)
     N = nodes_count+1
-    print("n", nodes_count)
     t = np.linspace(0, 1, N)
     spline = interp1d(t, xy, kind="quadratic", bounds_error=False)
     t_fine = np.linspace(0, 1, N**2)
     x_fine, y_fine = spline(t_fine)
-    print(x_fine)
-    print(x_fine.shape)
 
     path = Path()
     path.header = Header(frame_id='odom')
@@ -199,51 +212,49 @@ def splineCurve():
 
     return path
 
+def calculate_soft_path():
+    global path, old_path, path_pub
+    path = get_flat_path()
+    if nodes_count > 1:
+        path = spline_curve()
+    path_pub.publish(path)
+    old_path = get_flat_path()
 
-def navigate():
-    global path
-    pt = Path()
-    #pt.poses
-    first = False
-    count = 0
-    for p in path.poses:
-        if first:
-            pass
-            #first = False
-        else:    
-            print(type(p))
-            print(p)
-            rot = p.pose.orientation
-            a = 2*math.atan2(rot.z, rot.w)
-            a = a - 2*math.pi if a > math.pi else a
-            JuskeshinoNavigation.startGetCloseXYAOdom(p.pose.position.x, p.pose.position.y, a)
+
+def is_same_pat(path1, path2):
+    count = 1
+    if len(path1.poses) == len(path2.poses):
+        for p1, p2 in zip(path1.poses, path2.poses):
+            if p1.pose != p2.pose and count < 0:
+                return False
             count += 1
-            first = True
-    print(count)
+        return True
+    else: 
+        return False
+
+
 
 if __name__ == "__main__":
-    global path
+    global path, old_path, path_pub
 
     rospy.init_node("path_controls")
-    jn = JuskeshinoNavigation()
-    
+
     JuskeshinoNavigation.setNodeHandle()
 
     rospy.Subscriber('/clicked_point', PointStamped, globalGoalCallback)
-    # /simple_move/goal_path # /goal_path
     path_pub = rospy.Publisher('/goal_path', Path, queue_size=10)
-    # /simple_move/goal_path # /goal_path 
-    goal_path_pub = rospy.Publisher('/simple_move/goal_path', Path, queue_size=10) #/mapless/goal_path
+    goal_path_pub = rospy.Publisher('/simple_move/goal_path', Path, queue_size=10)
 
     set = termios.tcgetattr(sys.stdin)
     key_timeout = rospy.get_param("~key_timeout", 0.5)
     marker_server = InteractiveMarkerServer("path_controls")
     path = Path()
+    old_path = path
     path.header = Header(frame_id='odom')
 
-    rate = rospy.Rate(5)  # hz
+    rate = rospy.Rate(5)
     while not rospy.is_shutdown():
-        key = getKey(set, key_timeout)
+        key = get_key(set, key_timeout)
         key = key.lower()
 
         if key == 'q':
@@ -252,34 +263,30 @@ if __name__ == "__main__":
             clear_nodes()
             rospy.signal_shutdown('')
         elif key == 'r':
-            print(key + "- remove node")
-            removeNodes()
+            print(key + "- remove node", end="\r")
+            remove_nodes()
             print("\rnodes: ", nodes_count)
-            path = getPath()
+            path = get_flat_path()
         elif key == 'c':
             rospy.logwarn(key + "- remove all nodes")
             clear_nodes()
         elif key == 'p':
             rospy.logwarn(key + "- path preview")
-            
-            path = getPath()
-            print(nodes_count)
-            if nodes_count > 1:
-                path = splineCurve()
-            x, y, a = JuskeshinoNavigation.getRobotPoseWrtOdom()
-            print(x, y, a)
-            path_pub.publish(path)
-            
+            calculate_soft_path()
+
         elif key == 'n':
             rospy.logwarn(key + "- navigate")
-
-            path = getPath()
-            print(nodes_count)
+            if nodes_count == 0:
+                rospy.logerr("Use Publish Point to inset path nodes")
+                continue
+            path = get_flat_path()
+            if is_same_pat(old_path, path):
+                restart_path(path.poses[0])
+            calculate_soft_path()
             if nodes_count > 1:
-                path = splineCurve()
-            x, y, a = JuskeshinoNavigation.getRobotPoseWrtOdom()
-            print(x, y, a)
-            path_pub.publish(path)
+                path = get_flat_path()
+                path = spline_curve()
+                path_pub.publish(path)
             goal_path_pub.publish(path)
 
         else:
@@ -288,5 +295,3 @@ if __name__ == "__main__":
 
         path_pub.publish(path)
         rate.sleep()
-
-    # rospy.spin()
