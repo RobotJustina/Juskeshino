@@ -19,6 +19,7 @@
   <arg name="move_head" default="True"/>
   <arg name="use_pot_fields" default="False"/>
   <arg name="/base_link_name" default="base_link"/>
+  <arg name="/target_frame" default="map"/>
 
   <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
 
@@ -44,7 +45,7 @@
   <node name="map_server" pkg="map_server" type="map_server" output="screen" args="$(find config_files)/maps/AllBlank.yaml _frame_id:=odom">
   </node>
 
-  <node name="simple_move" pkg="simple_move" type="simple_move_node" output="screen">
+  <!-- <node name="simple_move" pkg="simple_move" type="simple_move_node" output="screen">
     <param name="max_linear_speed" value="$(arg max_linear_speed)"/>
     <param name="max_angular_speed" value="$(arg max_angular_speed)"/>
     <param name="min_linear_speed" value="$(arg min_linear_speed)"/>
@@ -57,6 +58,24 @@
     <param name="move_head" value="$(arg move_head)"/>
     <param name="use_pot_fields" value="$(arg use_pot_fields)"/>
     <param name="/base_link_name" value="$(arg /base_link_name)"/>
+    <param name="/target_frame" value="$(arg /target_frame)"/>
+  </node> -->
+
+  <node name="simple_move_odom" pkg="simple_move" type="simple_move_odom_node" output="screen">
+    <param name="max_linear_speed" value="$(arg max_linear_speed)"/>
+    <param name="max_angular_speed" value="$(arg max_angular_speed)"/>
+    <param name="min_linear_speed" value="$(arg min_linear_speed)"/>
+    <param name="control_alpha" value="$(arg control_alpha)"/>
+    <param name="control_beta" value="$(arg control_beta)"/>
+    <param name="linear_acceleration" value="$(arg linear_acceleration)"/>
+    <param name="fine_dist_tolerance" value="$(arg fine_dist_tolerance)"/>
+    <param name="coarse_dist_tolerance" value="$(arg coarse_dist_tolerance)"/>
+    <param name="angle_tolerance" value="$(arg angle_tolerance)"/>
+    <param name="move_head" value="$(arg move_head)"/>
+    <param name="use_pot_fields" value="$(arg use_pot_fields)"/>
+    <param name="/base_link_name" value="$(arg /base_link_name)"/>
+    <param name="/target_frame" value="$(arg /target_frame)"/>
+    
   </node>
 
   <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 1 map odom 100" />

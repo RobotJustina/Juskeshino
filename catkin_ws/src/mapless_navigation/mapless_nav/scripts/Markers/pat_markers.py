@@ -232,9 +232,8 @@ if __name__ == "__main__":
     rospy.Subscriber('/clicked_point', PointStamped, globalGoalCallback)
     # /simple_move/goal_path # /goal_path
     path_pub = rospy.Publisher('/goal_path', Path, queue_size=10)
-    # /simple_move/goal_path # /goal_path
-    goal_path_pub = rospy.Publisher(
-        '/mapless/goal_path', Path, queue_size=10)
+    # /simple_move/goal_path # /goal_path 
+    goal_path_pub = rospy.Publisher('/simple_move/goal_path', Path, queue_size=10) #/mapless/goal_path
 
     set = termios.tcgetattr(sys.stdin)
     key_timeout = rospy.get_param("~key_timeout", 0.5)
