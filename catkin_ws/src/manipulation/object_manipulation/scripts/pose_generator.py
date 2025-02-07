@@ -16,6 +16,11 @@ from geometry_msgs.msg import Pose, PointStamped
 from manip_msgs.srv import DataCapture
 
 BASE_JUSTINA_VECTOR = np.array([0.0,-1.0,0.0])
+VG_PLANE = {
+    "XY": vg.basis.z,
+    "YZ": vg.basis.x,
+    "ZX": vg.basis.y
+}
 
 def generate_random_pose():
     rpose = Pose()
@@ -83,26 +88,39 @@ def reset_simulation():
     pub_object.publish(obj)
     grasp_attempts = 0
     
-def get_angle_in_plane(gr_point, obj_point, plane):
-    gr_vector = np.array([gr_point.x - obj_point.x, gr_point.y - obj_point.y, gr_point.z - obj_point.z])
-    
-    gr_angle = vg.signed_angle(gr_vector, BASE_JUSTINA_VECTOR, look=vg.basis.z)
-    print(gr_angle)
-    xs = [gr_vector[0],BASE_JUSTINA_VECTOR[0]]
-    ys = [gr_vector[1],BASE_JUSTINA_VECTOR[1]]
-    zs = [gr_vector[2],BASE_JUSTINA_VECTOR[2]]
-    colors = ['b','r']
+def show_graph(V1,V2,W1,W2):
     fig, ax = plt.subplots(figsize=(10, 10))
-    ax.quiver(0, 0, gr_vector[0], gr_vector[1], angles='xy', scale_units='xy', scale=1, color='r')
-    ax.quiver(0, 0, BASE_JUSTINA_VECTOR[0], BASE_JUSTINA_VECTOR[1], angles='xy', scale_units='xy', scale=1, color='b')
-
-    #ax.set_xlim([-3, 3])
-    #ax.set_ylim([-3, 3])
-
+    ax.quiver(0, 0, V1, V2, angles='xy', scale_units='xy', scale=1, color='r')
+    ax.quiver(0, 0, W1, W2, angles='xy', scale_units='xy', scale=1, color='b')
+    ax.set_xlim([-3, 3])
+    ax.set_ylim([-3, 3])
     plt.grid()
     plt.show()
-    return gr_angle
 
+def get_angle_in_plane(gr_point, obj_point, plane="XY",show_plot=False):
+    gr_vector = np.array([gr_point.x - obj_point.x, gr_point.y - obj_point.y, gr_point.z - obj_point.z])
+    gr_vector = gr_vector/np.linalg.norm(gr_vector)
+    angle_XY = vg.signed_angle(gr_vector, BASE_JUSTINA_VECTOR, look=vg.basis.z)
+    angle_YZ = vg.signed_angle(gr_vector, BASE_JUSTINA_VECTOR, look=vg.basis.x)
+    angle_ZX = vg.signed_angle(gr_vector, np.array([1.0,0.0,0.0]), look=vg.basis.y)
+    print(angle_XY, angle_YZ, angle_ZX)
+    if show_plot:
+        if plane == "XY":
+            show_graph(gr_vector[0], gr_vector[1],BASE_JUSTINA_VECTOR[0], BASE_JUSTINA_VECTOR[1])
+        if plane == "YZ":
+            show_graph(gr_vector[1], gr_vector[2],BASE_JUSTINA_VECTOR[0], BASE_JUSTINA_VECTOR[1])
+        if plane == "ZX":
+            show_graph(gr_vector[0], gr_vector[2],1.0, 0.0)
+    return angle_XY, angle_YZ, angle_ZX
+
+def is_pose_valid(angle_XY, angle_YZ, angle_ZX):
+    XY_OFFSET = 90.0
+    YZ_OFFSET = 0.0
+    ZX_OFFSET = 0.0
+    if  45 <= angle_XY +  XY_OFFSET <= 135: return False
+    if not (10 <= angle_YZ +  YZ_OFFSET <= 170): return False
+    if not (10 <= angle_ZX +  ZX_OFFSET <= 170): return False
+    return True
 
 def main():
     global state_msg, grasp_trajectory_found, justina_origin_pose, obj, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
@@ -121,12 +139,12 @@ def main():
     obj_shape = 'apple'
     rospy.init_node('object_grip_test')
     print("Starting grip test")
-    rospy.Subscriber('/manipulation/grasp/grasp_status' ,String ,callback_grasp_status)
-    rospy.Subscriber('/left_arm_grip_left_sensor' ,ContactsState ,callback_left_grip_sensor)
-    rospy.Subscriber('/left_arm_grip_right_sensor' ,ContactsState ,callback_right_grip_sensor)
-    rospy.wait_for_service('/manipulation/grasp/data_capture_service')
+    # rospy.Subscriber('/manipulation/grasp/grasp_status' ,String ,callback_grasp_status)
+    # rospy.Subscriber('/left_arm_grip_left_sensor' ,ContactsState ,callback_left_grip_sensor)
+    # rospy.Subscriber('/left_arm_grip_right_sensor' ,ContactsState ,callback_right_grip_sensor)
+    # rospy.wait_for_service('/manipulation/grasp/data_capture_service')
     get_object_relative_pose = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
-    capture = rospy.ServiceProxy('/manipulation/grasp/data_capture_service', DataCapture)
+    # capture = rospy.ServiceProxy('/manipulation/grasp/data_capture_service', DataCapture)
     set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
     pub_object = rospy.Publisher("/plannning/simple_task/take_object", String, queue_size=10)
     pub_la = rospy.Publisher("/hardware/left_arm/goal_pose", Float64MultiArray, queue_size=10)
@@ -161,8 +179,11 @@ def main():
                                                         gr_pose_relative_to_base_link.orientation.w])
             print(math.degrees(roll),math.degrees(pitch),math.degrees(yaw))
         if command =="a":
-            get_angle_in_plane(get_object_relative_pose("justina_gripper","world").pose.position,
-                               get_object_relative_pose(obj_shape,"world").pose.position,1)
+            # get_angle_in_plane(get_object_relative_pose("justina_gripper","world").pose.position,
+            #                    get_object_relative_pose(obj_shape,"world").pose.position,"XY")
+            angle_XY, angle_YZ, angle_ZX = get_angle_in_plane(get_object_relative_pose("justina_gripper","world").pose.position, 
+                                                              get_object_relative_pose(obj_shape,"world").pose.position,"XY")
+            print(is_pose_valid(angle_XY, angle_YZ, angle_ZX))
         loop.sleep()
 
 if __name__ == '__main__':
