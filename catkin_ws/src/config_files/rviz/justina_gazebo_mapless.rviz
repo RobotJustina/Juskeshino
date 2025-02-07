@@ -6,6 +6,8 @@ Panels:
       Expanded:
         - /TF1
         - /TF1/Frames1
+        - /PointStamped1
+        - /Path1
         - /Path1/Offset1
       Splitter Ratio: 0.5
     Tree Height: 288
@@ -497,7 +499,7 @@ Visualization Manager:
       Name: PointStamped
       Queue Size: 10
       Radius: 0.10000000149011612
-      Topic: /clicked_point
+      Topic: /mapless_nav/goal
       Unreliable: false
       Value: true
     - Alpha: 1
@@ -521,7 +523,7 @@ Visualization Manager:
       Radius: 0.029999999329447746
       Shaft Diameter: 0.10000000149011612
       Shaft Length: 0.10000000149011612
-      Topic: /goal_path
+      Topic: /mapless_nav/goal_path
       Unreliable: false
       Value: true
     - Class: rviz/InteractiveMarkers
@@ -561,7 +563,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.552732467651367
+      Distance: 6.644638538360596
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -569,17 +571,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -10.618077278137207
-        Y: -1.9601709842681885
-        Z: 0.09892671555280685
+        X: -6.145566463470459
+        Y: 1.6196736097335815
+        Z: -0.8910768628120422
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8347967267036438
+      Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
-      Yaw: 6.243561267852783
+      Yaw: 0.07037633657455444
     Saved: ~
 Window Geometry:
   Displays:

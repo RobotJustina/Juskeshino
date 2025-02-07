@@ -7,19 +7,19 @@
   <!-- -1.57   0.0 -->
   <arg name="world" default="bio_robotics_lab"/>
 
-  <arg name="max_linear_speed" default="0.5"/>
+  <arg name="max_linear_speed" default="0.8"/> <!-- 0.5 -->
   <arg name="min_linear_speed" default="0.05"/>
-  <arg name="max_angular_speed" default="0.8"/>
-  <arg name="control_alpha" default="0.8"/>
-  <arg name="control_beta" default="0.5"/>
+  <arg name="max_angular_speed" default="1.0"/> <!-- 0.5 -->
+  <arg name="control_alpha" default="0.1"/> <!-- 0.8 w0.1-->
+  <arg name="control_beta" default="0.3"/> <!-- 0.5 -->
   <arg name="linear_acceleration" default="0.1"/>
-  <arg name="fine_dist_tolerance" default="0.03"/>
-  <arg name="coarse_dist_tolerance" default="0.2"/>
+  <arg name="fine_dist_tolerance" default="0.02"/>
+  <arg name="coarse_dist_tolerance" default="0.1"/>
   <arg name="angle_tolerance" default="0.05"/>
   <arg name="move_head" default="True"/>
   <arg name="use_pot_fields" default="False"/>
   <arg name="/base_link_name" default="base_link"/>
-  <arg name="/target_frame" default="map"/>
+  <arg name="/target_frame" default="odom"/>
 
   <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
 

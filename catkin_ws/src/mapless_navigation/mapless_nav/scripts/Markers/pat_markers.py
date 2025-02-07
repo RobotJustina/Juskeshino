@@ -2,31 +2,29 @@
 import rospy
 import tf
 from interactive_markers.interactive_marker_server import InteractiveMarkerFeedback, InteractiveMarkerServer
-from interactive_markers.menu_handler import MenuHandler
 from visualization_msgs.msg import InteractiveMarkerControl, Marker, InteractiveMarker
 from geometry_msgs.msg import Point, PointStamped, PoseStamped
 from nav_msgs.msg import Path
-from std_msgs.msg import Header
+from std_msgs.msg import Header, Bool
+from actionlib_msgs.msg import GoalStatus
 import sys
 import termios
 import tty
 from select import select
 from scipy.interpolate import interp1d
-import matplotlib.pyplot as plt
 import numpy as np
-from juskeshino_tools.JuskeshinoNavigation import JuskeshinoNavigation
-from general_utils import files_utils
 import math
 
+from juskeshino_tools.JuskeshinoNavigation import JuskeshinoNavigation
+# from general_utils import files_utils
+
+
 marker_server = None
-menu_handler = MenuHandler()
-counter = 0
 nodes_count = 0
-splin_path = False
 
 
 def processFeedback(feedback):
-    global path
+    global path, goal_pub
 
     s = "Marker '" + feedback.marker_name
     s += "' / control '" + feedback.control_name + "'"
@@ -37,6 +35,15 @@ def processFeedback(feedback):
         print('', end='\r')
         rospy.loginfo(s + ": pose changed to (" + p + ", 0.0)")
         path = get_flat_path()
+        path
+        
+        if feedback.marker_name == "path_node_" + str(nodes_count):
+            marker = marker_server.get(feedback.marker_name)
+            point = PointStamped()
+            point.header.frame_id = "odom"
+            point.header.stamp = rospy.Time.now()
+            point.point = marker.pose.position
+            goal_pub.publish(point)
 
 
 def create_marker(interaction_mode, position):
@@ -44,7 +51,6 @@ def create_marker(interaction_mode, position):
     int_marker.header.frame_id = "odom"
     int_marker.pose.position = position
     int_marker.scale = 1
-
     int_marker.name = "path_node_" + str(nodes_count)
     int_marker.description = "path_node_" + str(nodes_count)
 
@@ -89,7 +95,7 @@ def create_marker(interaction_mode, position):
 
 def globalGoalCallback(msg):
     global goal_x, goal_y
-    global path, nodes_count
+    global path, nodes_count, goal_pub
 
     goal_x = msg.point.x
     goal_y = msg.point.y
@@ -99,6 +105,18 @@ def globalGoalCallback(msg):
     print(f"Clicked ({goal_x:.2f}, {goal_y:.2f}, 0)")
     print("\rnodes: ", nodes_count)
     path = get_flat_path()
+    
+    point = PointStamped()
+    point.header.frame_id = "odom"
+    point.header.stamp = rospy.Time.now()
+    point.point = position
+    goal_pub.publish(point)
+
+
+def stopSaveDataCallback(msg):
+    global save_enable
+    print(">> GOAL status reached:", msg.status)
+    save_enable = False
 
 
 def get_key(set, timeout):
@@ -108,7 +126,6 @@ def get_key(set, timeout):
         key = sys.stdin.read(1)
     else:
         key = ''
-
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, set)
     return key
 
@@ -126,6 +143,7 @@ def remove_nodes():
 
 def clear_nodes():
     global path
+
     for _ in range(nodes_count):
         remove_nodes()
     print("\rnodes: ", nodes_count)
@@ -154,7 +172,8 @@ def restart_path(p):
         if abs(delta_angle) > math.pi:
             delta_angle = delta_angle - (np.sign(delta_angle)*2*math.pi)
         JuskeshinoNavigation.startMoveDistAngle(0, delta_angle)
-        if abs(delta_angle) < 1.2:
+        rospy.sleep(0.1)
+        if abs(delta_angle) < 0.3:
             JuskeshinoNavigation.startMoveDistAngle(0, 0)
             break
     JuskeshinoNavigation.startMoveDist(0.5)
@@ -235,22 +254,27 @@ def is_same_pat(path1, path2):
 
 
 if __name__ == "__main__":
-    global path, old_path, path_pub
+    global path, old_path
+    global path_pub, save_enable, goal_pub
 
     rospy.init_node("path_controls")
 
     JuskeshinoNavigation.setNodeHandle()
 
     rospy.Subscriber('/clicked_point', PointStamped, globalGoalCallback)
-    path_pub = rospy.Publisher('/goal_path', Path, queue_size=10)
+    rospy.Subscriber('/simple_move/goal_reached', GoalStatus, stopSaveDataCallback)
+    path_pub = rospy.Publisher('/mapless_nav/goal_path', Path, queue_size=10)
     goal_path_pub = rospy.Publisher('/simple_move/goal_path', Path, queue_size=10)
+    save_path_pub = rospy.Publisher('/mapless_nav/save_dataset', Bool, queue_size=10)
+    goal_pub = rospy.Publisher('/mapless_nav/goal', PointStamped, queue_size=10)
 
     set = termios.tcgetattr(sys.stdin)
     key_timeout = rospy.get_param("~key_timeout", 0.5)
     marker_server = InteractiveMarkerServer("path_controls")
     path = Path()
-    old_path = path
     path.header = Header(frame_id='odom')
+    old_path = path
+    save_enable = False
 
     rate = rospy.Rate(5)
     while not rospy.is_shutdown():
@@ -262,26 +286,34 @@ if __name__ == "__main__":
             rospy.logwarn("Exit selected")
             clear_nodes()
             rospy.signal_shutdown('')
+
         elif key == 'r':
             print(key + "- remove node", end="\r")
             remove_nodes()
             print("\rnodes: ", nodes_count)
             path = get_flat_path()
+
         elif key == 'c':
             rospy.logwarn(key + "- remove all nodes")
             clear_nodes()
+
         elif key == 'p':
             rospy.logwarn(key + "- path preview")
             calculate_soft_path()
 
-        elif key == 'n':
-            rospy.logwarn(key + "- navigate")
+        elif key == 'n' or key == 's':
+            cad = "- navigate"
+            
             if nodes_count == 0:
                 rospy.logerr("Use Publish Point to inset path nodes")
                 continue
             path = get_flat_path()
             if is_same_pat(old_path, path):
-                restart_path(path.poses[0])
+                restart_path(path.poses[-2])
+            if key == 's':
+                cad = "- navigate and save"
+                save_enable = True
+            rospy.logwarn(key + cad)
             calculate_soft_path()
             if nodes_count > 1:
                 path = get_flat_path()
@@ -294,4 +326,5 @@ if __name__ == "__main__":
             sys.stdout.write('\x1b[2K')
 
         path_pub.publish(path)
+        save_path_pub.publish(save_enable)
         rate.sleep()

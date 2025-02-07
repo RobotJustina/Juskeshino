@@ -10,6 +10,8 @@
 #include "std_msgs/Empty.h"
 #include "tf/transform_listener.h"
 #include "actionlib_msgs/GoalStatus.h"
+#include "nav_msgs/Odometry.h"
+
 
 #define RATE 30
 
@@ -317,6 +319,7 @@ int main(int argc, char** argv)
     ros::Publisher pub_goal_reached     = n.advertise<actionlib_msgs::GoalStatus>("/simple_move/goal_reached", 1); 
     ros::Publisher pub_cmd_vel          = n.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
     ros::Publisher pub_head_goal_pose   = n.advertise<std_msgs::Float64MultiArray>("/hardware/head/goal_pose", 1);
+    ros::Publisher pub_odom             = n.advertise<nav_msgs::Odometry>("/odom", 1);
 
     actionlib_msgs::GoalStatus msg_goal_reached;
     int state = SM_INIT;
@@ -334,6 +337,9 @@ int main(int argc, char** argv)
     float temp_k = 0;
     int attempts = 0;
     float global_error = 0;
+    geometry_msgs::Twist robot_twist = geometry_msgs::Twist();
+    nav_msgs::Odometry odom;
+
     while(ros::ok())
     {
         if(stop)
@@ -346,8 +352,8 @@ int main(int argc, char** argv)
         }
         if(new_pose || new_path)
             state = SM_WAITING_FOR_TASK;
-        
-        
+
+            
         switch(state)
         {
         case SM_INIT:
@@ -357,6 +363,18 @@ int main(int argc, char** argv)
 
             
         case SM_WAITING_FOR_TASK:
+            get_robot_position_wrt_odom(tf_listener, robot_x, robot_y, robot_t, target_frame);
+            pub_cmd_vel.publish(geometry_msgs::Twist());
+
+            odom.header.stamp = ros::Time::now();
+            odom.header.frame_id = "odom";
+            odom.pose.pose.position.x = robot_x;
+            odom.pose.pose.position.y = robot_y;
+            odom.pose.pose.position.z = 0.0;
+            odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_t);
+            odom.child_frame_id = "base_link";
+            odom.twist.twist = robot_twist;
+            pub_odom.publish(odom);
             if(new_pose)
             {
                 get_goal_position_wrt_odom(goal_distance, goal_angle, tf_listener, goal_x, goal_y, goal_t);
@@ -401,14 +419,25 @@ int main(int argc, char** argv)
                 state = SM_GOAL_POSE_FAILED;
                 std::cout << "SimpleMove.->Timeout exceeded while trying to reach goal position. Current state: GOAL_POSE_ACCEL." << std::endl;
             }
-            pub_cmd_vel.publish(calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
-                                                 max_angular_speed, alpha*2, beta/4, goal_distance < 0, move_lat));
+            robot_twist = calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
+                                                 max_angular_speed, alpha*2, beta/4, goal_distance < 0, move_lat);
+            pub_cmd_vel.publish(robot_twist);
+
+            odom.header.stamp = ros::Time::now();
+            odom.header.frame_id = "odom";
+            odom.pose.pose.position.x = robot_x;
+            odom.pose.pose.position.y = robot_y;
+            odom.pose.pose.position.z = 0.0;
+            odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_t);
+            odom.child_frame_id = "base_link";
+            odom.twist.twist = robot_twist;
+            pub_odom.publish(odom);
             current_linear_speed += (linear_acceleration*5)/RATE;
             break;
 
             
         case SM_GOAL_POSE_CRUISE:
-            get_robot_position_wrt_odom(tf_listener, robot_x, robot_y, robot_t,  target_frame);
+            get_robot_position_wrt_odom(tf_listener, robot_x, robot_y, robot_t, target_frame);
             global_error = sqrt((goal_x - robot_x)*(goal_x - robot_x) + (goal_y - robot_y)*(goal_y - robot_y));
             if(global_error < fine_dist_tolerance)
                 state = SM_GOAL_POSE_CORRECT_ANGLE;
@@ -422,8 +451,19 @@ int main(int argc, char** argv)
                 state = SM_GOAL_POSE_FAILED;
                 std::cout << "SimpleMove.->Timeout exceeded while trying to reach goal position. Current state: GOAL_POSE_CRUISE." << std::endl;
             }
-            pub_cmd_vel.publish(calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
-                                                 max_angular_speed, alpha*2, beta/4, goal_distance < 0, move_lat));
+            robot_twist = calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
+                                                 max_angular_speed, alpha*2, beta/4, goal_distance < 0, move_lat);
+            pub_cmd_vel.publish(robot_twist);
+
+            odom.header.stamp = ros::Time::now();
+            odom.header.frame_id = "odom";
+            odom.pose.pose.position.x = robot_x;
+            odom.pose.pose.position.y = robot_y;
+            odom.pose.pose.position.z = 0.0;
+            odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_t);
+            odom.child_frame_id = "base_link";
+            odom.twist.twist = robot_twist;
+            pub_odom.publish(odom);
             break;
 
             
@@ -439,20 +479,42 @@ int main(int argc, char** argv)
             }
             current_linear_speed = temp_k * sqrt(global_error);
             if(current_linear_speed < min_linear_speed) current_linear_speed = min_linear_speed;
-            pub_cmd_vel.publish(calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
-                                                 max_angular_speed, alpha*2, beta/4, goal_distance < 0, move_lat, use_pot_fields, rejection_force.y));
+            robot_twist = calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
+                                                 max_angular_speed, alpha*2, beta/4, goal_distance < 0, move_lat, use_pot_fields, rejection_force.y);
+            pub_cmd_vel.publish(robot_twist);
+
+            odom.header.stamp = ros::Time::now();
+            odom.header.frame_id = "odom";
+            odom.pose.pose.position.x = robot_x;
+            odom.pose.pose.position.y = robot_y;
+            odom.pose.pose.position.z = 0.0;
+            odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_t);
+            odom.child_frame_id = "base_link";
+            odom.twist.twist = robot_twist;
+            pub_odom.publish(odom);
             break;
 
 
         case SM_GOAL_POSE_CORRECT_ANGLE:
-            get_robot_position_wrt_odom(tf_listener, robot_x, robot_y, robot_t,  target_frame);
+            get_robot_position_wrt_odom(tf_listener, robot_x, robot_y, robot_t, target_frame);
             global_error = (goal_t - robot_t);
             if (global_error > M_PI) global_error-=2*M_PI;
             if (global_error <= -M_PI) global_error+=2*M_PI;
             global_error = fabs(global_error);
             if(global_error < angle_tolerance)
                 state = SM_GOAL_POSE_FINISH;
-            pub_cmd_vel.publish(calculate_speeds(robot_t, goal_t, max_angular_speed, beta/4, move_lat));
+            robot_twist = calculate_speeds(robot_t, goal_t, max_angular_speed, beta/4, move_lat);
+            pub_cmd_vel.publish(robot_twist);
+            
+            odom.header.stamp = ros::Time::now();
+            odom.header.frame_id = "odom";
+            odom.pose.pose.position.x = robot_x;
+            odom.pose.pose.position.y = robot_y;
+            odom.pose.pose.position.z = 0.0;
+            odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_t);
+            odom.child_frame_id = "base_link";
+            odom.twist.twist = robot_twist;
+            pub_odom.publish(odom);
             if(--attempts <= 0)
             {
                 state = SM_GOAL_POSE_FAILED;
@@ -489,7 +551,7 @@ int main(int argc, char** argv)
                 state = SM_GOAL_PATH_FAILED;
             }
             else{
-                get_robot_position_wrt_odom(tf_listener, robot_x, robot_y, robot_t,  target_frame);
+                get_robot_position_wrt_odom(tf_listener, robot_x, robot_y, robot_t, target_frame);
                 get_next_goal_from_path(robot_x, robot_y, robot_t, goal_x, goal_y, prev_pose_idx, next_pose_idx);
                 global_error = sqrt((global_goal_x - robot_x)*(global_goal_x - robot_x) + (global_goal_y - robot_y)*(global_goal_y - robot_y));
                 if(global_error < coarse_dist_tolerance)
@@ -509,8 +571,19 @@ int main(int argc, char** argv)
                     state = SM_GOAL_PATH_FAILED;
                     std::cout<<"SimpleMove.->Timeout exceeded while trying to reach goal path. Current state: GOAL_PATH_ACCEL."<<std::endl;
                 }
-                pub_cmd_vel.publish(calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
-                                                     max_angular_speed, alpha, beta, false, move_lat, use_pot_fields, rejection_force.y));
+                robot_twist = calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
+                                                     max_angular_speed, alpha, beta, false, move_lat, use_pot_fields, rejection_force.y);
+                pub_cmd_vel.publish(robot_twist);
+
+                odom.header.stamp = ros::Time::now();
+                odom.header.frame_id = "odom";
+                odom.pose.pose.position.x = robot_x;
+                odom.pose.pose.position.y = robot_y;
+                odom.pose.pose.position.z = 0.0;
+                odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_t);
+                odom.child_frame_id = "base_link";
+                odom.twist.twist = robot_twist;
+                pub_odom.publish(odom);
                 if(move_head) pub_head_goal_pose.publish(get_next_goal_head_angles(robot_x, robot_y, robot_t, next_pose_idx));
                 current_linear_speed += linear_acceleration/RATE;
             }
@@ -526,7 +599,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                get_robot_position_wrt_odom(tf_listener, robot_x, robot_y, robot_t,  target_frame);
+                get_robot_position_wrt_odom(tf_listener, robot_x, robot_y, robot_t, target_frame);
                 get_next_goal_from_path(robot_x, robot_y, robot_t, goal_x, goal_y, prev_pose_idx, next_pose_idx);
                 global_error = sqrt((global_goal_x - robot_x)*(global_goal_x - robot_x) + (global_goal_y - robot_y)*(global_goal_y - robot_y));
                 if(global_error < coarse_dist_tolerance)
@@ -541,8 +614,19 @@ int main(int argc, char** argv)
                     state = SM_GOAL_PATH_FAILED;
                     std::cout<<"SimpleMove.->Timeout exceeded while trying to reach goal path. Current state: GOAL_PATH_CRUISE."<<std::endl;
                 }
-                pub_cmd_vel.publish(calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
-                                                     max_angular_speed, alpha, beta, false,move_lat, use_pot_fields, rejection_force.y));
+                robot_twist = calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
+                                                     max_angular_speed, alpha, beta, false,move_lat, use_pot_fields, rejection_force.y);
+                pub_cmd_vel.publish(robot_twist);
+
+                odom.header.stamp = ros::Time::now();
+                odom.header.frame_id = "odom";
+                odom.pose.pose.position.x = robot_x;
+                odom.pose.pose.position.y = robot_y;
+                odom.pose.pose.position.z = 0.0;
+                odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_t);
+                odom.child_frame_id = "base_link";
+                odom.twist.twist = robot_twist;
+                pub_odom.publish(odom);
                 if(move_head) pub_head_goal_pose.publish(get_next_goal_head_angles(robot_x, robot_y, robot_t, next_pose_idx));
             }
             break;
@@ -557,7 +641,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                get_robot_position_wrt_odom(tf_listener, robot_x, robot_y, robot_t,  target_frame);
+                get_robot_position_wrt_odom(tf_listener, robot_x, robot_y, robot_t, target_frame);
                 get_next_goal_from_path(robot_x, robot_y, robot_t, goal_x, goal_y, prev_pose_idx, next_pose_idx);
                 global_error = sqrt((global_goal_x - robot_x)*(global_goal_x - robot_x) + (global_goal_y - robot_y)*(global_goal_y - robot_y));
                 if(global_error < coarse_dist_tolerance)
@@ -569,8 +653,19 @@ int main(int argc, char** argv)
                 }
                 current_linear_speed = temp_k * sqrt(global_error);
                 if(current_linear_speed < min_linear_speed) current_linear_speed = min_linear_speed;
-                pub_cmd_vel.publish(calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
-                                                     max_angular_speed, alpha, beta, false,move_lat, use_pot_fields, rejection_force.y));
+                robot_twist = calculate_speeds(robot_x, robot_y, robot_t, goal_x, goal_y, min_linear_speed, current_linear_speed,
+                                                     max_angular_speed, alpha, beta, false,move_lat, use_pot_fields, rejection_force.y);
+                pub_cmd_vel.publish(robot_twist);
+
+                odom.header.stamp = ros::Time::now();
+                odom.header.frame_id = "odom";
+                odom.pose.pose.position.x = robot_x;
+                odom.pose.pose.position.y = robot_y;
+                odom.pose.pose.position.z = 0.0;
+                odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_t);
+                odom.child_frame_id = "base_link";
+                odom.twist.twist = robot_twist;
+                pub_odom.publish(odom);
                 if(move_head) pub_head_goal_pose.publish(get_next_goal_head_angles(robot_x, robot_y, robot_t, next_pose_idx));
             }
             break;
