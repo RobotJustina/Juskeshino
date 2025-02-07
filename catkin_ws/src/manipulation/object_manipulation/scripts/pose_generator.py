@@ -3,11 +3,19 @@
 import rospy 
 import rospkg 
 import random
+import math
+import matplotlib.pyplot as plt
+import tf.transformations as tft
+import numpy as np
+import vg
+import tf
 from gazebo_msgs.msg import ModelState, ContactsState 
-from gazebo_msgs.srv import SetModelState
+from gazebo_msgs.srv import SetModelState, GetModelState
 from std_msgs.msg import String, Float64MultiArray
-from geometry_msgs.msg import Pose  
+from geometry_msgs.msg import Pose, PointStamped  
 from manip_msgs.srv import DataCapture
+
+BASE_JUSTINA_VECTOR = np.array([0.0,-1.0,0.0])
 
 def generate_random_pose():
     rpose = Pose()
@@ -75,6 +83,26 @@ def reset_simulation():
     pub_object.publish(obj)
     grasp_attempts = 0
     
+def get_angle_in_plane(gr_point, obj_point, plane):
+    gr_vector = np.array([gr_point.x - obj_point.x, gr_point.y - obj_point.y, gr_point.z - obj_point.z])
+    
+    gr_angle = vg.signed_angle(gr_vector, BASE_JUSTINA_VECTOR, look=vg.basis.z)
+    print(gr_angle)
+    xs = [gr_vector[0],BASE_JUSTINA_VECTOR[0]]
+    ys = [gr_vector[1],BASE_JUSTINA_VECTOR[1]]
+    zs = [gr_vector[2],BASE_JUSTINA_VECTOR[2]]
+    colors = ['b','r']
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.quiver(0, 0, gr_vector[0], gr_vector[1], angles='xy', scale_units='xy', scale=1, color='r')
+    ax.quiver(0, 0, BASE_JUSTINA_VECTOR[0], BASE_JUSTINA_VECTOR[1], angles='xy', scale_units='xy', scale=1, color='b')
+
+    #ax.set_xlim([-3, 3])
+    #ax.set_ylim([-3, 3])
+
+    plt.grid()
+    plt.show()
+    return gr_angle
+
 
 def main():
     global state_msg, grasp_trajectory_found, justina_origin_pose, obj, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
@@ -97,6 +125,7 @@ def main():
     rospy.Subscriber('/left_arm_grip_left_sensor' ,ContactsState ,callback_left_grip_sensor)
     rospy.Subscriber('/left_arm_grip_right_sensor' ,ContactsState ,callback_right_grip_sensor)
     rospy.wait_for_service('/manipulation/grasp/data_capture_service')
+    get_object_relative_pose = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
     capture = rospy.ServiceProxy('/manipulation/grasp/data_capture_service', DataCapture)
     set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
     pub_object = rospy.Publisher("/plannning/simple_task/take_object", String, queue_size=10)
@@ -124,6 +153,16 @@ def main():
             deserialized_gripper_model_state.reference_frame = 'apple'
             print(deserialized_gripper_model_state)
             set_state(deserialized_gripper_model_state)
+        if command == "p":
+            gr_pose_relative_to_base_link = get_object_relative_pose("justina_gripper","justina::left_arm_link7").pose
+            roll,pitch,yaw = tft.euler_from_quaternion([gr_pose_relative_to_base_link.orientation.x,
+                                                        gr_pose_relative_to_base_link.orientation.y,
+                                                        gr_pose_relative_to_base_link.orientation.z,
+                                                        gr_pose_relative_to_base_link.orientation.w])
+            print(math.degrees(roll),math.degrees(pitch),math.degrees(yaw))
+        if command =="a":
+            get_angle_in_plane(get_object_relative_pose("justina_gripper","world").pose.position,
+                               get_object_relative_pose(obj_shape,"world").pose.position,1)
         loop.sleep()
 
 if __name__ == '__main__':
