@@ -49,13 +49,13 @@
     
     <sensor name="gr_left_arm_grip_left_sensor" type="contact">
         <alwaysOn>true</alwaysOn>
-        <updateRate>0.000000015</updateRate>
+        <updateRate>0.001</updateRate>
         <contact>
-            <collision>left_arm_grip_left_collision_collision</collision>
+            <collision>gr_left_arm_grip_left_collision_collision</collision>
         </contact>
         <plugin name="gr_left_arm_grip_left_bumper_controller" filename="libgazebo_ros_bumper.so">
-            <bumperTopicName>left_arm_grip_left_sensor</bumperTopicName>
-            <frameName>left_arm_grip_left_sensor</frameName>
+            <bumperTopicName>gr_left_arm_grip_left_sensor</bumperTopicName>
+            <frameName>gr_left_arm_grip_left_sensor</frameName>
         </plugin>
     </sensor>
     
@@ -80,13 +80,13 @@
     </torsional>
     <sensor name="gr_left_arm_grip_right_sensor" type="contact">
         <alwaysOn>true</alwaysOn>
-        <updateRate>0.000000015</updateRate>
+        <updateRate>0.001</updateRate>
         <contact>
-            <collision>left_arm_grip_right_collision_collision</collision>
+            <collision>gr_left_arm_grip_right_collision_collision</collision>
         </contact>
         <plugin name="gr_left_arm_grip_right_bumper_controller" filename="libgazebo_ros_bumper.so">
-            <bumperTopicName>left_arm_grip_right_sensor</bumperTopicName>
-            <frameName>left_arm_grip_right_sensor</frameName>
+            <bumperTopicName>gr_left_arm_grip_right_sensor</bumperTopicName>
+            <frameName>gr_left_arm_grip_right_sensor</frameName>
         </plugin>
     </sensor>
   </gazebo>
