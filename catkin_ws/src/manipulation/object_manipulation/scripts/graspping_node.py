@@ -66,9 +66,11 @@ def pose_for_ik_service(pose_in_frame_object):
         return -1, -1
     x , y, z = new_pose.position.x , new_pose.position.y , new_pose.position.z
     roll,pitch,yaw = tft.euler_from_quaternion( [new_pose.orientation.x , new_pose.orientation.y , 
-                                                new_pose.orientation.z , new_pose.orientation.w ])
+                                                 new_pose.orientation.z , new_pose.orientation.w ])
     cartesian_pose_shoulder = np.asarray([x ,y ,z , roll, pitch , yaw])
     return cartesian_pose_shoulder, new_pose
+
+tft.ma
 
 
 

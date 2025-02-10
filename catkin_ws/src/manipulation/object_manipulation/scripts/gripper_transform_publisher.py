@@ -54,7 +54,7 @@ class DynamicTFBroadcaster:
 
             rospy.sleep(0.01)
 
-            pose = get_object_relative_pose("apple","justina::camera_link").pose
+            pose = get_object_relative_pose("024_bowl","justina::camera_link").pose
 
             t = geometry_msgs.msg.TransformStamped()
             t.header.frame_id = "camera_link"
@@ -87,7 +87,7 @@ class StaticTFBroadcaster:
 
             rospy.sleep(0.01)
 
-            pose = get_object_relative_pose("apple","justina::camera_link").pose
+            pose = get_object_relative_pose("024_bowl","justina::camera_link").pose
             broadcaster_frame_object("camera_link","object_frame",pose)
 
 if __name__ == '__main__':

@@ -141,7 +141,7 @@ def main():
     right_gripper_made_contact = False
     grasp_attempts = 0
     num_loops = 0
-    obj_shape = 'apple'
+    obj_shape = '024_bowl'
     rospy.init_node('object_grip_test')
     print("Starting grip test")
     # rospy.Subscriber('/manipulation/grasp/grasp_status' ,String ,callback_grasp_status)
@@ -172,7 +172,7 @@ def main():
             file_serialized_gripper_model_state = in_file.read() # if you only wanted to read 512 bytes, do .read(512)
             in_file.close()
             deserialized_gripper_model_state.deserialize(file_serialized_gripper_model_state)
-            deserialized_gripper_model_state.reference_frame = 'apple'
+            deserialized_gripper_model_state.reference_frame = '024_bowl'
             #print(deserialized_gripper_model_state)
             set_state(deserialized_gripper_model_state)
         if command == "p":
