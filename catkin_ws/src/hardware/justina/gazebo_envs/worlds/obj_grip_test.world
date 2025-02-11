@@ -134,7 +134,7 @@
             </friction>
             <contact>
               <ode/>
-              <collide_bitmask>0x02</collide_bitmask>
+              <collide_bitmask>0x01</collide_bitmask>
             </contact>
           </surface>
         </collision>
@@ -170,7 +170,7 @@
             </friction>
             <contact>
               <ode/>
-              <collide_bitmask>0x02</collide_bitmask>
+              <collide_bitmask>0x01</collide_bitmask>
             </contact>
           </surface>
         </collision>
@@ -206,7 +206,7 @@
             </friction>
             <contact>
               <ode/>
-              <collide_bitmask>0x02</collide_bitmask>
+              <collide_bitmask>0x01</collide_bitmask>
             </contact>
           </surface>
         </collision>
@@ -242,7 +242,7 @@
             </friction>
             <contact>
               <ode/>
-              <collide_bitmask>0x02</collide_bitmask>
+              <collide_bitmask>0x01</collide_bitmask>
             </contact>
           </surface>
         </collision>
@@ -258,7 +258,7 @@
       <static>1</static>
       <pose>1.59733 2.00864 0 0 -0 0</pose>
     </model>
-    <model name='apple'>
+    <!-- <model name='apple'>
       <link name='link'>
         <pose>0 0 0 0 -0 0</pose>
         <inertial>
@@ -320,13 +320,13 @@
       </link>
       <static>0</static>
       <pose>3.63236 2.37237 0 0 -0 0</pose>
-    </model>
+    </model> -->
     <state world_name='default'>
       <sim_time>102 908000000</sim_time>
       <real_time>103 103389819</real_time>
       <wall_time>1726186793 627273761</wall_time>
       <iterations>102908</iterations>
-      <model name='apple'>
+      <!-- <model name='apple'>
         <pose>2.56378 2.22894 0.745 0 -3e-06 0</pose>
         <scale>1 1 1</scale>
         <link name='link'>
@@ -345,7 +345,7 @@
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
-      </model>
+      </model> -->
       <model name='office_desk'>
         <pose>1.99274 2.00988 0 0 0 -1.56766</pose>
         <scale>1 1 1</scale>
