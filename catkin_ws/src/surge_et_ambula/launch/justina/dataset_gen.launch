@@ -3,8 +3,10 @@
   <arg name="use_vosk" default="False"/>
   <arg name="map_name" default="appartment"/>
   <arg name="locations" default="known_locations_gazebo"/>
+  <arg name="object" default="apple"/>
 
   <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
+  <param name="obj" value="$(arg object)"/>
   <arg name="world" default="obj_grip_test"/> 
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo3.launch">
     <arg name="posx"  value="2.46"/>
@@ -12,6 +14,7 @@
     <arg name="posz"  value="0.06"/>
     <arg name="yaw"   value="1.57"/>
     <arg name="world" value="$(arg world)"/>
+    <arg name="object" value="$(arg object)"/>
   </include>
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/>
   

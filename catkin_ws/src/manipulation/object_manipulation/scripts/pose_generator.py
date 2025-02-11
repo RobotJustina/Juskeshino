@@ -75,8 +75,8 @@ def create_origin_pose():
     return jop
     
 def reset_simulation():
-    global justina_origin_pose, obj, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts
-    change_gazebo_object_pose(state_msg, generate_random_pose(), obj)
+    global justina_origin_pose, obj_shape, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts
+    change_gazebo_object_pose(state_msg, generate_random_pose(), obj_shape)
     change_gazebo_object_pose(state_msg, justina_origin_pose, "justina")
     num_loops = 0
     left_gripper_made_contact = False
@@ -84,8 +84,8 @@ def reset_simulation():
     pub_la.publish(msg_la)
     pub_hd.publish(msg_hd)
     rospy.sleep(0.1)
-    pub_object.publish(obj)
-    pub_object.publish(obj)
+    pub_object.publish(obj_shape)
+    pub_object.publish(obj_shape)
     grasp_attempts = 0
     
 def show_graph(V1,V2,W1,W2):
@@ -103,6 +103,7 @@ def get_angle_in_plane(gr_point, obj_point, plane="XY",show_plot=False):
     angle_XY = vg.angle(gr_vector, BASE_JUSTINA_VECTOR, look=vg.basis.z) #Symmetric, sign does not matter
     angle_YZ = vg.signed_angle(gr_vector, BASE_JUSTINA_VECTOR, look=vg.basis.x)
     angle_ZX = vg.signed_angle(gr_vector, np.array([1.0,0.0,0.0]), look=vg.basis.y)
+    gripper_side = gr_vector > 0 #If true gripper side = right, else its left
     #print(angle_XY, angle_YZ, angle_ZX)
     if show_plot:
         if plane == "XY":
@@ -111,7 +112,7 @@ def get_angle_in_plane(gr_point, obj_point, plane="XY",show_plot=False):
             show_graph(gr_vector[1], gr_vector[2],BASE_JUSTINA_VECTOR[0], BASE_JUSTINA_VECTOR[1])
         if plane == "ZX":
             show_graph(gr_vector[0], gr_vector[2],1.0, 0.0)
-    return angle_XY, angle_YZ, angle_ZX
+    return angle_XY, angle_YZ, angle_ZX, gripper_side
 
 def check_for_contact():
     left_gripper_made_contact = len(rospy.wait_for_message('/gr_left_arm_grip_left_sensor' ,ContactsState,5).states) > 0
@@ -127,7 +128,7 @@ def is_pose_valid(angle_XY, angle_YZ, angle_ZX):
     return True 
 
 def main():
-    global state_msg, grasp_trajectory_found, justina_origin_pose, obj, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
+    global state_msg, grasp_trajectory_found, justina_origin_pose, obj_shape, obj, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
     state_msg = ModelState()
     deserialized_gripper_model_state = ModelState()
     justina_origin_pose = create_origin_pose()
@@ -154,7 +155,7 @@ def main():
     pub_object = rospy.Publisher("/plannning/simple_task/take_object", String, queue_size=10)
     pub_la = rospy.Publisher("/hardware/left_arm/goal_pose", Float64MultiArray, queue_size=10)
     pub_hd = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=10)
-    obj = rospy.get_param("~obj","apple")
+    obj_shape = rospy.get_param("/obj","056_tennis_ball")
     rospy.sleep(1)
     reset_simulation()
     POSE_DATA_PATH = "./catkin_ws/src/manipulation/object_manipulation/pose_data/"
@@ -183,9 +184,9 @@ def main():
                                                         gr_pose_relative_to_base_link.orientation.w])
             print(math.degrees(roll),math.degrees(pitch),math.degrees(yaw))
         if command =="a":
-            angle_XY, angle_YZ, angle_ZX = get_angle_in_plane(get_object_relative_pose("justina_gripper","world").pose.position, 
+            angle_XY, angle_YZ, angle_ZX, gripper_side = get_angle_in_plane(get_object_relative_pose("justina_gripper","world").pose.position, 
                                                               get_object_relative_pose(obj_shape,"world").pose.position,"XY")
-            print(is_pose_valid(angle_XY, angle_YZ, angle_ZX))
+            print(is_pose_valid(angle_XY, angle_YZ, angle_ZX,gripper_side))
         if command == 'f':
             pose_num = 0
             while(pose_num<34):
@@ -214,10 +215,10 @@ def main():
                     deserialized_gripper_model_state.deserialize(file_serialized_gripper_model_state)
                     deserialized_gripper_model_state.reference_frame = obj_shape
                     set_state(deserialized_gripper_model_state)
-                    rospy.sleep(0.001)
-                    angle_XY, angle_YZ, angle_ZX = get_angle_in_plane(get_object_relative_pose("justina_gripper","world").pose.position, 
+                    rospy.sleep(0.0001)
+                    angle_XY, angle_YZ, angle_ZX, gripper_side = get_angle_in_plane(get_object_relative_pose("justina_gripper","world").pose.position, 
                                                                 get_object_relative_pose(obj_shape,"world").pose.position,"XY")
-                    if is_pose_valid(angle_XY, angle_YZ, angle_ZX): rospy.sleep(0.5)
+                    if is_pose_valid(angle_XY, angle_YZ, angle_ZX): rospy.sleep(1)
 
         loop.sleep()
 

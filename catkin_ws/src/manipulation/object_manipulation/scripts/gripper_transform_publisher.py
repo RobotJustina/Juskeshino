@@ -54,7 +54,7 @@ class DynamicTFBroadcaster:
 
             rospy.sleep(0.01)
 
-            pose = get_object_relative_pose("056_tennis_ball","justina::camera_link").pose
+            pose = get_object_relative_pose(obj_shape,"justina::camera_link").pose
 
             t = geometry_msgs.msg.TransformStamped()
             t.header.frame_id = "camera_link"
@@ -87,12 +87,13 @@ class StaticTFBroadcaster:
 
             rospy.sleep(0.01)
 
-            pose = get_object_relative_pose("056_tennis_ball","justina::camera_link").pose
+            pose = get_object_relative_pose(obj_shape,"justina::camera_link").pose
             broadcaster_frame_object("camera_link","object_frame",pose)
 
 if __name__ == '__main__':
-    global get_object_relative_pose
+    global get_object_relative_pose, obj_shape
     rospy.init_node('gripper_tf_broadcaster')
+    obj_shape = rospy.get_param("/obj","056_tennis_ball")
     get_object_relative_pose = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
     tfb = DynamicTFBroadcaster()
 
