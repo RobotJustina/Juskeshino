@@ -131,11 +131,19 @@ def get_key(set, timeout):
 
 
 def remove_nodes():
-    global nodes_count
+    global nodes_count, goal_pub
 
     if nodes_count > 0:
         marker_server.erase("path_node_" + str(nodes_count))
         marker_server.applyChanges()
+        if nodes_count > 1:
+            marker = marker_server.get("path_node_" + str(nodes_count-1))
+            point = PointStamped()
+            point.header.frame_id = "odom"
+            point.header.stamp = rospy.Time.now()
+            point.point = marker.pose.position
+            goal_pub.publish(point)
+
         nodes_count -= 1
     else:
         print("\rnodes not found",)
@@ -257,7 +265,7 @@ if __name__ == "__main__":
     global path, old_path
     global path_pub, save_enable, goal_pub
 
-    rospy.init_node("path_controls")
+    rospy.init_node("path_markers")
 
     JuskeshinoNavigation.setNodeHandle()
 
