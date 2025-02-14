@@ -4,7 +4,7 @@ import rospkg
 import torch
 import torchvision.transforms as transforms
 from torch.utils.data import TensorDataset, DataLoader
-from torch.optim import SGD, AdamW
+from torch.optim import SGD, Adam
 from sklearn.model_selection import train_test_split
 import numpy as np
 import sys
@@ -34,26 +34,27 @@ np.set_printoptions(threshold=sys.maxsize)
 pkg_name = 'mapless_nav'
 pkg_path = rospkg.RosPack().get_path(pkg_name)
 files_path = pkg_path + '/scripts/TorchModels/data/'
-files_path += "data_dep1_*.npz"
+files_path += "*.npz"
 data_X, data_Y = l_util.load_data_matrix(files_path, shape=[81, 80])  # 81x80
 
 
 
 print("Data_X shape:", data_X.shape)
 print("Data_Y shape:", data_Y.shape)
-## print(data_X[0, 1, 0, :2])  # show vector
+# print(data_X[:, 0, -1, :2])  # show vector
 # show random sample
-#l_util.show_image_gray(data_X[np.random.randint(0,len(data_X)), 0])
+# l_util.show_image_gray(data_X[np.random.randint(0,len(data_X)), 0])
 
 # CLASSIFICATION problem
-y_one_hot = l_util.one_hot_encode(data_Y, verbose=True)
-y_one_hot = np.asarray(y_one_hot, dtype=np.float32)
+# y_one_hot = l_util.one_hot_encode(data_Y, verbose=True)
+# y_one_hot = np.asarray(y_one_hot, dtype=np.float32)
+
 
 # Normalization
 data_X[:,0] = data_X[:,0] /100.
 data_X = np.array(data_X)
 # Split data
-X_train, X_val , y_train, y_val= train_test_split(data_X, y_one_hot, train_size=0.7, shuffle=True)
+X_train, X_val , y_train, y_val= train_test_split(data_X, data_Y, train_size=0.7, shuffle=True)
 X_val, X_test, y_val, y_test= train_test_split(X_train, y_train, train_size=0.5, shuffle=True)
 
 X_train = torch.tensor(X_train, dtype=torch.float32, device=device)
@@ -75,10 +76,10 @@ epochs = 2
 """
 Model
 """
-model = nn_models.CNN_B()
+model = nn_models.CNN_Reg3out()
 model.to(device)
 
-optimizer = AdamW(model.parameters(), lr=learn_r)
+optimizer = Adam(model.parameters(), lr=learn_r)
 loss_fn = torch.nn.MSELoss() # CrossEntropyLoss()
 
 """

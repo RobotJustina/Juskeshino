@@ -158,7 +158,7 @@ class CNN_A(torch.nn.Module):
 class CNN_B(torch.nn.Module):
     def __init__(self):
         super(CNN_B, self).__init__()
-
+        
         self.conv1 = torch.nn.Conv2d(1, 6, 5)
         # self.conv2 = torch.nn.Conv2d(3, 8, 5)
         self.dropout_50 = torch.nn.Dropout2d(p=0.5)
@@ -214,3 +214,55 @@ class CNN_B(torch.nn.Module):
 
         x = torch.nn.functional.softmax(x, dim=1)
         return x
+    
+
+class CNN_Reg3out(torch.nn.Module):
+    def __init__(self):
+        super(CNN_Reg3out, self).__init__()
+
+        self.name = 'CNN_Reg3out'
+        # layers
+        self.conv1 = torch.nn.Conv2d(1, 6, 5)
+        self.conv2 = torch.nn.Conv2d(6, 18, 3)
+        self.lin_1 = torch.nn.Linear(74, 32)
+
+        self.dropout_50 = torch.nn.Dropout2d(p=0.5)
+        self.dropout_40 = torch.nn.Dropout(p=0.4)
+
+        # second input
+        self.vector = torch.nn.Linear(2, 2)
+
+        # merge 
+        self.flat2 = torch.nn.Linear(42626, 16)
+        self.out = torch.nn.Linear(16, 3)
+
+    def forward(self, x):
+        # vector: d, th
+        vect = x[:, 0, -1, :2]  # [batch_s, channel, row, col]
+        # print(vect.size())
+        # print(vect)
+        vect = self.vector(vect)
+
+        vect = torch.nn.functional.relu(self.vector(vect))
+
+
+        # image
+        # [batch_s, channel, row, col]
+        x = x[:, :, :-1]    
+        print(x.size())
+        print(x)
+
+        # Architecture
+        x = torch.nn.functional.relu(self.conv1(x))
+        x = torch.nn.functional.relu(self.conv2(x))
+        x = self.dropout_50(x)
+        x = self.lin_1(x)
+        x = self.dropout_40(x)
+
+        x = torch.flatten(x, 1)
+        # concat inputs
+        x = torch.cat((x, vect), 1)
+        x = torch.nn.functional.relu(self.flat2(x))
+        x = self.out(x)
+        return x
+

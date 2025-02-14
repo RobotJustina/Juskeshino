@@ -48,12 +48,18 @@ def load_data_matrix(files_path='/data/', shape=[100, 100]):
     count = 0
     for info in data:
         #print("image shape: ", info.shape)
-        # print(info[-1, :])  # target (d, th)
-        # print(info[-1, 2:4])  # DATA Y
-        data_Y.append(np.copy(info[-1, 2:4]))
-        info[-1, 2:4] = [0.0, 0.0]
-        # print(data_Y[-1])
+        #print(info[-1, :])  # target (d, th)
+        # print(info[-1, 2:5])  # DATA Y
+        """
+        # MAT dim(81x80): ch0 80x80=occ_grid, mat[81]=vect_ydat dim(80)
+        # 80x80 matrix is occ_grid data, row 81 is a vect_ydat with label info
+        # vect_ydat dim(80) = distance_to_target, theta_to_target, l_vel_x, l_vel_y, a_vel_z
+        """
+        data_Y.append(np.copy(info[-1, 2:5]))
+        info[-1, 2:5] = [0.0, 0.0, 0.0]  # clear Y data
         data_X.append([info])  # img(80x80) ch0, vet(2) ch2
+        #print("data_Y", data_Y[-1])
+        #print("data_X", info[-1])
         
     data_X = np.asarray(data_X, dtype=np.float32)
     data_Y = np.asarray(data_Y, dtype=np.float32)

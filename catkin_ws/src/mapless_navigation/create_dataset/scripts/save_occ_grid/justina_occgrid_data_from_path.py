@@ -19,7 +19,7 @@ file_name = "data_from_path"
 
 goal_x, goal_y = 0.0, 0.0
 data_X = [0.0, 0.0]
-data_Y = [0.0, 0.0, 0.0]
+data_Y = [0.0, 0.0, 0.0]  # [l_vel_x, l_vel_y, a_vel_z]
 recording = False
 
 def clickPointCallback(msg):
@@ -100,7 +100,11 @@ def occGridCallback(msg):
     d, th = target_direction()
     other_features[:2] = [round(d, 2), round(th, 2)]
     other_features[2:5] = data_Y
-    # mat(81x80) ch0 80x80=occ_grid, mat[81]=vect(80) 
+    """
+    # MAT dim(81x80): ch0 80x80=occ_grid, mat[81]=vect_ydat dim(80)
+    # 80x80 matrix is occ_grid data, row 81 is a vect_ydat with label info
+    # vect_ydat dim(80) = distance_to_target, theta_to_target, l_vel_x, l_vel_y, a_vel_z
+    """
     data_X = np.vstack((data, other_features))
 
 
