@@ -115,6 +115,9 @@
               <name>base_materials/dark_wood</name>
             </script>
           </material>
+          <meta>
+            <layer>1</layer>
+          </meta>
         </visual>
         <collision name='collision_top_board'>
           <pose>-0.3 0.6 0.69 0 -0 0</pose>

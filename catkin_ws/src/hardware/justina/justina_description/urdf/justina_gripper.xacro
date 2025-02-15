@@ -9,6 +9,9 @@
         <box size = "0.06 0.03525 0.03525"/> 
       </geometry>
       <material name = "la_material"><color rgba="1.0 0.5 0 1"/></material>
+      <meta>
+        <layer>1</layer>
+      </meta>
     </visual>
     <visual>
       <origin xyz="0 0 -0.055" rpy = "0 0 0"/>
@@ -16,6 +19,9 @@
         <box size = "0.03 0.1 0.03"/> 
       </geometry>
       <material name = "la_material"><color rgba="1.0 0.5 0 1"/></material>
+      <meta>
+        <layer>1</layer>
+      </meta>
     </visual>
     <collision>
       <origin xyz="-0.01 0 -0.03" rpy = "0 0 0"/>
@@ -56,6 +62,9 @@
         <box size = "0.04 0.005 0.09"/> 
       </geometry>
       <material name = "la_material"><color rgba="1.0 0.5 0 1"/></material>
+      <meta>
+    <layer>1</layer>
+  </meta>
     </visual>
     <collision name = 'gr_left_arm_grip_left_collision'>
       <origin xyz="0 0 -0.065" rpy = "0 0 0"/>
