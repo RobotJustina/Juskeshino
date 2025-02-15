@@ -1,4 +1,5 @@
 string capture_info
+bool arm
 ---
 string capture_status
 sensor_msgs/PointCloud2 pointcloud
@@ -6,3 +7,5 @@ geometry_msgs/Pose obj_relative_pose
 float64[] head_pose_q
 float64[] final_grasp_q
 string obj_type
+float32 score
+bool arm 			# 0 if left arm is used, 1 for right arm

@@ -128,7 +128,7 @@ def is_pose_valid(angle_XY, angle_YZ, angle_ZX):
     return True 
 
 def main():
-    global state_msg, grasp_trajectory_found, justina_origin_pose, obj_shape, obj, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
+    global state_msg, grasp_trajectory_found, justina_origin_pose, obj_shape, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
     state_msg = ModelState()
     deserialized_gripper_model_state = ModelState()
     justina_origin_pose = create_origin_pose()
@@ -142,15 +142,16 @@ def main():
     right_gripper_made_contact = False
     grasp_attempts = 0
     num_loops = 0
+    found_grasps = 0
     obj_shape = '056_tennis_ball'
     rospy.init_node('object_grip_test')
     print("Starting grip test")
     # rospy.Subscriber('/manipulation/grasp/grasp_status' ,String ,callback_grasp_status)
     # rospy.Subscriber('/gr_left_arm_grip_left_sensor' ,ContactsState ,callback_left_grip_sensor)
     # rospy.Subscriber('/gr_left_arm_grip_right_sensor' ,ContactsState ,callback_right_grip_sensor)
-    # rospy.wait_for_service('/manipulation/grasp/data_capture_service')
+    rospy.wait_for_service('/manipulation/grasp/data_capture_service')
     get_object_relative_pose = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
-    # capture = rospy.ServiceProxy('/manipulation/grasp/data_capture_service', DataCapture)
+    capture = rospy.ServiceProxy('/manipulation/grasp/data_capture_service', DataCapture)
     set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
     pub_object = rospy.Publisher("/plannning/simple_task/take_object", String, queue_size=10)
     pub_la = rospy.Publisher("/hardware/left_arm/goal_pose", Float64MultiArray, queue_size=10)
@@ -205,8 +206,11 @@ def main():
         if command == 'l':
             while(not rospy.is_shutdown()):
                 reset_simulation()
+                #resp = capture("Initial Conditions")
+                print("Saved initial conditions")
                 pose_num = 0
-                while(pose_num<34):
+                found_grasps = 0
+                while(pose_num<15):
                     pose_num = pose_num + 1
                     file_name = POSE_DATA_PATH + obj_shape + str(pose_num)
                     in_file = open(file_name, "rb") # opening for [r]eading as [b]inary
@@ -215,10 +219,17 @@ def main():
                     deserialized_gripper_model_state.deserialize(file_serialized_gripper_model_state)
                     deserialized_gripper_model_state.reference_frame = obj_shape
                     set_state(deserialized_gripper_model_state)
-                    rospy.sleep(0.0001)
+                    rospy.sleep(0.001)
                     angle_XY, angle_YZ, angle_ZX, gripper_side = get_angle_in_plane(get_object_relative_pose("justina_gripper","world").pose.position, 
                                                                 get_object_relative_pose(obj_shape,"world").pose.position,"XY")
-                    if is_pose_valid(angle_XY, angle_YZ, angle_ZX): rospy.sleep(1)
+                    if is_pose_valid(angle_XY, angle_YZ, angle_ZX): 
+                        rospy.sleep(0.5)
+                        capture("Found grasp")
+                        rospy.sleep(1)
+                        found_grasps = found_grasps + 1
+                        print("Found Grasp: ",found_grasps)
+
+                        rospy.sleep(1)
 
         loop.sleep()
 
