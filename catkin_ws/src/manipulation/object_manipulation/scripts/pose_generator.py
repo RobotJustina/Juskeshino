@@ -13,7 +13,7 @@ from gazebo_msgs.msg import ModelState, ContactsState
 from gazebo_msgs.srv import SetModelState, GetModelState
 from std_msgs.msg import String, Float64MultiArray
 from geometry_msgs.msg import Pose, PointStamped  
-from manip_msgs.srv import DataCapture
+from manip_msgs.srv import DataCapture, InverseKinematicsPose2TrajRequest, InverseKinematicsPose2Traj
 
 BASE_JUSTINA_VECTOR = np.array([0.0,-1.0,0.0])
 VG_PLANE = {
@@ -127,8 +127,39 @@ def is_pose_valid(angle_XY, angle_YZ, angle_ZX):
     
     return True 
 
+
+
+def score_calculation(articular_array):
+    a = sum(articular_array)
+
+
+def get_ik_la(msg_pose):
+    global ik_srv
+
+    roll,pitch,yaw = tft.euler_from_quaternion( [msg_pose.orientation.x , msg_pose.orientation.y , 
+                                                 msg_pose.orientation.z , msg_pose.orientation.w ])
+
+    ik_msg = InverseKinematicsPose2TrajRequest()
+    ik_msg.x         = msg_pose.position.x
+    ik_msg.y         = msg_pose.position.y
+    ik_msg.z         = msg_pose.position.z
+    ik_msg.roll      = roll    
+    ik_msg.pitch     = pitch
+    ik_msg.yaw       = yaw
+    ik_msg.duration  = 0
+    ik_msg.time_step = 0.05
+    try:
+        resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
+        print("Approved pose")
+        return
+        return resp_ik_srv.articular_trajectory
+    except:
+        print("")
+
+
+
 def main():
-    global state_msg, grasp_trajectory_found, justina_origin_pose, obj_shape, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
+    global ik_srv, state_msg, grasp_trajectory_found, justina_origin_pose, obj_shape, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
     state_msg = ModelState()
     deserialized_gripper_model_state = ModelState()
     justina_origin_pose = create_origin_pose()
@@ -150,6 +181,7 @@ def main():
     # rospy.Subscriber('/gr_left_arm_grip_left_sensor' ,ContactsState ,callback_left_grip_sensor)
     # rospy.Subscriber('/gr_left_arm_grip_right_sensor' ,ContactsState ,callback_right_grip_sensor)
     rospy.wait_for_service('/manipulation/grasp/data_capture_service')
+    ik_srv           = rospy.ServiceProxy( '/manipulation/la_ik_trajectory' , InverseKinematicsPose2Traj )
     get_object_relative_pose = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
     capture = rospy.ServiceProxy('/manipulation/grasp/data_capture_service', DataCapture)
     set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)

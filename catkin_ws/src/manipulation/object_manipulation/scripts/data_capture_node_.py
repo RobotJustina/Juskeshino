@@ -7,13 +7,14 @@ import tf2_ros
 from tf2_geometry_msgs import PointStamped
 from pathlib import Path
 from threading import Lock
-from manip_msgs.srv import DataCapture, DataCaptureResponse
+from manip_msgs.srv import DataCapture, DataCaptureResponse, InverseKinematicsPose2TrajRequest, InverseKinematicsPose2Traj
 from trajectory_msgs.msg import JointTrajectory
 from sensor_msgs.msg import PointCloud2
 from std_msgs.msg import String, Float64MultiArray
 from gazebo_msgs.srv import GetModelState
 import geometry_msgs
 from geometry_msgs.msg import Point, PoseStamped
+import tf.transformations as tft
 
 REAL_GRASP_ATTEMPT = False
 
@@ -32,6 +33,10 @@ def broadcaster_frame_object(frame, child_frame, pose):   # Emite la transformac
     t.transform.rotation.z = pose.orientation.z
     t.transform.rotation.w = pose.orientation.w
     br.sendTransform(t)
+
+
+
+
 
 def callback_capture(req):
     global obj_shape, get_object_relative_pose, tf_listener,tf_buf
@@ -54,7 +59,38 @@ def callback_capture(req):
     resp.final_grasp_q     = [0,1,0]
     resp.obj_type          = obj_shape
     #resp.arm               = False
+
+    resp.score             = score_calculation(get_object_relative_pose(obj_shape,"justina::camera_link").pose)
     return resp
+
+
+def score_calculation(msg_pose):
+    return sum(get_ik_la(msg_pose))
+    
+
+
+def get_ik_la(msg_pose):
+    global ik_srv
+
+    roll,pitch,yaw = tft.euler_from_quaternion( [msg_pose.orientation.x , msg_pose.orientation.y , 
+                                                 msg_pose.orientation.z , msg_pose.orientation.w ])
+
+    ik_msg = InverseKinematicsPose2TrajRequest()
+    ik_msg.x         = msg_pose.position.x
+    ik_msg.y         = msg_pose.position.y
+    ik_msg.z         = msg_pose.position.z
+    ik_msg.roll      = roll    
+    ik_msg.pitch     = pitch
+    ik_msg.yaw       = yaw
+    ik_msg.duration  = 0
+    ik_msg.time_step = 0.05
+    try:
+        resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
+        print("Approved pose")
+        articular_array = resp_ik_srv.articular_trajectory.points[-1]
+        return articular_array
+    except:
+        print("It was not possible to obtain the ik")
 
 
     
