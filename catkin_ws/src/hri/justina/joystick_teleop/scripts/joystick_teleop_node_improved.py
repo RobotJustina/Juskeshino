@@ -187,6 +187,7 @@ def main():
     #pubHeadTorque = rospy.Publisher("/hardware/head/torque", Float32MultiArray, queue_size=1)
 
     loop = rospy.Rate(10)
+    once = True
     while not rospy.is_shutdown():
         if math.fabs(speedX) > 0 or math.fabs(speedY) > 0 or math.fabs(yaw) > 0:
             msgTwist.linear.x = speedX
@@ -195,12 +196,15 @@ def main():
             msgTwist.angular.z = yaw
             #print "x: " + str(msgTwist.linear.x) + "  y: " + str(msgTwist.linear.y) + " yaw: " + str(msgTwist.angular.z)
             pubTwist.publish(msgTwist)
+            once = True
         else:
-            msgTwist.linear.x = 0.0
-            msgTwist.linear.y = 0.0
-            msgTwist.linear.z = 0.0
-            msgTwist.angular.z = 0.0
-            pubTwist.publish(msgTwist)
+            if once:
+                msgTwist.linear.x = 0.0
+                msgTwist.linear.y = 0.0
+                msgTwist.linear.z = 0.0
+                msgTwist.angular.z = 0.0
+                pubTwist.publish(msgTwist)
+                once = False
 
         if math.fabs(panPos) > 0 or math.fabs(tiltPos) > 0:
             msgHeadPos.data = [panPos, tiltPos]

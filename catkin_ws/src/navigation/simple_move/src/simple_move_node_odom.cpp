@@ -347,7 +347,7 @@ int main(int argc, char** argv)
             stop = false;
             state = SM_INIT;
             msg_goal_reached.status = actionlib_msgs::GoalStatus::ABORTED;
-            pub_cmd_vel.publish(geometry_msgs::Twist());
+            //pub_cmd_vel.publish(geometry_msgs::Twist());
             pub_goal_reached.publish(msg_goal_reached);
         }
         if(new_pose || new_path)
@@ -364,7 +364,7 @@ int main(int argc, char** argv)
             
         case SM_WAITING_FOR_TASK:
             get_robot_position_wrt_odom(tf_listener, robot_x, robot_y, robot_t, target_frame);
-            pub_cmd_vel.publish(geometry_msgs::Twist());
+            //pub_cmd_vel.publish(geometry_msgs::Twist());
 
             odom.header.stamp = ros::Time::now();
             odom.header.frame_id = "odom";

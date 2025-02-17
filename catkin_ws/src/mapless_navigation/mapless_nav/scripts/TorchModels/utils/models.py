@@ -233,7 +233,8 @@ class CNN_Reg3out(torch.nn.Module):
         self.vector = torch.nn.Linear(2, 2)
 
         # merge 
-        self.flat2 = torch.nn.Linear(42626, 16)
+        self.flat2 = torch.nn.Linear(42626, 150)
+        self.flat3 = torch.nn.Linear(150, 16)
         self.out = torch.nn.Linear(16, 3)
 
     def forward(self, x):
@@ -249,8 +250,8 @@ class CNN_Reg3out(torch.nn.Module):
         # image
         # [batch_s, channel, row, col]
         x = x[:, :, :-1]    
-        print(x.size())
-        print(x)
+        # print(x.size())
+        # print(x)
 
         # Architecture
         x = torch.nn.functional.relu(self.conv1(x))
@@ -263,6 +264,7 @@ class CNN_Reg3out(torch.nn.Module):
         # concat inputs
         x = torch.cat((x, vect), 1)
         x = torch.nn.functional.relu(self.flat2(x))
+        x = torch.nn.functional.relu(self.flat3(x))
         x = self.out(x)
         return x
 
