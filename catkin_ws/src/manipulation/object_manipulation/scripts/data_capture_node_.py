@@ -46,7 +46,7 @@ def callback_capture(req):
     #listener.waitForTransform("gr_left_arm_grip_center","shoulders_left_link",rospy.Time(),rospy.Duration(2))
     #grip_center_pose = listener.transformPose("shoulders_left_link",)
     target_pt = tf_buf.transform(og_pose, "shoulders_left_link")
-    print(target_pt)
+    #print(target_pt)
     broadcaster_frame_object("shoulders_left_link","saved_gripper_center",target_pt.pose)
     hd               = rospy.wait_for_message("/hardware/head/current_pose", Float64MultiArray)
     #trajectory_found = rospy.wait_for_message("/manipulation/la_q_trajectory" , JointTrajectory)
@@ -60,13 +60,17 @@ def callback_capture(req):
     resp.obj_type          = obj_shape
     #resp.arm               = False
 
-    resp.score             = score_calculation(get_object_relative_pose(obj_shape,"justina::camera_link").pose)
+    resp.score             = score_calculation(target_pt.pose)
     return resp
 
 
 def score_calculation(msg_pose):
-    return sum(get_ik_la(msg_pose))
-    
+    ik = get_ik_la(msg_pose)
+    print(ik)
+    if ik is not None: 
+        return sum(ik.positions)
+    else: 
+        return 0    
 
 
 def get_ik_la(msg_pose):
@@ -96,7 +100,7 @@ def get_ik_la(msg_pose):
     
 
 def main():
-    global pc2, hd, obj_pos, grasp_traj, obj_shape, status, listener,tf_listener,tf_buf, get_object_relative_pose
+    global pc2, hd, obj_pos, grasp_traj, obj_shape, status,tf_listener,tf_buf, get_object_relative_pose, ik_srv
     pc2 = PointCloud2()
     hd = []
     obj_pos= Point() 
@@ -106,6 +110,7 @@ def main():
     #listener = tf.TransformListener()
     print("Starting training data capture node")
     get_object_relative_pose = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
+    ik_srv = rospy.ServiceProxy('/manipulation/la_ik_trajectory', InverseKinematicsPose2Traj)
     rospy.init_node("data_capture_node")
     tf_buf = tf2_ros.Buffer()
     tf_listener = tf2_ros.TransformListener(tf_buf)

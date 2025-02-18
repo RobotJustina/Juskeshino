@@ -66,7 +66,7 @@ def callback_right_grip_sensor(msg):
 def create_origin_pose():
     jop = Pose()
     jop.position.x = 2.46
-    jop.position.y = 1.46
+    jop.position.y = 1.8
     jop.position.z = 0.06
     jop.orientation.x = 0
     jop.orientation.y = 0
@@ -135,10 +135,8 @@ def score_calculation(articular_array):
 
 def get_ik_la(msg_pose):
     global ik_srv
-
     roll,pitch,yaw = tft.euler_from_quaternion( [msg_pose.orientation.x , msg_pose.orientation.y , 
                                                  msg_pose.orientation.z , msg_pose.orientation.w ])
-
     ik_msg = InverseKinematicsPose2TrajRequest()
     ik_msg.x         = msg_pose.position.x
     ik_msg.y         = msg_pose.position.y
@@ -151,10 +149,9 @@ def get_ik_la(msg_pose):
     try:
         resp_ik_srv = ik_srv(ik_msg)    # Envia al servicio de IK
         print("Approved pose")
-        return
         return resp_ik_srv.articular_trajectory
     except:
-        print("")
+        print("Could not find IK")
 
 
 
@@ -256,7 +253,7 @@ def main():
                                                                 get_object_relative_pose(obj_shape,"world").pose.position,"XY")
                     if is_pose_valid(angle_XY, angle_YZ, angle_ZX): 
                         rospy.sleep(0.5)
-                        capture("Found grasp")
+                        capture("Found grasp",1)
                         rospy.sleep(1)
                         found_grasps = found_grasps + 1
                         print("Found Grasp: ",found_grasps)
