@@ -162,7 +162,7 @@ def main():
     justina_origin_pose = create_origin_pose()
     msg_la = Float64MultiArray()
     msg_hd = Float64MultiArray()
-    msg_la.data = [0,0,0,0,0,0,0]
+    msg_la.data = [-0.8, 0.2, 0.0, 1.55, 0.0, 1.24, 0.0]
     msg_hd.data = [0,0]
     msg_capture = String()
     grasp_trajectory_found = False
