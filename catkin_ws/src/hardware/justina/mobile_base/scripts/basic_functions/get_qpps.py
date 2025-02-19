@@ -8,7 +8,7 @@ import sys
 
 ADDRESS = 0x80
 speed = 127
-roboclaw = Roboclaw("/dev/ttyACM0", 38400)
+roboclaw = Roboclaw("/dev/justinaRC15", 38400)
 roboclaw.Open()
 iteraciones = 20
 

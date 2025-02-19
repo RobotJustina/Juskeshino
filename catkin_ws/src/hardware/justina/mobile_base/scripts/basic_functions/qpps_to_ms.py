@@ -5,11 +5,14 @@ import time
 import numpy as np 
 
 ADDRESS = 0x80
-qpps_1 = 1000
-qpps_2 = 1000
-qpps_3 = 1000
-roboclaw = Roboclaw("/dev/ttyACM0", 38400)
+ADDRESS1 = 0X81
+qpps_1 = 5000
+qpps_2 = 5000
+qpps_3 = 5000
+roboclaw = Roboclaw("/dev/justinaRC15", 38400)
+roboclaw1 = Roboclaw("/dev/justinaRC30", 38400)
 roboclaw.Open()
+roboclaw1.Open()
 
 # Parámetros físicos
 CPR = 500  # estandar 
@@ -27,13 +30,13 @@ M_inv = (D / 6) * np.array([
 
 roboclaw.SpeedM1(ADDRESS, qpps_1)
 roboclaw.SpeedM2(ADDRESS, qpps_2)
-roboclaw.SpeedM1(ADDRESS, qpps_3)
+roboclaw1.SpeedM1(ADDRESS1, qpps_3)
 
 while True:
     try:
-        status1, QPPS_1 = roboclaw.ReadSpeedM1(0x80)  
-        status2, QPPS_2 = roboclaw.ReadSpeedM2(0x80)
-        status3, QPPS_3 = roboclaw.ReadSpeedM1(0x81)  
+        status1, QPPS_1 = roboclaw.ReadSpeedM1(ADDRESS)  
+        status2, QPPS_2 = roboclaw.ReadSpeedM2(ADDRESS)
+        status3, QPPS_3 = roboclaw1.ReadSpeedM1(ADDRESS1)  
 
 
         if not (status1 and status2 and status3):
@@ -59,7 +62,7 @@ while True:
         print("stop")
         roboclaw.SpeedM1(0x80, 0)
         roboclaw.SpeedM2(0x80, 0)
-        roboclaw.SpeedM1(0x81, 0)
+        roboclaw1.SpeedM1(0x81, 0)
         break
 
 

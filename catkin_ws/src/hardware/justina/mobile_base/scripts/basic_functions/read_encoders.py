@@ -4,7 +4,7 @@ from roboclaw_3 import Roboclaw
 
 ADDRESS = 0x80
 
-roboclaw = Roboclaw("/dev/ttyACM0", 38400)
+roboclaw = Roboclaw("/dev/justinaRC15", 38400)
 roboclaw.Open()
 
 encoder1 = roboclaw.ReadEncM1(ADDRESS)
