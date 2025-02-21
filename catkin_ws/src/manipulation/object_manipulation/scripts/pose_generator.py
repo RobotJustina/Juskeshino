@@ -4,6 +4,7 @@ import rospy
 import rospkg 
 import random
 import math
+import os
 import matplotlib.pyplot as plt
 import tf.transformations as tft
 import numpy as np
@@ -34,11 +35,12 @@ def generate_random_pose():
     return rpose
 
 def change_gazebo_object_pose(state_msg, state_pose, mod_name):
+    global set_state
     state_msg.model_name = mod_name
     state_msg.pose = state_pose
-    rospy.wait_for_service('/gazebo/set_model_state')
+    #rospy.wait_for_service('/gazebo/set_model_state')
     try:
-        set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
+        #set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
         resp = set_state( state_msg )
 
     except rospy.ServiceException:
@@ -157,6 +159,7 @@ def get_ik_la(msg_pose):
 
 def main():
     global ik_srv, state_msg, grasp_trajectory_found, justina_origin_pose, obj_shape, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
+    global set_state
     state_msg = ModelState()
     deserialized_gripper_model_state = ModelState()
     justina_origin_pose = create_origin_pose()
@@ -237,11 +240,10 @@ def main():
                 reset_simulation()
                 #resp = capture("Initial Conditions")
                 print("Saved initial conditions")
-                pose_num = 0
+                pose_num = 1
                 found_grasps = 0
-                while(pose_num<15):
-                    pose_num = pose_num + 1
-                    file_name = POSE_DATA_PATH + obj_shape + str(pose_num)
+                file_name = POSE_DATA_PATH + obj_shape + str(pose_num)
+                while(os.path.exists(file_name)):
                     in_file = open(file_name, "rb") # opening for [r]eading as [b]inary
                     file_serialized_gripper_model_state = in_file.read() # if you only wanted to read 512 bytes, do .read(512)
                     in_file.close()
@@ -253,12 +255,14 @@ def main():
                                                                 get_object_relative_pose(obj_shape,"world").pose.position,"XY")
                     if is_pose_valid(angle_XY, angle_YZ, angle_ZX): 
                         rospy.sleep(0.5)
-                        capture("Found grasp",1)
+                        capture("Found grasp")
                         rospy.sleep(1)
                         found_grasps = found_grasps + 1
                         print("Found Grasp: ",found_grasps)
 
                         rospy.sleep(1)
+                    pose_num = pose_num + 1
+                    file_name = POSE_DATA_PATH + obj_shape + str(pose_num)
 
         loop.sleep()
 
