@@ -53,6 +53,14 @@ def show_pcd_from_file(path):
     data = np.load(os.path.abspath(path), allow_pickle=True)
     view = data['points']
     color = data['colors']
+    grip = data['grasp']
+    score = data['scores']
+    obj_pos = data['obj_relative_pos']
+    gr_pose = data['gripper_origin']
+    print(grip)
+    print(score)
+    print(obj_pos)
+    print(gr_pose)
     view_point_cloud = open3d.geometry.PointCloud()
     view_point_cloud.points = open3d.utility.Vector3dVector(view)
     view_point_cloud.colors = open3d.utility.Vector3dVector(color)
@@ -80,20 +88,21 @@ def save_data_to_file(resp, file_num=1):
     pcd = resp.pointcloud
     pc = ros_pc2_to_nparray(pcd)
     pc, color, _ = nparray_pc_to_torch(pc)
-    grasp = [1, 1, 1, 1, 1, 1, 1] ##
-    gr_pose = "siu" ###
-    obj_relative_pos = resp.obj_relative_pose
+    grasp = resp.final_grasp_q 
+    gr_pose = resp.gripper_pose
+    obj_relative_pos = resp.obj_relative_pos
     head_pose_q = resp.head_pose_q
     obj_type = resp.obj_type
-    score = 10 ###
-    file_path = DATASET_PATH + file_num + ".p"
+    score = resp.score
+    file_path = DATASET_PATH + "example_" + str(file_num) + ".p"
     save_to_file(pc, color, grasp, gr_pose, obj_relative_pos, head_pose_q, obj_type, score, file_path)
 
 def main():
     print("Dataset utils started")
-    rospy.init_node('object_grip_test')
+    rospy.init_node('dataset_utils')
     loop = rospy.Rate(1)
     while not rospy.is_shutdown():
+        print("Choose command")
         command = input()
         if command == 'y':
             pcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
@@ -107,8 +116,10 @@ def main():
             score = 10
             file_path = DATASET_PATH + "test1.p"
             save_to_file(pc, color, grasp, gr_pose, obj_relative_pos, head_pose_q, obj_type, score, file_path)
-        if command == 'show':
-            show_pcd_from_file(DATASET_PATH + "test1.p")
+        if command == 's':
+            print("Show number")
+            num = input()
+            show_pcd_from_file(DATASET_PATH + "example_" + num + ".p")
 
 
 

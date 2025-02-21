@@ -70,6 +70,7 @@ def callback_capture(req):
     resp.obj_type          = obj_shape
     resp.gripper_pose      = get_object_relative_pose("justina_gripper","justina::camera_link").pose
     set_state(GRIPPER_ORIGIN)
+    rospy.sleep(0.15)
     resp.pointcloud        = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
     #resp.arm               = False
 

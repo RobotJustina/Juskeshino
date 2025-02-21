@@ -15,7 +15,7 @@ from gazebo_msgs.srv import SetModelState, GetModelState
 from std_msgs.msg import String, Float64MultiArray
 from geometry_msgs.msg import Pose, PointStamped  
 from manip_msgs.srv import DataCapture, InverseKinematicsPose2TrajRequest, InverseKinematicsPose2Traj
-
+from dataset_utils import save_data_to_file
 BASE_JUSTINA_VECTOR = np.array([0.0,-1.0,0.0])
 VG_PLANE = {
     "XY": vg.basis.z,
@@ -165,8 +165,8 @@ def main():
     justina_origin_pose = create_origin_pose()
     msg_la = Float64MultiArray()
     msg_hd = Float64MultiArray()
-    msg_la.data = [-0.8, 0.2, 0.0, 1.55, 0.0, 1.24, 0.0]
-    msg_hd.data = [0,0]
+    msg_la.data = [-1.0, 0.2, 0.0, 1.55, 0.0, 1.24, 0.0]
+    msg_hd.data = [0,-1.3]
     msg_capture = String()
     grasp_trajectory_found = False
     left_gripper_made_contact = False
@@ -175,7 +175,7 @@ def main():
     num_loops = 0
     found_grasps = 0
     obj_shape = '056_tennis_ball'
-    rospy.init_node('object_grip_test')
+    rospy.init_node('dataset_generator')
     print("Starting grip test")
     # rospy.Subscriber('/manipulation/grasp/grasp_status' ,String ,callback_grasp_status)
     # rospy.Subscriber('/gr_left_arm_grip_left_sensor' ,ContactsState ,callback_left_grip_sensor)
@@ -236,12 +236,12 @@ def main():
                                                               get_object_relative_pose(obj_shape,"world").pose.position,"XY")
                 print(is_pose_valid(angle_XY, angle_YZ, angle_ZX))
         if command == 'l':
+            found_grasps = 0
             while(not rospy.is_shutdown()):
                 reset_simulation()
                 #resp = capture("Initial Conditions")
                 print("Saved initial conditions")
                 pose_num = 1
-                found_grasps = 0
                 file_name = POSE_DATA_PATH + obj_shape + str(pose_num)
                 while(os.path.exists(file_name)):
                     in_file = open(file_name, "rb") # opening for [r]eading as [b]inary
@@ -255,11 +255,11 @@ def main():
                                                                 get_object_relative_pose(obj_shape,"world").pose.position,"XY")
                     if is_pose_valid(angle_XY, angle_YZ, angle_ZX): 
                         rospy.sleep(0.5)
-                        capture("Found grasp")
+                        data = capture("Found grasp")
                         rospy.sleep(1)
                         found_grasps = found_grasps + 1
                         print("Found Grasp: ",found_grasps)
-
+                        save_data_to_file(data,found_grasps)
                         rospy.sleep(1)
                     pose_num = pose_num + 1
                     file_name = POSE_DATA_PATH + obj_shape + str(pose_num)
