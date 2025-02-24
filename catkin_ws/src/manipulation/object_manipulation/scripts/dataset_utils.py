@@ -12,7 +12,7 @@ import torch
 from sensor_msgs.msg import PointCloud2
 
 MAX_POINTS = 25600
-DATASET_PATH = 'catkin_ws/src/gnet/dataset/'
+DATASET_PATH = 'catkin_ws/src/graspnet/dataset/'
 gpus = 1
 
 def ros_pc2_to_nparray(pc):
