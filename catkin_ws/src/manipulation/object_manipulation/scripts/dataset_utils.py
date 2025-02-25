@@ -10,10 +10,20 @@ import copy
 import numpy.lib.recfunctions as rf
 import torch
 from sensor_msgs.msg import PointCloud2
+from geometry_msgs.msg import Point
+from gazebo_msgs.srv import GetModelState
+from visualization_msgs.msg import Marker
 
 MAX_POINTS = 25600
 DATASET_PATH = 'catkin_ws/src/graspnet/dataset/'
 gpus = 1
+
+def debug_type(obj, obj_name):
+    print(obj_name + "Object characteristics:")
+    print(obj)
+    print(obj.shape)
+    print(obj.dtype)
+    print(type(obj))
 
 def ros_pc2_to_nparray(pc):
     data = ros_numpy.point_cloud2.pointcloud2_to_array(pc)
@@ -30,6 +40,22 @@ def ros_pc2_to_nparray(pc):
     rgb = rf.structured_to_unstructured(rgb)
     rgb = rgb[~np.isnan(rgb).any(axis=1)]
 
+    return rgb
+
+def ros_pc2_to_npmatrix(pc):
+    print(pc.header.frame_id)
+    data = ros_numpy.point_cloud2.pointcloud2_to_array(pc)
+    #data = ros_numpy.point_cloud2.split_rgb_field(pc)
+    debug_type(data,"Split points")
+    rgb = ros_numpy.point_cloud2.split_rgb_field(data)
+    #rgb = ros_numpy.point_cloud2.pointcloud2_to_array(data)
+    debug_type(rgb,"Split points + RGB")
+    dt2 = np.dtype([('x', '<f4'), ('y', '<f4'), ('z', '<f4'), ('r', '<f4'), ('g', '<f4'), ('b', '<f4')])
+    rgb = np.asarray(rgb).astype(dt2)
+    rgb['r'] = np.divide(rgb['r'], 255)
+    rgb['g'] = np.divide(rgb['g'], 255)
+    rgb['b'] = np.divide(rgb['b'], 255)
+    debug_type(rgb, "Split points + Normalized RGB")
     return rgb
 
 def save_to_file(pc, color, grasp, gr_pose, obj_relative_pos, head_pose_q, obj_type, score, file_path):
@@ -66,6 +92,20 @@ def show_pcd_from_file(path):
     view_point_cloud.colors = open3d.utility.Vector3dVector(color)
     open3d.visualization.draw_geometries([view_point_cloud])
 
+def show_pcd_from_npmatrix(mat):
+    rgb = copy.deepcopy(mat)
+    #dt2 = np.dtype([('x', '<f4'), ('y', '<f4'), ('z', '<f4'), ('r', '<f4'), ('g', '<f4'), ('b', '<f4')])
+    #rgb = np.asarray(rgb).astype(dt2)
+    #rgb = np.squeeze(rgb, axis=0)
+    rgb = rgb.reshape(-1)
+    rgb = rf.structured_to_unstructured(rgb)
+    rgb = rgb[~np.isnan(rgb).any(axis=1)]
+    view_point_cloud = open3d.geometry.PointCloud()
+    debug_type(rgb, "Reshaped pcd ")
+    view_point_cloud.points = open3d.utility.Vector3dVector(copy.deepcopy(rgb[:,:3]))
+    view_point_cloud.colors = open3d.utility.Vector3dVector(copy.deepcopy(rgb[:,3:6]))
+    open3d.visualization.draw_geometries([view_point_cloud])
+
 def nparray_pc_to_torch(pc):
     pc_back, color_back = copy.deepcopy(pc[:,:3]), copy.deepcopy(pc[:,3:6])
     #pc = utils.noise_color(pc)
@@ -97,8 +137,36 @@ def save_data_to_file(resp, file_num=1):
     file_path = DATASET_PATH + "example_" + str(file_num) + ".p"
     save_to_file(pc, color, grasp, gr_pose, obj_relative_pos, head_pose_q, obj_type, score, file_path)
 
+def camera_link_to_optical_frame(pt):
+    target_pt = Point()
+    target_pt.x = -pt.y
+    target_pt.y = -pt.z
+    target_pt.z = pt.x
+    return target_pt
+
+def create_marker_from_pt(pt):
+    global marker_pub
+    marker = Marker()
+    marker.header.frame_id = "camera_rgb_optical_frame"
+    marker.type = Marker.SPHERE
+    marker.ns = "obje"
+    marker.header.stamp = rospy.Time.now()
+    marker.action = marker.ADD
+    marker.id = 1
+    marker.scale.x, marker.scale.y, marker.scale.z = 0.02, 0.2, 0.2
+    marker.color.r, marker.color.g, marker.color.b, marker.color.a = 20, 50, 100, 1.0
+    marker.lifetime = rospy.Duration(10)
+    marker.pose.position = pt
+    marker.pose.orientation.w = 1
+    marker_pub.publish(marker)
+
+
 def main():
+    global marker_pub
     print("Dataset utils started")
+    obj_shape = rospy.get_param("/obj","056_tennis_ball")
+    get_object_relative_pose = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
+    marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10)
     rospy.init_node('dataset_utils')
     loop = rospy.Rate(1)
     while not rospy.is_shutdown():
@@ -120,6 +188,17 @@ def main():
             print("Show number")
             num = input()
             show_pcd_from_file(DATASET_PATH + "example_" + num + ".p")
+        if command == 'p':
+            pcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
+            mat = ros_pc2_to_npmatrix(pcd)
+            show_pcd_from_npmatrix(mat)
+        if command == 'c':
+            pcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
+            obj_pt = get_object_relative_pose(obj_shape,"justina::camera_link").pose.position
+            obj_pt = camera_link_to_optical_frame(obj_pt)
+            create_marker_from_pt(obj_pt)
+
+
 
 
 
