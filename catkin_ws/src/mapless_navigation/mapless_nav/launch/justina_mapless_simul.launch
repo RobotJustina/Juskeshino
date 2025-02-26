@@ -1,11 +1,11 @@
 <launch>
-  <arg name="posx" default="-5.0" />
+  <arg name="posx" default="-4.62" /> <!-- -12.0 -->
   <!-- 3.75   -5.0 -->
-  <arg name="posy" default="-2.0" />
+  <arg name="posy" default="0.0" />
   <!-- 12.0   -2.0 -->
   <arg name="yaw" default="0.0"/>
   <!-- -1.57   0.0 -->
-  <arg name="world" default="bio_robotics_lab"/>
+  <arg name="world" default="rnd_room_c2_01"/>   <!-- bio_robotics_lab -->
 
   <arg name="max_linear_speed" default="0.8"/>
   <!-- 0.5 -->

@@ -316,8 +316,8 @@ if __name__ == "__main__":
                 rospy.logerr("Use Publish Point to inset path nodes")
                 continue
             path = get_flat_path()
-            if is_same_pat(old_path, path):
-                restart_path(path.poses[-2])
+            # if is_same_pat(old_path, path):
+            #     restart_path(path.poses[-2])
             if key == 's':
                 cad = "- navigate and save"
                 save_enable = True
