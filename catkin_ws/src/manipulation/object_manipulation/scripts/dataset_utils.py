@@ -4,6 +4,7 @@ import rospy
 import pickle
 import ros_numpy
 import numpy as np
+import math
 import os
 import open3d
 import copy
@@ -13,6 +14,7 @@ from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import Point
 from gazebo_msgs.srv import GetModelState
 from visualization_msgs.msg import Marker
+from scipy.spatial import cKDTree
 
 MAX_POINTS = 25600
 DATASET_PATH = 'catkin_ws/src/graspnet/dataset/'
@@ -29,33 +31,27 @@ def ros_pc2_to_nparray(pc):
     data = ros_numpy.point_cloud2.pointcloud2_to_array(pc)
     data = data.reshape(-1)
     rgb = ros_numpy.point_cloud2.split_rgb_field(data)
-    
     dt2 = np.dtype([('x', '<f4'), ('y', '<f4'), ('z', '<f4'), ('r', '<f4'), ('g', '<f4'), ('b', '<f4')])
-    
     rgb = np.asarray(rgb).astype(dt2)
     rgb['r'] = np.divide(rgb['r'], 255)
     rgb['g'] = np.divide(rgb['g'], 255)
     rgb['b'] = np.divide(rgb['b'], 255)
-    
     rgb = rf.structured_to_unstructured(rgb)
     rgb = rgb[~np.isnan(rgb).any(axis=1)]
-
     return rgb
 
 def ros_pc2_to_npmatrix(pc):
     print(pc.header.frame_id)
     data = ros_numpy.point_cloud2.pointcloud2_to_array(pc)
-    #data = ros_numpy.point_cloud2.split_rgb_field(pc)
-    debug_type(data,"Split points")
+    #debug_type(data,"Split points")
     rgb = ros_numpy.point_cloud2.split_rgb_field(data)
-    #rgb = ros_numpy.point_cloud2.pointcloud2_to_array(data)
-    debug_type(rgb,"Split points + RGB")
+    #debug_type(rgb,"Split points + RGB")
     dt2 = np.dtype([('x', '<f4'), ('y', '<f4'), ('z', '<f4'), ('r', '<f4'), ('g', '<f4'), ('b', '<f4')])
     rgb = np.asarray(rgb).astype(dt2)
     rgb['r'] = np.divide(rgb['r'], 255)
     rgb['g'] = np.divide(rgb['g'], 255)
     rgb['b'] = np.divide(rgb['b'], 255)
-    debug_type(rgb, "Split points + Normalized RGB")
+    #debug_type(rgb, "Split points + Normalized RGB")
     return rgb
 
 def save_to_file(pc, color, grasp, gr_pose, obj_relative_pos, head_pose_q, obj_type, score, file_path):
@@ -66,7 +62,6 @@ def save_to_file(pc, color, grasp, gr_pose, obj_relative_pos, head_pose_q, obj_t
         'gripper_origin'     : gr_pose, #Pose of gr_left_arm_link7 w.r.p to camera_link
         'obj_relative_pos'   : obj_relative_pos, #Object relative position w.r.p to camera_link
         'head_pose_q'        : head_pose_q, #Array of head angles at capture time
-        #'final_grasp_q'      : final_grasp_q,
         'obj_type'           : obj_type, #String of object type
         'scores'             : score, #Assigned score for grasp
     }
@@ -94,9 +89,6 @@ def show_pcd_from_file(path):
 
 def show_pcd_from_npmatrix(mat):
     rgb = copy.deepcopy(mat)
-    #dt2 = np.dtype([('x', '<f4'), ('y', '<f4'), ('z', '<f4'), ('r', '<f4'), ('g', '<f4'), ('b', '<f4')])
-    #rgb = np.asarray(rgb).astype(dt2)
-    #rgb = np.squeeze(rgb, axis=0)
     rgb = rgb.reshape(-1)
     rgb = rf.structured_to_unstructured(rgb)
     rgb = rgb[~np.isnan(rgb).any(axis=1)]
@@ -108,7 +100,6 @@ def show_pcd_from_npmatrix(mat):
 
 def nparray_pc_to_torch(pc):
     pc_back, color_back = copy.deepcopy(pc[:,:3]), copy.deepcopy(pc[:,3:6])
-    #pc = utils.noise_color(pc)
     select_point_index = None
     if len(pc) >= MAX_POINTS:
         select_point_index = np.random.choice(len(pc), MAX_POINTS, replace=False)
@@ -160,7 +151,29 @@ def create_marker_from_pt(pt):
     marker.pose.orientation.w = 1
     marker_pub.publish(marker)
 
+def find_nearest_pt_in_pc(pc, pt):
+    matrix = copy.deepcopy(pc)
+    matrix = matrix.reshape(-1)
+    matrix = rf.structured_to_unstructured(matrix)
+    search_vec = np.array([pt.x, pt.y, pt.z])
+    nearest = cKDTree(matrix[:,:3]).query(search_vec, k=1)[1]
+    u = math.floor(nearest/pc.shape[1])
+    v = nearest%pc.shape[1]
+    print(u,v)
+    return u,v 
 
+def find_pt_in_pc(position_obj, pc):
+    min_dist = 100000
+    u, v = 0, 0
+    for i in range(len(pc)):
+        for j in range(len(pc[0])):
+            dist = np.linalg.norm(np.array([pc[i,j]['x'] - position_obj.x, pc[i,j]['y'] - position_obj.y, pc[i,j]['z'] - position_obj.z]))
+            if dist < min_dist:
+                min_dist = dist
+                u = i
+                v = j
+    return u, v
+                
 def main():
     global marker_pub
     print("Dataset utils started")
@@ -197,12 +210,14 @@ def main():
             obj_pt = get_object_relative_pose(obj_shape,"justina::camera_link").pose.position
             obj_pt = camera_link_to_optical_frame(obj_pt)
             create_marker_from_pt(obj_pt)
-
-
-
-
-
-
+        if command == 'r':
+            pcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
+            obj_pt = get_object_relative_pose("justina_gripper","justina::camera_link").pose.position
+            mat = ros_pc2_to_npmatrix(pcd)
+            t_pt = camera_link_to_optical_frame(obj_pt)
+            u, v = find_nearest_pt_in_pc(mat,t_pt)
+            found_pt = Point(x=mat[u,v]['x'], y=mat[u,v]['y'], z=mat[u,v]['z'])
+            create_marker_from_pt(found_pt)
 
 if __name__ == '__main__':
     try:
