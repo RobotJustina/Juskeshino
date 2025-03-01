@@ -51,7 +51,7 @@ def get_new_pcd():
     global pub_hd, msg_hd
     msg_hd.data = [random.uniform(-0.4,0.4),-random.uniform(1.0, 1.2)]
     pub_hd.publish(msg_hd)
-    rospy.sleep(0.1)
+    #rospy.sleep(0.005)
     pcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
     return msg_hd.data, pcd
 

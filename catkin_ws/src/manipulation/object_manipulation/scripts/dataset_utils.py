@@ -135,7 +135,9 @@ def save_data_to_file(resp, file_num=1):
     u, v, obj_in_range = find_nearest_pt_in_pc(pcd, obj_relative_pos)
     if obj_in_range:
         file_path = DATASET_PATH + "example_" + str(file_num) + ".p"
-        cut_pcd = pcd
+
+        cut_pcd = cut_pc(u,v,pcd)
+
         save_to_file(cut_pcd, grasp, gr_pose, obj_relative_pos, head_pose_q, obj_type, score, file_path)
         return 1
     else:
@@ -189,6 +191,13 @@ def find_pt_in_pc(position_obj, pc):
                 v = j
     return u, v
                 
+
+def cut_pc(u,v, pc):
+    l, w = 150, 150
+    cropped_pc = pc[(u - int(l/2)): (u + int(l/2)) , (v - int(l/2)) : (v + int(l/2))]
+    return cropped_pc
+
+
 def main():
     global marker_pub
     print("Dataset utils started")
