@@ -13,6 +13,7 @@ import tf
 from gazebo_msgs.msg import ModelState, ContactsState 
 from gazebo_msgs.srv import SetModelState, GetModelState
 from std_msgs.msg import String, Float64MultiArray
+from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import Pose, PointStamped  
 from manip_msgs.srv import DataCapture, InverseKinematicsPose2TrajRequest, InverseKinematicsPose2Traj
 from dataset_utils import save_data_to_file
@@ -46,6 +47,14 @@ def change_gazebo_object_pose(state_msg, state_pose, mod_name):
     except rospy.ServiceException:
         pass      
 
+def get_new_pcd():
+    global pub_hd, msg_hd
+    msg_hd.data = [random.uniform(-0.4,0.4),-random.uniform(1.0, 1.2)]
+    pub_hd.publish(msg_hd)
+    rospy.sleep(0.1)
+    pcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
+    return msg_hd.data, pcd
+
 def callback_grasp_status(msg):
     global grasp_trajectory_found, grasp_attempts
     if msg.data == "SUCCESS":
@@ -67,7 +76,7 @@ def callback_right_grip_sensor(msg):
 
 def create_origin_pose():
     jop = Pose()
-    jop.position.x = 2.46
+    jop.position.x = 2.6
     jop.position.y = 1.8
     jop.position.z = 0.06
     jop.orientation.x = 0
@@ -240,8 +249,8 @@ def main():
             while(not rospy.is_shutdown()):
                 reset_simulation()
                 #resp = capture("Initial Conditions")
-                print("Saved initial conditions")
                 pose_num = 1
+                print("Testing new position")
                 file_name = POSE_DATA_PATH + obj_shape + str(pose_num)
                 while(os.path.exists(file_name)):
                     in_file = open(file_name, "rb") # opening for [r]eading as [b]inary
@@ -257,9 +266,12 @@ def main():
                         rospy.sleep(0.5)
                         data = capture("Found grasp")
                         rospy.sleep(1)
-                        found_grasps = found_grasps + 1
-                        print("Found Grasp: ",found_grasps)
-                        save_data_to_file(data,found_grasps)
+                        for i in range(5):
+                            found_grasps = found_grasps + save_data_to_file(data,found_grasps)
+                            print("Found Grasp: ",found_grasps)
+                            new_hd, new_pcd = get_new_pcd()
+                            data.head_pose_q = new_hd
+                            data.pointcloud = new_pcd
                         rospy.sleep(1)
                     pose_num = pose_num + 1
                     file_name = POSE_DATA_PATH + obj_shape + str(pose_num)

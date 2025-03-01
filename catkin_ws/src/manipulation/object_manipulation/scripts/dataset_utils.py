@@ -54,10 +54,11 @@ def ros_pc2_to_npmatrix(pc):
     #debug_type(rgb, "Split points + Normalized RGB")
     return rgb
 
-def save_to_file(pc, color, grasp, gr_pose, obj_relative_pos, head_pose_q, obj_type, score, file_path):
+def save_to_file(pcd, grasp, gr_pose, obj_relative_pos, head_pose_q, obj_type, score, file_path):
     output_dict = {
-        'points'             : pc, #np array of XYZ points of pointcloud w.r.p to camera_link
-        'colors'             : color, #np array of RGB values of pointcloud in [0,1] range (necessary for open3d and tensor)
+        #'points'             : pc, #np array of XYZ points of pointcloud w.r.p to camera_link
+        #'colors'             : color, #np array of RGB values of pointcloud in [0,1] range (necessary for open3d and tensor)
+        'pcd'                : pcd,
         'grasp'              : grasp, #[x, y, z, roll, pitch, yaw, w] array of final grip center pose w.r.p to camera_link
         'gripper_origin'     : gr_pose, #Pose of gr_left_arm_link7 w.r.p to camera_link
         'obj_relative_pos'   : obj_relative_pos, #Object relative position w.r.p to camera_link
@@ -72,8 +73,12 @@ def save_to_file(pc, color, grasp, gr_pose, obj_relative_pos, head_pose_q, obj_t
 
 def show_pcd_from_file(path):
     data = np.load(os.path.abspath(path), allow_pickle=True)
-    view = data['points']
-    color = data['colors']
+    pcd = data['pcd']
+    pcd = pcd.reshape(-1)
+    pcd = rf.structured_to_unstructured(pcd)
+    pcd = pcd[~np.isnan(pcd).any(axis=1)]
+    #view = data['points']
+    #color = data['colors']
     grip = data['grasp']
     score = data['scores']
     obj_pos = data['obj_relative_pos']
@@ -83,8 +88,8 @@ def show_pcd_from_file(path):
     print(obj_pos)
     print(gr_pose)
     view_point_cloud = open3d.geometry.PointCloud()
-    view_point_cloud.points = open3d.utility.Vector3dVector(view)
-    view_point_cloud.colors = open3d.utility.Vector3dVector(color)
+    view_point_cloud.points = open3d.utility.Vector3dVector(copy.deepcopy(pcd[:,:3]))
+    view_point_cloud.colors = open3d.utility.Vector3dVector(copy.deepcopy(pcd[:,3:6]))
     open3d.visualization.draw_geometries([view_point_cloud])
 
 def show_pcd_from_npmatrix(mat):
@@ -117,16 +122,24 @@ def nparray_pc_to_torch(pc):
 
 def save_data_to_file(resp, file_num=1):
     pcd = resp.pointcloud
-    pc = ros_pc2_to_nparray(pcd)
-    pc, color, _ = nparray_pc_to_torch(pc)
-    grasp = resp.final_grasp_q 
+    #pc = ros_pc2_to_nparray(pcd)
+    #pc, color, _ = nparray_pc_to_torch(pc)
+    pcd = ros_pc2_to_npmatrix(pcd)
+    grasp = resp.final_grasp_q
     gr_pose = resp.gripper_pose
     obj_relative_pos = resp.obj_relative_pos
+    obj_relative_pos = camera_link_to_optical_frame(obj_relative_pos)
     head_pose_q = resp.head_pose_q
     obj_type = resp.obj_type
     score = resp.score
-    file_path = DATASET_PATH + "example_" + str(file_num) + ".p"
-    save_to_file(pc, color, grasp, gr_pose, obj_relative_pos, head_pose_q, obj_type, score, file_path)
+    u, v, obj_in_range = find_nearest_pt_in_pc(pcd, obj_relative_pos)
+    if obj_in_range:
+        file_path = DATASET_PATH + "example_" + str(file_num) + ".p"
+        cut_pcd = pcd
+        save_to_file(cut_pcd, grasp, gr_pose, obj_relative_pos, head_pose_q, obj_type, score, file_path)
+        return 1
+    else:
+        return 0
 
 def camera_link_to_optical_frame(pt):
     target_pt = Point()
@@ -152,6 +165,7 @@ def create_marker_from_pt(pt):
     marker_pub.publish(marker)
 
 def find_nearest_pt_in_pc(pc, pt):
+    valid = False
     matrix = copy.deepcopy(pc)
     matrix = matrix.reshape(-1)
     matrix = rf.structured_to_unstructured(matrix)
@@ -159,8 +173,9 @@ def find_nearest_pt_in_pc(pc, pt):
     nearest = cKDTree(matrix[:,:3]).query(search_vec, k=1)[1]
     u = math.floor(nearest/pc.shape[1])
     v = nearest%pc.shape[1]
-    print(u,v)
-    return u,v 
+    if 60 < u < 420 and 60 < v < 580: valid = True
+    print(u,v,valid)
+    return u,v,valid
 
 def find_pt_in_pc(position_obj, pc):
     min_dist = 100000

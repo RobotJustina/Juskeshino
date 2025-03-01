@@ -42,10 +42,6 @@ def broadcaster_frame_object(frame, child_frame, pose):   # Emite la transformac
     t.transform.rotation.w = pose.orientation.w
     br.sendTransform(t)
 
-
-
-
-
 def callback_capture(req):
     global obj_shape, get_object_relative_pose, tf_listener,tf_buf, set_state
     og_pose = PoseStamped()
