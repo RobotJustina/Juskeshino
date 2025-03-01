@@ -47,9 +47,9 @@ def callback_capture(req):
     og_pose = PoseStamped()
     og_pose.header.frame_id = "gm/gr_left_arm_grip_center"
     og_pose.pose.orientation.w = 1
-    target_pt = tf_buf.transform(og_pose, "shoulders_left_link")
+    target_pt = tf_buf.transform(og_pose, "camera_rgb_optical_frame")
     #print(target_pt)
-    broadcaster_frame_object("shoulders_left_link","saved_gripper_center",target_pt.pose)
+    broadcaster_frame_object("camera_rgb_optical_frame","saved_gripper_center",target_pt.pose)
     hd               = rospy.wait_for_message("/hardware/head/current_pose", Float64MultiArray)
     #trajectory_found = rospy.wait_for_message("/manipulation/la_q_trajectory" , JointTrajectory)
     #articular_array          = trajectory_found.points[-1].positions
