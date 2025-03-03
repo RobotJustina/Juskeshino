@@ -4,22 +4,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import torchvision
 import numpy as np
 import open3d
 
-#Gpu config
-gpu_number = 1
-gpus = 0
-gpu_arr = '0'
-BATCH_SIZE = 5
-np.random.seed(int(time.time()))
-torch.cuda.manual_seed(1)
-torch.cuda.set_device(gpus)
 
 # Gripper and pointcloud properties
-
-
-#Dataset loaders
 
 
 
@@ -56,7 +46,7 @@ class ResidualBlock(nn.Module):
             out = self.relu(out)
             return out
 
-class GraspNetwork(nn.Module):
+class ResidualGraspNetwork(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Sequential(
@@ -86,4 +76,60 @@ class GraspNetwork(nn.Module):
                 layers.append(block(self.inplanes, planes))
 
             return nn.Sequential(*layers)
-        
+
+class GraspNetwork(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Sequential(
+                            nn.Conv2d(3, 32, kernel_size = 11, stride = 1),
+                            nn.BatchNorm2d(32),
+                            nn.ReLU())
+        self.maxpool = nn.MaxPool2d(kernel_size = 2, stride = 2, padding = 0)
+        self.conv2 = nn.Sequential(
+                            nn.Conv2d(3, 64, kernel_size = 6, stride = 1),
+                            nn.BatchNorm2d(64),
+                            nn.ReLU())
+        self.conv3 = nn.Sequential(
+                            nn.Conv2d(3, 128, kernel_size = 4, stride = 2),
+                            nn.BatchNorm2d(128),
+                            nn.ReLU())
+        self.conv4 = nn.Sequential(
+                            nn.Conv2d(3, 256, kernel_size = 4, stride = 2),
+                            nn.BatchNorm2d(256),
+                            nn.ReLU())
+        self.conv5 = nn.Sequential(
+                            nn.Conv2d(3, 512, kernel_size = 3, stride = 2),
+                            nn.BatchNorm2d(512),
+                            nn.ReLU())
+        self.conv6 = nn.Sequential(
+                            nn.Conv2d(3, 512, kernel_size = 2, stride = 1, padding=2),
+                            nn.BatchNorm2d(512),
+                            nn.ReLU())
+        self.maxpool2 = nn.MaxPool2d(kernel_size=2,stride=1,padding=0)
+        self.fc1 = nn.Linear(5*5*512,8192)
+        self.fc2 = nn.Linear(8192, 2048)
+        self.fc3 = nn.Linear(2048,512)
+        self.fc4 = nn.Linear(512,64)
+        self.fc5 = nn.Linear(64,6)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.maxpool(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = self.conv5(x)
+        x = self.conv6(x)
+        x = self.maxpool2(x)
+        x = self.fc1(x)
+        x = self.fc2(x)
+        x = self.fc3(x)
+        x = self.fc4(x)
+        x = self.fc5(x)
+
+        return x
+
+# Loss and optimizer definition
+
+criterion = nn.HuberLoss()
+optimzer = optim.SGD(GraspNetwork.parameters(),lr=0.001,momentum=0.8)
