@@ -131,5 +131,5 @@ class GraspNetwork(nn.Module):
 
 # Loss and optimizer definition
 
-criterion = nn.HuberLoss()
-optimzer = optim.SGD(GraspNetwork.parameters(),lr=0.001,momentum=0.8)
+#criterion = nn.HuberLoss()
+#optimzer = optim.SGD(GraspNetwork.parameters(),lr=0.001,momentum=0.8)
