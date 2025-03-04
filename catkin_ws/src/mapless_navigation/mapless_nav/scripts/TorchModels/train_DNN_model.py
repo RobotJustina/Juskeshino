@@ -69,8 +69,8 @@ y_test = torch.tensor(y_test, dtype=torch.float32, device=device)
 Hyperparameters
 """
 batch_size = 16
-learn_r = 4e-6 # 1e-3
-epochs = 2
+learn_r = 1e-3 # 1e-3
+epochs = 20
 
 
 """

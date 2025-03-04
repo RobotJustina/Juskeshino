@@ -1,11 +1,11 @@
 <launch>
-  <arg name="posx" default="-4.62" /> <!-- -12.0 -->
+  <arg name="posx" default="-2.0" /> <!-- -12.0 -->
   <!-- 3.75   -5.0 -->
-  <arg name="posy" default="0.0" />
+  <arg name="posy" default="2.0" />
   <!-- 12.0   -2.0 -->
-  <arg name="yaw" default="0.0"/>
+  <arg name="yaw" default="1.57079"/>
   <!-- -1.57   0.0 -->
-  <arg name="world" default="rnd_room_c2_01"/>   <!-- bio_robotics_lab -->
+  <arg name="world" default="rnd_room_c3_01"/>   <!-- bio_robotics_lab -->
 
   <arg name="max_linear_speed" default="0.8"/>
   <!-- 0.5 -->
@@ -79,6 +79,8 @@
     <param name="laser_scan_topic" value="/hardware/scan"/>
     <param name="point_cloud_topic" value="/camera/depth_registered/points"/>
   </node>
+
+  <node name="get_goal_point" pkg="mapless_nav" type="get_goal_point.py"/>
 
   <node name="joy" pkg="joy" type="joy_node" output="screen">
     <remap from="/joy" to="/hardware/joy"/>
