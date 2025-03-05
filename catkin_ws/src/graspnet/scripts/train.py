@@ -55,7 +55,6 @@ class GraspDataset(torch.utils.data.Dataset):
         pcd = rf.structured_to_unstructured(pcd)
         points = torch.tensor(pcd[:,:,:3],dtype=torch.float32)
         points = torch.permute(points,(2,1,0))
-        #print(points.size())
         pose = torch.tensor(data['grasp'],dtype=torch.float32)
         return points, pose
     
@@ -77,19 +76,32 @@ def train_network(num_epochs):
     criterion = nn.HuberLoss()
     optimizer = optim.SGD(model.parameters(),lr=0.001,momentum=0.8)
     for epoch in range(num_epochs):
+    min_loss = 0
         for batch, (points, target_pose) in enumerate(train_loader):
             points = points.to(DEVICE)
             target_pose = target_pose.to(DEVICE)
 
             output_pose = model(points)
             loss = criterion(output_pose,target_pose)
+            
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            
             del points, target_pose, output_pose
             torch.cuda.empty_cache()
             gc.collect()
-
+            
+        with torch.no_grad():
+            for points, target_pose in valid_loader:
+                error = 0
+                points = points.to(DEVICE)
+                target_pose = target_pose.to(DEVICE)
+                output_pose = model(points)
+                error = torch.sum(abs(output_pose - target_pose),dim=0) + error
+                error = error/len(points)
+                print("Average absolute error for this batch: ",error)
+                
         print ('Epoch [{}/{}], Loss: {:.4f}'.format(epoch+1, num_epochs, loss.item()))
     
 
@@ -100,7 +112,7 @@ def train_network(num_epochs):
 #optimzer = optim.SGD(GraspNetwork.parameters(),lr=0.001,momentum=0.8)
 
 def main():
-    train_network(2)
+    train_network(10)
     # dataset = GraspDataset(set_type="test",path=DATASET_PATH)
     # dataloader = torch.utils.data.DataLoader(dataset, BATCH_SIZE, shuffle=True)
     # train_features, train_labels = next(iter(dataloader))
