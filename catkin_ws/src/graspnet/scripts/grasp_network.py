@@ -86,23 +86,23 @@ class GraspNetwork(nn.Module):
                             nn.ReLU())
         self.maxpool = nn.MaxPool2d(kernel_size = 2, stride = 2, padding = 0)
         self.conv2 = nn.Sequential(
-                            nn.Conv2d(3, 64, kernel_size = 6, stride = 1),
+                            nn.Conv2d(32, 64, kernel_size = 6, stride = 1),
                             nn.BatchNorm2d(64),
                             nn.ReLU())
         self.conv3 = nn.Sequential(
-                            nn.Conv2d(3, 128, kernel_size = 4, stride = 2),
+                            nn.Conv2d(64, 128, kernel_size = 4, stride = 2),
                             nn.BatchNorm2d(128),
                             nn.ReLU())
         self.conv4 = nn.Sequential(
-                            nn.Conv2d(3, 256, kernel_size = 4, stride = 2),
+                            nn.Conv2d(128, 256, kernel_size = 4, stride = 2),
                             nn.BatchNorm2d(256),
                             nn.ReLU())
         self.conv5 = nn.Sequential(
-                            nn.Conv2d(3, 512, kernel_size = 3, stride = 2),
+                            nn.Conv2d(256, 512, kernel_size = 3, stride = 2),
                             nn.BatchNorm2d(512),
                             nn.ReLU())
         self.conv6 = nn.Sequential(
-                            nn.Conv2d(3, 512, kernel_size = 2, stride = 1, padding=2),
+                            nn.Conv2d(512, 512, kernel_size = 2, stride = 1, padding=2),
                             nn.BatchNorm2d(512),
                             nn.ReLU())
         self.maxpool2 = nn.MaxPool2d(kernel_size=2,stride=1,padding=0)
@@ -121,6 +121,8 @@ class GraspNetwork(nn.Module):
         x = self.conv5(x)
         x = self.conv6(x)
         x = self.maxpool2(x)
+        print(x.size())
+        x = torch.flatten(x,1)
         x = self.fc1(x)
         x = self.fc2(x)
         x = self.fc3(x)
@@ -129,7 +131,3 @@ class GraspNetwork(nn.Module):
 
         return x
 
-# Loss and optimizer definition
-
-#criterion = nn.HuberLoss()
-#optimzer = optim.SGD(GraspNetwork.parameters(),lr=0.001,momentum=0.8)
