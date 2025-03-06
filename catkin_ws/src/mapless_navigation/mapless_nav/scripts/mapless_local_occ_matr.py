@@ -10,9 +10,9 @@ import torch
 from TorchModels.utils import models
 
 package_path = rospkg.RosPack().get_path("mapless_nav")
-model_path = package_path + "/scripts/TorchModels/Mat_Regression.pth"
+model_path = package_path + "/scripts/TorchModels/CNN_Reg3out.pth"
 print("model path: ", model_path)
-model = models.Mat_Regression()
+model = models.CNN_Reg3out()
 model.load_state_dict(torch.load(model_path))
 disp = 'cuda' if torch.cuda.is_available() else 'cpu'
 model.to(disp)
@@ -26,43 +26,10 @@ target_reached = True
 robot_pos_x, robot_pos_y = 0, 0
 speed_factor = 0.5
 
-# def callback_grid(msg):
-#     # print("callback_grid")
-#     global model, last_goal, disp, linx, angz, C, init_time
-#     grid = list(msg.data)
-#     entrada = grid+last_goal
-#     entrada = np.asarray(entrada)
-#     entrada = np.expand_dims(entrada, axis=0)
-#     x_ent = torch.tensor(entrada)
-#     x_ent = x_ent.to(torch.device(disp), torch.float32)
-#     # print("last_goal", abs(last_goal[0]))
-#     if (abs(last_goal[0]) > 0.3):
-#         # print("on if")
-#         with torch.no_grad():
-#             y_pred = model(x_ent)
-#         y_pred = y_pred.cpu().numpy()
-#         index = int(np.argmax(y_pred))
-#         linx = C[index, 0]
-#         angz = C[index, 1]
-#     else:
-#         # print("on else")
-#         # linx=0.0
-#         # angz=0.0
-#         if (init_time != -1.0 and (linx+angz) > 0):
-#             tiempo = rospy.get_time()
-#             print(f"inicio: {init_time}, {tiempo}")
-#             tiempo = tiempo-init_time
-#             print(f"Time: {tiempo}")
-#             init_time = -1.0
-#         linx = 0.0
-#         angz = 0.0
-#     print()
-
 
 def callback_goal(msg):
     # print("callback_goal")
     global last_goal, target_reached
-    global robot_pos_x, robot_pos_y
     
     # print("last_goal", last_goal)
     # print("msg.data", msg.data)
