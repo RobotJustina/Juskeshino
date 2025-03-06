@@ -1,5 +1,4 @@
-#!/home/robocup/regnet/REGNet_for_3D_Grasping/env/bin/python
-
+#!/usr/bin/env python
 import rospy 
 import pickle
 import ros_numpy
@@ -10,6 +9,7 @@ import open3d
 import copy
 import numpy.lib.recfunctions as rf
 import torch
+import cv2
 from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import Point
 from gazebo_msgs.srv import GetModelState
@@ -137,6 +137,7 @@ def save_data_to_file(resp, file_num=1):
         file_path = DATASET_PATH + "example_" + str(file_num) + ".p"
 
         cut_pcd = cut_pc(u,v,pcd)
+        #show_rgb(cut_pc)
 
         save_to_file(cut_pcd, grasp, gr_pose, obj_relative_pos, head_pose_q, obj_type, score, file_path)
         return 1
@@ -175,7 +176,7 @@ def find_nearest_pt_in_pc(pc, pt):
     nearest = cKDTree(matrix[:,:3]).query(search_vec, k=1)[1]
     u = math.floor(nearest/pc.shape[1])
     v = nearest%pc.shape[1]
-    if 60 < u < 420 and 60 < v < 580: valid = True
+    if 100 < u < 380 and 100 < v < 540: valid = True
     print(u,v,valid)
     return u,v,valid
 
@@ -193,9 +194,19 @@ def find_pt_in_pc(position_obj, pc):
                 
 
 def cut_pc(u,v, pc):
-    l, w = 150, 150
+    l, w = 200, 200
     cropped_pc = pc[(u - int(l/2)): (u + int(l/2)) , (v - int(l/2)) : (v + int(l/2))]
     return cropped_pc
+
+
+def show_rgb(pc):
+    img_xyz = ros_numpy.point_cloud2.pointcloud2_to_array(pc)  # dim 480 x 640, 
+    rgb_array = img_xyz['rgb'].copy()     # Pass a copy of rgb float32, 480 x 640
+    rgb_array.dtype = np.uint32       # Config data type of elements from array
+    r,g,b = ((rgb_array >> 16) & 255), ((rgb_array >> 8) & 255), (rgb_array & 255)  # 480 x 640 c/u
+    img_bgr = cv2.merge((np.asarray(b,dtype='uint8'),np.asarray(g,dtype='uint8'),np.asarray(r,dtype='uint8')))
+    cv2.imshow("imagen sin plano #1", img_bgr) #*****************
+    cv2.waitKey(0)
 
 
 def main():

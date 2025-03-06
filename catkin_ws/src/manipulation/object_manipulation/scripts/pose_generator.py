@@ -26,8 +26,8 @@ VG_PLANE = {
 
 def generate_random_pose():
     rpose = Pose()
-    rpose.position.x = random.randint(205,310)/100
-    rpose.position.y = random.randint(205,225)/100
+    rpose.position.x = random.randint(210,310)/100
+    rpose.position.y = random.randint(218,245)/100
     rpose.position.z = 0.745
     rpose.orientation.x = random.randint(-315,315)/100
     rpose.orientation.y = random.randint(-315,315)/100
@@ -92,11 +92,11 @@ def reset_simulation():
     num_loops = 0
     left_gripper_made_contact = False
     right_gripper_made_contact = False
-    pub_la.publish(msg_la)
-    pub_hd.publish(msg_hd)
+    #pub_la.publish(msg_la)
+    #pub_hd.publish(msg_hd)
     rospy.sleep(0.1)
-    pub_object.publish(obj_shape)
-    pub_object.publish(obj_shape)
+    #pub_object.publish(obj_shape)
+    #pub_object.publish(obj_shape)
     grasp_attempts = 0
     
 def show_graph(V1,V2,W1,W2):
@@ -194,7 +194,7 @@ def main():
     get_object_relative_pose = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
     capture = rospy.ServiceProxy('/manipulation/grasp/data_capture_service', DataCapture)
     set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
-    pub_object = rospy.Publisher("/plannning/simple_task/take_object", String, queue_size=10)
+    #pub_object = rospy.Publisher("/plannning/simple_task/take_object", String, queue_size=10)
     pub_la = rospy.Publisher("/hardware/left_arm/goal_pose", Float64MultiArray, queue_size=10)
     pub_hd = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=10)
     obj_shape = rospy.get_param("/obj","056_tennis_ball")
@@ -204,7 +204,7 @@ def main():
     pose_num = 0
     loop = rospy.Rate(1)
     while not rospy.is_shutdown():
-        print("Type r to reset sim to a random pose")
+        print("Type r to reset sim to a random pose, and l to loop simulation for samples")
         command = input()
         if command == "r": 
             #obj_pose = get_object_relative_pose("justina_gripper::left_arm_grip_center",obj_shape).pose
@@ -245,16 +245,18 @@ def main():
                                                               get_object_relative_pose(obj_shape,"world").pose.position,"XY")
                 print(is_pose_valid(angle_XY, angle_YZ, angle_ZX))
         if command == 'l':
-            found_grasps = 0
-            while(not rospy.is_shutdown()):
+            print("Start from sample number:")
+            found_grasps = int(input())
+            print("How many samples to take?")
+            desired_samples = int(input()) + found_grasps + 1
+            while((not rospy.is_shutdown()) and found_grasps < desired_samples):
                 reset_simulation()
-                #resp = capture("Initial Conditions")
                 pose_num = 1
                 print("Testing new position")
                 file_name = POSE_DATA_PATH + obj_shape + str(pose_num)
-                while(os.path.exists(file_name)):
+                while(os.path.exists(file_name) and found_grasps < desired_samples):
                     in_file = open(file_name, "rb") # opening for [r]eading as [b]inary
-                    file_serialized_gripper_model_state = in_file.read() # if you only wanted to read 512 bytes, do .read(512)
+                    file_serialized_gripper_model_state = in_file.read() 
                     in_file.close()
                     deserialized_gripper_model_state.deserialize(file_serialized_gripper_model_state)
                     deserialized_gripper_model_state.reference_frame = obj_shape
@@ -262,19 +264,21 @@ def main():
                     rospy.sleep(0.001)
                     angle_XY, angle_YZ, angle_ZX, gripper_side = get_angle_in_plane(get_object_relative_pose("justina_gripper","world").pose.position, 
                                                                 get_object_relative_pose(obj_shape,"world").pose.position,"XY")
-                    if is_pose_valid(angle_XY, angle_YZ, angle_ZX): 
-                        rospy.sleep(0.5)
+                    if is_pose_valid(angle_XY, angle_YZ, angle_ZX) and found_grasps < desired_samples: 
                         data = capture("Found grasp")
-                        rospy.sleep(1)
+                        found_grasps = found_grasps + save_data_to_file(data,found_grasps)
+                        print("Found Grasp: ",found_grasps)
                         for i in range(5):
-                            found_grasps = found_grasps + save_data_to_file(data,found_grasps)
-                            print("Found Grasp: ",found_grasps)
-                            new_hd, new_pcd = get_new_pcd()
-                            data.head_pose_q = new_hd
-                            data.pointcloud = new_pcd
-                        rospy.sleep(1)
+                            if found_grasps < desired_samples:
+                                new_hd, new_pcd = get_new_pcd()
+                                data.head_pose_q = new_hd
+                                data.pointcloud = new_pcd
+                                found_grasps = found_grasps + save_data_to_file(data,found_grasps)
+                                print("Found Grasp: ",found_grasps)
+                            else: break
                     pose_num = pose_num + 1
                     file_name = POSE_DATA_PATH + obj_shape + str(pose_num)
+            print("Finished taking samples")
 
         loop.sleep()
 

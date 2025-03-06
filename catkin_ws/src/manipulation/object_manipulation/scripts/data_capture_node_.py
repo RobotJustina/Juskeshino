@@ -48,29 +48,29 @@ def callback_capture(req):
     og_pose.header.frame_id = "gm/gr_left_arm_grip_center"
     og_pose.pose.orientation.w = 1
     target_pt = tf_buf.transform(og_pose, "camera_rgb_optical_frame")
-    #print(target_pt)
-    broadcaster_frame_object("camera_rgb_optical_frame","saved_gripper_center",target_pt.pose)
+    #broadcaster_frame_object("camera_rgb_optical_frame","saved_gripper_center",target_pt.pose)
     hd               = rospy.wait_for_message("/hardware/head/current_pose", Float64MultiArray)
-    #trajectory_found = rospy.wait_for_message("/manipulation/la_q_trajectory" , JointTrajectory)
-    #articular_array          = trajectory_found.points[-1].positions
     x = target_pt.pose.position.x
     y = target_pt.pose.position.y
     z = target_pt.pose.position.z
-    roll,pitch,yaw = tft.euler_from_quaternion( [target_pt.pose.orientation.x , target_pt.pose.orientation.y , 
-                                                 target_pt.pose.orientation.z , target_pt.pose.orientation.w ])
+    qx = target_pt.pose.orientation.x
+    qy = target_pt.pose.orientation.y
+    qz = target_pt.pose.orientation.z
+    qw = target_pt.pose.orientation.w
+    # roll,pitch,yaw = tft.euler_from_quaternion( [target_pt.pose.orientation.x , target_pt.pose.orientation.y , 
+    #                                              target_pt.pose.orientation.z , target_pt.pose.orientation.w ])
     resp                   = DataCaptureResponse()
     resp.capture_status    = "Saved_grasp"
     resp.obj_relative_pos  = get_object_relative_pose(obj_shape,"justina::camera_link").pose.position
     resp.head_pose_q       = hd.data
-    resp.final_grasp_q     = [x, y, z, roll, pitch, yaw]
+    resp.final_grasp_q     = [x, y, z, qx, qy, qz, qw]
     resp.obj_type          = obj_shape
     resp.gripper_pose      = get_object_relative_pose("justina_gripper","justina::camera_link").pose
     set_state(GRIPPER_ORIGIN)
     rospy.sleep(0.15)
     resp.pointcloud        = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
-    #resp.arm               = False
-
-    resp.score             = score_calculation(target_pt.pose)
+    resp.score             = 0
+    #score_calculation(target_pt.pose)
     return resp
 
 
