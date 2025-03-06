@@ -69,13 +69,10 @@ def occGridCallback(msg):
     other_features = np.zeros(msg.info.height)
     d, th = target_direction()
     other_features[:2] = [round(d, 2), round(th, 2)]
-    print("\ndatay", data_Y)
     if category_y:
         other_features[2:4] = data_Y
     else:
         other_features[2:5] = data_Y
-    print()
-    print()
     # mat(81x80) ch0 80x80=occ_grid, mat[81]=vect(80) 
     """
     # MAT dim(81x80): ch0 80x80=occ_grid, mat[81]=vect_ydat dim(80)
@@ -188,7 +185,7 @@ def main():
 
             cad += " No recording"
             
-        #print(cad, end='\r')
+        print(cad, end='\r')
         #print(cad)
         loop.sleep()
     
