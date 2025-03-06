@@ -10,16 +10,18 @@ import torch.utils.data.dataloader
 import torchvision
 import numpy as np
 import open3d
+import copy
 from grasp_network import GraspNetwork
 import os
 import numpy.lib.recfunctions as rf
 import gc
+import matplotlib as plt
 
 #Gpu config
 gpu_number = 1
 gpus = 0
 gpu_arr = '0'
-BATCH_SIZE = 5
+BATCH_SIZE = 200
 #np.random.seed(int(time.time()))
 #torch.cuda.manual_seed(1)
 #torch.cuda.set_device(gpus)
@@ -30,6 +32,7 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 #Dataset loaders
 
 DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/dataset"
+MODELS_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/models"
 VAL_TO_TEST_RATIO = 0.1
 
 class GraspDataset(torch.utils.data.Dataset):
@@ -70,13 +73,14 @@ def get_dataloaders():
 
     return train_loader, valid_loader
 
-def train_network(num_epochs):
+def train_network(num_epochs, model_path=None):
     train_loader, valid_loader = get_dataloaders()
-    model = GraspNetwork().to(DEVICE)
+    model = load_model(model_path)
     criterion = nn.HuberLoss()
-    optimizer = optim.SGD(model.parameters(),lr=0.001,momentum=0.8)
+    optimizer = optim.SGD(model.parameters(),lr=0.01,momentum=0.8)
+    min_loss = 10
     for epoch in range(num_epochs):
-    min_loss = 0
+        model.train()
         for batch, (points, target_pose) in enumerate(train_loader):
             points = points.to(DEVICE)
             target_pose = target_pose.to(DEVICE)
@@ -91,28 +95,35 @@ def train_network(num_epochs):
             del points, target_pose, output_pose
             torch.cuda.empty_cache()
             gc.collect()
-            
+        
+        model.eval()    
         with torch.no_grad():
             for points, target_pose in valid_loader:
                 error = 0
                 points = points.to(DEVICE)
                 target_pose = target_pose.to(DEVICE)
                 output_pose = model(points)
+                loss = criterion(output_pose,target_pose)
                 error = torch.sum(abs(output_pose - target_pose),dim=0) + error
                 error = error/len(points)
                 print("Average absolute error for this batch: ",error)
-                
+            if loss < min_loss:
+                min_loss = loss
+                best_model = copy.deepcopy(model.state_dict())       
         print ('Epoch [{}/{}], Loss: {:.4f}'.format(epoch+1, num_epochs, loss.item()))
-    
+    model_file = MODELS_PATH + "/model.pt"
+    torch.save(best_model,model_file)
 
-            
-# Loss and optimizer definition
-
-#criterion = nn.HuberLoss()
-#optimzer = optim.SGD(GraspNetwork.parameters(),lr=0.001,momentum=0.8)
+def load_model(model_path=None):
+    model = GraspNetwork()
+    if model_path:
+        model.load_state_dict(torch.load(model_path,weights_only=True))
+    model.to(DEVICE)
+    return model
 
 def main():
-    train_network(10)
+    model_file = MODELS_PATH + "/model.pt"
+    train_network(100,model_path=model_file)
     # dataset = GraspDataset(set_type="test",path=DATASET_PATH)
     # dataloader = torch.utils.data.DataLoader(dataset, BATCH_SIZE, shuffle=True)
     # train_features, train_labels = next(iter(dataloader))
