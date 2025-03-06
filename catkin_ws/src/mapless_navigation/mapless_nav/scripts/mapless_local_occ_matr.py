@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 import rospy
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float32MultiArray, Float64MultiArray
 from geometry_msgs.msg import Twist, PointStamped
 from nav_msgs.msg import OccupancyGrid, Odometry
 import numpy as np
@@ -10,9 +10,9 @@ import torch
 from TorchModels.utils import models
 
 package_path = rospkg.RosPack().get_path("mapless_nav")
-model_path = package_path + "/scripts/TorchModels/CNN_Reg3out.pth"
+model_path = package_path + "/scripts/TorchModels/Mat_Regression.pth"
 print("model path: ", model_path)
-model = models.CNN_Reg3out()
+model = models.Mat_Regression()
 model.load_state_dict(torch.load(model_path))
 disp = 'cuda' if torch.cuda.is_available() else 'cpu'
 model.to(disp)
@@ -24,7 +24,7 @@ liny = 0.0
 angz = 0.0
 target_reached = True
 robot_pos_x, robot_pos_y = 0, 0
-speed_factor = 1
+speed_factor = 0.5
 
 # def callback_grid(msg):
 #     # print("callback_grid")
@@ -103,7 +103,7 @@ def occGridCallback(msg):
 
     entrada = np.expand_dims(entrada, axis=0)
     entrada = np.expand_dims(entrada, axis=0)
-    print("entrada", entrada.shape)
+    #print("entrada", entrada.shape)
     x_ent = torch.tensor(entrada)
     x_ent = x_ent.to(torch.device(disp), torch.float32)
 
@@ -115,10 +115,25 @@ def occGridCallback(msg):
         # y_pred=  l_vel_x, l_vel_y, a_vel_z
         y_pred = y_pred.cpu().numpy()[0]
         print("y_pred", y_pred)
-        y_pred*= speed_factor 
-        linx = y_pred[0]
-        liny = y_pred[1]
-        angz = y_pred[2]
+        #y_pred*= speed_factor 
+        linx = y_pred[0] #* speed_factor
+        if linx > 1:
+            linx = 1
+        #linx = speed_factor*( (linx+1)/2 )
+        #linx = 0.2
+        
+        """Deleted"""
+        #liny = y_pred[1]
+
+        """changed"""
+        angz = y_pred[1]
+
+        #angz = y_pred[2]
+        #angz = (angz -0.5)*100
+        # if angz > 1:
+        #     angz = 1
+        # elif angz < -1:
+        #     angz = -1
 
     else:
         print("-- else")
@@ -148,7 +163,7 @@ def getOdomCallback(msg):
     #     robot_theta = th - (np.sign(th)*2*math.pi)
     # else:
     #     robot_theta = th
-    print(f"robot ({robot_pos_x:.2f},{robot_pos_y:.2f})")
+    #print(f"robot ({robot_pos_x:.2f},{robot_pos_y:.2f})")
     
 
 def shutdown_stop():
@@ -168,11 +183,17 @@ def main():
     rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
     pub_cmd = rospy.Publisher(
         "/hardware/mobile_base/cmd_vel", Twist, queue_size=10)
+    pubHeadPos = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=1)
     # pub_cmd = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
     print("NN_out has been started")
-    loop = rospy.Rate(1)
+    loop = rospy.Rate(2)
     msg = Twist()
-    
+    msgHeadPos = Float64MultiArray()
+    msgHeadPos.data = [0.0, -0.4]
+    pubHeadPos.publish(msgHeadPos)
+    rospy.sleep(0.5)
+    pubHeadPos.publish(msgHeadPos)
+
     while not rospy.is_shutdown():
         # pub_cmd.publish(msg)
         msg.linear.x = linx
@@ -180,12 +201,13 @@ def main():
         msg.angular.z = angz
         print("linx", linx)
         print("ang z", angz)
-        print("target_reached", target_reached)
-        print()
+        #print("target_reached", target_reached)
+        print("publish >>>")
         pub_cmd.publish(msg)
+        print()
         rospy.on_shutdown(shutdown_stop)
         loop.sleep()
-    
+
         
 
 

@@ -266,5 +266,176 @@ class CNN_Reg3out(torch.nn.Module):
         x = torch.nn.functional.relu(self.flat2(x))
         x = torch.nn.functional.relu(self.flat3(x))
         x = self.out(x)
+        x = torch.nn.functional.sigmoid(x)
         return x
+
+# Semi zigzag
+class CNN_Reg3outS(torch.nn.Module):
+    def __init__(self):
+        super(CNN_Reg3outS, self).__init__()
+
+        self.name = 'CNN_Reg3outS'
+        # layers
+        self.conv1 = torch.nn.Conv2d(1, 8, 5)
+        #self.conv2 = torch.nn.Conv2d(8, 16, 3)
+        #self.conv3 = torch.nn.Conv2d(18, 32, 3)
+        self.lin1 = torch.nn.Linear(76, 200)
+
+        self.dropout_20 = torch.nn.Dropout2d(p=0.2)
+        self.dropout_10 = torch.nn.Dropout(p=0.1)
+
+        # second input
+        self.vector = torch.nn.Linear(2, 2)
+
+        # merge 
+        self.flat2 = torch.nn.Linear(121602, 150)
+        #self.flat3 = torch.nn.Linear(200, 16)
+        self.out = torch.nn.Linear(150, 3)
+
+    def forward(self, x):
+        # vector: d, th
+        vect = x[:, 0, -1, :2]  # [batch_s, channel, row, col]
+        # print(vect.size())
+        # print(vect)
+        vect = self.vector(vect)
+
+        vect = torch.nn.functional.relu(self.vector(vect))
+
+
+        # image
+        # [batch_s, channel, row, col]
+        x = x[:, :, :-1]    
+        # print(x.size())
+        # print(x)
+
+        # Architecture
+        x = torch.nn.functional.relu(self.conv1(x))
+        #x = torch.nn.functional.relu(self.conv2(x))
+        x = self.dropout_20(x)
+        #x = torch.nn.functional.relu(self.conv3(x))
+        x = torch.nn.functional.relu(self.lin1(x))
+        
+        x = self.dropout_10(x)
+
+        x = torch.flatten(x, 1)
+        # concat inputs
+        x = torch.cat((x, vect), 1)
+        x = torch.nn.functional.relu(self.flat2(x))
+        #x = torch.nn.functional.relu(self.flat3(x))
+        x = self.out(x)
+        x = torch.nn.functional.sigmoid(x)
+        return x
+
+
+class Mat_Regression(torch.nn.Module):
+    def __init__(self):
+        super(Mat_Regression, self).__init__()
+
+        self.name = 'Mat_Regression'
+
+        self.conv1 = torch.nn.Conv2d(1, 1, 5)
+        self.lin1 = torch.nn.Linear(76, 24)
+        self.lin2 = torch.nn.Linear(24, 12)
+        self.lin3 = torch.nn.Linear(914, 6)
+        self.out = torch.nn.Linear(6, 3)  
+        # second input
+        self.vector = torch.nn.Linear(2, 2)
+
+    def forward(self, x):
+        # vector: d, th
+        vect = x[:, 0, -1, :2]  # [batch_s, channel, row, col]
+        # print(vect.size())
+        # print(vect)
+        vect = self.vector(vect)
+
+        vect = torch.nn.functional.relu(self.vector(vect))
+        x = x[:, :, :-1] 
+
+        # Architecture
+        x = torch.nn.functional.relu(self.conv1(x))
+        x = torch.nn.functional.relu(self.lin1(x))
+        x = torch.nn.functional.relu(self.lin2(x))
+        x = torch.flatten(x, 1)
+        # concat inputs
+        x = torch.cat((x, vect), 1)
+        x = torch.nn.functional.relu(self.lin3(x))
+        x = self.out(x)
+        x = torch.nn.functional.tanh(x)
+        return x
+    
+
+class CNN_RegTanh(torch.nn.Module):
+    def __init__(self):
+        super(CNN_RegTanh, self).__init__()
+        self.name = 'CNN_RegTanh'
+        # layers
+        self.conv1 = torch.nn.Conv2d(1, 16, 3)
+        # self.conv2 = torch.nn.Conv2d(3, 8, 5)
+        self.dropout_50 = torch.nn.Dropout2d(p=0.5)
+        self.conv3 = torch.nn.Conv2d(16, 32, 3)
+        self.dropout_40 = torch.nn.Dropout(p=0.4)
+        self.norm_l3 = torch.nn.GroupNorm(1, 32)
+        
+        self.flat1 = torch.nn.Linear(184834, 120)
+
+        # second input
+        self.vector = torch.nn.Linear(2, 2)
+
+        # merge
+        self.flat2 = torch.nn.Linear(120, 32)
+        self.dropout_20 = torch.nn.Dropout(p=0.2)
+        self.flat3 = torch.nn.Linear(32, 6)
+        self.out = torch.nn.Linear(6, 2)
+
+    def forward(self, x):
+        # vector: d, th
+        vect = x[:, 0, -1, :2]  # [batch_s, channel, row, col]
+        # print(vect.size())
+        # print(vect)
+        vect = self.vector(vect)
+
+        vect = torch.nn.functional.relu(self.vector(vect))
+
+
+        # image
+        # [batch_s, channel, row, col]
+        x = x[:, :, :-1]    
+        # print(x.size())
+        # print(x)
+
+        # Architecture
+        x = self.conv1(x)
+        x = torch.nn.functional.relu(x)
+
+        # x = self.conv2(x)
+        # x = torch.nn.functional.relu(x)
+        # x = self.dropout_50(x)
+
+        x = self.conv3(x)
+        x = torch.nn.functional.relu(x)
+        x = self.dropout_50(x)
+        x = self.norm_l3(x)
+
+
+
+        x = torch.flatten(x, 1)
+        x = torch.cat((x, vect), 1)
+        x = self.flat1(x)
+        x = self.dropout_40(x)
+        # concat inputs
+        #x = torch.cat((x, vect), 1)
+        x = self.flat2(x)
+        x = torch.nn.functional.relu(x)
+        x = self.dropout_20(x)
+        
+        x = self.flat3(x)
+        x = torch.nn.functional.relu(x)
+        x = self.dropout_20(x)
+        x = self.out(x)
+        x = torch.nn.functional.tanh(x)
+
+        #x = torch.nn.functional.softmax(x, dim=1)
+        return x
+    
+
 
