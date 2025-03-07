@@ -52,17 +52,19 @@ print("Data_Y shape:", data_Y.shape)
 
 # # TODO: Delete
 # Norm Az
-#data_Y[:, 2] = (data_Y[:, 2] - np.amin(data_Y[:, 2])) / np.ptp(data_Y[:, 2])
+data_Y[:, 1] = (data_Y[:, 1] - np.amin(data_Y[:, 1])) / np.ptp(data_Y[:, 1])
+data_Y[:, 1] = (data_Y[:, 1]*2) -1
+data_Y[:, 0] = (data_Y[:, 0] - np.amin(data_Y[:, 0])) / np.ptp(data_Y[:, 0])
+
 
 # Norm lx
-
 
 # for y in data_Y:
 #     print(y)
 # print("sample", data_Y.shape)
-# ymax = np.amax(data_Y[:, 1])
+# ymax = np.amax(data_Y[:, 0])
 # print(ymax)
-# ymin = np.amin(data_Y[:, 1])
+# ymin = np.amin(data_Y[:, 0])
 # print(ymin)
 
 # Normalization
@@ -83,15 +85,15 @@ y_val = torch.tensor(y_val, dtype=torch.float32, device=device)
 # """
 # Hyperparameters
 # """
-batch_size = 16
-learn_r = 0.001 # 1e-3
-epochs = 60
+batch_size = 8
+learn_r = 0.0001 # 1e-3
+epochs = 10
 
 
 # """
 # Model
 # """
-model = nn_models.CNN_RegTanh()
+model = nn_models.CNN_2feat()
 model.to(device)
 
 optimizer = Adam(model.parameters(), lr=learn_r)
@@ -135,7 +137,7 @@ for epoch in range(epochs):
         running_loss += loss_val.item()
         if i % (batch_size*10) == (batch_size*10)-1:
             train_loss = running_loss / i # loss per batch
-            print('   batch {} loss: {}'.format(i + 1, train_loss), end='\r')
+            print('   batch {} loss: {:.6f}'.format(i + 1, train_loss), end='\r')
             tb_x = epoch * len(train_loader) + i + 1
             running_loss = 0.
     print()
@@ -155,7 +157,7 @@ for epoch in range(epochs):
             running_vloss += vloss
 
     avg_vloss = running_vloss /  (i + 1)
-    print('   train loss: {}, valid loss: {}'.format(train_loss, avg_vloss))
+    print('   train loss: {:.6f}, valid loss: {:.6f}'.format(train_loss, avg_vloss))
     # Track best performance, and save the model's state
     if avg_vloss < best_vloss:
         best_vloss = avg_vloss

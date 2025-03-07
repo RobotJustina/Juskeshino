@@ -438,4 +438,35 @@ class CNN_RegTanh(torch.nn.Module):
         return x
     
 
+class CNN_2feat(torch.nn.Module):
+    def __init__(self):
+        super(CNN_2feat, self).__init__()
+        self.name = 'CNN_2feat'
+        
+        # layers
+        self.dropout_60 = torch.nn.Dropout(p=0.6)
+        self.dropout_40 = torch.nn.Dropout(p=0.4)
+        self.norm_l3 = torch.nn.GroupNorm(1, 32)
+        self.dropout_20 = torch.nn.Dropout(p=0.2)
+        
+        # second input
+        self.vector = torch.nn.Linear(2, 32)
 
+        # merge
+        self.flat2 = torch.nn.Linear(32, 16)
+        self.out = torch.nn.Linear(16, 2)
+
+    def forward(self, x):
+        # vector: d, th
+        vect = x[:, 0, -1, :2]  # [batch_s, channel, row, col]
+        vect = self.vector(vect)
+        vect = torch.nn.functional.relu(vect)
+
+        x = self.flat2(vect)
+        x = torch.nn.functional.relu(x)
+
+        x = self.out(x)
+        x = torch.nn.functional.tanh(x)
+
+        #x = torch.nn.functional.softmax(x, dim=1)
+        return x

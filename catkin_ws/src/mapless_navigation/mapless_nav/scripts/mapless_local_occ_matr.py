@@ -10,9 +10,9 @@ import torch
 from TorchModels.utils import models
 
 package_path = rospkg.RosPack().get_path("mapless_nav")
-model_path = package_path + "/scripts/TorchModels/CNN_Reg3out.pth"
+model_path = package_path + "/scripts/TorchModels/CNN_2feat.pth"
 print("model path: ", model_path)
-model = models.CNN_Reg3out()
+model = models.CNN_2feat()
 model.load_state_dict(torch.load(model_path))
 disp = 'cuda' if torch.cuda.is_available() else 'cpu'
 model.to(disp)
@@ -24,19 +24,14 @@ liny = 0.0
 angz = 0.0
 target_reached = True
 robot_pos_x, robot_pos_y = 0, 0
-speed_factor = 0.5
+speed_factor = 2
 
 
 def callback_goal(msg):
-    # print("callback_goal")
     global last_goal, target_reached
-    
-    # print("last_goal", last_goal)
-    # print("msg.data", msg.data)
     if target_reached:
         last_goal[0] = 0.0
         last_goal[1] = 0.0
-        print("> target reached")
     else:
         last_goal = list(msg.data)
 
@@ -44,7 +39,6 @@ def callback_goal(msg):
 def callback_point(msg):
     global init_time, target_reached
     init_time = rospy.get_time()
-    # print(f"Init time: {init_time}")
     target_reached = False
     print(f"New goal: {msg.point.x, msg.point.y}")
 
@@ -52,7 +46,6 @@ def callback_point(msg):
 def occGridCallback(msg):
     global data_X, linx, liny, angz
     global model, last_goal, disp, init_time
-
     global target_reached, speed_factor
     
     data = np.asarray(msg.data)
@@ -76,34 +69,40 @@ def occGridCallback(msg):
 
     # print("last_goal", abs(last_goal[0]))
     if (abs(last_goal[0]) > 0.3):
-        print("++ on if")
         with torch.no_grad():
             y_pred = model(x_ent)
-        # y_pred=  l_vel_x, l_vel_y, a_vel_z
         y_pred = y_pred.cpu().numpy()[0]
-        print("y_pred", y_pred)
-        #y_pred*= speed_factor 
-        linx = y_pred[0] #* speed_factor
-        if linx > 1:
-            linx = 1
+
+        advance = True
+        if advance:
+            if last_goal[1] < 0.5:
+                linx = y_pred[0] * speed_factor
+            else:
+                linx = y_pred[0] / 10*last_goal[1]
+            #linx = 0
+            if linx > 1:
+                linx = 1
+        else:
+            linx = 0
+
         #linx = speed_factor*( (linx+1)/2 )
         #linx = 0.2
-        
+
         """Deleted"""
         #liny = y_pred[1]
 
         """changed"""
         angz = y_pred[1]
-
         #angz = y_pred[2]
         #angz = (angz -0.5)*100
-        # if angz > 1:
-        #     angz = 1
-        # elif angz < -1:
-        #     angz = -1
+        # if angz > 2:
+        #     angz = 2
+        #     linx = 0.01
+        # elif angz < -2:
+        #     angz = -2
+        #     linx = 0.01
 
     else:
-        print("-- else")
         if (init_time != -1.0 and (linx+angz) > 0):
             tiempo = rospy.get_time()
             print(f"inicio: {init_time}, {tiempo}")
@@ -114,7 +113,6 @@ def occGridCallback(msg):
         liny = 0.0
         angz = 0.0
         target_reached = True
-    print()
 
 
 def getOdomCallback(msg):
@@ -123,14 +121,6 @@ def getOdomCallback(msg):
 
     robot_pos_x = msg.pose.pose.position.x
     robot_pos_y = msg.pose.pose.position.y
-    # robot_orient_z = msg.pose.pose.orientation.z
-    # robot_orient_w = msg.pose.pose.orientation.w
-    # th = 2*math.atan2(robot_orient_z, robot_orient_w)
-    # if abs(th) > math.pi:
-    #     robot_theta = th - (np.sign(th)*2*math.pi)
-    # else:
-    #     robot_theta = th
-    #print(f"robot ({robot_pos_x:.2f},{robot_pos_y:.2f})")
     
 
 def shutdown_stop():
@@ -146,36 +136,36 @@ def main():
     rospy.Subscriber("/NN_goal", Float32MultiArray, callback_goal)
     rospy.Subscriber("/clicked_point", PointStamped, callback_point)
     rospy.Subscriber("/odom", Odometry, getOdomCallback)
-    # rospy.Subscriber("/local_occ_grid_array", Float32MultiArray, callback_grid)
     rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
     pub_cmd = rospy.Publisher(
         "/hardware/mobile_base/cmd_vel", Twist, queue_size=10)
     pubHeadPos = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=1)
-    # pub_cmd = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
     print("NN_out has been started")
-    loop = rospy.Rate(2)
+    
+    loop = rospy.Rate(15)
     msg = Twist()
     msgHeadPos = Float64MultiArray()
     msgHeadPos.data = [0.0, -0.4]
     pubHeadPos.publish(msgHeadPos)
     rospy.sleep(0.5)
     pubHeadPos.publish(msgHeadPos)
-
+    cad = ""
     while not rospy.is_shutdown():
-        # pub_cmd.publish(msg)
         msg.linear.x = linx
         #msg.linear.y = liny
         msg.angular.z = angz
-        print("linx", linx)
-        print("ang z", angz)
-        #print("target_reached", target_reached)
-        print("publish >>>")
+        d = last_goal[0]
+        th = last_goal[1]
+        cad = f"trg({d:.4f}, {th:.4f}) || "
+        cad += f"vel(l_x, a_z) = ({linx:.3f},{angz:.3f})"
+        if target_reached:
+            cad += " > target reached"
         pub_cmd.publish(msg)
-        print()
+        
+        print(" "*100, end='\r')
+        print(cad, end='\r')
         rospy.on_shutdown(shutdown_stop)
         loop.sleep()
-
-        
 
 
 if __name__ == '__main__':

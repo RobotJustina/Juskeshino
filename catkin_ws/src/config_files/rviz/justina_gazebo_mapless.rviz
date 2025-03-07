@@ -7,7 +7,6 @@ Panels:
         - /TF1/Frames1
         - /Path1
         - /Path1/Offset1
-        - /TargetPoint1/Status1
       Splitter Ratio: 0.5
     Tree Height: 288
   - Class: rviz/Selection
@@ -475,7 +474,7 @@ Visualization Manager:
       Color Scheme: map
       Draw Behind: false
       Enabled: true
-      Name: LocalMap
+      Name: LocalOccMap
       Topic: /local_occ_grid
       Unreliable: false
       Use Timestamp: false
@@ -485,7 +484,7 @@ Visualization Manager:
       Color Scheme: map
       Draw Behind: false
       Enabled: true
-      Name: LocalMap2
+      Name: LocalReference
       Topic: /local_occ_grid_2
       Unreliable: false
       Use Timestamp: false
@@ -573,7 +572,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 8.433935165405273
+      Distance: 22.392086029052734
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
