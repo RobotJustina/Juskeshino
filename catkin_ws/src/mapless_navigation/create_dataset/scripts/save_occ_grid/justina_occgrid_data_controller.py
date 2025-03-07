@@ -182,7 +182,7 @@ def main():
     while not rospy.is_shutdown():
         key = get_key(set, key_timeout)
         key = key.lower()
-        if key == 'r' or key == ' ':
+        if key == 's' or key == ' ':
             recording = not recording
         if key == 'q':
             print(key)
