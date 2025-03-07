@@ -10,6 +10,9 @@ import math
 import tf
 import sys
 from datetime import datetime
+import tty
+import termios
+from select import select
 
 #np.set_printoptions(threshold=sys.maxsize)
 np.set_printoptions(suppress=True)
@@ -18,6 +21,7 @@ package_path = rospkg.RosPack().get_path("mapless_nav")
 save_path = package_path + "/scripts/TorchModels/data/"
 file_name = "data_dep1"
 
+npz_data = []
 lin_vel_x, goal_x, goal_y = 0.0, 0.0, 0.0
 ang_vel_z = 1.0
 last_goal = [0.0, 0.0]
@@ -33,6 +37,17 @@ def clickPointCallback(msg):
     goal_x = msg.point.x
     goal_y = msg.point.y
     print(f"\nNew goal ({goal_x:.3f}, {goal_y:.3f})")
+
+
+def get_key(set, timeout):
+    tty.setraw(sys.stdin.fileno())
+    rlist, _, _ = select([sys.stdin], [], [], timeout)
+    if rlist:
+        key = sys.stdin.read(1)
+    else:
+        key = ''
+    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, set)
+    return key
 
 
 def get_position():
@@ -80,6 +95,9 @@ def occGridCallback(msg):
     # vect_ydat dim(80) = distance_to_target, theta_to_target, l_vel_x, l_vel_y, a_vel_z
     """
     data_X = np.vstack((data, other_features))
+    if recording:
+        npz_data.append(data_X)
+    
 
 
 def cmdVelCallback(msg):
@@ -108,12 +126,15 @@ def recordCallback(msg):
         recording = not recording
         y_button = 0
     y_button += 1
+    rospy.sleep(0.5)
 
 
 def main():
     global lin_vel_x, ang_vel_z, listener
     global goal_x, goal_y, cmd_vel_pub
-    global recording, y_button, category_y, data_Y
+    global recording, y_button, category_y
+    global data_X, data_Y, npz_data
+    
     start = True
     rospy.init_node("justina_occgrid_data")
     rospy.loginfo("INITIALIZING justina_occgrid_data")
@@ -125,12 +146,14 @@ def main():
     rospy.Subscriber("/hardware/mobile_base/cmd_vel", Twist, cmdVelCallback)
     rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
     rospy.Subscriber("/stop", Empty, stopCallback)  # Button (B)
-    rospy.Subscriber("/hardware/robot_state/skip_state", Empty, recordCallback)  # Button (Y)
+    #rospy.Subscriber("/hardware/robot_state/skip_state", Empty, recordCallback)  # Button (Y)
     #goal_pub = rospy.Publisher("/NN_goal", Float32MultiArray, queue_size=10)
     cmd_vel_pub = rospy.Publisher("/hardware/mobile_base/cmd_vel", Twist, queue_size=10)
     pubHeadPos = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=1)
     #msg_pos = Float32MultiArray()
-    
+    set = termios.tcgetattr(sys.stdin)
+    key_timeout = rospy.get_param("~key_timeout", 0.5)
+
     if start:
         ([x, y, _], _) = listener.lookupTransform("odom", 'base_link', rospy.Time(0))
         goal_x, goal_y = x, y-0.1
@@ -152,11 +175,20 @@ def main():
     #msg_pos.data = target_direction()
     #goal_pub.publish(msg_pos)
     
-    loop = rospy.Rate(4)
-    npz_data = []
+    loop = rospy.Rate(60)
+    #npz_data = []
     save_data = False
     
     while not rospy.is_shutdown():
+        key = get_key(set, key_timeout)
+        key = key.lower()
+        if key == 'r' or key == ' ':
+            recording = not recording
+        if key == 'q':
+            print(key)
+            rospy.logwarn("Exit selected")
+            rospy.signal_shutdown('')
+        
         #msg_pos.data = target_direction()
         #goal_pub.publish(msg_pos)
         d, th = target_direction()
@@ -168,7 +200,7 @@ def main():
         cad += f" || Posicion actual = ({x:.3f}, {y:.3f}, {a:.3f})"
         if recording:
             cad += " Recording * "
-            npz_data.append(data_X)
+            #npz_data.append(data_X)
             save_data = True
         else:
             if save_data:
@@ -184,7 +216,8 @@ def main():
                 save_data = False
 
             cad += " No recording"
-            
+        
+        print(" "*100, end='\r')
         print(cad, end='\r')
         #print(cad)
         loop.sleep()

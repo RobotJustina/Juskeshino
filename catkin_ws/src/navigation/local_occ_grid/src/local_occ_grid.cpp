@@ -160,9 +160,9 @@ int main(int argc, char** argv)
     if(use_lidar) sub_lidar = n.subscribe(scan_topic, 1, callback_laser_scan);
     if(use_cloud) sub_cloud = n.subscribe(cloud_topic, 1 , callback_point_cloud);
 
-    ros::Publisher pubLocalOccGrid = n.advertise<nav_msgs::OccupancyGrid>("/local_occ_grid", 10);
-    ros::Publisher pubLocalOccGridArray = n.advertise<std_msgs::Float32MultiArray>("/local_occ_grid_array", 10);
-    ros::Rate loop(10);
+    ros::Publisher pubLocalOccGrid = n.advertise<nav_msgs::OccupancyGrid>("/local_occ_grid", 30);
+    ros::Publisher pubLocalOccGridArray = n.advertise<std_msgs::Float32MultiArray>("/local_occ_grid_array", 30);
+    ros::Rate loop(30);
     while(ros::ok())
     {
         for(size_t i=0; i < local_map.data.size(); i++) local_map.data[i] = 0;
