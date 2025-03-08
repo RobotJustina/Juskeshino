@@ -21,7 +21,7 @@ import matplotlib as plt
 gpu_number = 1
 gpus = 0
 gpu_arr = '0'
-BATCH_SIZE = 200
+BATCH_SIZE = 250
 #np.random.seed(int(time.time()))
 #torch.cuda.manual_seed(1)
 #torch.cuda.set_device(gpus)
@@ -32,7 +32,7 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 #Dataset loaders
 
 DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/dataset"
-MODELS_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/models"
+MODELS_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/models/"
 VAL_TO_TEST_RATIO = 0.1
 
 class GraspDataset(torch.utils.data.Dataset):
@@ -73,12 +73,15 @@ def get_dataloaders():
 
     return train_loader, valid_loader
 
-def train_network(num_epochs, model_path=None):
+def train_network(num_epochs,model_name, model_path=None):
+    torch.cuda.empty_cache()
+    gc.collect()
     train_loader, valid_loader = get_dataloaders()
     model = load_model(model_path)
+    best_model = copy.deepcopy(model.state_dict())
     criterion = nn.HuberLoss()
-    optimizer = optim.SGD(model.parameters(),lr=0.01,momentum=0.8)
-    min_loss = 10
+    optimizer = optim.SGD(model.parameters(),lr=0.001,momentum=0.8)
+    min_loss = 1.5
     for epoch in range(num_epochs):
         model.train()
         for batch, (points, target_pose) in enumerate(train_loader):
@@ -111,8 +114,9 @@ def train_network(num_epochs, model_path=None):
                 min_loss = loss
                 best_model = copy.deepcopy(model.state_dict())       
         print ('Epoch [{}/{}], Loss: {:.4f}'.format(epoch+1, num_epochs, loss.item()))
-    model_file = MODELS_PATH + "/model.pt"
+    model_file = MODELS_PATH + model_name
     torch.save(best_model,model_file)
+    print(min_loss)
 
 def load_model(model_path=None):
     model = GraspNetwork()
@@ -122,8 +126,8 @@ def load_model(model_path=None):
     return model
 
 def main():
-    model_file = MODELS_PATH + "/model.pt"
-    train_network(100,model_path=model_file)
+    model_file = MODELS_PATH + "model1.pt"
+    train_network(100,"model2.pt")
     # dataset = GraspDataset(set_type="test",path=DATASET_PATH)
     # dataloader = torch.utils.data.DataLoader(dataset, BATCH_SIZE, shuffle=True)
     # train_features, train_labels = next(iter(dataloader))

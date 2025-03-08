@@ -6,7 +6,14 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
 import numpy as np
-import open3d
+import copy
+import numpy.lib.recfunctions as rf
+import ros_numpy
+from geometry_msgs.msg import Point
+from scipy.spatial import cKDTree
+import math
+
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 # Gripper and pointcloud properties
@@ -130,3 +137,49 @@ class GraspNetwork(nn.Module):
 
         return x
 
+# Pointcloud conversion methods
+def ros_pc2_to_npmatrix(pc):
+    print(pc.header.frame_id)
+    data = ros_numpy.point_cloud2.pointcloud2_to_array(pc)
+    #debug_type(data,"Split points")
+    rgb = ros_numpy.point_cloud2.split_rgb_field(data)
+    #debug_type(rgb,"Split points + RGB")
+    dt2 = np.dtype([('x', '<f4'), ('y', '<f4'), ('z', '<f4'), ('r', '<f4'), ('g', '<f4'), ('b', '<f4')])
+    rgb = np.asarray(rgb).astype(dt2)
+    rgb['r'] = np.divide(rgb['r'], 255)
+    rgb['g'] = np.divide(rgb['g'], 255)
+    rgb['b'] = np.divide(rgb['b'], 255)
+    #debug_type(rgb, "Split points + Normalized RGB")
+    return rgb
+
+def npmatrix_to_torch(pcd):
+    points = rf.structured_to_unstructured(pcd)
+    points = torch.tensor(points[:,:,:3],dtype=torch.float32)
+    points = torch.permute(points,(2,1,0))
+    points.to(DEVICE)
+    return points
+
+def camera_link_to_optical_frame(pt):
+    target_pt = Point()
+    target_pt.x = -pt.y
+    target_pt.y = -pt.z
+    target_pt.z = pt.x
+    return target_pt
+
+def find_nearest_pt_in_pc(pc, pt):
+    valid = False
+    matrix = copy.deepcopy(pc)
+    matrix = matrix.reshape(-1)
+    matrix = rf.structured_to_unstructured(matrix)
+    search_vec = np.array([pt.x, pt.y, pt.z])
+    nearest = cKDTree(matrix[:,:3]).query(search_vec, k=1)[1]
+    u = math.floor(nearest/pc.shape[1])
+    v = nearest%pc.shape[1]
+    if 100 < u < 380 and 100 < v < 540: valid = True
+    print(u,v,valid)
+    return u,v,valid
+
+def cut_pc(u,v, pc):
+    l, w = 200, 200
+    cropped_pc = pc[(u - int(l/2)): (u + int(l/2)) , (v - int(l/2)) : (v + int(l/2))]
+    return cropped_pc
