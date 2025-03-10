@@ -126,8 +126,8 @@ def load_model(model_path=None):
     return model
 
 def main():
-    model_file = MODELS_PATH + "model1.pt"
-    train_network(100,"model2.pt")
+    model_file = MODELS_PATH + "model2.pt"
+    train_network(100,"model3.pt",model_path=model_file)
     # dataset = GraspDataset(set_type="test",path=DATASET_PATH)
     # dataloader = torch.utils.data.DataLoader(dataset, BATCH_SIZE, shuffle=True)
     # train_features, train_labels = next(iter(dataloader))

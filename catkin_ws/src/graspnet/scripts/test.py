@@ -123,7 +123,7 @@ def main():
     obj_shape = rospy.get_param("/obj","056_tennis_ball")
     rospy.sleep(1)
     loop = rospy.Rate(1)
-    grasp_network = load_model(MODELS_PATH + "model2.pt")
+    grasp_network = load_model(MODELS_PATH + "model3.pt")
     grasp_network.eval()
     while not rospy.is_shutdown():
         print("Type r to reset sim to a random pose, and l to loop simulation for samples")
@@ -144,10 +144,14 @@ def main():
                     predicted_gripper_center_pose = grasp_network(pcd)
                 print(predicted_gripper_center_pose)
                 predicted_pose = tensor_to_pose(predicted_gripper_center_pose)
+                
+                broadcaster_frame_object("camera_rgb_optical_frame","grasp_frame",predicted_pose)
                 print(predicted_pose)
-                broadcaster_frame_object('camera_rgb_optical_frame','network_grip',predicted_pose)
             print("sure")
-            
+        if command == "rm":
+            obj_pose = get_object_relative_pose(obj_shape,"justina::camera_link").pose
+            tf2_ros.
+
         loop.sleep()
 
 if __name__ == '__main__':
