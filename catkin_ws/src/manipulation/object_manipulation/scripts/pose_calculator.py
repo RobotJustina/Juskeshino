@@ -40,7 +40,7 @@ def serialize_msg(msg):
 def main():
     global pc2, hd, obj_pos, grasp_traj, obj_shape, status, trajectory_found, get_object_relative_pose
     obj_pose = Pose()
-    obj_shape = '056_tennis_ball'
+    obj_shape = '013_apple'
     print("Starting pose calculator node")
     rospy.init_node("pose_calc_node")
     #rospy.wait_for_service("gazebo/spawn_sdf_model")
@@ -65,7 +65,7 @@ def main():
                 transform.child_frame_id = 'relative_grasp'
                 #print(transform)
                 rgbr.sendTransform(transform)
-                gr_pose = get_object_relative_pose("justina_gripper","056_tennis_ball").pose
+                gr_pose = get_object_relative_pose("justina_gripper","013_apple").pose
                 broadcaster_frame_object('object_frame','grasp_spawn',gr_pose)
                 gripper_model_state.pose = gr_pose
                 print(gripper_model_state)
@@ -92,7 +92,7 @@ def main():
                 print(deserialized_gripper_model_state)
 
             except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-                rate.sleep()
+                rospy.sleep(0.01)
                 continue
         loop.sleep()
 
