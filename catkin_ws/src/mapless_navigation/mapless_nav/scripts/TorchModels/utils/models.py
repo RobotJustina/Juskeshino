@@ -216,6 +216,56 @@ class CNN_B(torch.nn.Module):
         return x
     
 
+class NN_82_80(torch.nn.Module):
+    def __init__(self):
+        super(NN_82_80, self).__init__()
+        self.name = 'NN_82_80'
+        
+        # layers
+        self.conv1 = torch.nn.Conv2d(1, 16, 3)
+        self.dropout_60 = torch.nn.Dropout(p=0.6)
+        self.dropout_40 = torch.nn.Dropout(p=0.4)
+        self.norm_l3 = torch.nn.GroupNorm(1, 32)
+        self.dropout_20 = torch.nn.Dropout(p=0.2)
+        
+        # second input
+        self.in_vector = torch.nn.Linear(160, 32)
+
+        # merge
+        self.flat2 = torch.nn.Linear(32, 16)
+        self.out = torch.nn.Linear(16, 2)
+
+    def forward(self, x):
+        # vector: d, th
+        # Get last 2 cols: [[80(distance)], [80(angle)]
+        vect = x[:, 0, -2:, :]  # [batch_s, channel, col, row]
+        vect = torch.flatten(vect, 1)
+        # image
+        # [batch_s, channel, col, row]
+        x = x[:, :, :-2]
+
+        x = self.conv1(x)
+        x = torch.nn.functional.relu(x)
+        x = torch.flatten(x, 1)
+        # print("x.shape", x.shape)
+        # print("vect.shape", vect.shape)
+        # concat inputs
+        x = torch.cat((x, vect), 1)
+
+        vect = self.in_vector(vect)
+        vect = torch.nn.functional.relu(vect)
+
+        x = self.flat2(vect)
+        x = torch.nn.functional.relu(x)
+
+        x = self.out(x)
+        x = torch.nn.functional.tanh(x)
+
+        #x = torch.nn.functional.softmax(x, dim=1)
+        return x
+
+
+### TODO: delete---------------------------------------------->
 class CNN_Reg3out(torch.nn.Module):
     def __init__(self):
         super(CNN_Reg3out, self).__init__()
@@ -239,7 +289,7 @@ class CNN_Reg3out(torch.nn.Module):
 
     def forward(self, x):
         # vector: d, th
-        vect = x[:, 0, -1, :2]  # [batch_s, channel, row, col]
+        vect = x[:, 0, -1, :2]  # [batch_s, channel, col, row]
         # print(vect.size())
         # print(vect)
         vect = self.vector(vect)
@@ -248,7 +298,7 @@ class CNN_Reg3out(torch.nn.Module):
 
 
         # image
-        # [batch_s, channel, row, col]
+        # [batch_s, channel, col, row]
         x = x[:, :, :-1]    
         # print(x.size())
         # print(x)
@@ -294,7 +344,7 @@ class CNN_Reg3outS(torch.nn.Module):
 
     def forward(self, x):
         # vector: d, th
-        vect = x[:, 0, -1, :2]  # [batch_s, channel, row, col]
+        vect = x[:, 0, -1, :2]  # [batch_s, channel, col, row]
         # print(vect.size())
         # print(vect)
         vect = self.vector(vect)
@@ -303,7 +353,7 @@ class CNN_Reg3outS(torch.nn.Module):
 
 
         # image
-        # [batch_s, channel, row, col]
+        # [batch_s, channel, col, row]
         x = x[:, :, :-1]    
         # print(x.size())
         # print(x)
@@ -343,7 +393,7 @@ class Mat_Regression(torch.nn.Module):
 
     def forward(self, x):
         # vector: d, th
-        vect = x[:, 0, -1, :2]  # [batch_s, channel, row, col]
+        vect = x[:, 0, -1, :2]  # [batch_s, channel, col, row]
         # print(vect.size())
         # print(vect)
         vect = self.vector(vect)
@@ -389,7 +439,7 @@ class CNN_RegTanh(torch.nn.Module):
 
     def forward(self, x):
         # vector: d, th
-        vect = x[:, 0, -1, :2]  # [batch_s, channel, row, col]
+        vect = x[:, 0, -1, :2]  # [batch_s, channel, col, row]
         # print(vect.size())
         # print(vect)
         vect = self.vector(vect)
@@ -398,7 +448,7 @@ class CNN_RegTanh(torch.nn.Module):
 
 
         # image
-        # [batch_s, channel, row, col]
+        # [batch_s, channel, col, row]
         x = x[:, :, :-1]    
         # print(x.size())
         # print(x)
@@ -458,7 +508,7 @@ class CNN_2feat(torch.nn.Module):
 
     def forward(self, x):
         # vector: d, th
-        vect = x[:, 0, -1, :2]  # [batch_s, channel, row, col]
+        vect = x[:, 0, -1, :2]  # [batch_s, channel, col, row]
         vect = self.vector(vect)
         vect = torch.nn.functional.relu(vect)
 

@@ -18,7 +18,7 @@ save_path = package_path + "/scripts/TorchModels/data/"
 file_name = "data_from_path"
 
 goal_x, goal_y = 0.0, 0.0
-data_X = [0.0, 0.0]
+npz_data = []
 data_Y = [0.0, 0.0, 0.0]  # [l_vel_x, l_vel_y, a_vel_z]
 recording = False
 
@@ -63,6 +63,7 @@ def getOdomCallback(msg):
         robot_theta = th
 
     data_Y[0] = round(msg.twist.twist.linear.x, 3)
+    #/odom doesn't have linear.y
     data_Y[2] = round(msg.twist.twist.angular.z, 3)
 
 
@@ -92,24 +93,26 @@ def target_direction():
 
 
 def occGridCallback(msg):
-    global data_X, data_Y
+    global npz_data, data_Y
 
-    data = np.asarray(msg.data)
+    data = np.asarray(msg.data, dtype=np.float32)
     data = np.reshape(data, (msg.info.height, msg.info.width))
-    other_features = np.zeros(msg.info.height)
     d, th = target_direction()
-    other_features[:2] = [round(d, 2), round(th, 2)]
-    other_features[2:5] = data_Y
+    tgt = np.array([round(d, 2), round(th, 2)])
+    tgt = np.asarray(tgt, dtype=np.float32)
+    data_Y = np.asarray(data_Y, dtype=np.float32)
+    sample = {'features':{'occ_grid':data, 'target':tgt}, 'labels':data_Y}
     """
     # MAT dim(81x80): ch0 80x80=occ_grid, mat[81]=vect_ydat dim(80)
     # 80x80 matrix is occ_grid data, row 81 is a vect_ydat with label info
     # vect_ydat dim(80) = distance_to_target, theta_to_target, l_vel_x, l_vel_y, a_vel_z
     """
-    data_X = np.vstack((data, other_features))
+    if recording:
+        npz_data.append(sample)
 
 
 def main():
-    global goal_x, goal_y
+    global goal_x, goal_y, npz_data
     global recording
     global robot_pos_x, robot_pos_y, robot_theta
 
@@ -136,7 +139,7 @@ def main():
         rospy.logwarn("creating folder" + save_path)
         files_utils.DirectoryUtils.createDir(save_path, True)
 
-    loop = rospy.Rate(4)
+    loop = rospy.Rate(30)
     npz_data = []
     save_data = False
     while not rospy.is_shutdown():
@@ -145,7 +148,6 @@ def main():
         cad += f" || Posicion actual = ({robot_pos_x:.3f}, {robot_pos_y:.3f}, {robot_theta:.3f})"
         if recording:
             cad += " Recording * "
-            npz_data.append(data_X)
             save_data = True
         else:
             if save_data:
@@ -158,8 +160,7 @@ def main():
                 npz_data = np.asarray(npz_data)
                 np.savez(path,data=npz_data)
                 npz_data = []
-                save_data = False
-            
+                save_data = False  
             cad += " No recording"
                 
         print('', end="\r")  # clear whole line

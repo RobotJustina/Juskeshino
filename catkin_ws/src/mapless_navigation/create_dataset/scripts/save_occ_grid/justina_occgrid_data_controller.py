@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 import rospy
-from std_msgs.msg import Float64MultiArray, Float32MultiArray
+from std_msgs.msg import Float64MultiArray
 from std_msgs.msg import Empty
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Twist, PointStamped
@@ -13,6 +13,7 @@ from datetime import datetime
 import tty
 import termios
 from select import select
+from general_utils import files_utils
 
 #np.set_printoptions(threshold=sys.maxsize)
 np.set_printoptions(suppress=True)
@@ -22,15 +23,14 @@ save_path = package_path + "/scripts/TorchModels/data/"
 file_name = "data_dep1"
 
 npz_data = []
-lin_vel_x, goal_x, goal_y = 0.0, 0.0, 0.0
-ang_vel_z = 1.0
+goal_x, goal_y = 0.0, 0.0
+ang_vel_z, lin_vel_x = 0.0, 0.0
 last_goal = [0.0, 0.0]
-data_X = [0.0, 0.0]
-data_Y = None #TODO: add lin_vel_y
+data_Y = None
 cmd_vel_pub = None
 recording = False
-y_button = 0
 category_y = False
+
 
 def clickPointCallback(msg):
     global goal_x, goal_y
@@ -78,62 +78,42 @@ def target_direction():
 
 
 def occGridCallback(msg):
-    global data_X, data_Y, category_y
-    data = np.asarray(msg.data)
+    global data_Y
+
+    data = np.asarray(msg.data, dtype=np.float32)
     data = np.reshape(data, (msg.info.height, msg.info.width))
-    other_features = np.zeros(msg.info.height)
     d, th = target_direction()
-    other_features[:2] = [round(d, 2), round(th, 2)]
-    if category_y:
-        other_features[2:4] = data_Y
-    else:
-        other_features[2:5] = data_Y
-    # mat(81x80) ch0 80x80=occ_grid, mat[81]=vect(80) 
+    tgt = np.array([round(d, 2), round(th, 2)])
+    tgt = np.asarray(tgt, dtype=np.float32)
+    data_Y = np.asarray(data_Y, dtype=np.float32)
+    sample = {'features':{'occ_grid':data, 'target':tgt}, 'labels':data_Y}
     """
-    # MAT dim(81x80): ch0 80x80=occ_grid, mat[81]=vect_ydat dim(80)
-    # 80x80 matrix is occ_grid data, row 81 is a vect_ydat with label info
-    # vect_ydat dim(80) = distance_to_target, theta_to_target, l_vel_x, l_vel_y, a_vel_z
+    data = dict{'features':{occ_grid:[80x80], 'target':[2]}, 'labels':[3]}
+    # occ_grid dim(80x80) float32
+    # target dim(2) = (distance_to_target, theta_to_target) float32
+    # labels vect dim(3) =  (l_vel_x, l_vel_y, a_vel_z) float32
     """
-    data_X = np.vstack((data, other_features))
     if recording:
-        npz_data.append(data_X)
-    
+        npz_data.append(sample)
 
 
 def cmdVelCallback(msg):
-    global data_Y, category_y
+    global data_Y
     x = round(msg.linear.x, 3)
     y = round(msg.linear.y, 3)
     z = round(msg.angular.z, 3)
-    if category_y:
-        if x > 0.5 and z < 0.2:
-            data_Y = [x, z]    
-    else:
-        data_Y = [x, y, z]
-    #print("\n", data_Y)
+    data_Y = np.array([x, y, z])
     
 
 def stopCallback(msg):
-    twist_msg = Twist()
-    twist_msg.linear.x = 0.0
-    twist_msg.angular.z = 0.0
-    cmd_vel_pub.publish(twist_msg)
-
-
-def recordCallback(msg):
-    global recording, y_button
-    if y_button > 1:
-        recording = not recording
-        y_button = 0
-    y_button += 1
-    rospy.sleep(0.5)
+    cmd_vel_pub.publish(Twist())
 
 
 def main():
     global lin_vel_x, ang_vel_z, listener
     global goal_x, goal_y, cmd_vel_pub
-    global recording, y_button, category_y
-    global data_X, data_Y, npz_data
+    global recording
+    global data_Y, npz_data
     
     start = True
     rospy.init_node("justina_occgrid_data")
@@ -146,14 +126,12 @@ def main():
     rospy.Subscriber("/hardware/mobile_base/cmd_vel", Twist, cmdVelCallback)
     rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
     rospy.Subscriber("/stop", Empty, stopCallback)  # Button (B)
-    #rospy.Subscriber("/hardware/robot_state/skip_state", Empty, recordCallback)  # Button (Y)
-    #goal_pub = rospy.Publisher("/NN_goal", Float32MultiArray, queue_size=10)
+
     cmd_vel_pub = rospy.Publisher("/hardware/mobile_base/cmd_vel", Twist, queue_size=10)
     pubHeadPos = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=1)
-    #msg_pos = Float32MultiArray()
+    
     set = termios.tcgetattr(sys.stdin)
     key_timeout = rospy.get_param("~key_timeout", 0.5)
-
     if start:
         ([x, y, _], _) = listener.lookupTransform("odom", 'base_link', rospy.Time(0))
         goal_x, goal_y = x, y-0.1
@@ -163,20 +141,15 @@ def main():
         pubHeadPos.publish(msgHeadPos)
         rospy.sleep(0.5)
         pubHeadPos.publish(msgHeadPos)
-    if category_y:
-        data_Y = [0.0, 0.0]
-        rospy.logwarn("Save as classification category_y = TRUE")
-        rospy.logwarn("Save Y as 2d vector (linv_x, Avel_z)")
-    else:
-        rospy.logwarn("Save as regression category_y = FALSE")
-        rospy.logwarn("Save Y as 3d vector (linv_x, linv_y, Avel_z)")
-        data_Y = [0.0, 0.0, 0.0]
 
-    #msg_pos.data = target_direction()
-    #goal_pub.publish(msg_pos)
+    if not files_utils.DirectoryUtils.existDir(save_path, True):
+        rospy.logwarn("creating folder" + save_path)
+        files_utils.DirectoryUtils.createDir(save_path, True)
+
+    rospy.logwarn("Save Y as 3d vector (linv_x, linv_y, Avel_z)")
+    data_Y = [0.0, 0.0, 0.0]
     
-    loop = rospy.Rate(60)
-    #npz_data = []
+    loop = rospy.Rate(30)
     save_data = False
     
     while not rospy.is_shutdown():
@@ -189,18 +162,12 @@ def main():
             rospy.logwarn("Exit selected")
             rospy.signal_shutdown('')
         
-        #msg_pos.data = target_direction()
-        #goal_pub.publish(msg_pos)
         d, th = target_direction()
-        #print(f"(Distancia, Angulo)= ({d:.3f}, {th:.3f})", end='\r')
         x, y, a = get_position()
-        #print(f"(Distancia, Angulo)= ({x:.3f}, {y:.3f}, {a:.3f})", end='\r')
-
         cad = f"(Distancia, Angulo)= ({d:.3f}, {th:.3f})"
         cad += f" || Posicion actual = ({x:.3f}, {y:.3f}, {a:.3f})"
         if recording:
             cad += " Recording * "
-            #npz_data.append(data_X)
             save_data = True
         else:
             if save_data:
@@ -214,12 +181,10 @@ def main():
                 np.savez(path,data=npz_data)
                 npz_data = []
                 save_data = False
-
             cad += " No recording"
         
         print(" "*100, end='\r')
         print(cad, end='\r')
-        #print(cad)
         loop.sleep()
     
 

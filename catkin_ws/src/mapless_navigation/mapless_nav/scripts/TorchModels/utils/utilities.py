@@ -6,23 +6,23 @@ from sklearn.preprocessing import OneHotEncoder
 import glob
 
 
-def load_data(files_path='/data/'):
-    files_names =  files_path+'/*.npz'
-    files = glob.glob(files_names)
-    print("Data.npz files found:", len(files))
-    print("Loading data ...")
-    data , temp = None, None
+# def load_data(files_path='/data/'):
+#     files_names =  files_path+'/*.npz'
+#     files = glob.glob(files_names)
+#     print("Data.npz files found:", len(files))
+#     print("Loading data ...")
+#     data , temp = None, None
 
-    count = 0
-    for file in files:
-        arr = np.load(file)
-        temp = arr['data'][:,:]
-        if(count==0):
-            data=temp
-            count+=1
-        else:
-            data=np.concatenate((data, temp), axis=0)
-    return data
+#     count = 0
+#     for file in files:
+#         arr = np.load(file)
+#         temp = arr['data'][:,:]
+#         if(count==0):
+#             data=temp
+#             count+=1
+#         else:
+#             data=np.concatenate((data, temp), axis=0)
+#     return data
 
 
 def load_data_matrix(files_path='/data/', shape=[100, 100]):
@@ -64,6 +64,24 @@ def load_data_matrix(files_path='/data/', shape=[100, 100]):
     data_X = np.asarray(data_X, dtype=np.float32)
     data_Y = np.asarray(data_Y, dtype=np.float32)
     return data_X, data_Y
+
+
+def load_data(files_path='/data/'):
+    files = glob.glob(files_path)
+    if len(files) == 0:
+        print("NO files found in data/ folder")
+        return None, None
+    print(len(files), ".npz files found:" )
+    print("Loading data ...")
+    data , temp = [], None
+    for file in files:
+        print("loading: ", file)
+        arr = np.load(file, allow_pickle=True)
+        temp = arr['data']
+        data=np.concatenate((data, temp), axis=0)
+    
+    return data
+
 
 
 def show_image_gray(img):   

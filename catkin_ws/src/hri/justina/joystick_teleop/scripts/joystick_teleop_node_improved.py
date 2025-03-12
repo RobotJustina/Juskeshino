@@ -15,7 +15,6 @@ def callbackJoy(msg):
     global yaw
     global panPos
     global tiltPos
-    global b_Button
     global spine	
     global mov_spine
     global waist
@@ -80,7 +79,7 @@ def callbackJoy(msg):
     rightStickY = msg.axes[4]
     magnitudRight = math.sqrt(rightStickX*rightStickX + rightStickY*rightStickY)
     if magnitudRight > 0.17:
-        speedX = 0.45*rightStickY
+        speedX = 0.5*rightStickY
         yaw = 0.8*rightStickX
     else:
         speedX = 0.0
@@ -147,7 +146,6 @@ def main():
     rightSpeed = 0
     panPos = 0
     tiltPos = 0
-    b_Button = 0
     stop = 0
     skip_state = 0
     speedY = 0
