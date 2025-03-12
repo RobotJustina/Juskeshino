@@ -15,7 +15,7 @@ from gazebo_msgs.msg import ModelState, ContactsState
 from gazebo_msgs.srv import SetModelState, GetModelState
 from std_msgs.msg import String, Float64MultiArray
 from sensor_msgs.msg import PointCloud2
-from geometry_msgs.msg import Pose, PointStamped  
+from geometry_msgs.msg import Pose, PointStamped, Quaternion  
 from train import load_model, DEVICE
 import geometry_msgs
 import grasp_network as gn
@@ -53,17 +53,24 @@ def generate_random_pose():
     rpose.orientation.w = 0
     return rpose
 
+def normalize(v):
+    norm = np.linalg.norm(v)
+    if norm == 0: 
+       return v
+    return v / norm
+
 def tensor_to_pose(tensor):
     nppose = tensor.detach().cpu().numpy()
     nppose = nppose[0]
+    quat = normalize(nppose[3:])
     rpose = Pose()
     rpose.position.x = nppose[0]
     rpose.position.y = nppose[1]
     rpose.position.z = nppose[2]
-    rpose.orientation.x = nppose[3]
-    rpose.orientation.y = nppose[4]
-    rpose.orientation.z = nppose[5]
-    rpose.orientation.w = nppose[6]
+    rpose.orientation.x = quat[0]
+    rpose.orientation.y = quat[1]
+    rpose.orientation.z = quat[2]
+    rpose.orientation.w = quat[3]
     return rpose
 
 def change_gazebo_object_pose(state_msg, state_pose, mod_name):
@@ -123,7 +130,7 @@ def main():
     obj_shape = rospy.get_param("/obj","056_tennis_ball")
     rospy.sleep(1)
     loop = rospy.Rate(1)
-    grasp_network = load_model(MODELS_PATH + "model3.pt")
+    grasp_network = load_model(MODELS_PATH + "model_ghlh.pt")
     grasp_network.eval()
     while not rospy.is_shutdown():
         print("Type r to reset sim to a random pose, and l to loop simulation for samples")
@@ -144,13 +151,12 @@ def main():
                     predicted_gripper_center_pose = grasp_network(pcd)
                 print(predicted_gripper_center_pose)
                 predicted_pose = tensor_to_pose(predicted_gripper_center_pose)
-                
+                #predicted_pose.orientation.normalize()
                 broadcaster_frame_object("camera_rgb_optical_frame","grasp_frame",predicted_pose)
                 print(predicted_pose)
             print("sure")
         if command == "rm":
             obj_pose = get_object_relative_pose(obj_shape,"justina::camera_link").pose
-            tf2_ros.
 
         loop.sleep()
 

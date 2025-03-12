@@ -17,7 +17,11 @@ from visualization_msgs.msg import Marker
 from scipy.spatial import cKDTree
 
 MAX_POINTS = 25600
-DATASET_PATH = 'catkin_ws/src/graspnet/dataset/'
+#DATASET_PATH = 'catkin_ws/src/graspnet/dataset/'
+DATASET_PATH = 'catkin_ws/src/graspnet/dataset_test/'
+
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 gpus = 1
 
 def debug_type(obj, obj_name):
@@ -119,6 +123,13 @@ def nparray_pc_to_torch(pc):
     print(pc_torch.shape)
     print(type(pc_torch))
     return pc_back, color_back, pc_torch
+
+def npmatrix_to_torch(pcd):
+    points = rf.structured_to_unstructured(pcd)
+    points = torch.tensor(points[:,:,:3],dtype=torch.float32)
+    points = torch.permute(points,(2,1,0))
+    points.to(DEVICE)
+    return points
 
 def save_data_to_file(resp, file_num=1):
     pcd = resp.pointcloud

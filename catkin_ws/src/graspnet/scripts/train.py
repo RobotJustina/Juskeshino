@@ -31,7 +31,7 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 #Dataset loaders
 
-DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/dataset"
+DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/dataset_test"
 MODELS_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/models/"
 VAL_TO_TEST_RATIO = 0.1
 
@@ -79,7 +79,7 @@ def train_network(num_epochs,model_name, model_path=None):
     train_loader, valid_loader = get_dataloaders()
     model = load_model(model_path)
     best_model = copy.deepcopy(model.state_dict())
-    criterion = nn.HuberLoss()
+    criterion = nn.HuberLoss(delta=0.4)
     optimizer = optim.SGD(model.parameters(),lr=0.001,momentum=0.8)
     min_loss = 1.5
     for epoch in range(num_epochs):
@@ -127,7 +127,7 @@ def load_model(model_path=None):
 
 def main():
     model_file = MODELS_PATH + "model2.pt"
-    train_network(100,"model3.pt",model_path=model_file)
+    train_network(70,"model_ghlm.pt")
     # dataset = GraspDataset(set_type="test",path=DATASET_PATH)
     # dataloader = torch.utils.data.DataLoader(dataset, BATCH_SIZE, shuffle=True)
     # train_features, train_labels = next(iter(dataloader))
