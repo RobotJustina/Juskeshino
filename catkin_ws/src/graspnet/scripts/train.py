@@ -57,6 +57,7 @@ class GraspDataset(torch.utils.data.Dataset):
         pcd = data['pcd']
         pcd = rf.structured_to_unstructured(pcd)
         points = torch.tensor(pcd[:,:,:3],dtype=torch.float32)
+        points = torch.nan_to_num(points,nan=0.0)
         points = torch.permute(points,(2,1,0))
         pose = torch.tensor(data['grasp'],dtype=torch.float32)
         return points, pose
@@ -79,7 +80,7 @@ def train_network(num_epochs,model_name, model_path=None):
     train_loader, valid_loader = get_dataloaders()
     model = load_model(model_path)
     best_model = copy.deepcopy(model.state_dict())
-    criterion = nn.HuberLoss(delta=0.4)
+    criterion = nn.HuberLoss(delta=0.625)
     optimizer = optim.SGD(model.parameters(),lr=0.001,momentum=0.8)
     min_loss = 1.5
     for epoch in range(num_epochs):
@@ -127,7 +128,7 @@ def load_model(model_path=None):
 
 def main():
     model_file = MODELS_PATH + "model2.pt"
-    train_network(70,"model_ghlm.pt")
+    train_network(70,"model_nn.pt")
     # dataset = GraspDataset(set_type="test",path=DATASET_PATH)
     # dataloader = torch.utils.data.DataLoader(dataset, BATCH_SIZE, shuffle=True)
     # train_features, train_labels = next(iter(dataloader))
