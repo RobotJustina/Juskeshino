@@ -222,15 +222,15 @@ class NN_82_80(torch.nn.Module):
         self.name = 'NN_82_80'
         
         # layers
-        self.conv1 = torch.nn.Conv2d(1, 16, 3)
-        self.conv2 = torch.nn.Conv2d(16, 32, 3)
+        self.conv1 = torch.nn.Conv2d(5, 32, 3)
+        self.conv2 = torch.nn.Conv2d(32, 64, 3)
         self.dropout_60 = torch.nn.Dropout(p=0.6)
         self.dropout_40 = torch.nn.Dropout(p=0.4)
         self.norm_l3 = torch.nn.GroupNorm(1, 32)
         self.dropout_20 = torch.nn.Dropout(p=0.2)
         
         # second input
-        self.flat1 = torch.nn.Linear(160, 120)
+        self.flat1 = torch.nn.Linear(40, 120)
 
         # merge
         self.flat2 = torch.nn.Linear(120, 80)
@@ -241,6 +241,8 @@ class NN_82_80(torch.nn.Module):
         # Get last 2 cols: [[80(distance)], [80(angle)]
         vect = x[:, 0, -2:, :]  # [batch_s, channel, col, row]
         vect = torch.flatten(vect, 1)
+        print("vect.shape", vect.shape)
+        #print("vect", vect)
         # image
         # [batch_s, channel, col, row]
         x = x[:, :, :-2]

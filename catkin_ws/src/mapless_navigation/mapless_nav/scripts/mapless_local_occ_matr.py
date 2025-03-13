@@ -52,21 +52,31 @@ def occGridCallback(msg):
     global target_reached, speed_factor
     
     data = np.asarray(msg.data)
-    data = np.reshape(data, (msg.info.height, msg.info.width))
-    other_features = np.zeros(msg.info.height)
-    other_features[:2] = [round(last_goal[0], 2), round(last_goal[1], 2)]
-
+    rows = msg.info.height
+    data = np.reshape(data, (rows, rows))
+    #other_features = np.zeros(msg.info.height)
+    #other_features[:2] = [round(last_goal[0], 2), round(last_goal[1], 2)]
+    other_features = np.array([np.ones(rows)*round(last_goal[0], 2), 
+                       np.ones(rows)*round(last_goal[1], 2)], dtype=np.float32)
     """
-    # MAT dim(81x80): ch0 80x80=occ_grid, mat[81]=vect_ydat dim(80)
-    # 80x80 matrix is occ_grid data, row 81 is a vect_ydat with label info
-    # vect_ydat dim(80) = distance_to_target, theta_to_target, zeros...
+    # 1m = 20 pixels 
+    # data dim(n+2 x n): ch0 nxn matrix is occ_grid 
+    # row n+1 = distance_to_target 
+    # row n+2 = theta_to_target 
+    # vect_ydat dim(3) label info = l_vel_x, l_vel_y, a_vel_z
     """
     data_X = np.vstack((data, other_features))
     entrada = np.asarray(data_X)
 
-    entrada = np.expand_dims(entrada, axis=0)
-    entrada = np.expand_dims(entrada, axis=0)
+
     #print("entrada", entrada.shape)
+    batch = []
+    for i in range(5):
+        batch.append(entrada)
+    entrada = np.array(batch)
+    #entrada = np.expand_dims(entrada, axis=0)
+    entrada = np.expand_dims(entrada, axis=0)
+    #print("entrada2", entrada.shape)
     x_ent = torch.tensor(entrada)
     x_ent = x_ent.to(torch.device(disp), torch.float32)
 

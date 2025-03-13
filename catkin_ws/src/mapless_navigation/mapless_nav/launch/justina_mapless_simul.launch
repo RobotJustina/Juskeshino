@@ -1,7 +1,7 @@
 <launch>
-  <arg name="posx" default="-2.0" /> <!-- -12.0 -->
+  <arg name="posx" default="0.0" /> <!-- -12.0 -->
   <!-- 3.75   -5.0 -->
-  <arg name="posy" default="2.0" />
+  <arg name="posy" default="0.0" />
   <!-- 12.0   -2.0 -->
   <arg name="yaw" default="1.57079"/>
   <!-- -1.57   0.0 -->
@@ -16,6 +16,12 @@
   <!-- 0.8 w0.1-->
   <arg name="control_beta" default="0.3"/>
   <!-- 0.5 -->
+
+  <!-- occ_grid 4m -->
+  <arg name="min_x" default="0.0"/>
+  <arg name="max_x" default="1.0"/>
+  <arg name="min_y" default="-.50"/>
+  <arg name="max_y" default=".50"/>
   <arg name="linear_acceleration" default="0.1"/>
   <arg name="fine_dist_tolerance" default="0.02"/>
   <arg name="coarse_dist_tolerance" default="0.1"/>
@@ -69,6 +75,10 @@
   <node name="get_goal_point" pkg="mapless_nav" type="get_goal_point.py"/>
 
   <node name="local_occ_grid" pkg="local_occ_grid" type="local_occ_grid">
+    <param name="min_x" value="$(arg min_x)"/>
+    <param name="max_x" value="$(arg max_x)"/>
+    <param name="min_y" value="$(arg min_y)"/>
+    <param name="max_y" value="$(arg max_y)"/>
     <param name="use_lidar" value="true"/>
     <param name="use_cloud" value="true"/>
     <param name="laser_scan_topic" value="/hardware/scan"/>

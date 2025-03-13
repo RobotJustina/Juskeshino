@@ -30,7 +30,7 @@ else:
 # """
 np.set_printoptions(threshold=sys.maxsize)
 
-# # --- load files ---
+# --- load files ---
 pkg_name = 'mapless_nav'
 pkg_path = rospkg.RosPack().get_path(pkg_name)
 files_path = pkg_path + '/scripts/TorchModels/data/'
@@ -41,13 +41,18 @@ data = l_util.load_data(files_path)
 # keys: 'occ_grid', 'target', 'labels'
 data_Y = []
 data_X = []
-# TODO: Add channels
+x_ch_arr = []
+ch_count = 0
+
+# < Modify channels number >
+stack_n_channels = 5
+
 for info in data:
     """
-    data = dict{'features':{occ_grid:[80x80], 'target':[2]}, 'labels':[3]}
-    # occ_grid dim(80x80) float32
+    data = dict{'features':{occ_grid:[nxn], 'target':[2]}, 'labels':[3]}
+    # occ_grid dim(nxn) float32
     # target dim(2) = (distance_to_target, theta_to_target) float32
-    # labels vect dim(3) =  (l_vel_x, l_vel_y, a_vel_z) float32
+    # labels vect dim(3) = (l_vel_x, l_vel_y, a_vel_z) float32
     """
     features = info.get('features')
     #print(features)
@@ -55,9 +60,27 @@ for info in data:
     target = features.get('target')
     rows = occ_grid.shape[0]
     target = np.array([np.ones(rows)*target[0], np.ones(rows)*target[1]], dtype=np.float32)
+
     features = np.vstack((occ_grid, target))
-    data_X.append([features])
-    data_Y.append(info.get('labels'))
+    features = np.array(features, dtype=np.float32)
+    x_ch_arr.append(features)
+    ch_count += 1
+    
+    if ch_count == stack_n_channels:
+        # stack x
+        x_ch_arr = np.array(x_ch_arr, dtype=np.float32)
+
+        # TODO: delete
+        # print("type x_ch_arr", type(x_ch_arr[0][0]))
+        # print("shape x_ch_arr", x_ch_arr.shape)
+        # print(x_ch_arr)
+        # print()
+
+        data_X.append(x_ch_arr)
+        # batch takes last y val 
+        data_Y.append(info.get('labels'))
+        x_ch_arr = []
+        ch_count = 0
 
 data_Y = np.array(data_Y, dtype=np.float32)
 data_X = np.array(data_X, dtype=np.float32)
@@ -69,9 +92,11 @@ data_Y = np.stack((lvel_x, Avel_z), axis=1)
 
 print("Data_X shape:", data_X.shape)
 print("Data_Y shape:", data_Y.shape)
-#print(data_X[0].get('target'))  # show vector
+
+# TODO: Delete
+#np.savez(pkg_path + '/scripts/TorchModels/x_ch_dat.npz', data=data_X)
 # show random sample
-#l_util.show_image_gray(data_X[np.random.randint(0,len(data_X))].get('occ_grid'))
+#l_util.show_image_gray(data_X[np.random.randint(0,len(data_X)), 0])
 
 
 # """
@@ -85,8 +110,7 @@ if normalize_label:
     # normalization lin_vel_x to range[0, 1], data_Y[:, 0]
     data_Y[:, 0] = (data_Y[:, 0] - np.amin(data_Y[:, 0])) / np.ptp(data_Y[:, 0])
 
-
-# Norm lx
+# Norm y
 # for y in data_Y:
 #     print(y)
 # print("sample", data_Y.shape)
@@ -99,12 +123,13 @@ if normalize_label:
 
 normalize_data = False
 if normalize_data:
+    print("normalize X")
     for i in range(len(data_X)):
-        data_X[i, :-2]= data_X[i, :-2]/100
-        print(type(data_X[i]))
-        print(data_X[i])
-        print(data_X[i].shape)
-        print()
+        data_X[i, :stack_n_channels, :-2]= data_X[i, :stack_n_channels, :-2]/100
+        # print(type(data_X[i]))
+        # print(data_X[i])
+        # print(data_X[i].shape)
+        # print()
 
 
 

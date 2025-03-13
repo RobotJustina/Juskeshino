@@ -88,10 +88,11 @@ def occGridCallback(msg):
     data_Y = np.asarray(data_Y, dtype=np.float32)
     sample = {'features':{'occ_grid':data, 'target':tgt}, 'labels':data_Y}
     """
-    data = dict{'features':{occ_grid:[80x80], 'target':[2]}, 'labels':[3]}
-    # occ_grid dim(80x80) float32
-    # target dim(2) = (distance_to_target, theta_to_target) float32
-    # labels vect dim(3) =  (l_vel_x, l_vel_y, a_vel_z) float32
+    # 1m = 20 pixels 
+    # data dim(n+2 x n): ch0 nxn matrix is occ_grid 
+    # row n+1 = distance_to_target 
+    # row n+2 = theta_to_target 
+    # vect_ydat dim(3) label info = l_vel_x, l_vel_y, a_vel_z
     """
     if recording:
         npz_data.append(sample)
@@ -149,7 +150,7 @@ def main():
     rospy.logwarn("Save Y as 3d vector (linv_x, linv_y, Avel_z)")
     data_Y = [0.0, 0.0, 0.0]
     
-    loop = rospy.Rate(30)
+    loop = rospy.Rate(15)
     save_data = False
     
     while not rospy.is_shutdown():
