@@ -40,7 +40,7 @@ def serialize_msg(msg):
 def main():
     global pc2, hd, obj_pos, grasp_traj, obj_shape, status, trajectory_found, get_object_relative_pose
     obj_pose = Pose()
-    obj_shape = '011_banana'
+    obj_shape = '048_hammer'
     print("Starting pose calculator node")
     rospy.init_node("pose_calc_node")
     #rospy.wait_for_service("gazebo/spawn_sdf_model")
