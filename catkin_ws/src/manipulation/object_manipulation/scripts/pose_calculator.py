@@ -53,7 +53,7 @@ def main():
     rgt = geometry_msgs.msg.TransformStamped() 
     loop = rospy.Rate(2)
     POSE_DATA_PATH = "./catkin_ws/src/manipulation/object_manipulation/pose_data/"
-    pose_num = 32
+    pose_num = 16
 
     while not rospy.is_shutdown():
         print("Once the edited pose in gazebo is appropiate, type 'save' to get the relative pose of the gripper and the object")
