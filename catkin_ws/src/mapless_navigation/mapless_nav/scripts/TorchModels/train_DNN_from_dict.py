@@ -123,9 +123,9 @@ y_val = torch.tensor(y_val, dtype=torch.float32, device=device)
 # """
 # Hyperparameters
 # """
-batch_size = 2
+batch_size = 16
 learn_r = 0.0001 # 1e-3
-epochs = 10
+epochs = 15
 
 
 # """

@@ -20,7 +20,7 @@ np.set_printoptions(suppress=True)
 
 package_path = rospkg.RosPack().get_path("mapless_nav")
 save_path = package_path + "/scripts/TorchModels/data/"
-file_name = "data_dep1"
+file_name = "data_controller"
 
 npz_data = []
 goal_x, goal_y = 0.0, 0.0

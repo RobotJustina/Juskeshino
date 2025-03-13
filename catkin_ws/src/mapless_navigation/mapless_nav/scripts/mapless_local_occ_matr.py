@@ -9,10 +9,13 @@ import torch
 
 from TorchModels.utils import models
 
+# >>>Select model
+model = models.NN_82_80()
+
 package_path = rospkg.RosPack().get_path("mapless_nav")
-model_path = package_path + "/scripts/TorchModels/CNN_2feat.pth"
+model_path = package_path + "/scripts/TorchModels/" 
+model_path += model.name + ".pth"
 print("model path: ", model_path)
-model = models.CNN_2feat()
 model.load_state_dict(torch.load(model_path))
 disp = 'cuda' if torch.cuda.is_available() else 'cpu'
 model.to(disp)
@@ -75,10 +78,14 @@ def occGridCallback(msg):
 
         advance = True
         if advance:
-            if last_goal[1] < 0.5:
+            print('last_goal', last_goal)
+            if abs(last_goal[1]) < 0.5:
                 linx = y_pred[0] * speed_factor
             else:
-                linx = y_pred[0] / 10*last_goal[1]
+                linx = y_pred[0] / (10*abs(last_goal[1]))
+                print("linx", linx, end='\n')
+                print("linx", linx, end='\n')
+                
             #linx = 0
             if linx > 1:
                 linx = 1
@@ -87,6 +94,7 @@ def occGridCallback(msg):
 
         #linx = speed_factor*( (linx+1)/2 )
         #linx = 0.2
+        linx = y_pred[0]
 
         """Deleted"""
         #liny = y_pred[1]
@@ -142,7 +150,7 @@ def main():
     pubHeadPos = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=1)
     print("NN_out has been started")
     
-    loop = rospy.Rate(15)
+    loop = rospy.Rate(5)
     msg = Twist()
     msgHeadPos = Float64MultiArray()
     msgHeadPos.data = [0.0, -0.4]

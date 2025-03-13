@@ -223,17 +223,18 @@ class NN_82_80(torch.nn.Module):
         
         # layers
         self.conv1 = torch.nn.Conv2d(1, 16, 3)
+        self.conv2 = torch.nn.Conv2d(16, 32, 3)
         self.dropout_60 = torch.nn.Dropout(p=0.6)
         self.dropout_40 = torch.nn.Dropout(p=0.4)
         self.norm_l3 = torch.nn.GroupNorm(1, 32)
         self.dropout_20 = torch.nn.Dropout(p=0.2)
         
         # second input
-        self.in_vector = torch.nn.Linear(160, 32)
+        self.flat1 = torch.nn.Linear(160, 120)
 
         # merge
-        self.flat2 = torch.nn.Linear(32, 16)
-        self.out = torch.nn.Linear(16, 2)
+        self.flat2 = torch.nn.Linear(120, 80)
+        self.out = torch.nn.Linear(80, 2)
 
     def forward(self, x):
         # vector: d, th
@@ -246,14 +247,17 @@ class NN_82_80(torch.nn.Module):
 
         x = self.conv1(x)
         x = torch.nn.functional.relu(x)
+        #x = self.conv2(x)
+        #x = torch.nn.functional.relu(x)
         x = torch.flatten(x, 1)
         # print("x.shape", x.shape)
         # print("vect.shape", vect.shape)
         # concat inputs
-        x = torch.cat((x, vect), 1)
 
-        vect = self.in_vector(vect)
+        vect = self.flat1(vect)
         vect = torch.nn.functional.relu(vect)
+        x = torch.cat((x, vect), 1)
+        #print("cat.shape", x.shape)
 
         x = self.flat2(vect)
         x = torch.nn.functional.relu(x)
