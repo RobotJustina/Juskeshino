@@ -40,7 +40,7 @@ def serialize_msg(msg):
 def main():
     global pc2, hd, obj_pos, grasp_traj, obj_shape, status, trajectory_found, get_object_relative_pose
     obj_pose = Pose()
-    obj_shape = '007_tuna_fish_can'
+    obj_shape = '001_chips_can'
     print("Starting pose calculator node")
     rospy.init_node("pose_calc_node")
     #rospy.wait_for_service("gazebo/spawn_sdf_model")
@@ -53,7 +53,7 @@ def main():
     rgt = geometry_msgs.msg.TransformStamped() 
     loop = rospy.Rate(2)
     POSE_DATA_PATH = "./catkin_ws/src/manipulation/object_manipulation/pose_data/"
-    pose_num = 79
+    pose_num = 315
 
     while not rospy.is_shutdown():
         print("Once the edited pose in gazebo is appropiate, type 'save' to get the relative pose of the gripper and the object")
