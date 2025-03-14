@@ -36,14 +36,16 @@ MODELS_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/models/"
 VAL_TO_TEST_RATIO = 0.1
 
 class GraspDataset(torch.utils.data.Dataset):
-    def __init__(self, set_type, path = DATASET_PATH):
+    def __init__(self, set_type, path = DATASET_PATH, samples = -1):
         self.base_path = path
         self.dataset_type = set_type
         p_path = os.listdir(self.base_path)
+        if samples > 0:
+            p_path = p_path[:samples]
         p_path.sort()
         p_path = np.array(p_path)
+        self.data_file_names = p_path
         if self.dataset_type == "test":
-            self.data_file_names = p_path
             print("test")
         if self.dataset_type == "validate":
             index = np.random.choice(len(p_path), int(len(p_path)*VAL_TO_TEST_RATIO), replace=False) 
@@ -65,19 +67,19 @@ class GraspDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.data_file_names)
 
-def get_dataloaders():
-    train_dataset = GraspDataset(set_type="test",path=DATASET_PATH)
+def get_dataloaders(samples =-1):
+    train_dataset = GraspDataset(set_type="test",path=DATASET_PATH,samples=samples)
     train_loader = torch.utils.data.DataLoader(train_dataset, BATCH_SIZE, shuffle=True)
 
-    valid_dataset = GraspDataset(set_type="validate",path=DATASET_PATH)
+    valid_dataset = GraspDataset(set_type="validate",path=DATASET_PATH,samples=samples)
     valid_loader = torch.utils.data.DataLoader(valid_dataset, BATCH_SIZE, shuffle=True)
 
     return train_loader, valid_loader
 
-def train_network(num_epochs,model_name, model_path=None):
+def train_network(num_epochs,model_name, model_path=None,samples =-1):
     torch.cuda.empty_cache()
     gc.collect()
-    train_loader, valid_loader = get_dataloaders()
+    train_loader, valid_loader = get_dataloaders(samples)
     model = load_model(model_path)
     best_model = copy.deepcopy(model.state_dict())
     criterion = nn.HuberLoss(delta=0.625)
@@ -127,8 +129,8 @@ def load_model(model_path=None):
     return model
 
 def main():
-    model_file = MODELS_PATH + "model2.pt"
-    train_network(70,"model_nn.pt")
+    model_file = MODELS_PATH + 'model_nn.pt'
+    train_network(70,"model_nn_5.pt",model_path=model_file)
     # dataset = GraspDataset(set_type="test",path=DATASET_PATH)
     # dataloader = torch.utils.data.DataLoader(dataset, BATCH_SIZE, shuffle=True)
     # train_features, train_labels = next(iter(dataloader))

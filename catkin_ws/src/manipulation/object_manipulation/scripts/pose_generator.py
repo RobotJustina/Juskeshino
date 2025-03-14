@@ -268,7 +268,7 @@ def main():
                         data = capture("Found grasp")
                         found_grasps = found_grasps + save_data_to_file(data,found_grasps)
                         print("Found Grasp: ",found_grasps)
-                        for i in range(5):
+                        for i in range(3):
                             if found_grasps < desired_samples:
                                 new_hd, new_pcd = get_new_pcd()
                                 data.head_pose_q = new_hd
