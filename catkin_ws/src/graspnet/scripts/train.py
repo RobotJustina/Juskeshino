@@ -21,7 +21,7 @@ import matplotlib as plt
 gpu_number = 1
 gpus = 0
 gpu_arr = '0'
-BATCH_SIZE = 250
+BATCH_SIZE = 100
 #np.random.seed(int(time.time()))
 #torch.cuda.manual_seed(1)
 #torch.cuda.set_device(gpus)
@@ -31,7 +31,7 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 #Dataset loaders
 
-DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/dataset_test"
+DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/dataset_fake"
 MODELS_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/models/"
 VAL_TO_TEST_RATIO = 0.1
 
@@ -130,7 +130,7 @@ def load_model(model_path=None):
 
 def main():
     model_file = MODELS_PATH + 'model_nn.pt'
-    train_network(70,"model_nn_5.pt",model_path=model_file)
+    train_network(100,"model_bl.pt")
     # dataset = GraspDataset(set_type="test",path=DATASET_PATH)
     # dataloader = torch.utils.data.DataLoader(dataset, BATCH_SIZE, shuffle=True)
     # train_features, train_labels = next(iter(dataloader))
