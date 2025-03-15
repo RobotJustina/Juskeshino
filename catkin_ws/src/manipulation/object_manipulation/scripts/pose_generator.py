@@ -49,8 +49,8 @@ def change_gazebo_object_pose(state_msg, state_pose, mod_name):
 
 def get_new_pcd():
     global pub_hd, msg_hd
-    #msg_hd.data = [random.uniform(-0.4,0.4),-random.uniform(1.0, 1.2)]
-    msg_hd.data = [0,-1.3]
+    msg_hd.data = [random.uniform(-0.4,0.4),-random.uniform(1.0, 1.2)]
+    #msg_hd.data = [0,-1.3]
     pub_hd.publish(msg_hd)
     #rospy.sleep(0.005)
     pcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
@@ -201,6 +201,7 @@ def main():
     obj_shape = rospy.get_param("/obj","056_tennis_ball")
     rospy.sleep(1)
     reset_simulation()
+    pub_hd.publish(msg_hd)
     POSE_DATA_PATH = "./catkin_ws/src/manipulation/object_manipulation/pose_data/"
     pose_num = 0
     loop = rospy.Rate(1)

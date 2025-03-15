@@ -21,7 +21,9 @@ from scipy.spatial import cKDTree
 MAX_POINTS = 25600
 #DATASET_PATH = 'catkin_ws/src/graspnet/dataset/'
 #DATASET_PATH = 'catkin_ws/src/graspnet/dataset_test/'
-DATASET_PATH = 'catkin_ws/src/graspnet/dataset_fake/'
+#DATASET_PATH = 'catkin_ws/src/graspnet/dataset_fake/'
+DATASET_PATH = 'catkin_ws/src/graspnet/dataset_base_link/'
+
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

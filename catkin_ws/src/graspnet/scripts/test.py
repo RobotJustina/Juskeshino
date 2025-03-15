@@ -11,6 +11,7 @@ import numpy as np
 import vg
 import tf2_ros
 from tf2_geometry_msgs import PointStamped
+from vision_msgs.srv import PreprocessPointCloud, PreprocessPointCloudRequest
 from gazebo_msgs.msg import ModelState, ContactsState
 from gazebo_msgs.srv import SetModelState, GetModelState
 from std_msgs.msg import String, Float64MultiArray
@@ -127,10 +128,11 @@ def main():
     set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
     pub_la = rospy.Publisher("/hardware/left_arm/goal_pose", Float64MultiArray, queue_size=10)
     pub_hd = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=10)
+    transform_pointcloud = rospy.ServiceProxy("/vision/point_cloud_to_base_link",PreprocessPointCloud)
     obj_shape = rospy.get_param("/obj","056_tennis_ball")
     rospy.sleep(1)
     loop = rospy.Rate(1)
-    grasp_network = load_model(MODELS_PATH + "model_nn.pt")
+    grasp_network = load_model(MODELS_PATH + "model_gelu.pt")
     grasp_network.eval()
     while not rospy.is_shutdown():
         print("Type r to reset sim to a random pose, and l to loop simulation for samples")
@@ -138,8 +140,10 @@ def main():
         if command == "r": 
             reset_simulation()
             pcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
+            #pcd = transform_pointcloud(PreprocessPointCloudRequest(pcd)).output_cloud
             obj_pt = get_object_relative_pose(obj_shape,"justina::camera_link").pose.position
             mat = gn.ros_pc2_to_npmatrix(pcd)
+            #t_pt = obj_pt
             t_pt = gn.camera_link_to_optical_frame(obj_pt)
             u, v, object_in_range = gn.find_nearest_pt_in_pc(mat,t_pt)
             if object_in_range:
@@ -153,6 +157,7 @@ def main():
                 predicted_pose = tensor_to_pose(predicted_gripper_center_pose)
                 #predicted_pose.orientation.normalize()
                 broadcaster_frame_object("camera_rgb_optical_frame","grasp_frame",predicted_pose)
+                #broadcaster_frame_object("base_link","grasp_frame",predicted_pose)
                 print(predicted_pose)
             print("sure")
         if command == "rm":
