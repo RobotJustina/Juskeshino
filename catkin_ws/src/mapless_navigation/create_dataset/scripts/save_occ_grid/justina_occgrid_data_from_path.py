@@ -10,17 +10,21 @@ import tf
 from datetime import datetime
 import sys
 from general_utils import files_utils
+import time
 
 np.set_printoptions(suppress=True)
 
 package_path = rospkg.RosPack().get_path("mapless_nav")
 save_path = package_path + "/scripts/TorchModels/data/"
 file_name = "data_from_path"
-
 goal_x, goal_y = 0.0, 0.0
 npz_data = []
 data_Y = [0.0, 0.0, 0.0]  # [l_vel_x, l_vel_y, a_vel_z]
 recording = False
+# Value between (5, 20)
+samples_average = 10
+callback_count = 1
+rate = 0
 
 def clickPointCallback(msg):
     global goal_x, goal_y
@@ -94,9 +98,15 @@ def target_direction():
 
 def occGridCallback(msg):
     global npz_data, data_Y
+    global samples_average
+    global rate, callback_count
+    
+    callback_count+=1
 
     data = np.asarray(msg.data, dtype=np.float32)
     data = np.reshape(data, (msg.info.height, msg.info.width))
+    data = np.rot90(np.flip(data, axis=0))
+    
     d, th = target_direction()
     tgt = np.array([round(d, 2), round(th, 2)])
     tgt = np.asarray(tgt, dtype=np.float32)
@@ -110,13 +120,16 @@ def occGridCallback(msg):
     # vect_ydat dim(3) label info = l_vel_x, l_vel_y, a_vel_z
     """
     if recording:
-        npz_data.append(sample)
+        t_lim = math.ceil(rate / samples_average)
+        if callback_count % t_lim == t_lim-1:
+            npz_data.append(sample)
 
 
 def main():
     global goal_x, goal_y, npz_data
     global recording
     global robot_pos_x, robot_pos_y, robot_theta
+    global rate, callback_count
 
     rospy.init_node("justina_occgrid_data_from_path")
     rospy.loginfo("INITIALIZING justina_occgrid_data_from_path")
@@ -141,10 +154,11 @@ def main():
         rospy.logwarn("creating folder" + save_path)
         files_utils.DirectoryUtils.createDir(save_path, True)
 
-    loop = rospy.Rate(30)
+    loop = rospy.Rate(1)
     npz_data = []
     save_data = False
     while not rospy.is_shutdown():
+        start = time.time()
         d, th = target_direction()
         cad = f"(Distancia, Angulo)= ({d:.3f}, {th:.3f})"
         cad += f" || Posicion actual = ({robot_pos_x:.3f}, {robot_pos_y:.3f}, {robot_theta:.3f})"
@@ -169,7 +183,9 @@ def main():
         sys.stdout.write('\x1b[2K')
         print(cad, end='\r')
         loop.sleep()
-    
+        rate = round(callback_count/ (time.time() - start))
+        callback_count = 1
+
 
 if __name__ == "__main__":
      main()

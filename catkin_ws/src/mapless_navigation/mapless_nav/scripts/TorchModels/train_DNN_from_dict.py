@@ -8,7 +8,7 @@ from torch.optim import SGD, Adam
 from sklearn.model_selection import train_test_split
 import numpy as np
 import sys
-
+import rospy
 import utils.utilities as l_util 
 import utils.models as nn_models
 from datetime import datetime
@@ -37,6 +37,7 @@ files_path = pkg_path + '/scripts/TorchModels/data/'
 files_path += "*.npz"
 
 data = l_util.load_data(files_path)
+print("Dataset samples:", data.shape)
 # --- prepare X(data), Y(labels) ---
 # keys: 'occ_grid', 'target', 'labels'
 data_Y = []
@@ -44,8 +45,19 @@ data_X = []
 x_ch_arr = []
 ch_count = 0
 
-# < Modify channels number >
+
+# PARAM <stack_n_channels>: Modify channels number
 stack_n_channels = 5
+# PARAM <meters>: Modify matrix resolution number
+# 1m = 20 pixels, max 8m
+meters = 4.0
+
+sub_rows = int(20*meters)
+print("-- >")
+matrix_shape = data[0].get('features').get('occ_grid').shape
+print(f"Dataset matrix shape {matrix_shape}, range {matrix_shape[0]/20}[m]")
+print(f"Shape selected: ({sub_rows}, {sub_rows}), range {meters}[m]")
+img_center = matrix_shape[0]//2
 
 for info in data:
     """
@@ -59,7 +71,19 @@ for info in data:
     occ_grid = features.get('occ_grid')
     target = features.get('target')
     rows = occ_grid.shape[0]
-    target = np.array([np.ones(rows)*target[0], np.ones(rows)*target[1]], dtype=np.float32)
+    
+    if sub_rows <= matrix_shape[0]:
+        target = np.array([np.ones(sub_rows)*target[0], np.ones(sub_rows)*target[1]], dtype=np.float32)
+        #print("occ_grid", occ_grid.shape)
+        #print("target", target.shape)
+        min_indx = img_center-sub_rows//2
+        max_indx = img_center+sub_rows//2
+        occ_grid = occ_grid[matrix_shape[0]-sub_rows:, min_indx:max_indx]
+        #print("sampled_occ_grid", occ_grid.shape)
+    else:
+        cad = f"Can not rescale shape from {matrix_shape} to ({sub_rows}, {sub_rows})"
+        rospy.logwarn(cad)
+        target = np.array([np.ones(rows)*target[0], np.ones(rows)*target[1]], dtype=np.float32)
 
     features = np.vstack((occ_grid, target))
     features = np.array(features, dtype=np.float32)
@@ -96,12 +120,13 @@ print("Data_Y shape:", data_Y.shape)
 # TODO: Delete
 #np.savez(pkg_path + '/scripts/TorchModels/x_ch_dat.npz', data=data_X)
 # show random sample
-#l_util.show_image_gray(data_X[np.random.randint(0,len(data_X)), 0])
+l_util.show_image_gray(data_X[np.random.randint(0,len(data_X)), 0])
 
 
 # """
 # Normalization
 # """
+# PARAM <normalize_label>: normalize velocity range
 normalize_label = True
 if normalize_label:
     # Normalization angular velocity range [-1, 1]
@@ -161,6 +186,7 @@ model.to(device)
 
 optimizer = Adam(model.parameters(), lr=learn_r)
 loss_fn = torch.nn.MSELoss() # CrossEntropyLoss()
+##torch.nn.L1Loss()
 
 """
 Training

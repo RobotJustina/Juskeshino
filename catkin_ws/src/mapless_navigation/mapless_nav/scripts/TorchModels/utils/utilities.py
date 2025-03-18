@@ -84,7 +84,8 @@ def load_data(files_path='/data/'):
 
 
 
-def show_image_gray(img):   
+def show_image_gray(img, name="image"):   
+    plt.title(name)
     plt.imshow(img, cmap='gray') 
     plt.show()
 

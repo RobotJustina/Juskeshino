@@ -9,8 +9,12 @@ import torch
 
 from TorchModels.utils import models
 
+
+
+import TorchModels.utils.utilities as l_util 
+
 # >>>Select model
-model = models.NN_82_80()
+model = models.CNN_B()
 
 package_path = rospkg.RosPack().get_path("mapless_nav")
 model_path = package_path + "/scripts/TorchModels/" 
@@ -54,6 +58,9 @@ def occGridCallback(msg):
     data = np.asarray(msg.data)
     rows = msg.info.height
     data = np.reshape(data, (rows, rows))
+    data = np.rot90(np.flip(data, axis=0))
+
+
     #other_features = np.zeros(msg.info.height)
     #other_features[:2] = [round(last_goal[0], 2), round(last_goal[1], 2)]
     other_features = np.array([np.ones(rows)*round(last_goal[0], 2), 
@@ -65,9 +72,15 @@ def occGridCallback(msg):
     # row n+2 = theta_to_target 
     # vect_ydat dim(3) label info = l_vel_x, l_vel_y, a_vel_z
     """
+    print("entr shape", data.shape)
+    l_util.show_image_gray(data)
+
+
     data_X = np.vstack((data, other_features))
     entrada = np.asarray(data_X)
 
+    print("entr shape", entrada.shape)
+    l_util.show_image_gray(entrada, "vstak")
 
     #print("entrada", entrada.shape)
     batch = []
@@ -76,6 +89,8 @@ def occGridCallback(msg):
     entrada = np.array(batch)
     #entrada = np.expand_dims(entrada, axis=0)
     entrada = np.expand_dims(entrada, axis=0)
+    
+
     #print("entrada2", entrada.shape)
     x_ent = torch.tensor(entrada)
     x_ent = x_ent.to(torch.device(disp), torch.float32)
@@ -86,7 +101,7 @@ def occGridCallback(msg):
             y_pred = model(x_ent)
         y_pred = y_pred.cpu().numpy()[0]
 
-        advance = True
+        advance = False
         if advance:
             print('last_goal', last_goal)
             if abs(last_goal[1]) < 0.5:

@@ -158,7 +158,8 @@ class CNN_A(torch.nn.Module):
 class CNN_B(torch.nn.Module):
     def __init__(self):
         super(CNN_B, self).__init__()
-        
+        self.name = 'CNN_B'
+
         self.conv1 = torch.nn.Conv2d(1, 6, 5)
         # self.conv2 = torch.nn.Conv2d(3, 8, 5)
         self.dropout_50 = torch.nn.Dropout2d(p=0.5)
