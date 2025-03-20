@@ -21,7 +21,7 @@ import matplotlib as plt
 gpu_number = 1
 gpus = 0
 gpu_arr = '0'
-BATCH_SIZE = 300
+BATCH_SIZE = 250
 #np.random.seed(int(time.time()))
 #torch.cuda.manual_seed(1)
 #torch.cuda.set_device(gpus)
@@ -82,8 +82,9 @@ def train_network(num_epochs,model_name, model_path=None,samples =-1):
     train_loader, valid_loader = get_dataloaders(samples)
     model = load_model(model_path)
     best_model = copy.deepcopy(model.state_dict())
-    criterion = nn.HuberLoss(delta=0.625)
-    optimizer = optim.SGD(model.parameters(),lr=0.001,momentum=0.8)
+    criterion = nn.HuberLoss(delta=0.96)
+    #optimizer = optim.SGD(model.parameters(),lr=0.00008,momentum=0.8)
+    optimizer = optim.Adam(model.parameters(),lr=0.00008)
     min_loss = 1.5
     for epoch in range(num_epochs):
         model.train()
@@ -130,7 +131,7 @@ def load_model(model_path=None):
 
 def main():
     model_file = MODELS_PATH + 'model_nn.pt'
-    train_network(70,"model_gelu_bl.pt")
+    train_network(70,"model_gelu_adam_bl.pt")
     # dataset = GraspDataset(set_type="test",path=DATASET_PATH)
     # dataloader = torch.utils.data.DataLoader(dataset, BATCH_SIZE, shuffle=True)
     # train_features, train_labels = next(iter(dataloader))
