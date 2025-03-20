@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 #from PIL import Image
 from sklearn.preprocessing import OneHotEncoder
 import glob
-
+import rospy
 
 # def load_data(files_path='/data/'):
 #     files_names =  files_path+'/*.npz'
@@ -71,17 +71,16 @@ def load_data(files_path='/data/'):
     if len(files) == 0:
         print("NO files found in data/ folder")
         return None, None
-    print(len(files), ".npz files found:" )
     print("Loading data ...")
+    print(len(files), "'.npz' files found")
     data , temp = [], None
     for file in files:
-        print("loading: ", file)
+        print("load: ", file)
         arr = np.load(file, allow_pickle=True)
         temp = arr['data']
         data=np.concatenate((data, temp), axis=0)
     
     return data
-
 
 
 def show_image_gray(img, name="image"):   

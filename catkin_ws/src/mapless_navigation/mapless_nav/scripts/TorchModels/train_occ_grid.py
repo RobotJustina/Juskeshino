@@ -14,7 +14,6 @@ import utils.models as nn_models
 from datetime import datetime
 import time
 
-import matplotlib.pyplot as plt
 # """
 # Enable GPU mode
 # """
@@ -25,38 +24,64 @@ else:
     device = torch.device('cpu')
 
 
-# """
-# Dataset
-# """
-np.set_printoptions(threshold=sys.maxsize)
+"""
+General parameters
+"""
 
-# --- load files ---
+# PARAM <stack_n_channels>: stack n samples in channels
+stack_n_channels = 5
+
+# PARAM <meters>: Modify matrix resolution number
+# 1m = 20 pixels, max 8m
+meters = 4
+
+# PARAM <normalize_label>: normalize velocity range
+# normalization lin_vel_x to range[0, 1]
+# Normalization angular velocity range [-1, 1]
+normalize_label = True
+
+# PARAM <normalize_data>: normalize occ_grid matrix [0, 1]
+normalize_data = True
+
+# PARAM <save_weights_only>: If False, save model complete
+save_weights_only = True
+
+# PARAM <print_sample>: show random occ_grid sample
+print_sample = False
+
+"""
+Hyperparameters
+"""
+# PARAMS
+batch_size = 5
+learn_r = 0.0001 # 1e-3
+epochs = 15
+
+
+
+
+
+"""
+Dataset
+"""
+np.set_printoptions(threshold=sys.maxsize)
 pkg_name = 'mapless_nav'
 pkg_path = rospkg.RosPack().get_path(pkg_name)
 files_path = pkg_path + '/scripts/TorchModels/data/'
 files_path += "*.npz"
-
+# --- load files ---
 data = l_util.load_data(files_path)
-print("Dataset samples:", data.shape)
+print("Dataset samples:", data.shape[0])
 # --- prepare X(data), Y(labels) ---
 # keys: 'occ_grid', 'target', 'labels'
 data_Y = []
 data_X = []
 x_ch_arr = []
 ch_count = 0
-
-
-# PARAM <stack_n_channels>: Modify channels number
-stack_n_channels = 5
-# PARAM <meters>: Modify matrix resolution number
-# 1m = 20 pixels, max 8m
-meters = 4.0
-
 sub_rows = int(20*meters)
-print("-- >")
 matrix_shape = data[0].get('features').get('occ_grid').shape
-print(f"Dataset matrix shape {matrix_shape}, range {matrix_shape[0]/20}[m]")
-print(f"Shape selected: ({sub_rows}, {sub_rows}), range {meters}[m]")
+print(f"\nDataset matrix shape {matrix_shape}, range {matrix_shape[0]/20}[m]")
+print(f"Selected shape: ({sub_rows}, {sub_rows}), range {meters}[m]")
 img_center = matrix_shape[0]//2
 
 for info in data:
@@ -67,19 +92,15 @@ for info in data:
     # labels vect dim(3) = (l_vel_x, l_vel_y, a_vel_z) float32
     """
     features = info.get('features')
-    #print(features)
     occ_grid = features.get('occ_grid')
     target = features.get('target')
     rows = occ_grid.shape[0]
     
     if sub_rows <= matrix_shape[0]:
         target = np.array([np.ones(sub_rows)*target[0], np.ones(sub_rows)*target[1]], dtype=np.float32)
-        #print("occ_grid", occ_grid.shape)
-        #print("target", target.shape)
         min_indx = img_center-sub_rows//2
         max_indx = img_center+sub_rows//2
         occ_grid = occ_grid[matrix_shape[0]-sub_rows:, min_indx:max_indx]
-        #print("sampled_occ_grid", occ_grid.shape)
     else:
         cad = f"Can not rescale shape from {matrix_shape} to ({sub_rows}, {sub_rows})"
         rospy.logwarn(cad)
@@ -93,15 +114,8 @@ for info in data:
     if ch_count == stack_n_channels:
         # stack x
         x_ch_arr = np.array(x_ch_arr, dtype=np.float32)
-
-        # TODO: delete
-        # print("type x_ch_arr", type(x_ch_arr[0][0]))
-        # print("shape x_ch_arr", x_ch_arr.shape)
-        # print(x_ch_arr)
-        # print()
-
         data_X.append(x_ch_arr)
-        # batch takes last y val 
+        # the batch takes the last 'y' value
         data_Y.append(info.get('labels'))
         x_ch_arr = []
         ch_count = 0
@@ -114,25 +128,25 @@ lvel_x = data_Y[:, 0]
 Avel_z = data_Y[:, 2]
 data_Y = np.stack((lvel_x, Avel_z), axis=1)
 
-print("Data_X shape:", data_X.shape)
-print("Data_Y shape:", data_Y.shape)
+print("Data_X.shape:", data_X.shape)
+print("Data_Y.shape:", data_Y.shape)
 
 # TODO: Delete
 #np.savez(pkg_path + '/scripts/TorchModels/x_ch_dat.npz', data=data_X)
 # show random sample
-l_util.show_image_gray(data_X[np.random.randint(0,len(data_X)), 0])
+if print_sample:
+    l_util.show_image_gray(data_X[np.random.randint(0,len(data_X)), 0])
 
 
-# """
-# Normalization
-# """
-# PARAM <normalize_label>: normalize velocity range
-normalize_label = True
+"""
+Normalization
+"""
+
 if normalize_label:
     # Normalization angular velocity range [-1, 1]
     data_Y[:, 1] = (data_Y[:, 1] - np.amin(data_Y[:, 1])) / np.ptp(data_Y[:, 1])
     data_Y[:, 1] = (data_Y[:, 1]*2) -1
-    # normalization lin_vel_x to range[0, 1], data_Y[:, 0]
+    # normalization lin_vel_x to range[0, 1]
     data_Y[:, 0] = (data_Y[:, 0] - np.amin(data_Y[:, 0])) / np.ptp(data_Y[:, 0])
 
 # Norm y
@@ -146,7 +160,7 @@ if normalize_label:
 # ymax = np.amax(data_Y[:, 1])
 # print("ang_vel_z range: ", ymin, ymax)
 
-normalize_data = False
+
 if normalize_data:
     print("normalize X")
     for i in range(len(data_X)):
@@ -170,23 +184,21 @@ y_val = torch.tensor(y_val, dtype=torch.float32, device=device)
 #y_test = torch.tensor(y_test, dtype=torch.float32, device=device)
 
 
-# """
-# Hyperparameters
-# """
-batch_size = 16
-learn_r = 0.0001 # 1e-3
-epochs = 15
 
 
-# """
-# Model
-# """
-model = nn_models.NN_82_80()
+"""
+Model
+"""
+# PARAM model = nn_models.<model_name>()
+model = nn_models.Param_CNN(channels=stack_n_channels, img_size=data_X.shape[-1])
 model.to(device)
 
 optimizer = Adam(model.parameters(), lr=learn_r)
-loss_fn = torch.nn.MSELoss() # CrossEntropyLoss()
+loss_fn = torch.nn.MSELoss()
 ##torch.nn.L1Loss()
+save_path = './'+ model.name + '.pth'
+
+
 
 """
 Training
@@ -251,19 +263,24 @@ for epoch in range(epochs):
     if avg_vloss < best_vloss:
         best_vloss = avg_vloss
         model_path = 'model_{}_{}'.format(timestamp, epoch)
-        ##torch.save(model.state_dict(), model_path)
+
+        if save_weights_only:
+            torch.save(model.state_dict(), save_path)
+        else:
+            torch.save(model, save_path)  # Save the model
 
 tf = time.time()
 from datetime import timedelta
 t =  str(timedelta(seconds=tf - t0))[:-4]
 print('\nTraining completed in:', t)
 
-"""
-Save model info
-"""
-# # --- save the model ---
-save_path = './'+ model.name + '.pth'
-torch.save(model.state_dict(), save_path)
+
+# TODO: delete
+# """
+# Save model info
+# """
+# # # --- save the model ---
+# #torch.save(model.state_dict(), save_path)
 
 
 """
