@@ -4,4 +4,9 @@
 *.swp
 *.vscode
 *.code-workspace
+catkin_ws/src/graspnet/dataset/
+catkin_ws/src/graspnet/dataset_test/
+catkin_ws/src/graspnet/dataset_fake/
+catkin_ws/src/graspnet/dataset_base_link/
+catkin_ws/src/graspnet/models/
 #*#

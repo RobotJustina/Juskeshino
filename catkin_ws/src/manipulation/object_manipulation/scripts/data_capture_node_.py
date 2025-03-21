@@ -9,6 +9,7 @@ from pathlib import Path
 from threading import Lock
 from manip_msgs.srv import DataCapture, DataCaptureResponse, InverseKinematicsPose2TrajRequest, InverseKinematicsPose2Traj
 from trajectory_msgs.msg import JointTrajectory
+from vision_msgs.srv import PreprocessPointCloud, PreprocessPointCloudRequest
 from sensor_msgs.msg import PointCloud2
 from std_msgs.msg import String, Float64MultiArray
 from gazebo_msgs.msg import ModelState
@@ -43,11 +44,12 @@ def broadcaster_frame_object(frame, child_frame, pose):   # Emite la transformac
     br.sendTransform(t)
 
 def callback_capture(req):
-    global obj_shape, get_object_relative_pose, tf_listener,tf_buf, set_state
+    global obj_shape, get_object_relative_pose, tf_listener,tf_buf, set_state, transform_pointcloud
     og_pose = PoseStamped()
     og_pose.header.frame_id = "gm/gr_left_arm_grip_center"
     og_pose.pose.orientation.w = 1
-    target_pt = tf_buf.transform(og_pose, "camera_rgb_optical_frame")
+    target_pt = tf_buf.transform(og_pose, "base_link")
+    #target_pt = tf_buf.transform(og_pose, "camera_rgb_optical_frame")
     #broadcaster_frame_object("camera_rgb_optical_frame","saved_gripper_center",target_pt.pose)
     hd               = rospy.wait_for_message("/hardware/head/current_pose", Float64MultiArray)
     x = target_pt.pose.position.x
@@ -61,14 +63,15 @@ def callback_capture(req):
     #                                              target_pt.pose.orientation.z , target_pt.pose.orientation.w ])
     resp                   = DataCaptureResponse()
     resp.capture_status    = "Saved_grasp"
-    resp.obj_relative_pos  = get_object_relative_pose(obj_shape,"justina::camera_link").pose.position
+    resp.obj_relative_pos  = get_object_relative_pose(obj_shape,"justina::base_link").pose.position
     resp.head_pose_q       = hd.data
     resp.final_grasp_q     = [x, y, z, qx, qy, qz, qw]
     resp.obj_type          = obj_shape
-    resp.gripper_pose      = get_object_relative_pose("justina_gripper","justina::camera_link").pose
+    resp.gripper_pose      = get_object_relative_pose("justina_gripper","justina::base_link").pose
     set_state(GRIPPER_ORIGIN)
     rospy.sleep(0.15)
     resp.pointcloud        = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
+    resp.pointcloud        = transform_pointcloud(PreprocessPointCloudRequest(resp.pointcloud)).output_cloud
     resp.score             = 0
     #score_calculation(target_pt.pose)
     return resp
@@ -110,7 +113,7 @@ def get_ik_la(msg_pose):
     
 
 def main():
-    global pc2, hd, obj_pos, grasp_traj, obj_shape, status,tf_listener,tf_buf, get_object_relative_pose, ik_srv, set_state
+    global pc2, hd, obj_pos, grasp_traj, obj_shape, status,tf_listener,tf_buf, get_object_relative_pose, ik_srv, set_state, transform_pointcloud
     pc2 = PointCloud2()
     hd = []
     obj_pos= Point() 
@@ -120,6 +123,7 @@ def main():
     #listener = tf.TransformListener()
     print("Starting training data capture node")
     get_object_relative_pose = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
+    transform_pointcloud = rospy.ServiceProxy("/vision/point_cloud_to_base_link",PreprocessPointCloud)
     set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
     ik_srv = rospy.ServiceProxy('/manipulation/la_ik_trajectory', InverseKinematicsPose2Traj)
     rospy.init_node("data_capture_node")
