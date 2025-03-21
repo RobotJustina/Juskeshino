@@ -63,7 +63,11 @@ def normalize(v):
 def tensor_to_pose(tensor):
     nppose = tensor.detach().cpu().numpy()
     nppose = nppose[0]
-    quat = normalize(nppose[3:])
+    i,j,k,c,s = nppose[3:]
+    ang = math.atan2(c,s)
+    vec = normalize([i,j,k])*math.sin(ang)
+    quat = np.append(vec,[math.cos(ang)])
+    #quat = normalize(nppose[3:])
     rpose = Pose()
     rpose.position.x = nppose[0]
     rpose.position.y = nppose[1]
@@ -134,7 +138,7 @@ def main():
     obj_shape = rospy.get_param("/obj","056_tennis_ball")
     rospy.sleep(1)
     loop = rospy.Rate(1)
-    grasp_network = load_model(MODELS_PATH + "model_gelu_adam_bl.pt")
+    grasp_network = load_model(MODELS_PATH + "model_gadam_cube")
     grasp_network.eval()
     while not rospy.is_shutdown():
         print("Type r to reset sim to a random pose, and l to loop simulation for samples")

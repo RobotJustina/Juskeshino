@@ -24,16 +24,45 @@ VG_PLANE = {
     "ZX": vg.basis.y
 }
 
+def rotation_object():
+    geometric_shape_dic = {
+                            "prism":    [[0, 0, random.randint(0,int(np.deg2rad()))] ],
+                            "spherical":[],
+                            "flat":     [],
+                            "box":      []
+    }
+
+    rotation = geometric_shape_dic["prism"][0]
+    print("rotacion", rotation)
+    print("r", rotation[2])
+
+    quaternion_obj = tft.quaternion_from_euler(rotation[0],rotation[1],rotation[2] ,'sxyz')
+
+    return quaternion_obj
+
+
 def generate_random_pose():
     rpose = Pose()
     rpose.position.x = random.randint(210,310)/100
     rpose.position.y = random.randint(218,245)/100
     rpose.position.z = 0.745
+    
+    q = rotation_object()
+    
+    
+    rpose.orientation.x = q[0]
+    rpose.orientation.y = q[1]
+    rpose.orientation.z = q[2]
+    rpose.orientation.w = q[3]
+    return rpose
+    """
     rpose.orientation.x = random.randint(-315,315)/100
     rpose.orientation.y = random.randint(-315,315)/100
     rpose.orientation.z = random.randint(-315,315)/100
     rpose.orientation.w = 0
     return rpose
+    """
+    
 
 def change_gazebo_object_pose(state_msg, state_pose, mod_name):
     global set_state
@@ -184,7 +213,7 @@ def main():
     grasp_attempts = 0
     num_loops = 0
     found_grasps = 0
-    obj_shape = '056_tennis_ball'
+    obj_shape = '001_chips_can'
     rospy.init_node('dataset_generator')
     print("Starting grip test")
     # rospy.Subscriber('/manipulation/grasp/grasp_status' ,String ,callback_grasp_status)
@@ -281,6 +310,11 @@ def main():
                     pose_num = pose_num + 1
                     file_name = POSE_DATA_PATH + obj_shape + str(pose_num)
             print("Finished taking samples")
+
+        if command == 'e':
+            while((not rospy.is_shutdown())):
+                change_gazebo_object_pose(state_msg, generate_random_pose(), obj_shape)
+                rospy.sleep(4)
 
         loop.sleep()
 

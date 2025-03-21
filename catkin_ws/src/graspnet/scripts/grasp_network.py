@@ -119,7 +119,7 @@ class GraspNetwork(nn.Module):
         self.fc2 = nn.Linear(8192, 2048)
         self.fc3 = nn.Linear(2048,512)
         self.fc4 = nn.Linear(512,64)
-        self.fc5 = nn.Linear(64,7)
+        self.fc5 = nn.Linear(64,8)
 
     def forward(self, x):
         x = self.conv1(x)

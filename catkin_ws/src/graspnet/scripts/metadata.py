@@ -6,7 +6,7 @@ import pandas as pd
 import rospy
 from scipy.spatial.distance import cdist, euclidean
 
-DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/dataset_base_link"
+DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/dataset_cube_test/"
 
 def get_dataset_frame(dataset_path):
     filelist = os.listdir(dataset_path)

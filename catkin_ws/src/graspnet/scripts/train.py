@@ -16,6 +16,7 @@ import os
 import numpy.lib.recfunctions as rf
 import gc
 import matplotlib as plt
+import math
 
 #Gpu config
 gpu_number = 1
@@ -31,7 +32,7 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 #Dataset loaders
 
-DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/dataset_base_link"
+DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/dataset_cube_test/"
 MODELS_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/models/"
 VAL_TO_TEST_RATIO = 0.1
 
@@ -61,7 +62,15 @@ class GraspDataset(torch.utils.data.Dataset):
         points = torch.tensor(pcd[:,:,:3],dtype=torch.float32)
         points = torch.nan_to_num(points,nan=0.0)
         points = torch.permute(points,(2,1,0))
-        pose = torch.tensor(data['grasp'],dtype=torch.float32)
+        #pose = torch.tensor(data['grasp'],dtype=torch.float32)
+        x,y,z,ox,oy,oz,w = data['grasp']
+        ang = math.acos(w)
+        c = w
+        s = math.sin(ang)
+        ox = ox/s
+        oy = oy/s
+        oz = oz/s
+        pose = torch.tensor([x,y,z,ox,oy,oz,c,s],dtype=torch.float32)
         return points, pose
     
     def __len__(self):
@@ -82,7 +91,7 @@ def train_network(num_epochs,model_name, model_path=None,samples =-1):
     train_loader, valid_loader = get_dataloaders(samples)
     model = load_model(model_path)
     best_model = copy.deepcopy(model.state_dict())
-    criterion = nn.HuberLoss(delta=0.96)
+    criterion = nn.HuberLoss(delta=0.7)
     #optimizer = optim.SGD(model.parameters(),lr=0.00008,momentum=0.8)
     optimizer = optim.Adam(model.parameters(),lr=0.00008)
     min_loss = 1.5
@@ -131,7 +140,7 @@ def load_model(model_path=None):
 
 def main():
     model_file = MODELS_PATH + 'model_nn.pt'
-    train_network(70,"model_gelu_adam_bl.pt")
+    train_network(100,"model_gadam_cube")
     # dataset = GraspDataset(set_type="test",path=DATASET_PATH)
     # dataloader = torch.utils.data.DataLoader(dataset, BATCH_SIZE, shuffle=True)
     # train_features, train_labels = next(iter(dataloader))
