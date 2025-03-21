@@ -10,14 +10,23 @@ import copy
 import numpy.lib.recfunctions as rf
 import torch
 import cv2
+import tf2_ros
 from sensor_msgs.msg import PointCloud2
-from geometry_msgs.msg import Point
+from tf2_geometry_msgs import PointStamped, PoseStamped
+from geometry_msgs.msg import Point, PointStamped, PoseStamped
 from gazebo_msgs.srv import GetModelState
 from visualization_msgs.msg import Marker
 from scipy.spatial import cKDTree
 
 MAX_POINTS = 25600
-DATASET_PATH = 'catkin_ws/src/graspnet/dataset/'
+#DATASET_PATH = 'catkin_ws/src/graspnet/dataset/'
+#DATASET_PATH = 'catkin_ws/src/graspnet/dataset_test/'
+#DATASET_PATH = 'catkin_ws/src/graspnet/dataset_fake/'
+DATASET_PATH = 'catkin_ws/src/graspnet/dataset_base_link/'
+
+
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 gpus = 1
 
 def debug_type(obj, obj_name):
@@ -120,6 +129,13 @@ def nparray_pc_to_torch(pc):
     print(type(pc_torch))
     return pc_back, color_back, pc_torch
 
+def npmatrix_to_torch(pcd):
+    points = rf.structured_to_unstructured(pcd)
+    points = torch.tensor(points[:,:,:3],dtype=torch.float32)
+    points = torch.permute(points,(2,1,0))
+    points.to(DEVICE)
+    return points
+
 def save_data_to_file(resp, file_num=1):
     pcd = resp.pointcloud
     #pc = ros_pc2_to_nparray(pcd)
@@ -128,7 +144,8 @@ def save_data_to_file(resp, file_num=1):
     grasp = resp.final_grasp_q
     gr_pose = resp.gripper_pose
     obj_relative_pos = resp.obj_relative_pos
-    obj_relative_pos = camera_link_to_optical_frame(obj_relative_pos)
+    #obj_relative_pos = camera_link_to_optical_frame(obj_relative_pos)
+    #obj_relative_pos = camera_link_to_base_link(obj_relative_pos)
     head_pose_q = resp.head_pose_q
     obj_type = resp.obj_type
     score = resp.score
@@ -150,6 +167,17 @@ def camera_link_to_optical_frame(pt):
     target_pt.y = -pt.z
     target_pt.z = pt.x
     return target_pt
+
+def camera_link_to_base_link(pt):
+    global tf_listener, tf_buf
+    # tf_buf = tf2_ros.Buffer()
+    # tf_listener = tf2_ros.TransformListener(tf_buf)
+    pst = PoseStamped()
+    pst.header.frame_id = 'camera_link'
+    pst.pose.position = pt
+    pst.pose.orientation.w = 1
+    target_pt = tf_buf.transform(pst,'base_link')
+    return target_pt.pose.position
 
 def create_marker_from_pt(pt):
     global marker_pub
@@ -210,7 +238,7 @@ def show_rgb(pc):
 
 
 def main():
-    global marker_pub
+    global marker_pub, tf_listener, tf_buf
     print("Dataset utils started")
     obj_shape = rospy.get_param("/obj","056_tennis_ball")
     get_object_relative_pose = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)

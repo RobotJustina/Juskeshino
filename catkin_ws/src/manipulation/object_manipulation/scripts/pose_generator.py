@@ -50,6 +50,7 @@ def change_gazebo_object_pose(state_msg, state_pose, mod_name):
 def get_new_pcd():
     global pub_hd, msg_hd
     msg_hd.data = [random.uniform(-0.4,0.4),-random.uniform(1.0, 1.2)]
+    #msg_hd.data = [0,-1.3]
     pub_hd.publish(msg_hd)
     #rospy.sleep(0.005)
     pcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
@@ -168,7 +169,7 @@ def get_ik_la(msg_pose):
 
 def main():
     global ik_srv, state_msg, grasp_trajectory_found, justina_origin_pose, obj_shape, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
-    global set_state
+    global set_state, tf_buf, tf_listener
     state_msg = ModelState()
     deserialized_gripper_model_state = ModelState()
     justina_origin_pose = create_origin_pose()
@@ -200,6 +201,7 @@ def main():
     obj_shape = rospy.get_param("/obj","056_tennis_ball")
     rospy.sleep(1)
     reset_simulation()
+    pub_hd.publish(msg_hd)
     POSE_DATA_PATH = "./catkin_ws/src/manipulation/object_manipulation/pose_data/"
     pose_num = 0
     loop = rospy.Rate(1)
@@ -268,7 +270,7 @@ def main():
                         data = capture("Found grasp")
                         found_grasps = found_grasps + save_data_to_file(data,found_grasps)
                         print("Found Grasp: ",found_grasps)
-                        for i in range(5):
+                        for i in range(3):
                             if found_grasps < desired_samples:
                                 new_hd, new_pcd = get_new_pcd()
                                 data.head_pose_q = new_hd
