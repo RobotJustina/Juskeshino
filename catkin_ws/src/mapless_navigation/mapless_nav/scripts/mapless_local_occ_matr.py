@@ -10,11 +10,11 @@ import torch
 from TorchModels.utils import models
 
 
-
 import TorchModels.utils.utilities as l_util 
 
 # >>>Select model
-model = models.CNN_B()
+occ_grid_meters = 4
+model = models.Param_CNN(channels=5)#, img_size=int(20*occ_grid_meters))
 
 package_path = rospkg.RosPack().get_path("mapless_nav")
 model_path = package_path + "/scripts/TorchModels/" 
@@ -34,6 +34,7 @@ robot_pos_x, robot_pos_y = 0, 0
 speed_factor = 2
 
 
+
 def callback_goal(msg):
     global last_goal, target_reached
     if target_reached:
@@ -48,6 +49,12 @@ def callback_point(msg):
     init_time = rospy.get_time()
     target_reached = False
     print(f"New goal: {msg.point.x, msg.point.y}")
+
+
+# def occ_grid_image(image=None, occ_grid_meters=4):
+    
+    
+#     return image
 
 
 def occGridCallback(msg):
@@ -73,14 +80,19 @@ def occGridCallback(msg):
     # vect_ydat dim(3) label info = l_vel_x, l_vel_y, a_vel_z
     """
     print("entr shape", data.shape)
-    l_util.show_image_gray(data)
+    print("model shape", model.img_shape)
+    #l_util.show_image_gray(data)
 
 
     data_X = np.vstack((data, other_features))
     entrada = np.asarray(data_X)
 
+    # Config input to model
+
+
+
     print("entr shape", entrada.shape)
-    l_util.show_image_gray(entrada, "vstak")
+    #l_util.show_image_gray(entrada, "vstak")
 
     #print("entrada", entrada.shape)
     batch = []

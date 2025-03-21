@@ -239,6 +239,7 @@ class Param_CNN(torch.nn.Module):
         self.name = "Param_CNN"
         self.channels = channels
         self.img_shape = (img_size, img_size)
+        #print(self.name, self.img_shape)
         
         # layers
         self.conv1 = torch.nn.Conv2d(self.channels, 16, 3)

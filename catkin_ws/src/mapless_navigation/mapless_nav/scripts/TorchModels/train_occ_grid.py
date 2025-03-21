@@ -31,9 +31,9 @@ General parameters
 # PARAM <stack_n_channels>: stack n samples in channels
 stack_n_channels = 5
 
-# PARAM <meters>: Modify matrix resolution number
+# PARAM <occ_grid_meters>: Modify matrix resolution number
 # 1m = 20 pixels, max 8m
-meters = 4
+occ_grid_meters = 4
 
 # PARAM <normalize_label>: normalize velocity range
 # normalization lin_vel_x to range[0, 1]
@@ -78,10 +78,10 @@ data_Y = []
 data_X = []
 x_ch_arr = []
 ch_count = 0
-sub_rows = int(20*meters)
+sub_rows = int(20*occ_grid_meters)
 matrix_shape = data[0].get('features').get('occ_grid').shape
 print(f"\nDataset matrix shape {matrix_shape}, range {matrix_shape[0]/20}[m]")
-print(f"Selected shape: ({sub_rows}, {sub_rows}), range {meters}[m]")
+print(f"Selected shape: ({sub_rows}, {sub_rows}), range {occ_grid_meters}[m]")
 img_center = matrix_shape[0]//2
 
 for info in data:
