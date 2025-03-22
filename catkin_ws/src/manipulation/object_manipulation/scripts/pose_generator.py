@@ -16,8 +16,10 @@ from std_msgs.msg import String, Float64MultiArray
 from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import Pose, PointStamped  
 from manip_msgs.srv import DataCapture, InverseKinematicsPose2TrajRequest, InverseKinematicsPose2Traj
+from vision_msgs.srv import PreprocessPointCloud, PreprocessPointCloudRequest
 from dataset_utils import save_data_to_file
 BASE_JUSTINA_VECTOR = np.array([0.0,-1.0,0.0])
+CONIC_ANGLE = math.cos(math.radians(30))
 VG_PLANE = {
     "XY": vg.basis.z,
     "YZ": vg.basis.x,
@@ -47,21 +49,21 @@ def generate_random_pose():
     rpose.position.y = random.randint(218,245)/100
     rpose.position.z = 0.745
     
-    q = rotation_object()
+    # q = rotation_object()
     
     
-    rpose.orientation.x = q[0]
-    rpose.orientation.y = q[1]
-    rpose.orientation.z = q[2]
-    rpose.orientation.w = q[3]
-    return rpose
-    """
+    # rpose.orientation.x = q[0]
+    # rpose.orientation.y = q[1]
+    # rpose.orientation.z = q[2]
+    # rpose.orientation.w = q[3]
+    # return rpose
+    # """
     rpose.orientation.x = random.randint(-315,315)/100
     rpose.orientation.y = random.randint(-315,315)/100
     rpose.orientation.z = random.randint(-315,315)/100
     rpose.orientation.w = 0
     return rpose
-    """
+    # """
     
 
 def change_gazebo_object_pose(state_msg, state_pose, mod_name):
@@ -119,11 +121,12 @@ def reset_simulation():
     global justina_origin_pose, obj_shape, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts
     change_gazebo_object_pose(state_msg, generate_random_pose(), obj_shape)
     change_gazebo_object_pose(state_msg, justina_origin_pose, "justina")
+    msg_hd.data = [random.uniform(-0.4,0.4),-random.uniform(1.0, 1.2)]
     num_loops = 0
     left_gripper_made_contact = False
     right_gripper_made_contact = False
     #pub_la.publish(msg_la)
-    #pub_hd.publish(msg_hd)
+    pub_hd.publish(msg_hd)
     rospy.sleep(0.1)
     #pub_object.publish(obj_shape)
     #pub_object.publish(obj_shape)
@@ -165,7 +168,7 @@ def is_pose_valid(angle_XY, angle_YZ, angle_ZX):
     if angle_XY >= 90: return False
     if not (10 <= angle_YZ <= 90): return False
     if not (10 <= angle_ZX <= 170): return False
-    
+
     return True 
 
 
@@ -173,6 +176,22 @@ def is_pose_valid(angle_XY, angle_YZ, angle_ZX):
 def score_calculation(articular_array):
     a = sum(articular_array)
 
+def gripper_in_conic(gp,ob):
+    g = np.asarray([gp.x,gp.y,gp.z])
+    o = np.asarray([ob.x,ob.y,ob.z])
+    axis = o/np.linalg.norm(o)
+    print(np.dot(((g-o)/np.linalg.norm(g-o)),axis))
+    in_conic = np.dot(((g-o)/np.linalg.norm(g-o)),axis) < CONIC_ANGLE
+    print("In conic:", in_conic)
+    return in_conic
+
+def get_vision_angle(gp,cam):
+    objgpr = np.asarray([gp.x,gp.y,gp.z])
+    objgpr = objgpr/np.linalg.norm(objgpr)
+    objcam = np.asarray([-cam.x,-cam.y,-cam.z])
+    objcam = objcam/np.linalg.norm(objcam)
+    vis_ang = vg.angle(objcam,objgpr)
+    return vis_ang
 
 def get_ik_la(msg_pose):
     global ik_srv
@@ -198,7 +217,7 @@ def get_ik_la(msg_pose):
 
 def main():
     global ik_srv, state_msg, grasp_trajectory_found, justina_origin_pose, obj_shape, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
-    global set_state, tf_buf, tf_listener
+    global set_state, get_object_relative_pose
     state_msg = ModelState()
     deserialized_gripper_model_state = ModelState()
     justina_origin_pose = create_origin_pose()
@@ -224,6 +243,7 @@ def main():
     get_object_relative_pose = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
     capture = rospy.ServiceProxy('/manipulation/grasp/data_capture_service', DataCapture)
     set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
+    transform_pointcloud = rospy.ServiceProxy("/vision/point_cloud_to_base_link",PreprocessPointCloud)
     #pub_object = rospy.Publisher("/plannning/simple_task/take_object", String, queue_size=10)
     pub_la = rospy.Publisher("/hardware/left_arm/goal_pose", Float64MultiArray, queue_size=10)
     pub_hd = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=10)
@@ -302,6 +322,7 @@ def main():
                         for i in range(3):
                             if found_grasps < desired_samples:
                                 new_hd, new_pcd = get_new_pcd()
+                                new_pcd = transform_pointcloud(PreprocessPointCloudRequest(new_pcd)).output_cloud
                                 data.head_pose_q = new_hd
                                 data.pointcloud = new_pcd
                                 found_grasps = found_grasps + save_data_to_file(data,found_grasps)
@@ -309,6 +330,44 @@ def main():
                             else: break
                     pose_num = pose_num + 1
                     file_name = POSE_DATA_PATH + obj_shape + str(pose_num)
+            print("Finished taking samples")
+        if command == 'c':
+            while((not rospy.is_shutdown())):
+                reset_simulation()
+                pose_num = 1
+                print("Testing new position")
+                file_name = POSE_DATA_PATH + obj_shape + str(pose_num)
+                angles = []
+                while(os.path.exists(file_name)):
+                    angles.append(256)
+                    in_file = open(file_name, "rb") # opening for [r]eading as [b]inary
+                    file_serialized_gripper_model_state = in_file.read() 
+                    in_file.close()
+                    deserialized_gripper_model_state.deserialize(file_serialized_gripper_model_state)
+                    deserialized_gripper_model_state.reference_frame = obj_shape
+                    set_state(deserialized_gripper_model_state)
+                    rospy.sleep(0.001)
+                    angle_XY, angle_YZ, angle_ZX, gripper_side = get_angle_in_plane(get_object_relative_pose("justina_gripper","world").pose.position, 
+                                                                get_object_relative_pose(obj_shape,"world").pose.position,"XY")
+                    gpwrtcam = get_object_relative_pose("justina_gripper","justina::camera_link").pose.position
+                    objwrtcam = get_object_relative_pose(obj_shape,"justina::camera_link").pose.position
+                    if is_pose_valid(angle_XY, angle_YZ, angle_ZX) and gripper_in_conic(gpwrtcam,objwrtcam):
+                        angles[pose_num-1] = get_vision_angle(deserialized_gripper_model_state.pose.position,objwrtcam)
+                        print(pose_num,angles[pose_num-1])
+                        rospy.sleep(2)
+                    pose_num = pose_num + 1
+                    file_name = POSE_DATA_PATH + obj_shape + str(pose_num)
+                print(angles)
+                best_pose = angles.index(min(angles)) + 1
+                print(best_pose)
+                file_name = POSE_DATA_PATH + obj_shape + str(best_pose)
+                in_file = open(file_name, "rb") # opening for [r]eading as [b]inary
+                file_serialized_gripper_model_state = in_file.read() 
+                in_file.close()
+                deserialized_gripper_model_state.deserialize(file_serialized_gripper_model_state)
+                deserialized_gripper_model_state.reference_frame = obj_shape
+                set_state(deserialized_gripper_model_state)
+                rospy.sleep(5)
             print("Finished taking samples")
 
         if command == 'e':
