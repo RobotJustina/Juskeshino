@@ -45,10 +45,11 @@ def callback_goal(msg):
 
 
 def callback_point(msg):
-    global init_time, target_reached
-    init_time = rospy.get_time()
+    global target_reached
+
+    print(f"\nNew goal: ({msg.point.x:.3f}, {msg.point.y:.3f})", end="\r") 
+    print(end='\n')
     target_reached = False
-    print(f"New goal: {msg.point.x, msg.point.y}")
 
 
 # def occ_grid_image(image=None, occ_grid_meters=4):
@@ -79,8 +80,8 @@ def occGridCallback(msg):
     # row n+2 = theta_to_target 
     # vect_ydat dim(3) label info = l_vel_x, l_vel_y, a_vel_z
     """
-    print("entr shape", data.shape)
-    print("model shape", model.img_shape)
+    #print("entr shape", data.shape)
+    #print("model shape", model.img_shape)
     #l_util.show_image_gray(data)
 
 
@@ -91,7 +92,7 @@ def occGridCallback(msg):
 
 
 
-    print("entr shape", entrada.shape)
+    #print("entr shape", entrada.shape)
     #l_util.show_image_gray(entrada, "vstak")
 
     #print("entrada", entrada.shape)
@@ -113,21 +114,21 @@ def occGridCallback(msg):
             y_pred = model(x_ent)
         y_pred = y_pred.cpu().numpy()[0]
 
-        advance = False
-        if advance:
-            print('last_goal', last_goal)
-            if abs(last_goal[1]) < 0.5:
-                linx = y_pred[0] * speed_factor
-            else:
-                linx = y_pred[0] / (10*abs(last_goal[1]))
-                print("linx", linx, end='\n')
-                print("linx", linx, end='\n')
+        # advance = False
+        # if advance:
+        #     print('last_goal', last_goal)
+        #     if abs(last_goal[1]) < 0.5:
+        #         linx = y_pred[0] * speed_factor
+        #     else:
+        #         linx = y_pred[0] / (10*abs(last_goal[1]))
+        #         print("XXXXXXXXXXXXXXXX linx", linx, end='\n')
+        #         print("XXXXXXXXXXXXXXXX linx", linx, end='\n')
                 
-            #linx = 0
-            if linx > 1:
-                linx = 1
-        else:
-            linx = 0
+        #     #linx = 0
+        #     if linx > 1:
+        #         linx = 1
+        # else:
+        #     linx = 0
 
         #linx = speed_factor*( (linx+1)/2 )
         #linx = 0.2
@@ -148,16 +149,11 @@ def occGridCallback(msg):
         #     linx = 0.01
 
     else:
-        if (init_time != -1.0 and (linx+angz) > 0):
-            tiempo = rospy.get_time()
-            print(f"inicio: {init_time}, {tiempo}")
-            tiempo = tiempo-init_time
-            print(f"Time: {tiempo}")
-            init_time = -1.0
         linx = 0.0
         liny = 0.0
         angz = 0.0
-        target_reached = True
+        if last_goal[0] != 0 and last_goal[1] != 0:
+            target_reached = True
 
 
 def getOdomCallback(msg):
