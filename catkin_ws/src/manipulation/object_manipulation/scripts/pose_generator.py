@@ -44,7 +44,7 @@ def categorize_objs(name):
         return 'spherical'
     elif name in flat:
         print("flat")
-        return 'flat'
+        return "flat"
     elif name in box:
         print("box")
         return 'box'
@@ -59,17 +59,13 @@ def rotation_object():
                             "dishes":     [[0, 0, np.deg2rad(random.randint(0, int(359)))]],
                             "prismatic":    [[0, 0, np.deg2rad(random.randint(0, int(359)))], [0, 1.57, np.deg2rad(random.randint(0, int(359)))] ],
                             "spherical":[[np.deg2rad(random.randint(0, int(359))) , np.deg2rad(random.randint(0, int(359))) ,np.deg2rad(random.randint(0, int(359)))]],
-                            "flat":     [[[0, 0, np.deg2rad(random.randint(0, int(359)))]],  [0, 1.57, np.deg2rad(random.randint(0, int(359)))] ,  [0, -1.57, np.deg2rad(random.randint(0, int(359)))] ],
+                            "flat":     [[0, 0, np.deg2rad(random.randint(0, int(359)))], [0, 1.57, np.deg2rad(random.randint(0, int(359)))] ,  [0, -1.57, np.deg2rad(random.randint(0, int(359)))] ],
                             "box":      [ [0, 1.57 , np.deg2rad(random.randint(0, int(359)))] ,  [0, 3.14, np.deg2rad(random.randint(0, int(359)))],  [0, 4.71, np.deg2rad(random.randint(0, int(359)))],  [0, 6.28, np.deg2rad(random.randint(0, int(359)))],
                                           [1.57, 0 , np.deg2rad(random.randint(0, int(359)))] ,  [3.14, 0,  np.deg2rad(random.randint(0, int(359)))], [4.71, 0, np.deg2rad(random.randint(0, int(359)))],  [6.28, 0, np.deg2rad(random.randint(0, int(359)))]],
                             "2faces":    [[0, 0, np.deg2rad(random.randint(0, int(359)))] ,  [0, 3.14, np.deg2rad(random.randint(0, int(359)))]]
     }
 
     rotation = random.choice(geometric_shape_dic[categorize_objs(obj_shape)])
-    #rotation = geometric_shape_dic["prism"][1]
-    print("rotacion", rotation)
-    print("r", np.rad2deg(rotation[2]))
-
     quaternion_obj = tft.quaternion_from_euler(rotation[0],rotation[1],rotation[2] ,'sxyz')
 
     return quaternion_obj
@@ -83,7 +79,6 @@ def generate_random_pose():
     
     q = rotation_object()
     
-    print("q_____", q)
     rpose.orientation.x = q[0]
     rpose.orientation.y = q[1]
     rpose.orientation.z = q[2]
