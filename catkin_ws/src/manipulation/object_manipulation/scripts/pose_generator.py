@@ -33,24 +33,12 @@ def categorize_objs(name):
     flat = ['006_mustard_bottle']
     box = ['pudding_box', '077_rubiks_cube']
     two_faces = ['011_banana', '048_hammer', '044_flat_screwdriver']
-    if name in dishes:
-        print("dishes")
-        return 'dishes'
-    elif name in prismatic:
-        print("prism")
-        return 'prismatic'
-    elif name in spherical:
-        print("sphere")
-        return 'spherical'
-    elif name in flat:
-        print("flat")
-        return "flat"
-    elif name in box:
-        print("box")
-        return 'box'
-    elif name in two_faces:
-        print("2 faces")
-        return '2faces'
+    if   name in dishes:    return 'dishes'
+    elif name in prismatic: return 'prismatic'
+    elif name in spherical: return 'spherical'
+    elif name in flat:      return "flat"
+    elif name in box:       return 'box'
+    elif name in two_faces: return '2faces'
     
 
 def rotation_object():
@@ -72,26 +60,18 @@ def rotation_object():
 
 
 def generate_random_pose():
+    global z
     rpose = Pose()
     rpose.position.x = random.randint(210,310)/100
     rpose.position.y = random.randint(218,245)/100
-    rpose.position.z = 0.745
-    
+    rpose.position.z = z
     q = rotation_object()
-    
     rpose.orientation.x = q[0]
     rpose.orientation.y = q[1]
     rpose.orientation.z = q[2]
     rpose.orientation.w = q[3]
-    print("rpose_***********", rpose.orientation)
     return rpose
-    """
-    rpose.orientation.x = random.randint(-315,315)/100
-    rpose.orientation.y = random.randint(-315,315)/100
-    rpose.orientation.z = random.randint(-315,315)/100
-    rpose.orientation.w = 0
-    return rpose
-    """
+
     
 
 def change_gazebo_object_pose(state_msg, state_pose, mod_name):
@@ -245,7 +225,7 @@ def get_ik_la(msg_pose):
 
 def main():
     global ik_srv, state_msg, grasp_trajectory_found, justina_origin_pose, obj_shape, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
-    global set_state, get_object_relative_pose
+    global set_state, get_object_relative_pose, z
     state_msg = ModelState()
     deserialized_gripper_model_state = ModelState()
     justina_origin_pose = create_origin_pose()
@@ -277,11 +257,31 @@ def main():
     pub_hd = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=10)
     obj_shape = rospy.get_param("/obj","056_tennis_ball")
     rospy.sleep(1)
+
+    msg = ModelState()
+    msg.reference_frame
+    msg.model_name = obj_shape
+    z = 0.74
+    initial_pose = Pose()
+    initial_pose.position.x = random.randint(210,310)/100
+    initial_pose.position.y = random.randint(218,245)/100
+    initial_pose.position.z = z
+    initial_pose.orientation.x = 0
+    initial_pose.orientation.y = 0
+    initial_pose.orientation.z = 0
+    initial_pose.orientation.w = 1
+    msg.pose = initial_pose
+    set_state(msg)
+    z = get_object_relative_pose(obj_shape,"world").pose.position.z
+
     reset_simulation()
     pub_hd.publish(msg_hd)
     POSE_DATA_PATH = "./catkin_ws/src/manipulation/object_manipulation/pose_data/"
     pose_num = 0
     loop = rospy.Rate(1)
+
+
+
     while not rospy.is_shutdown():
         print("Type r to reset sim to a random pose, and l to loop simulation for samples")
         command = input()
@@ -323,7 +323,7 @@ def main():
                 angle_XY, angle_YZ, angle_ZX = get_angle_in_plane(get_object_relative_pose("justina_gripper","world").pose.position, 
                                                               get_object_relative_pose(obj_shape,"world").pose.position,"XY")
                 print(is_pose_valid(angle_XY, angle_YZ, angle_ZX))
-        if command == 'l':
+        if command == 'l':            
             print("Start from sample number:")
             found_grasps = int(input())
             print("How many samples to take?")
@@ -399,13 +399,11 @@ def main():
             print("Finished taking samples")
 
         if command == 'e':
+ 
             while((not rospy.is_shutdown())):
-                #change_gazebo_object_pose(state_msg, generate_random_pose(), obj_shape)
-                msg = ModelState()
-                msg.reference_frame
-                msg.model_name = obj_shape
                 msg.pose = generate_random_pose()
                 set_state(msg)
+                get_object_relative_pose(obj_shape,"world").pose.position
 
                 rospy.sleep(4)
 
