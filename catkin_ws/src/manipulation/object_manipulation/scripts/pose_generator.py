@@ -26,17 +26,49 @@ VG_PLANE = {
     "ZX": vg.basis.y
 }
 
+def categorize_objs(name):
+    dishes = ['024_bowl']
+    prismatic = ['001_chips_can', '007_tuna_fish_can']
+    spherical = ['054_softball', '055_baseball', '056_tennis_ball']
+    flat = ['006_mustard_bottle']
+    box = ['pudding_box', '077_rubiks_cube']
+    two_faces = ['011_banana', '048_hammer', '044_flat_screwdriver']
+    if name in dishes:
+        print("dishes")
+        return 'dishes'
+    elif name in prismatic:
+        print("prism")
+        return 'prismatic'
+    elif name in spherical:
+        print("sphere")
+        return 'spherical'
+    elif name in flat:
+        print("flat")
+        return 'flat'
+    elif name in box:
+        print("box")
+        return 'box'
+    elif name in two_faces:
+        print("2 faces")
+        return '2faces'
+    
+
 def rotation_object():
+    global obj_shape
     geometric_shape_dic = {
-                            "prism":    [[0, 0, random.randint(0,int(np.deg2rad()))] ],
-                            "spherical":[],
-                            "flat":     [],
-                            "box":      []
+                            "dishes":     [[0, 0, np.deg2rad(random.randint(0, int(359)))]],
+                            "prismatic":    [[0, 0, np.deg2rad(random.randint(0, int(359)))], [0, 1.57, np.deg2rad(random.randint(0, int(359)))] ],
+                            "spherical":[[np.deg2rad(random.randint(0, int(359))) , np.deg2rad(random.randint(0, int(359))) ,np.deg2rad(random.randint(0, int(359)))]],
+                            "flat":     [[[0, 0, np.deg2rad(random.randint(0, int(359)))]],  [0, 1.57, np.deg2rad(random.randint(0, int(359)))] ,  [0, -1.57, np.deg2rad(random.randint(0, int(359)))] ],
+                            "box":      [ [0, 1.57 , np.deg2rad(random.randint(0, int(359)))] ,  [0, 3.14, np.deg2rad(random.randint(0, int(359)))],  [0, 4.71, np.deg2rad(random.randint(0, int(359)))],  [0, 6.28, np.deg2rad(random.randint(0, int(359)))],
+                                          [1.57, 0 , np.deg2rad(random.randint(0, int(359)))] ,  [3.14, 0,  np.deg2rad(random.randint(0, int(359)))], [4.71, 0, np.deg2rad(random.randint(0, int(359)))],  [6.28, 0, np.deg2rad(random.randint(0, int(359)))]],
+                            "2faces":    [[0, 0, np.deg2rad(random.randint(0, int(359)))] ,  [0, 3.14, np.deg2rad(random.randint(0, int(359)))]]
     }
 
-    rotation = geometric_shape_dic["prism"][0]
+    rotation = random.choice(geometric_shape_dic[categorize_objs(obj_shape)])
+    #rotation = geometric_shape_dic["prism"][1]
     print("rotacion", rotation)
-    print("r", rotation[2])
+    print("r", np.rad2deg(rotation[2]))
 
     quaternion_obj = tft.quaternion_from_euler(rotation[0],rotation[1],rotation[2] ,'sxyz')
 
@@ -49,21 +81,22 @@ def generate_random_pose():
     rpose.position.y = random.randint(218,245)/100
     rpose.position.z = 0.745
     
-    # q = rotation_object()
+    q = rotation_object()
     
-    
-    # rpose.orientation.x = q[0]
-    # rpose.orientation.y = q[1]
-    # rpose.orientation.z = q[2]
-    # rpose.orientation.w = q[3]
-    # return rpose
-    # """
+    print("q_____", q)
+    rpose.orientation.x = q[0]
+    rpose.orientation.y = q[1]
+    rpose.orientation.z = q[2]
+    rpose.orientation.w = q[3]
+    print("rpose_***********", rpose.orientation)
+    return rpose
+    """
     rpose.orientation.x = random.randint(-315,315)/100
     rpose.orientation.y = random.randint(-315,315)/100
     rpose.orientation.z = random.randint(-315,315)/100
     rpose.orientation.w = 0
     return rpose
-    # """
+    """
     
 
 def change_gazebo_object_pose(state_msg, state_pose, mod_name):
@@ -372,7 +405,13 @@ def main():
 
         if command == 'e':
             while((not rospy.is_shutdown())):
-                change_gazebo_object_pose(state_msg, generate_random_pose(), obj_shape)
+                #change_gazebo_object_pose(state_msg, generate_random_pose(), obj_shape)
+                msg = ModelState()
+                msg.reference_frame
+                msg.model_name = obj_shape
+                msg.pose = generate_random_pose()
+                set_state(msg)
+
                 rospy.sleep(4)
 
         loop.sleep()
