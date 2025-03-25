@@ -74,13 +74,15 @@ def rotation_object():
     }
 
     rotation = random.choice(geometric_shape_dic[categorize_objs(obj_shape)])
-    z1, z1 = get_Z_obj()
-    if((rotation[0] and rotation[1]) <= 0):
+    z1, z2 = get_Z_obj()
+    print("rotacion",np.rad2deg(rotation[0]), np.rad2deg(rotation[1]))
+    if((np.rad2deg(rotation[0]) or np.rad2deg(rotation[1])) <= 0):
         z = z2
-        print("z2")
+        print("z2", z2)
+
     else:
         z = z1
-        print("z1")
+        print("z1", z1)    
         
 
     quaternion_obj = tft.quaternion_from_euler(rotation[0],rotation[1],rotation[2] ,'sxyz')
