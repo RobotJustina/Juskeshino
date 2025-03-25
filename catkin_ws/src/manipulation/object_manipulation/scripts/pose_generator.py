@@ -14,7 +14,7 @@ from gazebo_msgs.msg import ModelState, ContactsState
 from gazebo_msgs.srv import SetModelState, GetModelState
 from std_msgs.msg import String, Float64MultiArray
 from sensor_msgs.msg import PointCloud2
-from geometry_msgs.msg import Pose, PointStamped  
+from geometry_msgs.msg import Pose, Quaternion  
 from manip_msgs.srv import DataCapture, InverseKinematicsPose2TrajRequest, InverseKinematicsPose2Traj
 from vision_msgs.srv import PreprocessPointCloud, PreprocessPointCloudRequest
 from dataset_utils import save_data_to_file
@@ -179,6 +179,25 @@ def is_pose_valid(angle_XY, angle_YZ, angle_ZX):
 
     return True 
 
+def get_quaternion_in_range(q):
+    ql = [q.x,q.y,q.z,q.w]
+    rot = tft.quaternion_matrix(ql)
+    print(rot)
+    x = rot[:3,0]
+    print(x)
+    in_range_z = np.dot(x,np.array([0,0,-1])) > 0
+    in_range_y = np.dot(x,np.array([0,-1,0])) > 0
+    print(in_range_y,in_range_z)
+    if in_range_z or in_range_y:
+        rot[:3,:2] = -rot[:3,:2]
+    print(rot)
+    qf = tft.quaternion_from_matrix(rot)
+    qr = Quaternion()
+    qr.x = qf[0]
+    qr.y = qf[1]
+    qr.z = qf[2]
+    qr.w = qf[3]
+    return qr
 
 
 def score_calculation(articular_array):
@@ -388,16 +407,38 @@ def main():
                 print(angles)
                 best_pose = angles.index(min(angles)) + 1
                 print(best_pose)
-                file_name = POSE_DATA_PATH + obj_shape + str(best_pose)
-                in_file = open(file_name, "rb") # opening for [r]eading as [b]inary
-                file_serialized_gripper_model_state = in_file.read() 
-                in_file.close()
-                deserialized_gripper_model_state.deserialize(file_serialized_gripper_model_state)
-                deserialized_gripper_model_state.reference_frame = obj_shape
-                set_state(deserialized_gripper_model_state)
-                rospy.sleep(5)
+                if angles[best_pose-1] != 256:
+                    file_name = POSE_DATA_PATH + obj_shape + str(best_pose)
+                    in_file = open(file_name, "rb") # opening for [r]eading as [b]inary
+                    file_serialized_gripper_model_state = in_file.read() 
+                    in_file.close()
+                    deserialized_gripper_model_state.deserialize(file_serialized_gripper_model_state)
+                    deserialized_gripper_model_state.reference_frame = obj_shape
+                    set_state(deserialized_gripper_model_state)
+                    rospy.sleep(5)
             print("Finished taking samples")
 
+        if command == 't':
+            pose_num = pose_num + 1
+            file_name = POSE_DATA_PATH + obj_shape + str(pose_num)
+            in_file = open(file_name, "rb") # opening for [r]eading as [b]inary
+            file_serialized_gripper_model_state = in_file.read() 
+            in_file.close()
+            deserialized_gripper_model_state.deserialize(file_serialized_gripper_model_state)
+            deserialized_gripper_model_state.reference_frame = obj_shape
+            set_state(deserialized_gripper_model_state)
+            print(get_object_relative_pose("justina_gripper",'world'))
+            uia = input()
+            gpos = get_object_relative_pose("justina_gripper",'world').pose
+            quat = get_quaternion_in_range(gpos.orientation)
+            print(quat)
+            deserialized_gripper_model_state.pose.orientation = quat
+            deserialized_gripper_model_state.pose.position = gpos.position
+            deserialized_gripper_model_state.reference_frame = "world"
+            set_state(deserialized_gripper_model_state)
+            print(get_object_relative_pose("justina_gripper","world"))
+            uia = input()
+        
         if command == 'e':
  
             while((not rospy.is_shutdown())):
