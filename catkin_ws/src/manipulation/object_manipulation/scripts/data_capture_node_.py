@@ -15,7 +15,7 @@ from std_msgs.msg import String, Float64MultiArray
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import GetModelState, SetModelState
 import geometry_msgs
-from geometry_msgs.msg import Point, Pose, PoseStamped
+from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
 import tf.transformations as tft
 
 REAL_GRASP_ATTEMPT = False
@@ -49,6 +49,7 @@ def callback_capture(req):
     og_pose.header.frame_id = "gm/gr_left_arm_grip_center"
     og_pose.pose.orientation.w = 1
     target_pt = tf_buf.transform(og_pose, "base_link")
+    target_pt.pose.orientation = get_quaternion_in_hemihypersphere(target_pt.pose.orientation)
     #target_pt = tf_buf.transform(og_pose, "camera_rgb_optical_frame")
     #broadcaster_frame_object("camera_rgb_optical_frame","saved_gripper_center",target_pt.pose)
     hd               = rospy.wait_for_message("/hardware/head/current_pose", Float64MultiArray)
@@ -109,9 +110,21 @@ def get_ik_la(msg_pose):
     except:
         print("It was not possible to obtain the ik")
 
-
+def get_quaternion_in_hemihypersphere(q):
+    qo = np.array([q.x,q.y,q.z,q.w])
+    if np.dot(qo,np.array([0,0,0,-1])) < 0:
+        #print("Positive quaternion :)")
+        return q
+    else:
+        qo = qo * -1
+        qr = Quaternion()
+        qr.x = qo[0]
+        qr.y = qo[1]
+        qr.z = qo[2]
+        qr.w = qo[3]
+        #print("Rotating quaternion :O")
+        return qr
     
-
 def main():
     global pc2, hd, obj_pos, grasp_traj, obj_shape, status,tf_listener,tf_buf, get_object_relative_pose, ik_srv, set_state, transform_pointcloud
     pc2 = PointCloud2()

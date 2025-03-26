@@ -24,7 +24,9 @@ MAX_POINTS = 25600
 #DATASET_PATH = 'catkin_ws/src/graspnet/dataset_fake/'
 #DATASET_PATH = 'catkin_ws/src/graspnet/dataset_base_link/'
 #DATASET_PATH = 'catkin_ws/src/graspnet/dataset_cube_test/'
-DATASET_PATH = 'catkin_ws/src/graspnet/dataset_rest_test/'
+#DATASET_PATH = 'catkin_ws/src/graspnet/dataset_rest_test/'
+DATASET_PATH = 'catkin_ws/src/graspnet/training_dataset/'
+
 
 
 

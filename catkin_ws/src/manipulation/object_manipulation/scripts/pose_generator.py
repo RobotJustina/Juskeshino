@@ -524,7 +524,7 @@ def main():
                     gpos = get_object_relative_pose("justina_gripper",'world').pose
                     quat = get_orientation_in_range(gpos.orientation)
                     #print(quat)
-                    quat = get_quaternion_in_hemihypersphere(quat)
+                    #quat = get_quaternion_in_hemihypersphere(quat)
                     #print(quat)
                     deserialized_gripper_model_state.pose.orientation = quat
                     deserialized_gripper_model_state.pose.position = gpos.position
