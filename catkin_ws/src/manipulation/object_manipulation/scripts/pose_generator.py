@@ -26,6 +26,24 @@ VG_PLANE = {
     "ZX": vg.basis.y
 }
 
+
+def get_Z_obj():
+    global z1, z2, obj_shape
+    z_obj_dic = {
+        '024_bowl':          [0.724, 0.724],
+        '001_chips_can':     [0.739, 0.799], 
+        '007_tuna_fish_can': [0.716, 0.742],
+        '056_tennis_ball':   [0.732, 0.732],
+        '006_mustard_bottle':[0.729, 0.783],
+        '003_cracker_box':   [0.780, 0.805], 
+        '077_rubiks_cube':   [0.728, 0.728],
+        '011_banana':        [0.717, 0.717], 
+        '048_hammer':        [0.716, 0.716]
+    }
+    z1 = z_obj_dic[obj_shape][0]
+    z2 = z_obj_dic[obj_shape][1]
+    return z1, z2
+
 def categorize_objs(name):
     dishes = ['024_bowl']
     prismatic = ['001_chips_can', '007_tuna_fish_can']
@@ -42,25 +60,38 @@ def categorize_objs(name):
     
 
 def rotation_object():
-    global obj_shape
+    global obj_shape, z
     geometric_shape_dic = {
                             "dishes":     [[0, 0, np.deg2rad(random.randint(0, int(359)))]],
                             "prismatic":    [[0, 0, np.deg2rad(random.randint(0, int(359)))], [0, 1.57, np.deg2rad(random.randint(0, int(359)))] ],
                             "spherical":[[np.deg2rad(random.randint(0, int(359))) , np.deg2rad(random.randint(0, int(359))) ,np.deg2rad(random.randint(0, int(359)))]],
                             "flat":     [[0, 0, np.deg2rad(random.randint(0, int(359)))], [0, 1.57, np.deg2rad(random.randint(0, int(359)))] ,  [0, -1.57, np.deg2rad(random.randint(0, int(359)))] ],
-                            "box":      [ [0, 1.57 , np.deg2rad(random.randint(0, int(359)))] ,  [0, 3.14, np.deg2rad(random.randint(0, int(359)))],  [0, 4.71, np.deg2rad(random.randint(0, int(359)))],  [0, 6.28, np.deg2rad(random.randint(0, int(359)))],
+                            "cubic":      [ [0, 1.57 , np.deg2rad(random.randint(0, int(359)))] ,  [0, 3.14, np.deg2rad(random.randint(0, int(359)))],  [0, 4.71, np.deg2rad(random.randint(0, int(359)))],  [0, 6.28, np.deg2rad(random.randint(0, int(359)))],
+                                          [1.57, 0 , np.deg2rad(random.randint(0, int(359)))] ,  [3.14, 0,  np.deg2rad(random.randint(0, int(359)))], [4.71, 0, np.deg2rad(random.randint(0, int(359)))],  [6.28, 0, np.deg2rad(random.randint(0, int(359)))]],
+                            "box":        [[0, 3.14, np.deg2rad(random.randint(0, int(359)))],
                                           [1.57, 0 , np.deg2rad(random.randint(0, int(359)))] ,  [3.14, 0,  np.deg2rad(random.randint(0, int(359)))], [4.71, 0, np.deg2rad(random.randint(0, int(359)))],  [6.28, 0, np.deg2rad(random.randint(0, int(359)))]],
                             "2faces":    [[0, 0, np.deg2rad(random.randint(0, int(359)))] ,  [0, 3.14, np.deg2rad(random.randint(0, int(359)))]]
     }
 
     rotation = random.choice(geometric_shape_dic[categorize_objs(obj_shape)])
+    z1, z2 = get_Z_obj()
+    print("rotacion",np.rad2deg(rotation[0]), np.rad2deg(rotation[1]))
+    if((np.rad2deg(rotation[0]) or np.rad2deg(rotation[1])) <= 0):
+        z = z2
+        print("z2", z2)
+
+    else:
+        z = z1
+        print("z1", z1)    
+        
+
     quaternion_obj = tft.quaternion_from_euler(rotation[0],rotation[1],rotation[2] ,'sxyz')
 
     return quaternion_obj
 
 
 def generate_random_pose():
-    global z
+    global z, z1, z2
     rpose = Pose()
     rpose.position.x = random.randint(210,310)/100
     rpose.position.y = random.randint(218,245)/100
