@@ -179,18 +179,18 @@ def is_pose_valid(angle_XY, angle_YZ, angle_ZX):
 
     return True 
 
-def get_quaternion_in_range(q):
+def get_orientation_in_range(q):
     ql = [q.x,q.y,q.z,q.w]
     rot = tft.quaternion_matrix(ql)
-    print(rot)
+    #print(rot)
     x = rot[:3,0]
-    print(x)
+    #print(x)
     in_range_z = np.dot(x,np.array([0,0,-1])) > 0
     in_range_y = np.dot(x,np.array([0,-1,0])) > 0
-    print(in_range_y,in_range_z)
+    #print(in_range_y,in_range_z)
     if in_range_z or in_range_y:
         rot[:3,:2] = -rot[:3,:2]
-    print(rot)
+    #print(rot)
     qf = tft.quaternion_from_matrix(rot)
     qr = Quaternion()
     qr.x = qf[0]
@@ -199,6 +199,20 @@ def get_quaternion_in_range(q):
     qr.w = qf[3]
     return qr
 
+def get_quaternion_in_hemihypersphere(q):
+    qo = np.array([q.x,q.y,q.z,q.w])
+    if np.dot(qo,np.array([0,-1,0,0])) < 0:
+        #print("Positive quaternion :)")
+        return q
+    else:
+        qo = qo * -1
+        qr = Quaternion()
+        qr.x = qo[0]
+        qr.y = qo[1]
+        qr.z = qo[2]
+        qr.w = qo[3]
+        #print("Rotating quaternion :O")
+        return qr
 
 def score_calculation(articular_array):
     a = sum(articular_array)
@@ -207,9 +221,9 @@ def gripper_in_conic(gp,ob):
     g = np.asarray([gp.x,gp.y,gp.z])
     o = np.asarray([ob.x,ob.y,ob.z])
     axis = o/np.linalg.norm(o)
-    print(np.dot(((g-o)/np.linalg.norm(g-o)),axis))
+    #print(np.dot(((g-o)/np.linalg.norm(g-o)),axis))
     in_conic = np.dot(((g-o)/np.linalg.norm(g-o)),axis) < CONIC_ANGLE
-    print("In conic:", in_conic)
+    #print("In conic:", in_conic)
     return in_conic
 
 def get_vision_angle(gp,cam):
@@ -430,7 +444,7 @@ def main():
             print(get_object_relative_pose("justina_gripper",'world'))
             uia = input()
             gpos = get_object_relative_pose("justina_gripper",'world').pose
-            quat = get_quaternion_in_range(gpos.orientation)
+            quat = get_orientation_in_range(gpos.orientation)
             print(quat)
             deserialized_gripper_model_state.pose.orientation = quat
             deserialized_gripper_model_state.pose.position = gpos.position
@@ -438,7 +452,61 @@ def main():
             set_state(deserialized_gripper_model_state)
             print(get_object_relative_pose("justina_gripper","world"))
             uia = input()
-        
+
+        if command == 'y':            
+            print("Start from sample number:")
+            found_grasps = int(input())
+            print("Stop until sample:")
+            desired_samples = int(input()) + 1
+            while((not rospy.is_shutdown()) and found_grasps < desired_samples):
+                reset_simulation()
+                pose_num = 1
+                print("Testing new position")
+                file_name = POSE_DATA_PATH + obj_shape + str(pose_num)
+                angles = []
+                while(os.path.exists(file_name)):
+                    angles.append(256)
+                    in_file = open(file_name, "rb") # opening for [r]eading as [b]inary
+                    file_serialized_gripper_model_state = in_file.read() 
+                    in_file.close()
+                    deserialized_gripper_model_state.deserialize(file_serialized_gripper_model_state)
+                    deserialized_gripper_model_state.reference_frame = obj_shape
+                    set_state(deserialized_gripper_model_state)
+                    rospy.sleep(0.001)
+                    angle_XY, angle_YZ, angle_ZX, gripper_side = get_angle_in_plane(get_object_relative_pose("justina_gripper","world").pose.position, 
+                                                                get_object_relative_pose(obj_shape,"world").pose.position,"XY")
+                    gpwrtcam = get_object_relative_pose("justina_gripper","justina::camera_link").pose.position
+                    objwrtcam = get_object_relative_pose(obj_shape,"justina::camera_link").pose.position
+                    if is_pose_valid(angle_XY, angle_YZ, angle_ZX) and gripper_in_conic(gpwrtcam,objwrtcam):
+                        angles[pose_num-1] = get_vision_angle(deserialized_gripper_model_state.pose.position,objwrtcam)
+                        #print(pose_num,angles[pose_num-1])
+                        #rospy.sleep(2)
+                    pose_num = pose_num + 1
+                    file_name = POSE_DATA_PATH + obj_shape + str(pose_num)
+                #print(angles)
+                best_pose = angles.index(min(angles)) + 1
+                print(best_pose)
+                if angles[best_pose-1] != 256:
+                    file_name = POSE_DATA_PATH + obj_shape + str(best_pose)
+                    in_file = open(file_name, "rb") # opening for [r]eading as [b]inary
+                    file_serialized_gripper_model_state = in_file.read() 
+                    in_file.close()
+                    deserialized_gripper_model_state.deserialize(file_serialized_gripper_model_state)
+                    deserialized_gripper_model_state.reference_frame = obj_shape
+                    set_state(deserialized_gripper_model_state)
+                    gpos = get_object_relative_pose("justina_gripper",'world').pose
+                    quat = get_orientation_in_range(gpos.orientation)
+                    #print(quat)
+                    quat = get_quaternion_in_hemihypersphere(quat)
+                    #print(quat)
+                    deserialized_gripper_model_state.pose.orientation = quat
+                    deserialized_gripper_model_state.pose.position = gpos.position
+                    deserialized_gripper_model_state.reference_frame = "world"
+                    set_state(deserialized_gripper_model_state)
+                    data = capture("Found grasp")
+                    found_grasps = found_grasps + save_data_to_file(data,found_grasps)
+            print("Finished taking samples")
+
         if command == 'e':
  
             while((not rospy.is_shutdown())):
