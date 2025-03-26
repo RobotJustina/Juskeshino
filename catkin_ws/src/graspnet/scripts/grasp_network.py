@@ -115,11 +115,28 @@ class GraspNetwork(nn.Module):
                             #nn.GELU()
                             )
         self.maxpool2 = nn.MaxPool2d(kernel_size=2,stride=1,padding=0)
+        self.lc  = nn.Sequential(
+                            nn.Linear(5*5*512,8192),
+                            nn.Linear(8192, 2048),
+                            nn.Linear(2048,512),
+                            nn.Linear(512,64),
+                            nn.Linear(64,3))
+        self.nlc = nn.Sequential(
+                            nn.Linear(5*5*512,8192),
+                            nn.ReLU(),
+                            nn.Linear(8192, 2048),
+                            nn.ReLU(),
+                            nn.Linear(2048,512),
+                            nn.ReLU(),
+                            nn.Linear(512,64),
+                            nn.ReLU(),
+                            nn.Linear(64,4),
+                            nn.Tanh())
         self.fc1 = nn.Linear(5*5*512,8192)
         self.fc2 = nn.Linear(8192, 2048)
         self.fc3 = nn.Linear(2048,512)
         self.fc4 = nn.Linear(512,64)
-        self.fc5 = nn.Linear(64,8)
+        self.fc5 = nn.Linear(64,7)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -133,18 +150,21 @@ class GraspNetwork(nn.Module):
         x = self.maxpool2(x)
         x = F.gelu(x)
         x = torch.flatten(x,1)
-        x = self.fc1(x)
-        #x = F.tanh(x)
-        x = self.fc2(x)
-        #x = F.tanh(x)
-        x = self.fc3(x)
-        #x = F.tanh(x)
-        x = self.fc4(x)
-        #x = F.tanh(x)
-        x = self.fc5(x)
-        #x = F.tanh(x)
 
-        return x
+        pos = self.lc(x)
+        ori = self.nlc(x)
+        # x = self.fc1(x)
+        # #x = F.tanh(x)
+        # x = self.fc2(x)
+        # #x = F.tanh(x)
+        # x = self.fc3(x)
+        # #x = F.tanh(x)
+        # x = self.fc4(x)
+        # #x = F.tanh(x)
+        # x = self.fc5(x)
+        # #x = F.tanh(x)
+
+        return pos, ori
 
 # Pointcloud conversion methods
 def ros_pc2_to_npmatrix(pc):
