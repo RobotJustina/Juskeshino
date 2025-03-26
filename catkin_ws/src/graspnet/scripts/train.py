@@ -22,7 +22,7 @@ import math
 gpu_number = 1
 gpus = 0
 gpu_arr = '0'
-BATCH_SIZE = 250
+BATCH_SIZE = 200
 #np.random.seed(int(time.time()))
 #torch.cuda.manual_seed(1)
 #torch.cuda.set_device(gpus)
@@ -32,7 +32,7 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 #Dataset loaders
 
-DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/dataset_cube_test/"
+DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/dataset_rest_test/"
 MODELS_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/models/"
 VAL_TO_TEST_RATIO = 0.1
 
@@ -62,15 +62,15 @@ class GraspDataset(torch.utils.data.Dataset):
         points = torch.tensor(pcd[:,:,:3],dtype=torch.float32)
         points = torch.nan_to_num(points,nan=0.0)
         points = torch.permute(points,(2,1,0))
-        #pose = torch.tensor(data['grasp'],dtype=torch.float32)
-        x,y,z,ox,oy,oz,w = data['grasp']
-        ang = math.acos(w)
-        c = w
-        s = math.sin(ang)
-        ox = ox/s
-        oy = oy/s
-        oz = oz/s
-        pose = torch.tensor([x,y,z,ox,oy,oz,c,s],dtype=torch.float32)
+        pose = torch.tensor(data['grasp'],dtype=torch.float32)
+        # x,y,z,ox,oy,oz,w = data['grasp']
+        # ang = math.acos(w)
+        # c = w
+        # s = math.sin(ang)
+        # ox = ox/s
+        # oy = oy/s
+        # oz = oz/s
+        # pose = torch.tensor([x,y,z,ox,oy,oz,c,s],dtype=torch.float32)
         return points, pose
     
     def __len__(self):
@@ -91,7 +91,7 @@ def train_network(num_epochs,model_name, model_path=None,samples =-1):
     train_loader, valid_loader = get_dataloaders(samples)
     model = load_model(model_path)
     best_model = copy.deepcopy(model.state_dict())
-    criterion = nn.HuberLoss(delta=0.7)
+    criterion = nn.HuberLoss(delta=0.94)
     #optimizer = optim.SGD(model.parameters(),lr=0.00008,momentum=0.8)
     optimizer = optim.Adam(model.parameters(),lr=0.00008)
     min_loss = 1.5
@@ -101,14 +101,19 @@ def train_network(num_epochs,model_name, model_path=None,samples =-1):
             points = points.to(DEVICE)
             target_pose = target_pose.to(DEVICE)
 
-            output_pose = model(points)
-            loss = criterion(output_pose,target_pose)
-            
+            #output_pose = model(points)
+            pos, ori = model(points)
+            #loss = criterion(output_pose,target_pose)
+            ploss = criterion(pos,target_pose[:,:3])
+            oloss = criterion(ori,target_pose[:,3:])
+            loss = ploss + 2*oloss
+
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             
-            del points, target_pose, output_pose
+            #del points, target_pose, output_pose
+            del points, target_pose, pos, ori
             torch.cuda.empty_cache()
             gc.collect()
         
@@ -118,10 +123,19 @@ def train_network(num_epochs,model_name, model_path=None,samples =-1):
                 error = 0
                 points = points.to(DEVICE)
                 target_pose = target_pose.to(DEVICE)
-                output_pose = model(points)
-                loss = criterion(output_pose,target_pose)
+                # output_pose = model(points)
+                # loss = criterion(output_pose,target_pose)
+                pos, ori = model(points)
+                #loss = criterion(output_pose,target_pose)
+                ploss = criterion(pos,target_pose[:,:3])
+                oloss = criterion(ori,target_pose[:,3:])
+                loss = ploss + 2*oloss
+                output_pose = torch.cat((pos,ori),dim=1)
                 error = torch.sum(abs(output_pose - target_pose),dim=0) + error
                 error = error/len(points)
+                del points, target_pose, pos, ori
+                torch.cuda.empty_cache()
+                gc.collect()
                 print("Average absolute error for this batch: ",error)
             if loss < min_loss:
                 min_loss = loss
@@ -140,7 +154,7 @@ def load_model(model_path=None):
 
 def main():
     model_file = MODELS_PATH + 'model_nn.pt'
-    train_network(100,"model_gadam_cube")
+    train_network(110,"dual_model_rest1_wl.pt")
     # dataset = GraspDataset(set_type="test",path=DATASET_PATH)
     # dataloader = torch.utils.data.DataLoader(dataset, BATCH_SIZE, shuffle=True)
     # train_features, train_labels = next(iter(dataloader))

@@ -43,15 +43,50 @@ def broadcaster_frame_object(frame, child_frame, pose):   # Emite la transformac
     t.transform.rotation.w = pose.orientation.w
     br.sendTransform(t)
 
+def categorize_objs(name):
+    dishes = ['024_bowl']
+    prismatic = ['001_chips_can', '007_tuna_fish_can']
+    spherical = ['054_softball', '055_baseball', '056_tennis_ball']
+    flat = ['006_mustard_bottle']
+    box = ['pudding_box', '077_rubiks_cube']
+    two_faces = ['011_banana', '048_hammer', '044_flat_screwdriver']
+    if   name in dishes:    return 'dishes'
+    elif name in prismatic: return 'prismatic'
+    elif name in spherical: return 'spherical'
+    elif name in flat:      return "flat"
+    elif name in box:       return 'box'
+    elif name in two_faces: return '2faces'
+    
+
+def rotation_object():
+    global obj_shape
+    geometric_shape_dic = {
+                            "dishes":     [[0, 0, np.deg2rad(random.randint(0, int(359)))]],
+                            "prismatic":    [[0, 0, np.deg2rad(random.randint(0, int(359)))], [0, 1.57, np.deg2rad(random.randint(0, int(359)))] ],
+                            "spherical":[[np.deg2rad(random.randint(0, int(359))) , np.deg2rad(random.randint(0, int(359))) ,np.deg2rad(random.randint(0, int(359)))]],
+                            "flat":     [[0, 0, np.deg2rad(random.randint(0, int(359)))], [0, 1.57, np.deg2rad(random.randint(0, int(359)))] ,  [0, -1.57, np.deg2rad(random.randint(0, int(359)))] ],
+                            "box":      [ [0, 1.57 , np.deg2rad(random.randint(0, int(359)))] ,  [0, 3.14, np.deg2rad(random.randint(0, int(359)))],  [0, 4.71, np.deg2rad(random.randint(0, int(359)))],  [0, 6.28, np.deg2rad(random.randint(0, int(359)))],
+                                          [1.57, 0 , np.deg2rad(random.randint(0, int(359)))] ,  [3.14, 0,  np.deg2rad(random.randint(0, int(359)))], [4.71, 0, np.deg2rad(random.randint(0, int(359)))],  [6.28, 0, np.deg2rad(random.randint(0, int(359)))]],
+                            "2faces":    [[0, 0, np.deg2rad(random.randint(0, int(359)))] ,  [0, 3.14, np.deg2rad(random.randint(0, int(359)))]]
+    }
+
+    rotation = random.choice(geometric_shape_dic[categorize_objs(obj_shape)])
+    quaternion_obj = tft.quaternion_from_euler(rotation[0],rotation[1],rotation[2] ,'sxyz')
+
+    return quaternion_obj
+
+
 def generate_random_pose():
+    global z
     rpose = Pose()
     rpose.position.x = random.randint(210,310)/100
     rpose.position.y = random.randint(218,245)/100
-    rpose.position.z = 0.745
-    rpose.orientation.x = random.randint(-315,315)/100
-    rpose.orientation.y = random.randint(-315,315)/100
-    rpose.orientation.z = random.randint(-315,315)/100
-    rpose.orientation.w = 0
+    rpose.position.z = z
+    q = rotation_object()
+    rpose.orientation.x = q[0]
+    rpose.orientation.y = q[1]
+    rpose.orientation.z = q[2]
+    rpose.orientation.w = q[3]
     return rpose
 
 def normalize(v):
@@ -63,11 +98,11 @@ def normalize(v):
 def tensor_to_pose(tensor):
     nppose = tensor.detach().cpu().numpy()
     nppose = nppose[0]
-    i,j,k,c,s = nppose[3:]
-    ang = math.atan2(c,s)
-    vec = normalize([i,j,k])*math.sin(ang)
-    quat = np.append(vec,[math.cos(ang)])
-    #quat = normalize(nppose[3:])
+    #i,j,k,c,s = nppose[3:]
+    #ang = math.atan2(c,s)
+    #vec = normalize([i,j,k])*math.sin(ang)
+    #quat = np.append(vec,[math.cos(ang)])
+    quat = normalize(nppose[3:])
     rpose = Pose()
     rpose.position.x = nppose[0]
     rpose.position.y = nppose[1]
@@ -119,7 +154,8 @@ def reset_simulation():
 
 def main():
     global ik_srv, state_msg, grasp_trajectory_found, justina_origin_pose, obj_shape, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
-    global set_state
+    global set_state, z
+    z = 0.74
     state_msg = ModelState()
     deserialized_gripper_model_state = ModelState()
     justina_origin_pose = create_origin_pose()
@@ -138,7 +174,7 @@ def main():
     obj_shape = rospy.get_param("/obj","056_tennis_ball")
     rospy.sleep(1)
     loop = rospy.Rate(1)
-    grasp_network = load_model(MODELS_PATH + "model_gadam_cube")
+    grasp_network = load_model(MODELS_PATH + "dual_model_rest1_wl.pt")
     grasp_network.eval()
     while not rospy.is_shutdown():
         print("Type r to reset sim to a random pose, and l to loop simulation for samples")
@@ -181,7 +217,8 @@ def main():
                 pcd = pcd.unsqueeze(0).to(DEVICE)
                 print(pcd)
                 with torch.no_grad():
-                    predicted_gripper_center_pose = grasp_network(pcd)
+                    pos, ori = grasp_network(pcd)
+                    predicted_gripper_center_pose = torch.cat((pos,ori),dim=1)
                 print(predicted_gripper_center_pose)
                 predicted_pose = tensor_to_pose(predicted_gripper_center_pose)
                 #predicted_pose.orientation.normalize()

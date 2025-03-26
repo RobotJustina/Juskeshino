@@ -6,7 +6,7 @@ import pandas as pd
 import rospy
 from scipy.spatial.distance import cdist, euclidean
 
-DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/dataset_cube_test/"
+DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/dataset_rest_test/"
 
 def get_dataset_frame(dataset_path):
     filelist = os.listdir(dataset_path)
@@ -67,7 +67,7 @@ def main():
     get_stats(DF)
     gm = geometric_mean(DF,1e-6)
     print(madgm(DF,gm))
-    get_stats(get_dataset_frame("/home/robocup/Juskeshino/catkin_ws/src/graspnet/dataset"))
+    #get_stats(get_dataset_frame("/home/robocup/Juskeshino/catkin_ws/src/graspnet/dataset"))
 
 
 if __name__ == '__main__':
