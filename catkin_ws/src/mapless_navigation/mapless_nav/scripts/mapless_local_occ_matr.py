@@ -13,8 +13,10 @@ from TorchModels.utils import models
 import TorchModels.utils.utilities as l_util 
 
 # >>>Select model
+n_channels = 4
+
 occ_grid_meters = 4
-model = models.Param_CNN(channels=5)#, img_size=int(20*occ_grid_meters))
+model = models.Param_CNN(channels=n_channels)#, img_size=int(20*occ_grid_meters))
 
 package_path = rospkg.RosPack().get_path("mapless_nav")
 model_path = package_path + "/scripts/TorchModels/" 
@@ -97,7 +99,7 @@ def occGridCallback(msg):
 
     #print("entrada", entrada.shape)
     batch = []
-    for i in range(5):
+    for i in range(n_channels):
         batch.append(entrada)
     entrada = np.array(batch)
     #entrada = np.expand_dims(entrada, axis=0)

@@ -29,7 +29,7 @@ General parameters
 """
 
 # PARAM <stack_n_channels>: stack n samples in channels
-stack_n_channels = 5
+stack_n_channels = 4
 
 # PARAM <occ_grid_meters>: Modify matrix resolution number
 # 1m = 20 pixels, max 8m
@@ -55,7 +55,7 @@ Hyperparameters
 # PARAMS
 batch_size = 5
 learn_r = 0.0001 # 1e-3
-epochs = 15
+epochs = 8
 
 
 

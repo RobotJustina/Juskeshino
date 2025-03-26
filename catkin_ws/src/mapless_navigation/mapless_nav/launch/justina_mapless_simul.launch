@@ -19,9 +19,9 @@
 
   <!-- occ_grid 4m -->
   <arg name="min_x" default="0.0"/>
-  <arg name="max_x" default="4.0"/>
-  <arg name="min_y" default="-2.0"/>
-  <arg name="max_y" default="2.0"/>
+  <arg name="max_x" default="8.0"/>
+  <arg name="min_y" default="-4.0"/>
+  <arg name="max_y" default="4.0"/>
   <arg name="linear_acceleration" default="0.1"/>
   <arg name="fine_dist_tolerance" default="0.02"/>
   <arg name="coarse_dist_tolerance" default="0.1"/>
