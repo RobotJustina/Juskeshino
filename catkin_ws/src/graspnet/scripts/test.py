@@ -16,10 +16,12 @@ from gazebo_msgs.msg import ModelState, ContactsState
 from gazebo_msgs.srv import SetModelState, GetModelState
 from std_msgs.msg import String, Float64MultiArray
 from sensor_msgs.msg import PointCloud2
-from geometry_msgs.msg import Pose, PointStamped, Quaternion  
+from geometry_msgs.msg import Pose, Point, Quaternion  
 from train import load_model, DEVICE
 import geometry_msgs
 import grasp_network as gn
+from visualization_msgs.msg import Marker
+
 
 #from ...manipulation.object_manipulation.scripts import dataset_utils as dutils
 #import ...manipulation.object_manipulation.scripts.dataset_utils as dtutils
@@ -135,6 +137,42 @@ def create_origin_pose():
     jop.orientation.z = 0.7068252
     jop.orientation.w = 0.7073883
     return jop
+
+def create_cube_marker_from_pt(ptlist, size, id):
+    global marker_pub
+    marker = Marker()
+    marker.header.frame_id = "grasp_frame"
+    marker.type = Marker.CUBE_LIST
+    marker.ns = "gr"
+    marker.header.stamp = rospy.Time.now()
+    marker.action = marker.ADD
+    marker.id = id
+    #marker.scale.x, marker.scale.y, marker.scale.z = 0.04, 0.005, 0.1
+    marker.scale.x, marker.scale.y, marker.scale.z = size
+    marker.color.r, marker.color.g, marker.color.b, marker.color.a = 20, 50, 100, 1.0
+    marker.lifetime = rospy.Duration(100)
+    marker.pose.position = Point(x=0,y=0,z=0)
+    marker.pose.orientation.w = 1
+    #marker.points = [Point(y=0.1,z=-0.1),Point(y=0.1,z=0.1),Point(y=-0.1,z=0.1),Point(y=0.1,z=0.1)]
+    marker.points = ptlist
+    marker_pub.publish(marker)
+
+def create_arrow_marker_from_pt(ptlist):
+    global marker_pub
+    marker = Marker()
+    marker.header.frame_id = "grasp_frame"
+    marker.type = Marker.ARROW
+    marker.ns = "gr"
+    marker.header.stamp = rospy.Time.now()
+    marker.action = marker.ADD
+    marker.id = 3
+    marker.scale.x, marker.scale.y, marker.scale.z = 0.03, 0.05, 0.05
+    marker.color.r, marker.color.g, marker.color.b, marker.color.a = 20, 50, 100, 1.0
+    marker.lifetime = rospy.Duration(100)
+    #marker.pose.position = pt
+    #marker.pose.orientation.w = 1
+    marker.points = ptlist
+    marker_pub.publish(marker)
     
 def reset_simulation():
     global justina_origin_pose, obj_shape, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts
@@ -154,7 +192,7 @@ def reset_simulation():
 
 def main():
     global ik_srv, state_msg, grasp_trajectory_found, justina_origin_pose, obj_shape, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
-    global set_state, z
+    global set_state, z, marker_pub
     z = 0.74
     state_msg = ModelState()
     deserialized_gripper_model_state = ModelState()
@@ -171,6 +209,7 @@ def main():
     pub_la = rospy.Publisher("/hardware/left_arm/goal_pose", Float64MultiArray, queue_size=10)
     pub_hd = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=10)
     transform_pointcloud = rospy.ServiceProxy("/vision/point_cloud_to_base_link",PreprocessPointCloud)
+    marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10)
     obj_shape = rospy.get_param("/obj","056_tennis_ball")
     rospy.sleep(1)
     loop = rospy.Rate(1)
@@ -224,6 +263,10 @@ def main():
                 #predicted_pose.orientation.normalize()
                 #broadcaster_frame_object("camera_rgb_optical_frame","grasp_frame",predicted_pose)
                 broadcaster_frame_object("base_link","grasp_frame",predicted_pose)
+                ptlist = [Point(y=0.04),Point(y=-0.04)]
+                create_cube_marker_from_pt(ptlist,[0.04, 0.005, 0.1],1)
+                create_cube_marker_from_pt([Point(z=0.03)],[0.06, 0.03525, 0.03525],2)
+                create_arrow_marker_from_pt([Point(z=0.03),Point(z=0.03,x=0.1)])
                 print(predicted_pose)
 
         loop.sleep()
