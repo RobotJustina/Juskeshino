@@ -232,7 +232,7 @@ def get_orientation_in_range(q):
 
 def get_quaternion_in_hemihypersphere(q):
     qo = np.array([q.x,q.y,q.z,q.w])
-    if np.dot(qo,np.array([0,-1,0,0])) < 0:
+    if np.dot(qo,np.array([0,0,0,-1])) < 0:
         #print("Positive quaternion :)")
         return q
     else:
