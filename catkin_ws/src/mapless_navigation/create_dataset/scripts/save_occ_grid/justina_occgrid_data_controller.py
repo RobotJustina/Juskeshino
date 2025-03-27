@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 import rospy
-from std_msgs.msg import Float64MultiArray
-from std_msgs.msg import Empty
+from std_msgs.msg import Empty, Float64MultiArray
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Twist, PointStamped
 import numpy as np
@@ -152,7 +151,6 @@ def main():
         msgHeadPos = Float64MultiArray()
         msgHeadPos.data = [0.0, -0.4]
         pubHeadPos.publish(msgHeadPos)
-        #rospy.sleep(0.5)
         rospy.sleep(1)
         pubHeadPos.publish(msgHeadPos)
         rate = 0

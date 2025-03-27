@@ -35,7 +35,6 @@ def processFeedback(feedback):
         print('', end='\r')
         rospy.loginfo(s + ": pose changed to (" + p + ", 0.0)")
         path = get_flat_path()
-        path
         
         if feedback.marker_name == "path_node_" + str(nodes_count):
             marker = marker_server.get(feedback.marker_name)

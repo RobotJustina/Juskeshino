@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 import rospy
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Float64MultiArray
 from nav_msgs.msg import OccupancyGrid, Odometry, Path
 from geometry_msgs.msg import Twist, PointStamped
 import numpy as np
@@ -144,11 +144,19 @@ def main():
     rospy.Subscriber("/hardware/mobile_base/cmd_vel", Twist, cmdVelCallback)
     rospy.Subscriber("mapless_nav/save_dataset", Bool, recordCallback)
     rospy.Subscriber("/mapless_nav/goal", PointStamped, updateGoalCallback)
+
+    pubHeadPos = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=1)
     
     ([robot_pos_x, robot_pos_y, _], _) = listener.lookupTransform("odom", 'base_link', rospy.Time(0))
     goal_x = robot_pos_x
     goal_y = robot_pos_y -0.1
     robot_theta = 0.0
+
+    msgHeadPos = Float64MultiArray()
+    msgHeadPos.data = [0.0, -0.4]
+    pubHeadPos.publish(msgHeadPos)
+    rospy.sleep(1)
+    pubHeadPos.publish(msgHeadPos)
 
     if not files_utils.DirectoryUtils.existDir(save_path, True):
         rospy.logwarn("creating folder" + save_path)
