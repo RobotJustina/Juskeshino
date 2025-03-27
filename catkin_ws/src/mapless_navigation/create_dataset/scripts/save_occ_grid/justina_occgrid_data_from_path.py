@@ -138,7 +138,8 @@ def main():
     listener.waitForTransform("odom", "base_link", rospy.Time(), rospy.Duration(4.0))
 
     rospy.Subscriber("/clicked_point", PointStamped, clickPointCallback)
-    rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
+    #rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
+    rospy.Subscriber("/re_local_occ_grid", OccupancyGrid, occGridCallback)
     rospy.Subscriber("/simple_move/goal_path", Path, getTargetCallback)
     rospy.Subscriber("/odom", Odometry, getOdomCallback)
     rospy.Subscriber("/hardware/mobile_base/cmd_vel", Twist, cmdVelCallback)
@@ -197,4 +198,3 @@ def main():
 
 if __name__ == "__main__":
      main()
-     print()

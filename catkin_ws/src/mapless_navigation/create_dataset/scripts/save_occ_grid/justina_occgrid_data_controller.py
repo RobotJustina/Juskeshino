@@ -136,7 +136,9 @@ def main():
 
     rospy.Subscriber("/clicked_point", PointStamped, clickPointCallback)
     rospy.Subscriber("/hardware/mobile_base/cmd_vel", Twist, cmdVelCallback)
-    rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
+    #rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
+    rospy.Subscriber("/re_local_occ_grid", OccupancyGrid, occGridCallback)
+    
     rospy.Subscriber("/stop", Empty, stopCallback)  # Button (B)
 
     cmd_vel_pub = rospy.Publisher("/hardware/mobile_base/cmd_vel", Twist, queue_size=10)
@@ -208,4 +210,3 @@ def main():
 
 if __name__ == "__main__":
      main()
-     print()
