@@ -4,9 +4,16 @@
   <arg name="map_name" default="appartment"/>
   <arg name="locations" default="known_locations_gazebo"/>
   <arg name="object" default="apple"/>
+  <arg name="start" default="0"/>
+  <arg name="stop" default="1000"/>
+  <arg name="loop_cmd" default="default"/>
+
 
   <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
   <param name="obj" value="$(arg object)"/>
+  <param name="sample_start" value="$(arg start)"/>
+  <param name="sample_stop" value="$(arg stop)"/>
+  <param name="cmd" value="$(arg loop_cmd)"/>
   <arg name="world" default="obj_grip_test"/> 
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo3.launch">
     <arg name="posx"  value="2.46"/>
@@ -47,8 +54,9 @@
     <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
   </node>
 
-  <node name="obj_reco" pkg="obj_reco" type="obj_reco_node" output="screen"/>
-  <node name="data_capture_node" pkg="object_manipulation" type="data_capture_node_.py" output="screen"/>
+  <node name="obj_reco" pkg="obj_reco" type="obj_reco_node" output="log"/>
+  <node name="data_capture_node" pkg="object_manipulation" type="data_capture_node_.py" output="log"/>
+  <node name="dataset_generator" pkg="object_manipulation" type="pose_generator.py" output="screen" respawn="true" respawn_delay="40"/>
   <include file="$(find surge_et_ambula)/launch/justina/justina_manipulation.launch"/>
   <!-- <include file="$(find surge_et_ambula)/launch/justina/vision.launch">
     <arg name="debug"         value="$(arg debug)"/>

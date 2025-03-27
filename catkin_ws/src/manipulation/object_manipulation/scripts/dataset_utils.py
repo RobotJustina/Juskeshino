@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import rospy 
+import rospy
+import rospkg 
 import pickle
 import ros_numpy
 import numpy as np
@@ -25,10 +26,12 @@ MAX_POINTS = 25600
 #DATASET_PATH = 'catkin_ws/src/graspnet/dataset_base_link/'
 #DATASET_PATH = 'catkin_ws/src/graspnet/dataset_cube_test/'
 #DATASET_PATH = 'catkin_ws/src/graspnet/dataset_rest_test/'
-DATASET_PATH = 'catkin_ws/src/graspnet/training_dataset/'
+#DATASET_PATH = 'catkin_ws/src/graspnet/training_dataset/'
 
-
-
+rospack = rospkg.RosPack()
+graspnet_path = rospack.get_path('graspnet')
+print(graspnet_path)
+DATASET_PATH = graspnet_path + "/training_dataset//"
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

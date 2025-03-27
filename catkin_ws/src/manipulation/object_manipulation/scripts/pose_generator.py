@@ -316,6 +316,10 @@ def main():
     pub_la = rospy.Publisher("/hardware/left_arm/goal_pose", Float64MultiArray, queue_size=10)
     pub_hd = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=10)
     obj_shape = rospy.get_param("/obj","056_tennis_ball")
+    sample_start = rospy.get_param("/sample_start",0)
+    sample_stop = rospy.get_param("/sample_stop",100)
+
+    print(sample_start,sample_stop)
     rospy.sleep(1)
 
     msg = ModelState()
@@ -336,15 +340,23 @@ def main():
 
     reset_simulation()
     pub_hd.publish(msg_hd)
-    POSE_DATA_PATH = "./catkin_ws/src/manipulation/object_manipulation/pose_data/"
+    #POSE_DATA_PATH = "./catkin_ws/src/manipulation/object_manipulation/pose_data/"
+    #objmanpkg_path = rospkg.get_ros_package_path()
+    #print(objmanpkg_path)
+    rospack = rospkg.RosPack()
+    objmanpkg_path = rospack.get_path('object_manipulation')
+    print(objmanpkg_path)
+    POSE_DATA_PATH = objmanpkg_path + "/pose_data/"
     pose_num = 0
     loop = rospy.Rate(1)
 
-
+    command = rospy.get_param('/cmd',"default")
 
     while not rospy.is_shutdown():
         print("Type r to reset sim to a random pose, and l to loop simulation for samples")
-        command = input()
+        if command == "default": 
+            command = input()
+            rospy.set_param('/cmd',command)
         if command == "r": 
             #obj_pose = get_object_relative_pose("justina_gripper::left_arm_grip_center",obj_shape).pose
             reset_simulation()
@@ -481,10 +493,11 @@ def main():
             uia = input()
 
         if command == 'y':            
-            print("Start from sample number:")
-            found_grasps = int(input())
-            print("Stop until sample:")
-            desired_samples = int(input()) + 1
+            #print("Start from sample number:")
+            found_grasps = sample_start
+            #print("Stop until sample:")
+            desired_samples = sample_stop + 1
+            rospy.sleep(2)
             while((not rospy.is_shutdown()) and found_grasps < desired_samples):
                 reset_simulation()
                 pose_num = 1
@@ -532,8 +545,10 @@ def main():
                     set_state(deserialized_gripper_model_state)
                     data = capture("Found grasp")
                     found_grasps = found_grasps + save_data_to_file(data,found_grasps)
+                    rospy.set_param('/sample_start',found_grasps)
             print("Finished taking samples")
-
+            rospy.set_param('/cmd',"default")
+            rospy.signal_shutdown('Finished taking samples')
         if command == 'e':
  
             while((not rospy.is_shutdown())):

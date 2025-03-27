@@ -28,7 +28,7 @@
   
   </group>
 
-  <node name="gripper_tf_broadcaster" pkg="object_manipulation" type="gripper_transform_publisher.py" output="screen" respawn="true"/>
+  <node name="gripper_tf_broadcaster" pkg="object_manipulation" type="gripper_transform_publisher.py" output="log" respawn="true"/>
 
   <param name="robot_description" command="xacro $(find justina_description)/urdf/justina.xacro"/>
   <arg name="posx" default="7.64"/>
@@ -48,8 +48,8 @@
   <node name="object_spawner" pkg="gazebo_ros" type="spawn_model" output="screen"
         args="-sdf -file $(find gazebo_envs)/models/YCB_virtual/$(arg object)/model.sdf -model $(arg object)"/>
 
-  <node name="topic_resender" pkg="gazebo_envs" type="topic_resender.py" output="screen"/>
-  <node name="omni_base_control" pkg="gazebo_envs" type="omni_base_gazebo_control.py" output="screen" respawn="true">
+  <node name="topic_resender" pkg="gazebo_envs" type="topic_resender.py" output="log"/>
+  <node name="omni_base_control" pkg="gazebo_envs" type="omni_base_gazebo_control.py" output="log" respawn="true">
     <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
   </node>
   <node name="tf_camera_connect" pkg="tf" type="static_transform_publisher" args="0 0 0 -1.5708 0 -1.5708 camera_link camera_rgb_optical_frame 30"/>
