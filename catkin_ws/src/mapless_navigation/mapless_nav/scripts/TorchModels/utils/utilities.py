@@ -66,7 +66,7 @@ def load_data_matrix(files_path='/data/', shape=[100, 100]):
     return data_X, data_Y
 
 
-def load_data(files_path='/data/'):
+def load_data(files_path='/data/', verbose=False):
     files = glob.glob(files_path)
     if len(files) == 0:
         print("NO files found in data/ folder")
@@ -75,7 +75,8 @@ def load_data(files_path='/data/'):
     print(len(files), "'.npz' files found")
     data , temp = [], None
     for file in files:
-        print("load: ", file)
+        if verbose:
+            print("load: ", file)
         arr = np.load(file, allow_pickle=True)
         temp = arr['data']
         data=np.concatenate((data, temp), axis=0)
