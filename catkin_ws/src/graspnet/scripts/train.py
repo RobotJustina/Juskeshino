@@ -22,7 +22,7 @@ import math
 gpu_number = 1
 gpus = 0
 gpu_arr = '0'
-BATCH_SIZE = 200
+BATCH_SIZE = 225
 #np.random.seed(int(time.time()))
 #torch.cuda.manual_seed(1)
 #torch.cuda.set_device(gpus)
@@ -32,7 +32,7 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 #Dataset loaders
 
-DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/dataset_rest_test/"
+DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/training_dataset/"
 MODELS_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/models/"
 VAL_TO_TEST_RATIO = 0.1
 
@@ -91,7 +91,7 @@ def train_network(num_epochs,model_name, model_path=None,samples =-1):
     train_loader, valid_loader = get_dataloaders(samples)
     model = load_model(model_path)
     best_model = copy.deepcopy(model.state_dict())
-    criterion = nn.HuberLoss(delta=0.94)
+    criterion = nn.HuberLoss(delta=0.9)
     #optimizer = optim.SGD(model.parameters(),lr=0.00008,momentum=0.8)
     optimizer = optim.Adam(model.parameters(),lr=0.00008)
     min_loss = 1.5
@@ -154,7 +154,7 @@ def load_model(model_path=None):
 
 def main():
     model_file = MODELS_PATH + 'model_nn.pt'
-    train_network(110,"dual_model_rest1_wl.pt")
+    train_network(150,"dual_model_5kc_wl_dp2.pt",samples=500)
     # dataset = GraspDataset(set_type="test",path=DATASET_PATH)
     # dataloader = torch.utils.data.DataLoader(dataset, BATCH_SIZE, shuffle=True)
     # train_features, train_labels = next(iter(dataloader))

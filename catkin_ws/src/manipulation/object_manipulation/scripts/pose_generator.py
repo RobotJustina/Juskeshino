@@ -145,7 +145,7 @@ def create_origin_pose():
     jop = Pose()
     jop.position.x = 2.6
     jop.position.y = 1.8
-    jop.position.z = 0.06
+    jop.position.z = 0.0
     jop.orientation.x = 0
     jop.orientation.y = 0
     jop.orientation.z = 0.7068252

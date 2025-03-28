@@ -88,6 +88,7 @@ class GraspNetwork(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Sequential(
+                            #nn.Dropout2d(0.05),
                             nn.Conv2d(3, 32, kernel_size = 11, stride = 1),
                             nn.BatchNorm2d(32),
                             #nn.GELU()
@@ -108,7 +109,8 @@ class GraspNetwork(nn.Module):
         self.conv5 = nn.Sequential(
                             nn.Conv2d(256, 512, kernel_size = 3, stride = 2),
                             nn.BatchNorm2d(512),
-                            nn.ReLU())
+                            nn.ReLU(),)
+                            #nn.Dropout2d(0.1))
         self.conv6 = nn.Sequential(
                             nn.Conv2d(512, 512, kernel_size = 2, stride = 2, padding=1),
                             nn.BatchNorm2d(512),
@@ -117,26 +119,42 @@ class GraspNetwork(nn.Module):
         self.maxpool2 = nn.MaxPool2d(kernel_size=2,stride=1,padding=0)
         self.lc  = nn.Sequential(
                             nn.Linear(5*5*512,8192),
-                            nn.Linear(8192, 2048),
+                            nn.ReLU(),
+                            nn.Dropout(0.1),
+                            nn.Linear(8192,2048),
+                            # nn.ReLU(),
+                            # nn.Linear(4096, 2048),
+                            nn.ReLU(),
                             nn.Linear(2048,512),
-                            nn.Linear(512,64),
-                            nn.Linear(64,3))
+                            nn.ReLU(),
+                            nn.Linear(512,256),
+                            nn.Linear(256,256),
+                            nn.Linear(256,3))
+                            #nn.Linear(64,3))
         self.nlc = nn.Sequential(
                             nn.Linear(5*5*512,8192),
                             nn.ReLU(),
-                            nn.Linear(8192, 2048),
+                            nn.Dropout(0.1),
+                            nn.Linear(8192,2048),
+                            # nn.ReLU(),
+                            # nn.Linear(4096, 2048),
                             nn.ReLU(),
-                            nn.Linear(2048,512),
+                            nn.Linear(2048, 512),
                             nn.ReLU(),
-                            nn.Linear(512,64),
+                            #nn.Dropout(0.1),
+                            nn.Linear(512,512),
                             nn.ReLU(),
-                            nn.Linear(64,4),
+                            nn.Linear(512,256),
+                            nn.ReLU(),
+                            nn.Linear(256,4),
+                            # nn.ReLU(),
+                            # nn.Linear(64,4),
                             nn.Tanh())
-        self.fc1 = nn.Linear(5*5*512,8192)
-        self.fc2 = nn.Linear(8192, 2048)
-        self.fc3 = nn.Linear(2048,512)
-        self.fc4 = nn.Linear(512,64)
-        self.fc5 = nn.Linear(64,7)
+        # self.fc1 = nn.Linear(5*5*512,8192)
+        # self.fc2 = nn.Linear(8192, 2048)
+        # self.fc3 = nn.Linear(2048,512)
+        # self.fc4 = nn.Linear(512,64)
+        # self.fc5 = nn.Linear(64,7)
 
     def forward(self, x):
         x = self.conv1(x)
