@@ -190,7 +190,7 @@ y_val = torch.tensor(y_val, dtype=torch.float32, device=device)
 Model
 """
 # PARAM model = nn_models.<model_name>()
-model = nn_models.Param_CNN(channels=stack_n_channels, img_size=data_X.shape[-1])
+model = nn_models.SNet(channels=stack_n_channels, img_size=data_X.shape[-1])
 model.to(device)
 
 optimizer = Adam(model.parameters(), lr=learn_r)

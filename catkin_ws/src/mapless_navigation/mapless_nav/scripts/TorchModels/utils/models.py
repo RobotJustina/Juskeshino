@@ -47,14 +47,14 @@ class Red_conv(torch.nn.Module):
 
 
 ### TODO: delete---------------------------------------------->
-class Red(torch.nn.Module):
+class SNet(torch.nn.Module):
     def __init__(self, channels=5, img_size=80):
         f1 = 32  # Mejor configuración f1 =32, l1=64, lr=8.1e-3, epoch=14
         l1 = 128
         expand = 32
         
-        super(Red, self).__init__()
-        self.name = "Param_CNN"
+        super(SNet, self).__init__()
+        self.name = "SNet"
         self.channels = channels
         
         #self.conv1 = torch.nn.Conv2d(1, f1, 3)
@@ -76,11 +76,11 @@ class Red(torch.nn.Module):
         #self.extra_norm = torch.nn.LayerNorm(img_size)
 
     def forward(self, x):
-        print = False
-        if print: print("forward")
+
+        ##print("forward")
         #pos = x[:, 6400:]
         vect = x[:, 0, -2:, :]  # [batch_s, channel, col, row]
-        if print: print("vect", vect.shape)
+        ##print("vect", vect.shape)
         #print(vect)
         
         #pos = self.extra(pos)
@@ -95,37 +95,37 @@ class Red(torch.nn.Module):
         
         # IMAGE
         #x = x[:, 0:6400]
-        if print: print(x.shape)
+        ##print(x.shape)
         #print(x)
         x = x[:, :, :80, :]
-        if print: print(x.shape)
+        ##print(x.shape)
         #print(x)
         #x = x.view(x.size(0), 1, 80, 80)
 
 
         x = self.conv1(x)
-        if print: print("conv1", x.shape)
+        ##print("conv1", x.shape)
         x = torch.nn.functional.relu(self.norm1(x))
         #print("norm1", x.shape)
         x = torch.nn.functional.avg_pool2d(x, kernel_size=2, stride=2)
-        if print: print("avg_pool2d", x.shape)
+        ##print("avg_pool2d", x.shape)
         x = self.dropout1(x)
 
         x = torch.flatten(x, 1)
-        if print: print("flatten", x.shape)
+        ##print("flatten", x.shape)
         x = self.c1(x)
-        if print: print("c1", x.shape)
+        ##print("c1", x.shape)
         x = torch.nn.functional.relu(self.norm3(x))
         x = self.dropout3(x)
 
         #x = torch.cat((x, pos), 1)
         x = torch.cat((x, vect), 1)
-        if print: print("cat", x.shape)
+        ##print("cat", x.shape)
         x = self.c2(x)
-        if print: print("c2", x.shape)
+        ##print("c2", x.shape)
         #return torch.nn.functional.softmax(x, dim=1)
         x = torch.nn.functional.tanh(x)
-        if print: print("out.shape", x.shape)
+        ##print("out.shape", x.shape)
 
         return x
 

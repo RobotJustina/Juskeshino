@@ -9,14 +9,11 @@ import torch
 
 from TorchModels.utils import models
 
-
-import TorchModels.utils.utilities as l_util 
-
 # >>>Select model
 n_channels = 4
 
 occ_grid_meters = 4
-model = models.Param_CNN(channels=n_channels, img_size=int(20*occ_grid_meters))
+model = models.SNet(channels=n_channels, img_size=int(20*occ_grid_meters))
 
 package_path = rospkg.RosPack().get_path("mapless_nav")
 model_path = package_path + "/scripts/TorchModels/" 
@@ -32,9 +29,7 @@ linx = 0.0
 liny = 0.0
 angz = 0.0
 target_reached = True
-robot_pos_x, robot_pos_y = 0, 0
 speed_factor = 2
-
 
 
 def callback_goal(msg):
@@ -52,12 +47,6 @@ def callback_point(msg):
     print(f"\nNew goal: ({msg.point.x:.3f}, {msg.point.y:.3f})", end="\r") 
     print(end='\n')
     target_reached = False
-
-
-# def occ_grid_image(image=None, occ_grid_meters=4):
-    
-    
-#     return image
 
 
 def occGridCallback(msg):
@@ -82,9 +71,6 @@ def occGridCallback(msg):
     # row n+2 = theta_to_target 
     # vect_ydat dim(3) label info = l_vel_x, l_vel_y, a_vel_z
     """
-    #print("entr shape", data.shape)
-    #print("model shape", model.img_shape)
-    #l_util.show_image_gray(data)
 
 
     data_X = np.vstack((data, other_features))
@@ -92,10 +78,6 @@ def occGridCallback(msg):
 
     # Config input to model
 
-
-
-    #print("entr shape", entrada.shape)
-    #l_util.show_image_gray(entrada, "vstak")
 
     #print("entrada", entrada.shape)
     batch = []
@@ -157,13 +139,6 @@ def occGridCallback(msg):
         if last_goal[0] != 0 and last_goal[1] != 0:
             target_reached = True
 
-
-def getOdomCallback(msg):
-    global robot_pos_x, robot_pos_y
-    global robot_theta
-
-    robot_pos_x = msg.pose.pose.position.x
-    robot_pos_y = msg.pose.pose.position.y
     
 
 def shutdown_stop():
@@ -178,7 +153,6 @@ def main():
     rospy.init_node("NN_out")
     rospy.Subscriber("/NN_goal", Float32MultiArray, callback_goal)
     rospy.Subscriber("/clicked_point", PointStamped, callback_point)
-    rospy.Subscriber("/odom", Odometry, getOdomCallback)
     rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
     pub_cmd = rospy.Publisher(
         "/hardware/mobile_base/cmd_vel", Twist, queue_size=10)
