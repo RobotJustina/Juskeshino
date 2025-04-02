@@ -12,4 +12,5 @@ catkin_ws/src/graspnet/dataset_cube_test/
 catkin_ws/src/graspnet/dataset_rest_test/
 catkin_ws/src/graspnet/models/
 catkin_ws/src/graspnet/training_dataset/
+catkin_ws/src/graspnet/validate_dataset/
 #*#

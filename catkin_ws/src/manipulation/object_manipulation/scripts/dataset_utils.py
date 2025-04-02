@@ -31,7 +31,8 @@ MAX_POINTS = 25600
 rospack = rospkg.RosPack()
 graspnet_path = rospack.get_path('graspnet')
 print(graspnet_path)
-DATASET_PATH = graspnet_path + "/training_dataset//"
+DATASET_PATH = graspnet_path + "/training_dataset/"
+#DATASET_PATH = graspnet_path + "/validate_dataset/"
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

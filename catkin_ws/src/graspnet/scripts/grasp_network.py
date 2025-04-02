@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
+import geotorch as geo
 import numpy as np
 import copy
 import numpy.lib.recfunctions as rf
@@ -120,13 +121,14 @@ class GraspNetwork(nn.Module):
         self.lc  = nn.Sequential(
                             nn.Linear(5*5*512,8192),
                             nn.ReLU(),
-                            nn.Dropout(0.1),
+                            nn.Dropout(0.2),
                             nn.Linear(8192,2048),
                             # nn.ReLU(),
                             # nn.Linear(4096, 2048),
                             nn.ReLU(),
                             nn.Linear(2048,512),
                             nn.ReLU(),
+                            nn.Dropout(0.2),
                             nn.Linear(512,256),
                             nn.Linear(256,256),
                             nn.Linear(256,3))
@@ -134,22 +136,33 @@ class GraspNetwork(nn.Module):
         self.nlc = nn.Sequential(
                             nn.Linear(5*5*512,8192),
                             nn.ReLU(),
-                            nn.Dropout(0.1),
+                            nn.Dropout(0.2),
                             nn.Linear(8192,2048),
                             # nn.ReLU(),
                             # nn.Linear(4096, 2048),
                             nn.ReLU(),
                             nn.Linear(2048, 512),
                             nn.ReLU(),
-                            #nn.Dropout(0.1),
+                            nn.Dropout(0.2),
                             nn.Linear(512,512),
                             nn.ReLU(),
                             nn.Linear(512,256),
                             nn.ReLU(),
-                            nn.Linear(256,4),
+                            nn.Linear(256,4))
                             # nn.ReLU(),
                             # nn.Linear(64,4),
-                            nn.Tanh())
+                            #geo.Sphere()
+                            #nn.Tanh())
+        #self.nlch = nn.Linear(256,4)
+        #ten = getattr(self.nlch,)
+        #self.manif = geo.Sphere(ten.size(),1)
+        self.manif = geo.Sphere([1,4],1)
+        self.manif.base = torch.tensor([0,0,0,1],dtype=torch.float32)
+        #self.manif = geo.SphereEmbedded(self.nlc,1)
+        #self.nlch = nn.Linear(256,4)
+        #geo.sphere(self.nlch, tensor_name="output")
+        #geo.SphereEmbedded(self.nlc,1)
+        #geo.orthogonal()
         # self.fc1 = nn.Linear(5*5*512,8192)
         # self.fc2 = nn.Linear(8192, 2048)
         # self.fc3 = nn.Linear(2048,512)
@@ -171,6 +184,7 @@ class GraspNetwork(nn.Module):
 
         pos = self.lc(x)
         ori = self.nlc(x)
+        ori = self.manif(ori)
         # x = self.fc1(x)
         # #x = F.tanh(x)
         # x = self.fc2(x)
