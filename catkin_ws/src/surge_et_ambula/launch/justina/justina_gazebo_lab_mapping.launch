@@ -1,11 +1,11 @@
 <launch>
   <arg name="debug" default="False"/>
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
-    <arg name="posx"  value="-0.45"/>
-    <arg name="posy"  value="0.4"/>
+    <arg name="posx"  value="0.0"/>
+    <arg name="posy"  value="2.0"/>
     <arg name="posz"  value="0.05"/>
     <arg name="yaw"   value="3.14"/>
-    <arg name="world" value="BioRobotics_lab"/>
+    <arg name="world" value="room_selected"/>
   </include>
   
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_mapping.rviz"/>
@@ -32,6 +32,13 @@
     <param name="maxRange" value="5.5"/>
     <param name="minimumScore" value="0.0"/>
   </node>
+  
+  <node name="joy" pkg="joy" type="joy_node" output="screen">
+    <remap from="/joy" to="/hardware/joy"/>
+  </node>
 
+  <node name="joystick_teleop_improved" pkg="joystick_teleop" type="joystick_teleop_node_improved.py" output="screen">
+    <remap from="/hardware/mobile_base/cmd_vel" to="/cmd_vel"/>
+  </node>
 
 </launch>

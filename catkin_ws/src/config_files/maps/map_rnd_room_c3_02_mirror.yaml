@@ -1,0 +1,7 @@
+image: map_rnd_room_c3_02_mirror.pgm
+resolution: 0.050000
+origin: [-4.600000, -16.975000, 0.000000]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196
+
