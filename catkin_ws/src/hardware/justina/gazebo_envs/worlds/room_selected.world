@@ -56,14 +56,14 @@
           <pose>0 0 0 0 -0 0</pose>
           <geometry>
             <mesh>
-              <uri>model://RandomRooms/rnd_room_c5_01.dae</uri>
+              <uri>model://RandomRooms/rnd_room_c2_01.dae</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
           <material>
             <lighting>1</lighting>
             <script>
-              <uri>model://RandomRooms/rnd_room_c5_01.dae</uri>
+              <uri>model://RandomRooms/rnd_room_c2_01.dae</uri>
               <name>Gazebo/Grey</name>
             </script>
             <shader type='pixel'>
@@ -79,7 +79,7 @@
           <pose>0 0 0 0 -0 0</pose>
           <geometry>
             <mesh>
-              <uri>model://RandomRooms/rnd_room_c5_01.dae</uri>
+              <uri>model://RandomRooms/rnd_room_c2_01.dae</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
