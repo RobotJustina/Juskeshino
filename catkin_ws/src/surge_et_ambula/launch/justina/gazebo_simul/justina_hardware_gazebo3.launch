@@ -24,6 +24,7 @@
     <remap from="robot_description" to="gripper_description"/>
     <param name="tf_prefix" value="gm"/>
     <param name="use_tf_static" value="false"/>
+    <param name ="publish_frequency" value="10"/>
   </node>
   
   </group>
@@ -42,7 +43,7 @@
 
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
     <param name="use_tf_static" value="false"/>
-    
+    <param name ="publish_frequency" value="10"/>
   </node>
 
   <node name="object_spawner" pkg="gazebo_ros" type="spawn_model" output="screen"
