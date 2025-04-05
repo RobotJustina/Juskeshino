@@ -14,9 +14,7 @@ from select import select
 from scipy.interpolate import interp1d
 import numpy as np
 import math
-
 from juskeshino_tools.JuskeshinoNavigation import JuskeshinoNavigation
-# from general_utils import files_utils
 
 
 marker_server = None
@@ -238,6 +236,7 @@ def spline_curve():
 
     return path
 
+
 def calculate_soft_path():
     global path, old_path, path_pub
     path = get_flat_path()
@@ -257,7 +256,6 @@ def is_same_pat(path1, path2):
         return True
     else: 
         return False
-
 
 
 if __name__ == "__main__":

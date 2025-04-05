@@ -16,7 +16,6 @@ from general_utils import files_utils
 import time
 
 
-
 #np.set_printoptions(threshold=sys.maxsize)
 np.set_printoptions(suppress=True)
 
@@ -136,7 +135,6 @@ def main():
 
     rospy.Subscriber("/clicked_point", PointStamped, clickPointCallback)
     rospy.Subscriber("/hardware/mobile_base/cmd_vel", Twist, cmdVelCallback)
-    #rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
     rospy.Subscriber("/re_local_occ_grid", OccupancyGrid, occGridCallback)
     
     rospy.Subscriber("/stop", Empty, stopCallback)  # Button (B)
