@@ -17,7 +17,7 @@ from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import Pose, Quaternion  
 from manip_msgs.srv import DataCapture, InverseKinematicsPose2TrajRequest, InverseKinematicsPose2Traj
 from vision_msgs.srv import PreprocessPointCloud, PreprocessPointCloudRequest
-from dataset_utils import save_data_to_file
+from dataset_utils import save_data_to_file, find_nearest_pt_in_pc, camera_link_to_optical_frame, ros_pc2_to_npmatrix
 BASE_JUSTINA_VECTOR = np.array([0.0,-1.0,0.0])
 CONIC_ANGLE = math.cos(math.radians(30))
 VG_PLANE = {
@@ -504,6 +504,10 @@ def main():
                 print("Testing new position")
                 file_name = POSE_DATA_PATH + obj_shape + str(pose_num)
                 angles = []
+                tpcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
+                gpwrtcam = get_object_relative_pose(obj_shape,"justina::camera_link").pose.position
+                _,_, in_frame = find_nearest_pt_in_pc(ros_pc2_to_npmatrix(tpcd),camera_link_to_optical_frame(gpwrtcam))
+                if not in_frame: continue
                 while(os.path.exists(file_name)):
                     angles.append(256)
                     in_file = open(file_name, "rb") # opening for [r]eading as [b]inary

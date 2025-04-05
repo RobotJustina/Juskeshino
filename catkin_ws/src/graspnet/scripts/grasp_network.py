@@ -110,8 +110,8 @@ class GraspNetwork(nn.Module):
         self.conv5 = nn.Sequential(
                             nn.Conv2d(256, 512, kernel_size = 3, stride = 2),
                             nn.BatchNorm2d(512),
-                            nn.ReLU(),)
-                            #nn.Dropout2d(0.1))
+                            nn.ReLU())
+                            #,nn.Dropout2d(0.1))
         self.conv6 = nn.Sequential(
                             nn.Conv2d(512, 512, kernel_size = 2, stride = 2, padding=1),
                             nn.BatchNorm2d(512),
@@ -121,31 +121,36 @@ class GraspNetwork(nn.Module):
         self.lc  = nn.Sequential(
                             nn.Linear(5*5*512,8192),
                             nn.ReLU(),
-                            nn.Dropout(0.2),
+                            nn.Dropout(0.5),
                             nn.Linear(8192,2048),
                             # nn.ReLU(),
                             # nn.Linear(4096, 2048),
                             nn.ReLU(),
+                            nn.Dropout(0.4),
                             nn.Linear(2048,512),
                             nn.ReLU(),
-                            nn.Dropout(0.2),
+                            nn.Dropout(0.25),
                             nn.Linear(512,256),
+                            nn.ReLU(),
+                            nn.Dropout(0.25),
                             nn.Linear(256,256),
                             nn.Linear(256,3))
                             #nn.Linear(64,3))
         self.nlc = nn.Sequential(
                             nn.Linear(5*5*512,8192),
                             nn.ReLU(),
-                            nn.Dropout(0.2),
+                            nn.Dropout(0.5),
                             nn.Linear(8192,2048),
                             # nn.ReLU(),
                             # nn.Linear(4096, 2048),
                             nn.ReLU(),
+                            nn.Dropout(0.5),
                             nn.Linear(2048, 512),
                             nn.ReLU(),
-                            nn.Dropout(0.2),
+                            nn.Dropout(0.4),
                             nn.Linear(512,512),
                             nn.ReLU(),
+                            nn.Dropout(0.25),
                             nn.Linear(512,256),
                             nn.ReLU(),
                             nn.Linear(256,4))
@@ -163,11 +168,6 @@ class GraspNetwork(nn.Module):
         #geo.sphere(self.nlch, tensor_name="output")
         #geo.SphereEmbedded(self.nlc,1)
         #geo.orthogonal()
-        # self.fc1 = nn.Linear(5*5*512,8192)
-        # self.fc2 = nn.Linear(8192, 2048)
-        # self.fc3 = nn.Linear(2048,512)
-        # self.fc4 = nn.Linear(512,64)
-        # self.fc5 = nn.Linear(64,7)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -185,16 +185,6 @@ class GraspNetwork(nn.Module):
         pos = self.lc(x)
         ori = self.nlc(x)
         ori = self.manif(ori)
-        # x = self.fc1(x)
-        # #x = F.tanh(x)
-        # x = self.fc2(x)
-        # #x = F.tanh(x)
-        # x = self.fc3(x)
-        # #x = F.tanh(x)
-        # x = self.fc4(x)
-        # #x = F.tanh(x)
-        # x = self.fc5(x)
-        # #x = F.tanh(x)
 
         return pos, ori
 

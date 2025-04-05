@@ -213,7 +213,7 @@ def main():
     obj_shape = rospy.get_param("/obj","056_tennis_ball")
     rospy.sleep(1)
     loop = rospy.Rate(1)
-    grasp_network = load_model(MODELS_PATH + "dual_model_5kc_wl_dp1.pt")
+    grasp_network = load_model(MODELS_PATH + "dual_model_28ks_nwl_dh_tansphere_1.pt")
     grasp_network.eval()
     while not rospy.is_shutdown():
         print("Type r to reset sim to a random pose, and l to loop simulation for samples")
