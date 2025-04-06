@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<robot name="baixue" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find baixue_description)/urdf/macros.xacro"/>
+  <xacro:include filename="$(find baixue_description)/urdf/materials.xacro"/>
+  <xacro:include filename="$(find baixue_description)/urdf/baixue_base_omni.xacro"/>
+  <xacro:include filename="$(find baixue_description)/urdf/xarm_device.urdf.xacro"/>
+  
+  <!-- <sensor name='left_gripper_contact' type='contact'>
+          <contact>
+            <collision>left_gripper_collision</collision>
+          </contact>
+  </sensor>
+  
+  <sensor name='riht_gripper_contact' type='contact'>
+          <contact>
+            <collision>right_gripper_collision</collision>
+          </contact>
+  </sensor> -->
+
+  <!-- <joint name="arm_base_connect" type="fixed">
+    <origin xyz= "0.1 0 0.43" rpy="0 0 0"/>
+    <parent link="base_torso_support"/>
+    <child link="link_base"/>
+  </joint> -->
+
+
+</robot>
+  

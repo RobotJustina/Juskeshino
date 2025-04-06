@@ -1,0 +1,128 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="robot_dof" />
+  <arg name="paused" default="false" doc="Starts gazebo in paused mode" />
+  <arg name="gui" default="true" doc="Starts gazebo gui" />
+  <arg name="effort_control" default="false"/>
+  <arg name="velocity_control" default="false"/>
+  <arg name="namespace" default="xarm"/>
+  <arg name="model1300" default="false" />
+  <arg name="add_realsense_d435i" default="true" />
+  <arg name="add_d435i_links" default="true" />
+  <arg name="robot_sn" default="" />
+  <arg name="show_rviz" default="true" />
+  <arg name="NO_GUI_CTRL" default="false"/>
+  <arg name="debug" default="false" />
+  <arg name="add_gripper" default="false" />
+  <arg name="map_name" default="appartment"/>
+  <arg name="locations" default="known_locations_gazebo"/>
+  
+  <rosparam file="$(eval find('xarm' + str(arg('robot_dof')) + '_moveit_config') + '/config/xarm' + str(arg('robot_dof')) + '_params.yaml')" command="load" ns="$(arg namespace)"/>
+
+  <!-- startup simulated world -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find xarm_gazebo)/worlds/xarm_camera_scene.world"/>
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="gui" value="$(arg gui)"/>
+  </include>
+
+    <!-- <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find gazebo_envs)/worlds/obj_grip_test.world"/>
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="gui" value="$(arg gui)"/>
+  </include> -->
+
+  <param name="robot_description" command="$(find xacro)/xacro
+    --inorder '$(find baixue_description)/urdf/baixue.xacro' robot_type:=xarm limited:=false add_gripper:=false add_vacuum_gripper:=false add_bio_gripper:=false use_gazebo_camera:=true dof:=$(arg robot_dof)
+    effort_control:=$(arg effort_control) velocity_control:=$(arg velocity_control) model1300:=$(arg model1300)
+    add_realsense_d435i:=$(arg add_realsense_d435i)
+    add_d435i_links:=$(arg add_d435i_links)
+    robot_sn:=$(arg robot_sn)
+    hw_ns:=$(arg namespace)
+    " />
+
+   <!-- <param name="robot_description" command="$(find xacro)/xacro
+    - -inorder '$(find xarm_description)/urdf/xarm_device.urdf.xacro' robot_type:=xarm limited:=false add_gripper:=false add_vacuum_gripper:=false add_bio_gripper:=false use_gazebo_camera:=true dof:=$(arg robot_dof)
+    effort_control:=$(arg effort_control) velocity_control:=$(arg velocity_control) model1300:=$(arg model1300)
+    add_realsense_d435i:=$(arg add_realsense_d435i)
+    add_d435i_links:=$(arg add_d435i_links)
+    robot_sn:=$(arg robot_sn)
+    hw_ns:=$(arg namespace)
+    " /> -->
+  
+  <!-- <param name="robot_description_semantic" 
+    command="$(find xacro)/xacro - -inorder '$(find xarm_description)/srdf/xarm.srdf.xacro' dof:=$(arg robot_dof) add_gripper:=false add_vacuum_gripper:=false add_bio_gripper:=false robot_type:=xarm" /> -->
+  <param name="robot_description_semantic" 
+    command="$(find xacro)/xacro --inorder '$(find baixue_description)/srdf/xarm.srdf.xacro' dof:=$(arg robot_dof) add_gripper:=false add_vacuum_gripper:=false add_bio_gripper:=false robot_type:=xarm" />
+
+  <!-- <param name="robot_description_semantic" 
+    command="$(find xacro)/xacro - -inorder '$(find baixue_description)/srdf/_xarm6_macro.srdf.xacro' add_gripper:=false add_vacuum_gripper:=false add_bio_gripper:=false" /> -->
+
+  <group ns="robot_description_planning">
+    <rosparam file="$(eval find('xarm' + str(arg('robot_dof')) + '_gripper_moveit_config') + '/config/joint_limits.yaml')" command="load"/>
+  </group>
+
+  <!-- Load default settings for kinematics; these settings are overridden by settings in a node's namespace -->
+  <group ns="robot_description_kinematics">
+    <rosparam file="$(eval find('xarm' + str(arg('robot_dof')) + '_gripper_moveit_config') + '/config/kinematics.yaml')" command="load"/>
+  </group>
+
+  <!-- spawn robot model in gazebo, located on the table, -gazebo_namespace defaults to be /gazebo -->
+  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model"
+    respawn="false" output="screen"
+    args="-gazebo_namespace /gazebo -urdf -model xarm$(arg robot_dof) -x 0 -y 0 -z 0.775 -Y 0 -param robot_description"/>
+
+  <!-- load the corresponding controllers -->
+  <include file="$(find xarm_controller)/launch/xarm$(arg robot_dof)_control.launch">
+    <arg name="run_demo_traj" value="false"/>
+    <arg name="effort_control" value="$(arg effort_control)"/>
+    <arg name="velocity_control" value="$(arg velocity_control)"/>
+    <arg name="add_gripper" value="false" />
+  </include>
+
+  <arg name="robot_controller_name" value="$(eval 'xarm' + str(arg('robot_dof')) + ('_velo_traj_controller' if arg('velocity_control') else '_traj_controller'))" />
+
+  <remap from="arm_controller/follow_joint_trajectory" to="/$(arg namespace)/$(arg robot_controller_name)/follow_joint_trajectory"/>
+
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <param name="/use_gui" value="false"/>
+    <rosparam param="/source_list" subst_value="True">[/$(arg namespace)/joint_states]</rosparam>
+  </node>
+
+  <include file="$(eval find('xarm' + str(arg('robot_dof')) + '_gripper_moveit_config') + '/launch/move_group.launch')">
+    <arg name="allow_trajectory_execution" value="true" />
+    <arg name="fake_execution" value="false" />
+    <arg name="info" value="true"/>
+    <arg name="debug" value="false"/>
+    <arg name="gripper_controller" value="false"/>
+  </include>
+
+  <!-- <node name="baixue_base_control" pkg="gazebo_envs" type="baixue_base_control.py" output="log" respawn="true">
+    <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
+  </node> -->
+
+  <!-- <include file="$(find surge_et_ambula)/launch/justina/navigation.launch">
+    <arg name="static_map_file"  value="$(find config_files)/maps/$(arg map_name).yaml"/>
+    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/$(arg map_name).yaml"/>
+    <arg name="initial_pose_x" value="0.49"/>
+    <arg name="initial_pose_y" value="-0.19"/>
+    <arg name="initial_pose_a" value="0"/>
+    <arg name="max_linear_speed" value="0.9"/>
+    <arg name="max_angular_speed" value="1.2"/>
+    <arg name="laser_scan_topic" value="/hardware/scan"/>
+    <arg name="point_cloud_topic" value="/camera/depth_registered/points"/>
+    <arg name="use_lidar" value="True"/>
+    <arg name="use_point_cloud" value="True"/>
+    <arg name="use_pot_fields" value="False"/>
+    <arg name="pot_fields_k_rej" value="0.3"/>
+    <arg name="pot_fields_d0" default="1.0"/>
+    <arg name="cloud_downsampling" value="9"/>
+    <arg name="cloud_points_threshold" value="50"/>
+    <arg name="lidar_points_threshold" value="5"/>
+  </include> -->
+
+  <include if="$(arg show_rviz)" file="$(find xarm6_moveit_config)/launch/moveit_rviz.launch">
+    <arg name="no_gui_ctrl" value="$(arg NO_GUI_CTRL)"/>
+    <arg name="debug" value="$(arg debug)"/>
+  </include>
+</launch>

@@ -228,12 +228,13 @@ def load_model(model_path=None):
 
 def main():
     model_file = MODELS_PATH + 'model_nn.pt'
-    train_network(50,"dual_model_46ks_nwl_dh_tansphere_nplot_1",samples=500)
+    train_network(50,"dual_model_46ks_nwl_dh_tansphere_fd",samples=FULL_DATASET)
     # dataset = GraspDataset(set_type="test",path=DATASET_PATH)
     # dataloader = torch.utils.data.DataLoader(dataset, BATCH_SIZE, shuffle=True)
     # train_features, train_labels = next(iter(dataloader))
     # print(f"Feature batch shape: {train_features.size()}")
     # print(f"Labels batch shape: {train_labels.size()}")
+    # 
 
 if __name__ == '__main__':
     try:
