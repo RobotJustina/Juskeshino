@@ -22,7 +22,7 @@ np.set_printoptions(threshold=sys.maxsize)
 
 package_path = rospkg.RosPack().get_path("mapless_nav")
 save_path = package_path + "/scripts/TorchModels/data/"
-file_name = "data_from_path"
+file_name = "data_nav_map"
 goal_x, goal_y = 0.0, 0.0
 npz_data = []
 data_Y = [0.0, 0.0, 0.0]  # [l_vel_x, l_vel_y, a_vel_z]
@@ -90,11 +90,6 @@ class Map:
     def get_marker(self):
         self.marker.pose = self.pose.pose
         return self.marker
-
-
-package_path = rospkg.RosPack().get_path("mapless_nav")
-save_path = package_path + "/scripts/TorchModels/data/"
-file_name = "data_from_path"
 
 
 def stopSaveDataCallback(msg):
