@@ -97,8 +97,29 @@
     <arg name="gripper_controller" value="false"/>
   </include>
 
-  <node name="baixue_base_publisher" pkg="gazebo_envs" type="base_publisher.py" output="log" respawn="true">
-  </node>
+  <node name="baixue_base_control" pkg="gazebo_envs" type="baixue_base_control.py" output="log" respawn="true">
+    <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
+  </node> 
+
+  <!-- <include file="$(find surge_et_ambula)/launch/justina/navigation.launch">
+    <arg name="static_map_file"  value="$(find config_files)/maps/$(arg map_name).yaml"/>
+    <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/$(arg map_name).yaml"/>
+    <arg name="initial_pose_x" value="0.49"/>
+    <arg name="initial_pose_y" value="-0.19"/>
+    <arg name="initial_pose_a" value="0"/>
+    <arg name="max_linear_speed" value="0.9"/>
+    <arg name="max_angular_speed" value="1.2"/>
+    <arg name="laser_scan_topic" value="/hardware/scan"/>
+    <arg name="point_cloud_topic" value="/camera/depth_registered/points"/>
+    <arg name="use_lidar" value="True"/>
+    <arg name="use_point_cloud" value="True"/>
+    <arg name="use_pot_fields" value="False"/>
+    <arg name="pot_fields_k_rej" value="0.3"/>
+    <arg name="pot_fields_d0" default="1.0"/>
+    <arg name="cloud_downsampling" value="9"/>
+    <arg name="cloud_points_threshold" value="50"/>
+    <arg name="lidar_points_threshold" value="5"/>
+  </include> -->
 
   <include if="$(arg show_rviz)" file="$(find xarm6_moveit_config)/launch/moveit_rviz.launch">
     <arg name="no_gui_ctrl" value="$(arg NO_GUI_CTRL)"/>

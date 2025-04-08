@@ -33,6 +33,11 @@
     </collision>
   </gazebo>
 
+
+
+
+
+
   <!-- RIGHT WHEEL ACTUATOR -->
   <transmission name="wheel_right_transmission">
     <type>transmission_interface/SimpleTransmission</type>
@@ -118,9 +123,9 @@
       </plugin>
     </sensor>
   </gazebo>
-  <gazebo>
+  <!-- <gazebo>
     <plugin filename="libgazebo_ros_control.so" name="ros_control">
-      <robotNamespace>/</robotNamespace>
+      <robotNamespace>xarm</robotNamespace>
     </plugin>
-  </gazebo>
+  </gazebo> -->
 </robot>

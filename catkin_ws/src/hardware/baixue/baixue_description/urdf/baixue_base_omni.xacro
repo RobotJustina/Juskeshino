@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <robot name="baixue" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:property name="base_radius" value="0.21"/>
-  <xacro:property name="base_height" value="0.43"/>
+  <xacro:property name="base_height" value="0.402"/>
   <xacro:property name="base_mass"   value="20.0"/>
   <xacro:property name="wheel_radius" value="0.08"/>
   <xacro:property name="wheel_width"  value="0.01"/>
@@ -27,30 +27,10 @@
       <geometry><cylinder radius="${base_radius}" length="${base_height}"/></geometry>
     </collision>
   </link>
-  <link name="base_torso_support">
-    <inertial>
-      <origin xyz="0 0 0"/>
-      <mass value="0.5"/>
-      <xacro:box_inertia m="0.5" x="0.12" y="0.12" z="0.16"/>
-    </inertial>
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry> <box size="0.12 0.12 0.16"/></geometry>
-      <material name="black"/>
-    </visual>
-    <collision>
-      <geometry> <box size="0.12 0.12 0.16"/></geometry>
-    </collision>
-  </link>
   <joint name="base_joint" type="fixed">
     <parent link="base_link" />
     <child link="base_center" />
-    <origin xyz="0 0 0.13"/>
-  </joint>
-  <joint name="base_torso_support_joint" type="fixed">
-    <parent link="base_center" />
-    <child link="base_torso_support" />
-    <origin xyz="0 0 0.18"/>
+    <origin xyz="0 0 0.2025"/>
   </joint>
 
   <!-- LEFT WHEEL ACTUATOR-->
@@ -72,9 +52,9 @@
     <parent link="base_center" />
     <child link="left_wheel_link" />
     <axis xyz="0 0 1"/>
-    <origin xyz="${(base_radius+0.03)*cos( PI/3)} ${(base_radius+0.03)*sin( PI/3)} -0.25" rpy="${PI/2} 0 ${ PI/3+PI/2}"/>
+    <origin xyz="${(base_radius+0.03)*cos( PI/3)} ${(base_radius+0.03)*sin( PI/3)} -0.1525" rpy="${PI/2} 0 ${ PI/3+PI/2}"/>
     <limit velocity="30.0" effort="5.0"/>
-    <dynamics damping="0.5" friction="0.01"/>
+    <dynamics damping="0.5" friction="1"/>
   </joint>  
   
   <!-- RIGHT WHEEL ACTUATOR-->
@@ -96,9 +76,9 @@
     <parent link="base_center" />
     <child link="right_wheel_link" />
     <axis xyz="0 0 1"/>
-    <origin xyz="${(base_radius+0.03)*cos(-PI/3)} ${(base_radius+0.03)*sin(-PI/3)} -0.25" rpy="${PI/2} 0 ${-PI/3+PI/2}"/>
+    <origin xyz="${(base_radius+0.03)*cos(-PI/3)} ${(base_radius+0.03)*sin(-PI/3)} -0.1525" rpy="${PI/2} 0 ${-PI/3+PI/2}"/>
     <limit velocity="30.0" effort="5.0"/>
-    <dynamics damping="0.5" friction="0.01"/>
+    <dynamics damping="0.5" friction="1"/>
   </joint>
 
   <!-- BACK WHEEL ACTUATOR-->
@@ -120,9 +100,9 @@
     <parent link="base_center" />
     <child link="back_wheel_link" />
     <axis xyz="0 0 1"/>
-    <origin xyz="${(base_radius+0.03)*cos(PI)} ${(base_radius+0.03)*sin(PI)} -0.25" rpy="${PI/2} 0 ${PI+PI/2}"/>
+    <origin xyz="${(base_radius+0.03)*cos(PI)} ${(base_radius+0.03)*sin(PI)} -0.1525" rpy="${PI/2} 0 ${PI+PI/2}"/>
     <limit velocity="30.0" effort="5.0"/>
-    <dynamics damping="0.5" friction="0.01"/>
+    <dynamics damping="0.5" friction="1"/>
   </joint>
 
   <!-- LASER LINK AND JOINTS-->

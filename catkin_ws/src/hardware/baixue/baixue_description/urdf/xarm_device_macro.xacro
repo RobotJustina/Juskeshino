@@ -18,7 +18,7 @@
     create_attach_link:=true
     ros2_control_params:=''
     load_gazebo_plugin:=false 
-    add_realsense_d435i:=false
+    add_realsense_d435i:=true
     add_d435i_links:=true
     use_gazebo_camera:=true
     add_other_geometry:=false 

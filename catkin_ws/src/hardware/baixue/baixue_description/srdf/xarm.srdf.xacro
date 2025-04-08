@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<robot xmlns:xacro="http://wiki.ros.org/xacro" name="UF_ROBOT">
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="baixue">
   <!-- parameters -->
   <xacro:arg name="prefix" default="" />
-  <xacro:arg name="dof" default="7" />
+  <xacro:arg name="dof" default="6" />
   <xacro:arg name="robot_type" default="xarm" />
   <xacro:arg name="add_gripper" default="false"/>
   <xacro:arg name="add_vacuum_gripper" default="false" />
