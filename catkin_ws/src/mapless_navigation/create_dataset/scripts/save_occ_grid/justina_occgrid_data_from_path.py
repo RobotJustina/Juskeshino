@@ -11,6 +11,7 @@ from datetime import datetime
 import sys
 from general_utils import files_utils
 import time
+import copy
 
 np.set_printoptions(suppress=True)
 
@@ -22,22 +23,13 @@ npz_data = []
 data_Y = [0.0, 0.0, 0.0]  # [l_vel_x, l_vel_y, a_vel_z]
 recording = False
 # Value between (5, 20)
-samples_average = 10
+samples_average = 6
 callback_count = 1
 rate = 0
-
-#TODO: DELETE?
-def clickPointCallback(msg):
-    global goal_x, goal_y
-    
-    goal_x = msg.point.x
-    goal_y = msg.point.y
-    print(f"\nNew goal ({goal_x:.3f}, {goal_y:.3f})", end="\r")
 
 
 def updateGoalCallback(msg):
     global goal_x, goal_y
-
     goal_x = msg.point.x
     goal_y = msg.point.y
     print(f"\nNew goal ({goal_x:.3f}, {goal_y:.3f})", end="\r")
@@ -74,7 +66,6 @@ def getOdomCallback(msg):
 
 def getTargetCallback(msg):
     global goal_x, goal_y
-
     pose = msg.poses[-1]
     goal_x = pose.pose.position.x
     goal_y = pose.pose.position.y
@@ -103,7 +94,6 @@ def occGridCallback(msg):
     global rate, callback_count
     
     callback_count+=1
-
     data = np.asarray(msg.data, dtype=np.float32)
     data = np.reshape(data, (msg.info.height, msg.info.width))
     data = np.rot90(np.flip(data, axis=0))
@@ -123,7 +113,7 @@ def occGridCallback(msg):
     if recording:
         t_lim = math.ceil(rate / samples_average)
         if callback_count % t_lim == t_lim-1:
-            npz_data.append(sample)
+            npz_data.append(copy.deepcopy(sample))
 
 
 def main():
@@ -138,8 +128,6 @@ def main():
     listener = tf.TransformListener()
     listener.waitForTransform("odom", "base_link", rospy.Time(), rospy.Duration(4.0))
 
-    rospy.Subscriber("/clicked_point", PointStamped, clickPointCallback)
-    #TODO: view->
     rospy.Subscriber("/re_local_occ_grid", OccupancyGrid, occGridCallback)
     rospy.Subscriber("/simple_move/goal_path", Path, getTargetCallback)
     rospy.Subscriber("/odom", Odometry, getOdomCallback)

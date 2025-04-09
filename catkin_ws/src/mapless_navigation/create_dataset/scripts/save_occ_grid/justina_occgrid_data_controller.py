@@ -14,7 +14,7 @@ import termios
 from select import select
 from general_utils import files_utils
 import time
-
+import copy
 
 #np.set_printoptions(threshold=sys.maxsize)
 np.set_printoptions(suppress=True)
@@ -29,7 +29,7 @@ data_Y = None
 cmd_vel_pub = None
 recording = False
 # Value between (5, 20)
-samples_average = 10
+samples_average = 6
 callback_count = 1
 rate = 0
 
@@ -103,7 +103,7 @@ def occGridCallback(msg):
     if recording:
         t_lim = math.ceil(rate / samples_average)
         if callback_count % t_lim == t_lim-1:
-            npz_data.append(sample)
+            npz_data.append(copy.deepcopy(sample))
 
 
 def cmdVelCallback(msg):

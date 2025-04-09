@@ -15,6 +15,7 @@ from datetime import datetime
 import sys
 from general_utils import files_utils
 import time
+import copy
 
 
 np.set_printoptions(suppress=True)
@@ -28,7 +29,7 @@ npz_data = []
 data_Y = [0.0, 0.0, 0.0]  # [l_vel_x, l_vel_y, a_vel_z]
 recording = False
 # Value between (5, 20)
-samples_average = 10
+samples_average = 6
 callback_count = 1
 rate = 0
 reach_objective = 0
@@ -159,7 +160,7 @@ def occGridCallback(msg):
         t_lim = math.ceil(rate / samples_average)
         if callback_count % t_lim == t_lim-1:
             if abs(data_Y[0]) > 0.1 or abs(data_Y[1]) > 0.1 or abs(data_Y[2]) > 0.1:
-                npz_data.append(sample)
+                npz_data.append(copy.deepcopy(sample))
 
 
 def cmdVelCallback(msg):
