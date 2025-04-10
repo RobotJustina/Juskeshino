@@ -30,11 +30,12 @@ npz_data = []
 data_Y = [0.0, 0.0, 0.0]  # [l_vel_x, l_vel_y, a_vel_z]
 recording = False
 # Value between (5, 20)
-samples_average = 6
+samples_average = 5
 callback_count = 1
 rate = 0
 nav_fails = 0
 fail_time = 0
+nav_time = 0
 navigating = False
 
 
@@ -96,7 +97,7 @@ class Map:
 def stopSaveDataCallback(msg):
     global recording, navigating, save_data
     global data_Y, npz_data
-    global fail_time, nav_fails
+    global fail_time, nav_fails, nav_time
     
     print("\n>> GOAL status reached:", msg.status)
     if msg.status == 3:
@@ -104,6 +105,7 @@ def stopSaveDataCallback(msg):
         if msg.goal_id.id == "-1":
             navigating = False
             nav_fails = 0
+            nav_time = time.time()
     if msg.status == 4:
         nav_fails += 1
         fail_time = time.time()
@@ -295,7 +297,7 @@ def main():
     global listener, goal_x, goal_y
     global navigating, recording, save_data, npz_data
     global rate, callback_count
-    global fail_time, nav_fails, data_Y
+    global fail_time, nav_fails, nav_time, data_Y
     cant_move = 0
 
     rospy.init_node("justina_occgrid_data_nav_map")
@@ -336,7 +338,7 @@ def main():
         # When robot can't planing, try to back to navigable space
         last_fail = time.time() - fail_time
         vel = np.linalg.norm(data_Y)
-        if nav_fails > 1 and last_fail > 4.0 and vel == 0.0:
+        if nav_fails >= 1 and last_fail > 4.0 and vel == 0.0:
             cant_move += 1
             recording = False
             save_data = False
@@ -370,6 +372,19 @@ def main():
             navigating = True
             recording = True
         else:
+            nav_timer = time.time() - nav_time
+            if vel == 0.0:
+                cant_move += 1
+
+            if cant_move > 5 and nav_timer > 10:
+                print("\nnavigation fail, reset path")
+                recording = False
+                save_data = False
+                nav_fails = 0
+                cant_move = 0
+                navigating = False
+                npz_data = []
+
             if recording:
                 cad += " Recording * "
                 save_data = True
