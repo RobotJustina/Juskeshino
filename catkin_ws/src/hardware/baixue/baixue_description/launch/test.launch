@@ -16,6 +16,10 @@
   <arg name="add_gripper" default="false" />
   <arg name="map_name" default="appartment"/>
   <arg name="locations" default="known_locations_gazebo"/>
+  <arg name="object" default="077_rubiks_cube"/>
+  <arg name="start" default="0"/>
+  <arg name="stop" default="1000"/>
+  <arg name="loop_cmd" default="default"/>
   
   <rosparam file="$(eval find('xarm' + str(arg('robot_dof')) + '_moveit_config') + '/config/xarm' + str(arg('robot_dof')) + '_params.yaml')" command="load" ns="$(arg namespace)"/>
 
@@ -70,7 +74,7 @@
   <!-- spawn robot model in gazebo, located on the table, -gazebo_namespace defaults to be /gazebo -->
   <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model"
     respawn="false" output="screen"
-    args="-gazebo_namespace /gazebo -urdf -model xarm$(arg robot_dof) -x 0 -y 0 -z 0.775 -Y 0 -param robot_description"/>
+    args="-gazebo_namespace /gazebo -urdf -model xarm$(arg robot_dof) -x 0 -y 0 -z 0 -Y 0 -param robot_description"/>
 
   <!-- load the corresponding controllers -->
   <include file="$(find xarm_controller)/launch/xarm$(arg robot_dof)_control.launch">
@@ -104,4 +108,9 @@
     <arg name="no_gui_ctrl" value="$(arg NO_GUI_CTRL)"/>
     <arg name="debug" value="$(arg debug)"/>
   </include>
+
+  <!-- <node name="obj_reco" pkg="obj_reco" type="obj_reco_node" output="log"/>
+  <node name="data_capture_node" pkg="object_manipulation" type="data_capture_node_.py" output="log"/>
+  <node name="dataset_generator" pkg="object_manipulation" type="pose_generator.py" output="screen" respawn="true" respawn_delay="2"/> -->
+
 </launch>
