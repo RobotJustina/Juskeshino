@@ -53,10 +53,9 @@ print_sample = False
 Hyperparameters
 """
 # PARAMS
-batch_size = 5
+batch_size = 8
 learn_r = 0.0001 # 1e-3
 epochs = 8
-
 
 
 
@@ -196,9 +195,10 @@ model.to(device)
 optimizer = Adam(model.parameters(), lr=learn_r)
 loss_fn = torch.nn.MSELoss()
 ##torch.nn.L1Loss()
-save_path = './'+ model.name + '.pth'
 
-
+save_path = pkg_path + '/scripts/TorchModels/' + model.name + '.pth'
+print('save_path', save_path)
+ 
 
 """
 Training

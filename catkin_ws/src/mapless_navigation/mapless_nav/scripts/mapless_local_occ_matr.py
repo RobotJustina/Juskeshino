@@ -13,7 +13,7 @@ from TorchModels.utils import models
 n_channels = 4
 
 occ_grid_meters = 4
-model = models.SNet(channels=n_channels, img_size=int(20*occ_grid_meters))
+model = models.Param_CNN(channels=n_channels, img_size=int(20*occ_grid_meters))
 
 package_path = rospkg.RosPack().get_path("mapless_nav")
 model_path = package_path + "/scripts/TorchModels/" 

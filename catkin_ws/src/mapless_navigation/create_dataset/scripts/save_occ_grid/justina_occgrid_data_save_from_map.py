@@ -261,7 +261,7 @@ def recover_movement(x, y, a, marker_pub, occ_map):
     free_point = None
 
     for i in range(cuadrant*2):
-        angle = a + i*(math.pi/cuadrant)
+        angle = a + i*(math.pi/cuadrant) + 2*math.pi/cuadrant
         x_pos = x + distance*math.cos(angle)
         y_pos = y + distance*math.sin(angle)
 
