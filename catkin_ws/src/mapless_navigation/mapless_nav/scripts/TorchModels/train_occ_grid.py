@@ -53,12 +53,19 @@ print_sample = False
 Hyperparameters
 """
 # PARAMS
-batch_size = 8
-learn_r = 0.0001 # 1e-3
+batch_size = 8 # 8
+learn_r = 0.00001 # 1e-3
 epochs = 8
 
 
-
+cad = "stack_n_channels " + str(stack_n_channels)
+cad += '\nocc_grid_meters\t' + str(occ_grid_meters)
+cad += '\normalize_label\t' + str(normalize_label)
+cad += '\normalize_data\t' + str(normalize_data)
+cad += '\nsave_weights_only ' + str(save_weights_only)
+cad += '\n\nbatch_size ' + str(batch_size)
+cad += '\nlearn_r\t' + str(learn_r)
+cad += '\nepochs\t' + str(epochs)
 
 """
 Dataset
@@ -130,6 +137,8 @@ data_Y = np.stack((lvel_x, Avel_z), axis=1)
 print("Data_X.shape:", data_X.shape)
 print("Data_Y.shape:", data_Y.shape)
 
+cad += '\n\nData_X.shape\t' + str(data_X.shape)
+cad += '\nData_Y.shape\t' + str(data_Y.shape)
 # TODO: Delete
 #np.savez(pkg_path + '/scripts/TorchModels/x_ch_dat.npz', data=data_X)
 # show random sample
@@ -199,6 +208,10 @@ loss_fn = torch.nn.MSELoss()
 save_path = pkg_path + '/scripts/TorchModels/' + model.name + '.pth'
 print('save_path', save_path)
  
+cad += '\n\nmodel.name\t' + str(model.name)
+cad += '\noptimizer\t' + str("Adam")
+cad += '\nloss\t' + str("MSELoss")
+
 
 """
 Training
@@ -303,3 +316,5 @@ with torch.no_grad():
 
 print(f'Accuracy train: {100 * correct // total}%')
 
+file_info_path = pkg_path + '/scripts/TorchModels/'
+l_util.save_train_params(cad, file_info_path+'train_info.txt')

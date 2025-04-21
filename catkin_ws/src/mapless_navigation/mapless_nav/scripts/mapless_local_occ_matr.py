@@ -29,7 +29,7 @@ linx = 0.0
 liny = 0.0
 angz = 0.0
 target_reached = True
-speed_factor = 2
+speed_factor = 2.0
 
 
 def callback_goal(msg):
@@ -92,6 +92,7 @@ def occGridCallback(msg):
     x_ent = torch.tensor(entrada)
     x_ent = x_ent.to(torch.device(disp), torch.float32)
 
+    turn_help = True
     # print("last_goal", abs(last_goal[0]))
     if (abs(last_goal[0]) > 0.3):
         with torch.no_grad():
@@ -113,24 +114,35 @@ def occGridCallback(msg):
         #         linx = 1
         # else:
         #     linx = 0
+        if turn_help:
+            if abs(last_goal[1]) < 0.5:
+                linx = y_pred[0] #* speed_factor
+                angz = y_pred[1]
 
-        #linx = speed_factor*( (linx+1)/2 )
-        #linx = 0.2
-        linx = y_pred[0]
+            else:
+                linx = y_pred[0] / (10*abs(last_goal[1]))
+                print("XXXXXXXXXXXXXXXX linx", linx, end='\n')
+                print("XXXXXXXXXXXXXXXX linx", linx, end='\n')
+                angz = y_pred[1] * speed_factor
+            
+        else:
+            #linx = speed_factor*( (linx+1)/2 )
+            #linx = 0.2
+            linx = y_pred[0]
 
-        """Deleted"""
-        #liny = y_pred[1]
+            """Deleted"""
+            #liny = y_pred[1]
 
-        """changed"""
-        angz = y_pred[1]
-        #angz = y_pred[2]
-        #angz = (angz -0.5)*100
-        # if angz > 2:
-        #     angz = 2
-        #     linx = 0.01
-        # elif angz < -2:
-        #     angz = -2
-        #     linx = 0.01
+            """changed"""
+            angz = y_pred[1]
+            #angz = y_pred[2]
+            #angz = (angz -0.5)*100
+            # if angz > 2:
+            #     angz = 2
+            #     linx = 0.01
+            # elif angz < -2:
+            #     angz = -2
+            #     linx = 0.01
 
     else:
         linx = 0.0

@@ -120,3 +120,11 @@ def one_hot_encode(data_Y, verbose=False):
         print("OneHot encoding:")
         print(categories)
     return y_one_hot
+
+
+def save_train_params(str, path):
+    print("\nWriting file: ")
+    print(path)
+    f = open(path, "w")
+    f.write(str)
+    f.close()

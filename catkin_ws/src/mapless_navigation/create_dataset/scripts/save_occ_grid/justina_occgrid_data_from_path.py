@@ -23,7 +23,7 @@ npz_data = []
 data_Y = [0.0, 0.0, 0.0]  # [l_vel_x, l_vel_y, a_vel_z]
 recording = False
 # Value between (5, 20)
-samples_average = 6
+samples_average = 5
 callback_count = 1
 rate = 0
 
