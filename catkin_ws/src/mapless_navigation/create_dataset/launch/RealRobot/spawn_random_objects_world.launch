@@ -1,0 +1,30 @@
+<launch>
+  <arg name="world" value="rnd_room_c2_01"/>
+  <arg name="n_objects" value="4"/>
+
+  <arg name="static_map_file"  value="$(find config_files)/maps/map_$(arg world).yaml"/>
+  <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/map_$(arg world).yaml"/>
+  <!-- This node changes the map in file room_selected.world, relaunch 2 times to visualize the changes -->
+  <node name="load_random_room_world" pkg="create_dataset" type="load_random_room_world.py" args="--map=$(arg world)" output="screen"/>
+  <node name="load_random_object_map" pkg="create_dataset" type="load_random_object_map.py" args="--n_objects=$(arg n_objects)" output="screen"/>
+
+  <env name="GAZEBO_MODEL_PATH" value="$(find gazebo_envs)/models:$(optenv GAZEBO_MODEL_PATH)"/>
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+    <arg name="debug" value="false"/>
+    <arg name="world_name" value="$(find gazebo_envs)/worlds/room_selected.world"/>
+  </include>
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_gazebo.rviz"/>
+
+  <include file="$(find surge_et_ambula)/launch/justina/navigation.launch">
+    <arg name="static_map_file"  value="$(arg static_map_file)"/>
+    <arg name="prohibition_map_file"  value="$(arg prohibition_map_file)"/>
+    <arg name="cost_radius" default="0.5"/> <!-- 0.5 -->
+    <arg name="inflation_radius" default="0.15"/>  <!-- 0.2 -->
+  </include>
+
+</launch>
