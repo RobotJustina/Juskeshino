@@ -16,7 +16,7 @@
   <param name="gripper_description" command="xacro $(find justina_description)/urdf/justina_gripper.xacro"/>
 
   <node name="gripper_spawn" pkg="gazebo_ros" type="spawn_model" output="screen"
-        args="-urdf -param gripper_description -model justina_gripper -x 3 -y 2.3 -z 1.1 -J gr_la_grip_left 0.707 -J gr_la_grip_right 0.707"/>
+        args="-urdf -param gripper_description -model justina_gripper -x -5 -y -5 -z 11 -J gr_la_grip_left 0.707 -J gr_la_grip_right 0.707"/>
   
   <group ns="gm">
   <param name="gripper_description" command="xacro $(find justina_description)/urdf/justina_gripper.xacro"/>

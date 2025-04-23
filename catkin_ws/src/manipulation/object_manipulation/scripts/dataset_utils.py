@@ -35,8 +35,8 @@ rospack = rospkg.RosPack()
 graspnet_path = rospack.get_path('graspnet')
 print(graspnet_path)
 DATASET_PATH = graspnet_path + "/training_dataset/"
-DATABASE_PATH = graspnet_path + '/grasp_database_test_siu.db'
-#DATABASE_PATH = graspnet_path + '/grasp_database_test_cracker_box.db'
+#DATABASE_PATH = graspnet_path + '/grasp_database_test_siu.db'
+DATABASE_PATH = graspnet_path + '/grasp_database_quaternion.db'
 #DATASET_PATH = graspnet_path + "/validate_dataset/"
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -108,10 +108,10 @@ def save_grasp_to_db(grasp,obj_shape,obj_type,pcd_id):
     return grasp_id
 
 def save_pcd_to_db(pcd):
+    print(pcd.shape)
     binary_stream = BytesIO()
     np.save(binary_stream,pcd)
     pcd_binary = binary_stream.getvalue()
-    print(pcd_binary)
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
     cursor.execute('''
@@ -135,8 +135,8 @@ def load_grasp_from_db(id):
 def load_pcd_from_db(id):
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM point_clouds_table WHERE pcd_id = {}".format(id))
-    row = cursor.fetchall()
+    cursor.execute("SELECT pcd_binary FROM point_clouds_table WHERE pcd_id = {}".format(id))
+    row = cursor.fetchone()
     conn.commit()
     conn.close()
     return row
@@ -377,17 +377,16 @@ def main():
             # pcd.reshape((480,640,3))
             # show_pcd_from_npmatrix(pcd)
         if command == 'sdb':
-            x = np.arange(28*28).reshape(28, 28)
-            save_pcd_to_db(x)
             print("What grasp to get?")
             id = input()
             g = load_pcd_from_db(int(id))
             print(type(g))
             print(len(g))
-            print(type(g[0][1]))
-            print(len(g[0][1]))
-            pcd = np.load(BytesIO(g[0][1]))
+            print(type(g[0]))
+            print(len(g[0]))
+            pcd = np.load(BytesIO(g[0]))
             print(pcd)
+            show_pcd_from_npmatrix(pcd)
 
 if __name__ == '__main__':
     try:

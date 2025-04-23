@@ -12,6 +12,10 @@ import vg
 import tf
 import tf2_ros
 import h5py
+import torch
+import geometry_msgs
+import geomstats.backend as gs
+from geomstats.geometry.hypersphere import Hypersphere, HypersphereMetric
 from gazebo_msgs.msg import ModelState, ContactsState 
 from gazebo_msgs.srv import SetModelState, GetModelState
 from std_msgs.msg import String, Float64MultiArray, Header
@@ -21,9 +25,11 @@ from manip_msgs.srv import DataCapture, InverseKinematicsPose2TrajRequest, Inver
 from vision_msgs.srv import PreprocessPointCloud, PreprocessPointCloudRequest
 from visualization_msgs.msg import Marker
 
-from dataset_utils import save_data_to_file, find_nearest_pt_in_pc, camera_link_to_optical_frame, ros_pc2_to_npmatrix, save_pcd_to_db, save_grasp_to_db
+from dataset_utils import save_data_to_file, find_nearest_pt_in_pc, camera_link_to_optical_frame, ros_pc2_to_npmatrix, save_pcd_to_db, save_grasp_to_db, cut_pc
 BASE_JUSTINA_VECTOR = np.array([0.0,-1.0,0.0])
-CONIC_ANGLE = math.cos(math.radians(30))
+MANIF = Hypersphere(3)
+GRASP_TO_PCD_RATIO = 10
+CONIC_ANGLE = math.cos(math.radians(70))
 VG_PLANE = {
     "XY": vg.basis.z,
     "YZ": vg.basis.x,
@@ -94,7 +100,7 @@ def generate_random_pose():
     global z
     rpose = Pose()
     rpose.position.x = random.randint(210,310)/100
-    rpose.position.y = random.randint(218,245)/100
+    rpose.position.y = random.randint(210,245)/100
     q, z = rotation_object()
     rpose.position.z = z
     rpose.orientation.x = q[0]
@@ -103,8 +109,11 @@ def generate_random_pose():
     rpose.orientation.w = q[3]
     return rpose
 
-    
 
+def generate_random_points(num):
+    ptlist = [Point(x=random.uniform(-0.2,0.2),y=random.uniform(-0.2,0.2),z=random.uniform(-0.2,0.2)) for i in range(num)]
+    return ptlist
+    
 def change_gazebo_object_pose(state_msg, state_pose, mod_name):
     global set_state
     state_msg.model_name = mod_name
@@ -230,6 +239,30 @@ def get_orientation_in_range(q):
     qr.w = qf[3]
     return qr
 
+def get_antipodal_in_range(q):
+    ql = [q.x,q.y,q.z,q.w]
+    rot = tft.quaternion_matrix(ql)
+    #print(rot)
+    y = rot[:3,1]
+    #print(x)
+    #in_range_z = np.dot(y,np.array([0,0,-1])) > 0
+    #in_range_y = np.dot(x,np.array([0,-1,0])) > 0
+    #print(in_range_y,in_range_z)
+    if y[2] < 0:
+        rot[:3,:2] = -rot[:3,:2]
+    #print(rot)
+    qf = tft.quaternion_from_matrix(rot)
+    qr = Quaternion()
+    qr.x = qf[0]
+    qr.y = qf[1]
+    qr.z = qf[2]
+    qr.w = qf[3]
+    return qr
+
+def quaternion_in_manifold(q):
+    s = torch.tensor([q.x,q.y,q.z,q.w],dtype=torch.float64)
+    return MANIF.belongs(s).item()
+
 def get_quaternion_in_hemihypersphere_dot(q):
     qo = np.array([q.x,q.y,q.z,q.w])
     if np.dot(qo,np.array([0,0,0,-1])) < 0:
@@ -271,6 +304,15 @@ def gripper_in_conic(gp,ob):
     axis = o/np.linalg.norm(o)
     #print(np.dot(((g-o)/np.linalg.norm(g-o)),axis))
     in_conic = np.dot(((g-o)/np.linalg.norm(g-o)),axis) < CONIC_ANGLE
+    #print("In conic:", in_conic)
+    return in_conic
+
+def grasp_in_ob_origin_conic(gp,cam):
+    g = np.asarray([gp.x,gp.y,gp.z])
+    cam = np.asarray([cam.x,cam.y,cam.z])
+    axis = cam/np.linalg.norm(cam)
+    #print(np.dot(((g-o)/np.linalg.norm(g-o)),axis))
+    in_conic = np.dot(((g)/np.linalg.norm(g)),axis) > CONIC_ANGLE
     #print("In conic:", in_conic)
     return in_conic
 
@@ -320,6 +362,58 @@ def create_points_marker_from_pt(ptlist, size, id):
     #marker.points = [Point(y=0.1,z=-0.1),Point(y=0.1,z=0.1),Point(y=-0.1,z=0.1),Point(y=0.1,z=0.1)]
     marker.points = ptlist
     marker_pub.publish(marker)
+
+def create_cube_marker_from_pt(ptlist, size, id):
+    global marker_pub
+    marker = Marker()
+    marker.header.frame_id = "grasp_frame"
+    marker.type = Marker.CUBE_LIST
+    marker.ns = "gr"
+    marker.header.stamp = rospy.Time.now()
+    marker.action = marker.ADD
+    marker.id = id
+    #marker.scale.x, marker.scale.y, marker.scale.z = 0.04, 0.005, 0.1
+    marker.scale.x, marker.scale.y, marker.scale.z = size
+    marker.color.r, marker.color.g, marker.color.b, marker.color.a = 20, 50, 100, 1.0
+    marker.lifetime = rospy.Duration(100)
+    marker.pose.position = Point(x=0,y=0,z=0)
+    marker.pose.orientation.w = 1
+    #marker.points = [Point(y=0.1,z=-0.1),Point(y=0.1,z=0.1),Point(y=-0.1,z=0.1),Point(y=0.1,z=0.1)]
+    marker.points = ptlist
+    marker_pub.publish(marker)
+
+def create_arrow_marker_from_pt(ptlist):
+    global marker_pub
+    marker = Marker()
+    marker.header.frame_id = "grasp_frame"
+    marker.type = Marker.ARROW
+    marker.ns = "gr"
+    marker.header.stamp = rospy.Time.now()
+    marker.action = marker.ADD
+    marker.id = 3
+    marker.scale.x, marker.scale.y, marker.scale.z = 0.03, 0.05, 0.05
+    marker.color.r, marker.color.g, marker.color.b, marker.color.a = 20, 50, 100, 1.0
+    marker.lifetime = rospy.Duration(100)
+    #marker.pose.position = pt
+    #marker.pose.orientation.w = 1
+    marker.points = ptlist
+    marker_pub.publish(marker)
+
+def broadcaster_frame_object(frame, child_frame, pose):   # Emite la transformacion en el frame base_link,
+    #br = tf2_ros.TransformBroadcaster()
+    br =  tf2_ros.StaticTransformBroadcaster()
+    t = geometry_msgs.msg.TransformStamped()
+    t.header.frame_id = frame
+    t.child_frame_id = child_frame 
+    t.header.stamp = rospy.Time.now()
+    t.transform.translation.x = pose.position.x
+    t.transform.translation.y = pose.position.y
+    t.transform.translation.z = pose.position.z
+    t.transform.rotation.x = pose.orientation.x
+    t.transform.rotation.y = pose.orientation.y
+    t.transform.rotation.z = pose.orientation.z
+    t.transform.rotation.w = pose.orientation.w
+    br.sendTransform(t)
 
 def main():
     global ik_srv, state_msg, grasp_trajectory_found, justina_origin_pose, obj_shape, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
@@ -391,6 +485,7 @@ def main():
     POSE_DATA_PATH = objmanpkg_path + "/pose_data/"
     pose_num = 0
     loop = rospy.Rate(1)
+    space = Hypersphere(3)
 
     command = rospy.get_param('/cmd',"default")
 
@@ -612,19 +707,69 @@ def main():
             grasp = f['poses'][:]
             grasp = grasp[index]
             head = Header(frame_id='object_frame')
-            pose_list = [PoseStamped(header=head, pose=Pose(position=Point(x=g[0],y=g[1],z=g[2]),orientation=Quaternion(x=g[3],y=g[4],z=g[5], w=g[6]))) for g in grasp]
+            og_pose = PoseStamped()
+            og_pose.header.frame_id = "camera_rgb_optical_frame"
+            og_pose.pose.orientation.w = 1
+            objwrtcam = tf_buf.transform(og_pose, "object_frame").pose.position
+            pose_list = np.array([PoseStamped(header=head, pose=Pose(position=Point(x=g[0],y=g[1],z=g[2]),orientation=Quaternion(x=g[3],y=g[4],z=g[5], w=g[6]))) for g in grasp])
+            print(len(pose_list))
+            pose_list = pose_list[[grasp_in_ob_origin_conic(ps.pose.position,objwrtcam) for ps in pose_list]]
+            print(len(pose_list))
             target_pose = [tf_buf.transform(pose, "base_link") for pose in pose_list]
             if show_rviz:
                 ptlist = np.array([tpose.pose.position for tpose in target_pose])
                 ptlist = ptlist[[pt.z > 0.78 for pt in ptlist]]
-                create_points_marker_from_pt(ptlist,[0.04, 0.005, 0.1],1)
-            rospy.sleep(20)
+                #ptlist = np.array(generate_random_points(5000)) ##To visualize first change the create_points_marker frame to object frame
+                #ptlist = ptlist[[grasp_in_ob_origin_conic(pt,objwrtcam) for pt in ptlist]]
+                create_points_marker_from_pt(ptlist,[0.04, 0.005, 0.1],5)
+                # predicted_pose = target_pose[0].pose
+                # ptlist = [Point(x=0.04),Point(x=-0.04)]
+                # broadcaster_frame_object("base_link","grasp_frame",predicted_pose)
+                # create_cube_marker_from_pt(ptlist,[0.005, 0.04, 0.1],1)
+                # create_cube_marker_from_pt([Point(z=-0.03)],[0.06, 0.03525, 0.03525],2)
+                # create_arrow_marker_from_pt([Point(z=-0.03),Point(z=-0.03,y=0.1)])
+            rospy.sleep(10)
+
+        if command == 'u':
+            show_rviz = True
+            FILE_PATH = BG_PATH + obj_shape + "/grasps.h5"
+            f = h5py.File(FILE_PATH,'r')
+            found_examples = sample_start
+            desired_samples = sample_stop
+            og_pose = PoseStamped()
+            og_pose.header.frame_id = "camera_rgb_optical_frame"
+            og_pose.pose.orientation.w = 1
+            poses = f['poses'][:]
+            while(not rospy.is_shutdown()):
+                reset_simulation()
+                index = np.random.choice(len(f['poses']),GRASP_TO_PCD_RATIO*30, replace=False)
+                grasp = poses[index]
+                head = Header(frame_id='object_frame')
+                pose_list = np.array([PoseStamped(header=head, pose=Pose(position=Point(x=g[0],y=g[1],z=g[2]),orientation=Quaternion(x=g[3],y=g[4],z=g[5], w=g[6]))) for g in grasp])
+                objwrtcam = tf_buf.transform(og_pose, "object_frame").pose.position
+                pose_list = pose_list[[grasp_in_ob_origin_conic(ps.pose.position,objwrtcam) for ps in pose_list]]
+                target_pose = np.array([tf_buf.transform(pose, "base_link") for pose in pose_list])
+                target_pose = target_pose[[tp.pose.position.z > 0.78 for tp in target_pose]]
+                for tp in target_pose: tp.pose.orientation = get_quaternion_in_hemihypersphere(get_antipodal_in_range(tp.pose.orientation))
+                valid = [quaternion_in_manifold(tp.pose.orientation) for tp in target_pose]
+                print(valid)
+                broadcaster_frame_object('base_link','grasp_frame',target_pose[0].pose)
+                ptlist = [Point(x=0.04),Point(x=-0.04)]
+                create_cube_marker_from_pt(ptlist,[0.005, 0.04, 0.1],1)
+                create_cube_marker_from_pt([Point(z=-0.03)],[0.06, 0.03525, 0.03525],2)
+                create_arrow_marker_from_pt([Point(z=-0.03),Point(z=-0.03,y=0.1)])
+                rospy.sleep(15)
+
         if command == 'db':
             show_rviz = True
             FILE_PATH = BG_PATH + obj_shape + "/grasps.h5"
             f = h5py.File(FILE_PATH,'r')
             found_examples = sample_start
             desired_samples = sample_stop
+            head = Header(frame_id='object_frame')
+            og_pose = PoseStamped()
+            og_pose.header.frame_id = "camera_rgb_optical_frame"
+            og_pose.pose.orientation.w = 1
             #index = np.random.choice(len(f['poses']),500, replace=False)
             poses = f['poses'][:]
             while((not rospy.is_shutdown()) and found_examples < desired_samples):
@@ -634,17 +779,28 @@ def main():
                 obpos = get_object_relative_pose(obj_shape,"justina::base_link").pose.position
                 _,_, in_frame = find_nearest_pt_in_pc(ros_pc2_to_npmatrix(tpcd),obpos)
                 if not in_frame: continue
-                index = np.random.choice(len(f['poses']),100, replace=False)
+                index = np.random.choice(len(f['poses']),GRASP_TO_PCD_RATIO*80, replace=False)
                 grasp = poses[index]
-                head = Header(frame_id='object_frame')
-                pose_list = [PoseStamped(header=head, pose=Pose(position=Point(x=g[0],y=g[1],z=g[2]),orientation=Quaternion(x=g[3],y=g[4],z=g[5], w=g[6]))) for g in grasp]
+                pose_list = np.array([PoseStamped(header=head, pose=Pose(position=Point(x=g[0],y=g[1],z=g[2]),orientation=Quaternion(x=g[3],y=g[4],z=g[5], w=g[6]))) for g in grasp])
+                objwrtcam = tf_buf.transform(og_pose, "object_frame").pose.position
+                pose_list = pose_list[[grasp_in_ob_origin_conic(ps.pose.position,objwrtcam) for ps in pose_list]]
                 target_pose = np.array([tf_buf.transform(pose, "base_link") for pose in pose_list])
                 target_pose = target_pose[[tp.pose.position.z > 0.78 for tp in target_pose]]
+                for tp in target_pose: tp.pose.orientation = get_quaternion_in_hemihypersphere(get_antipodal_in_range(tp.pose.orientation))
+                target_pose = target_pose[[quaternion_in_manifold(tp.pose.orientation) for tp in target_pose]]
+                if len(target_pose) < GRASP_TO_PCD_RATIO + 5: continue
+                target_pose = target_pose[np.random.choice(len(target_pose),GRASP_TO_PCD_RATIO, replace=False)]
                 valid_grasps = [pose_to_nparray(tp.pose) for tp in target_pose]
+                #print(len(valid_grasps))
                 ##Saving
                 tpcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
                 tpcd = transform_pointcloud(PreprocessPointCloudRequest(tpcd)).output_cloud
-                found_examples = save_pcd_to_db(ros_pc2_to_npmatrix(tpcd))
+                obpos = get_object_relative_pose(obj_shape,"justina::base_link").pose.position
+                tpcd = ros_pc2_to_npmatrix(tpcd)
+                u,v, in_frame = find_nearest_pt_in_pc(tpcd,obpos)
+                if not in_frame: continue
+                tpcd = cut_pc(u,v,tpcd)
+                found_examples = save_pcd_to_db(tpcd)
                 for valid in valid_grasps:
                     found_grasps = save_grasp_to_db(valid,obj_shape,categorize_objs(obj_shape),found_examples)
                 if show_rviz:
