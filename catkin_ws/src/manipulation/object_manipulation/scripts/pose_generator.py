@@ -39,16 +39,32 @@ BG_PATH = "/home/robocup/billion_grasps/21_ycb_object_grasps/"
 
 def get_Z_obj():
     global obj_shape
-    z_obj_dic = {            # z1  , z2
-        '024_bowl':          [0.724, 0.724],
-        '001_chips_can':     [0.740, 0.800], 
-        '007_tuna_fish_can': [0.743, 0.717],
-        '056_tennis_ball':   [0.732, 0.732],
-        '006_mustard_bottle':[0.729, 0.783],
-        '003_cracker_box':   [0.780, 0.805], 
-        '077_rubiks_cube':   [0.728, 0.728],
-        '011_banana':        [0.717, 0.717], 
-        '048_hammer':        [0.716, 0.716]
+    z_obj_dic = {             # z1  , z2
+        '001_chips_can':      [0.740, 0.800], 
+        '002_master_chef_can':[0.751, 0.770],
+        '003_cracker_box':    [0.780, 0.805], 
+        '004_sugar_box':      [0.749, 0.790],
+        '005_tomato_soup_can':[0.733, 0.758],
+        '006_mustard_bottle': [0.729, 0.783],
+        '007_tuna_fish_can':  [0.743, 0.717],
+        '008_pudding_box':    [0.746, 0.754],
+        '009_gelatin_box':    [0.737, 0.746],
+        '010_potted_meat_can':[0.727, 0.740],
+        '011_banana':         [0.717, 0.717], 
+        '019_pitcher_base':   [0.835, 0.835],
+        '021_bleach_cleanser':[0.728, 0.804],
+        '024_bowl':           [0.724, 0.724],
+        '025_mug':            [0.736, 0.736],
+        '035_power_drill':    [0.728, 0.818],
+        '036_wood_block':     [0.745, 0.806],
+        '037_scissors':       [0.708, 0.708],
+        '040_large_marker':   [0.709, 0.709],
+        '048_hammer':         [0.716, 0.716],
+        '051_large_clamp':    [0.718, 0.718],
+        '052_extra_large_clamp':[0.716, 0.716],
+        '056_tennis_ball':    [0.732, 0.732],
+        '061_foam_brick':     [0.738, 0.725],
+        '077_rubiks_cube':    [0.728, 0.728]
     }
     z1 = z_obj_dic[obj_shape][0]
     z2 = z_obj_dic[obj_shape][1]
@@ -57,13 +73,13 @@ def get_Z_obj():
 
 
 def categorize_objs(name):
-    dishes    = ['024_bowl']
-    prismatic = ['001_chips_can', '007_tuna_fish_can']
+    dishes    = ['024_bowl', '019_pitcher_base', '025_mug', ]
+    prismatic = ['001_chips_can', '007_tuna_fish_can', '002_master_chef_can', '005_tomato_soup_can']
     spherical = ['054_softball', '055_baseball', '056_tennis_ball']
-    flat      = ['006_mustard_bottle']
-    box       = ['pudding_box', '003_cracker_box']
+    flat      = ['006_mustard_bottle', '021_bleach_cleanser', '035_power_drill', ]
+    box       = ['pudding_box', '003_cracker_box', '004_sugar_box', '009_gelatin_box', '036_wood_block', '061_foam_brick']
     cubic     = ['077_rubiks_cube']
-    two_faces = ['011_banana', '048_hammer', '044_flat_screwdriver']
+    two_faces = ['011_banana', '048_hammer', '044_flat_screwdriver', '037_scissors', '040_large_marker', '051_large_clamp', '052_extra_large_clamp']
     if   name in dishes:    return 'dishes'
     elif name in prismatic: return 'prismatic'
     elif name in spherical: return 'spherical'
