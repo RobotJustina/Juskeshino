@@ -1,6 +1,6 @@
 <launch>
   <arg name="world" value="rnd_room_c2_01"/>
-  <arg name="n_objects" value="4"/>
+  <arg name="n_objects" default="4"/>
 
   <arg name="static_map_file"  value="$(find config_files)/maps/map_$(arg world).yaml"/>
   <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/map_$(arg world).yaml"/>
