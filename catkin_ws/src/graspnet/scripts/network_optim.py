@@ -222,7 +222,7 @@ def train_network(num_epochs, trial, train_loader, valid_loader):
     
     #optimizer = optim.Adam(model.parameters(),lr=0.00008)
     #if suggested_optimizer == 'AdamW':
-    optimizer = optim.Adam(model.parameters(),lr=suggested_lr,weight_decay=suggested_weight_decay)
+    optimizer = optim.AdamW(model.parameters(),lr=suggested_lr,weight_decay=suggested_weight_decay)
     
     for epoch in range(num_epochs):
         trunning_loss = 0

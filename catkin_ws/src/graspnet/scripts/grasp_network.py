@@ -13,6 +13,8 @@ import ros_numpy
 from geometry_msgs.msg import Point
 from scipy.spatial import cKDTree
 import math
+from mixture_density_network import MixtureDensityNetwork
+from geomstats.geometry.hypersphere import Hypersphere, HypersphereMetric
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -118,58 +120,63 @@ class GraspNetwork(nn.Module):
                             #nn.GELU()
                             )
         self.maxpool2 = nn.MaxPool2d(kernel_size=2,stride=1,padding=0)
-        self.lc  = nn.Sequential(
-                            nn.Linear(5*5*512,8192),
-                            nn.ReLU(),
-                            nn.Dropout(0.5),
-                            nn.Linear(8192,2048),
-                            # nn.ReLU(),
-                            # nn.Linear(4096, 2048),
-                            nn.ReLU(),
-                            nn.Dropout(0.4),
-                            nn.Linear(2048,512),
-                            nn.ReLU(),
-                            nn.Dropout(0.25),
-                            nn.Linear(512,256),
-                            nn.ReLU(),
-                            nn.Dropout(0.25),
-                            nn.Linear(256,256),
-                            nn.Linear(256,3))
-                            #nn.Linear(64,3))
-        self.nlc = nn.Sequential(
-                            nn.Linear(5*5*512,8192),
-                            nn.ReLU(),
-                            nn.Dropout(0.5),
-                            nn.Linear(8192,2048),
-                            # nn.ReLU(),
-                            # nn.Linear(4096, 2048),
-                            nn.ReLU(),
-                            nn.Dropout(0.5),
-                            nn.Linear(2048, 512),
-                            nn.ReLU(),
-                            nn.Dropout(0.4),
-                            nn.Linear(512,512),
-                            nn.ReLU(),
-                            nn.Dropout(0.25),
-                            nn.Linear(512,256),
-                            nn.ReLU(),
-                            nn.Linear(256,4))
-                            # nn.ReLU(),
-                            # nn.Linear(64,4),
-                            #geo.Sphere()
-                            #nn.Tanh())
-        #self.nlch = nn.Linear(256,4)
+        self.mdn = MixtureDensityNetwork(5*5*512,3,32,8)
+        self.qmdn = MixtureDensityNetwork(5*5*512 + 3,4,48,12)
+        self.jmdn = MixtureDensityNetwork(5*5*512,7,64,256)
+        # self.lc  = nn.Sequential(
+        #                     nn.Linear(5*5*512,8192),
+        #                     nn.ReLU(),
+        #                     nn.Dropout(0.5),
+        #                     nn.Linear(8192,2048),
+        #                     # nn.ReLU(),
+        #                     # nn.Linear(4096, 2048),
+        #                     nn.ReLU(),
+        #                     nn.Dropout(0.4),
+        #                     nn.Linear(2048,512),
+        #                     nn.ReLU(),
+        #                     nn.Dropout(0.25),
+        #                     nn.Linear(512,256),
+        #                     nn.ReLU(),
+        #                     nn.Dropout(0.25),
+        #                     nn.Linear(256,256),
+        #                     nn.Linear(256,3))
+        #                     #nn.Linear(64,3))
+        # self.nlc = nn.Sequential(
+        #                     nn.Linear(5*5*512 + 3,8192),
+        #                     nn.ReLU(),
+        #                     nn.Dropout(0.5),
+        #                     nn.Linear(8192,2048),
+        #                     # nn.ReLU(),
+        #                     # nn.Linear(4096, 2048),
+        #                     nn.ReLU(),
+        #                     nn.Dropout(0.5),
+        #                     nn.Linear(2048, 512),
+        #                     nn.ReLU(),
+        #                     nn.Dropout(0.4),
+        #                     nn.Linear(512,512),
+        #                     nn.ReLU(),
+        #                     nn.Dropout(0.25),
+        #                     nn.Linear(512,256),
+        #                     nn.ReLU(),
+        #                     nn.Linear(256,4))
+        #                     # nn.ReLU(),
+        #                     # nn.Linear(64,4),
+        #                     #geo.Sphere()
+        #                     #nn.Tanh())
+        # self.nlch = nn.Linear(256,4)
         #ten = getattr(self.nlch,)
         #self.manif = geo.Sphere(ten.size(),1)
-        self.manif = geo.Sphere([1,4],1)
-        self.manif.base = torch.tensor([0,0,0,1],dtype=torch.float32)
+        # self.manif = geo.Sphere([1,4],1)
+        # self.manif.base = torch.tensor([0,0,0,1],dtype=torch.float32)
         #self.manif = geo.SphereEmbedded(self.nlc,1)
         #self.nlch = nn.Linear(256,4)
         #geo.sphere(self.nlch, tensor_name="output")
         #geo.SphereEmbedded(self.nlc,1)
         #geo.orthogonal()
+        self.space = Hypersphere(3)
+        self.base_point = torch.tensor([0.0,0.0,0.0,1.0],dtype=torch.float32)
 
-    def forward(self, x):
+    def forward(self, x, y=None):
         x = self.conv1(x)
         x = self.maxpool(x)
         x = F.gelu(x)
@@ -182,11 +189,17 @@ class GraspNetwork(nn.Module):
         x = F.gelu(x)
         x = torch.flatten(x,1)
 
-        pos = self.lc(x)
-        ori = self.nlc(x)
-        ori = self.manif(ori)
+        #pos = self.lc(x)
 
-        return pos, ori
+        #pos = self.mdn.sample(x)
+        #ori = self.nlc(torch.cat((pos,x),dim=1))
+        #ori = self.qmdn.sample(torch.cat((pos,x),dim=1))
+        pose = self.jmdn.sample(x)
+        pos, ori = torch.split(pose,[3,4],dim=1) 
+        ori = self.space.metric.exp(ori,self.base_point)
+        #ori = self.manif(ori)
+
+        return pos, ori, x
 
 # Pointcloud conversion methods
 def ros_pc2_to_npmatrix(pc):
@@ -206,6 +219,7 @@ def ros_pc2_to_npmatrix(pc):
 def npmatrix_to_torch(pcd):
     points = rf.structured_to_unstructured(pcd)
     points = torch.tensor(points[:,:,:3],dtype=torch.float32)
+    #points = torch.nan_to_num(points,nan=0.0)
     points = torch.permute(points,(2,1,0))
     points.to(DEVICE)
     return points

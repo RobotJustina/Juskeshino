@@ -14,20 +14,25 @@ from tf2_geometry_msgs import PointStamped
 from vision_msgs.srv import PreprocessPointCloud, PreprocessPointCloudRequest
 from gazebo_msgs.msg import ModelState, ContactsState
 from gazebo_msgs.srv import SetModelState, GetModelState
-from std_msgs.msg import String, Float64MultiArray
+from std_msgs.msg import String, Float64MultiArray, Header
 from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import Pose, Point, Quaternion  
-from train import load_model, DEVICE
+#from train import load_model, DEVICE
 import geometry_msgs
 import grasp_network as gn
+#from position_network import Position_network, load_model, DEVICE
+from joint_var_network import Joint_Mixture_Density_Grasp_Network, quick_create_test, DEVICE
 from visualization_msgs.msg import Marker
-
+import geomstats.backend as gs
+from geomstats.geometry.hypersphere import Hypersphere, HypersphereMetric
 
 #from ...manipulation.object_manipulation.scripts import dataset_utils as dutils
 #import ...manipulation.object_manipulation.scripts.dataset_utils as dtutils
 import torch
 
 MODELS_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/models/"
+# Device configuration
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def broadcaster_frame_object(frame, child_frame, pose):   # Emite la transformacion en el frame base_link,
     #br = tf2_ros.TransformBroadcaster()
@@ -45,37 +50,63 @@ def broadcaster_frame_object(frame, child_frame, pose):   # Emite la transformac
     t.transform.rotation.w = pose.orientation.w
     br.sendTransform(t)
 
+def get_Z_obj():
+    global obj_shape
+    z_obj_dic = {            # z1  , z2
+        '024_bowl':          [0.724, 0.724],
+        '001_chips_can':     [0.740, 0.800], 
+        '007_tuna_fish_can': [0.743, 0.717],
+        '056_tennis_ball':   [0.732, 0.732],
+        '006_mustard_bottle':[0.729, 0.783],
+        '003_cracker_box':   [0.780, 0.805], 
+        '077_rubiks_cube':   [0.728, 0.728],
+        '011_banana':        [0.717, 0.717], 
+        '048_hammer':        [0.716, 0.716]
+    }
+    z1 = z_obj_dic[obj_shape][0]
+    z2 = z_obj_dic[obj_shape][1]
+    return z1, z2
+
+
+
 def categorize_objs(name):
-    dishes = ['024_bowl']
+    dishes    = ['024_bowl']
     prismatic = ['001_chips_can', '007_tuna_fish_can']
     spherical = ['054_softball', '055_baseball', '056_tennis_ball']
-    flat = ['006_mustard_bottle']
-    box = ['pudding_box', '077_rubiks_cube']
+    flat      = ['006_mustard_bottle']
+    box       = ['pudding_box', '003_cracker_box']
+    cubic     = ['077_rubiks_cube']
     two_faces = ['011_banana', '048_hammer', '044_flat_screwdriver']
     if   name in dishes:    return 'dishes'
     elif name in prismatic: return 'prismatic'
     elif name in spherical: return 'spherical'
     elif name in flat:      return "flat"
     elif name in box:       return 'box'
+    elif name in cubic:     return 'cubic'
     elif name in two_faces: return '2faces'
+
     
 
 def rotation_object():
     global obj_shape
     geometric_shape_dic = {
-                            "dishes":     [[0, 0, np.deg2rad(random.randint(0, int(359)))]],
-                            "prismatic":    [[0, 0, np.deg2rad(random.randint(0, int(359)))], [0, 1.57, np.deg2rad(random.randint(0, int(359)))] ],
+                            "dishes":   [[0, 0, np.deg2rad(random.randint(0, int(359)))]],
+                            "prismatic":[[0, 0, np.deg2rad(random.randint(0, int(359)))], [0, 1.57, np.deg2rad(random.randint(0, int(359)))] ],
                             "spherical":[[np.deg2rad(random.randint(0, int(359))) , np.deg2rad(random.randint(0, int(359))) ,np.deg2rad(random.randint(0, int(359)))]],
                             "flat":     [[0, 0, np.deg2rad(random.randint(0, int(359)))], [0, 1.57, np.deg2rad(random.randint(0, int(359)))] ,  [0, -1.57, np.deg2rad(random.randint(0, int(359)))] ],
-                            "box":      [ [0, 1.57 , np.deg2rad(random.randint(0, int(359)))] ,  [0, 3.14, np.deg2rad(random.randint(0, int(359)))],  [0, 4.71, np.deg2rad(random.randint(0, int(359)))],  [0, 6.28, np.deg2rad(random.randint(0, int(359)))],
-                                          [1.57, 0 , np.deg2rad(random.randint(0, int(359)))] ,  [3.14, 0,  np.deg2rad(random.randint(0, int(359)))], [4.71, 0, np.deg2rad(random.randint(0, int(359)))],  [6.28, 0, np.deg2rad(random.randint(0, int(359)))]],
-                            "2faces":    [[0, 0, np.deg2rad(random.randint(0, int(359)))] ,  [0, 3.14, np.deg2rad(random.randint(0, int(359)))]]
+                            "cubic":    [ [0, 1.57 , np.deg2rad(random.randint(0, int(359)))] ,  [0, 3.14, np.deg2rad(random.randint(0, int(359)))],  [0, 4.71, np.deg2rad(random.randint(0, int(359)))],  [0, 6.28, np.deg2rad(random.randint(0, int(359)))],
+                                        [1.57, 0 , np.deg2rad(random.randint(0, int(359)))] ,  [3.14, 0,  np.deg2rad(random.randint(0, int(359)))], [4.71, 0, np.deg2rad(random.randint(0, int(359)))],  [6.28, 0, np.deg2rad(random.randint(0, int(359)))]],
+                            "box":      [[0, 0, np.deg2rad(random.randint(0, int(359)))],  [3.14, 0,  np.deg2rad(random.randint(0, int(359)))],
+                                        [1.57, 0 , np.deg2rad(random.randint(0, int(359)))] , [4.71, 0, np.deg2rad(random.randint(0, int(359)))]],
+                            "2faces":   [[0, 0, np.deg2rad(random.randint(0, int(359)))] ,  [0, 3.14, np.deg2rad(random.randint(0, int(359)))]]
     }
-
     rotation = random.choice(geometric_shape_dic[categorize_objs(obj_shape)])
+    z1, z2 = get_Z_obj()
+    
+    if(((int(np.rad2deg(rotation[0])) == 0) or ((int(np.rad2deg(rotation[0])) > 175) and  (int(np.rad2deg(rotation[0])) < 185)))  and (int(np.rad2deg(rotation[1])) == 0)): z = z2
+    else:z = z1
     quaternion_obj = tft.quaternion_from_euler(rotation[0],rotation[1],rotation[2] ,'sxyz')
-
-    return quaternion_obj
+    return quaternion_obj, z
 
 
 def generate_random_pose():
@@ -83,8 +114,8 @@ def generate_random_pose():
     rpose = Pose()
     rpose.position.x = random.randint(210,310)/100
     rpose.position.y = random.randint(218,245)/100
+    q, z = rotation_object()
     rpose.position.z = z
-    q = rotation_object()
     rpose.orientation.x = q[0]
     rpose.orientation.y = q[1]
     rpose.orientation.z = q[2]
@@ -104,16 +135,31 @@ def tensor_to_pose(tensor):
     #ang = math.atan2(c,s)
     #vec = normalize([i,j,k])*math.sin(ang)
     #quat = np.append(vec,[math.cos(ang)])
-    quat = normalize(nppose[3:])
+    #quat = normalize(nppose[3:])
     rpose = Pose()
     rpose.position.x = nppose[0]
     rpose.position.y = nppose[1]
     rpose.position.z = nppose[2]
-    rpose.orientation.x = quat[0]
-    rpose.orientation.y = quat[1]
-    rpose.orientation.z = quat[2]
-    rpose.orientation.w = quat[3]
+    # rpose.orientation.x = quat[0]
+    # rpose.orientation.y = quat[1]
+    # rpose.orientation.z = quat[2]
+    # rpose.orientation.w = quat[3]
+    rpose.orientation.x = nppose[3]
+    rpose.orientation.y = nppose[4]
+    rpose.orientation.z = nppose[5]
+    rpose.orientation.w = nppose[6]
     return rpose
+
+def tensor_to_point(tensor):
+    nppose = tensor.detach().cpu().numpy()
+    nppose = nppose[0]
+    rpose = Point()
+    rpose.x = nppose[0]
+    rpose.y = nppose[1]
+    rpose.z = nppose[2]
+
+    return rpose
+
 
 def change_gazebo_object_pose(state_msg, state_pose, mod_name):
     global set_state
@@ -125,7 +171,7 @@ def change_gazebo_object_pose(state_msg, state_pose, mod_name):
         resp = set_state( state_msg )
 
     except rospy.ServiceException:
-        pass      
+        pass   
 
 def create_origin_pose():
     jop = Pose()
@@ -174,10 +220,30 @@ def create_arrow_marker_from_pt(ptlist):
     marker.points = ptlist
     marker_pub.publish(marker)
     
+def create_points_marker_from_pt(ptlist, size, id):
+    global marker_pub
+    marker = Marker()
+    marker.header.frame_id = "base_link"
+    marker.type = Marker.POINTS
+    marker.ns = "gr"
+    marker.header.stamp = rospy.Time.now()
+    marker.action = marker.ADD
+    marker.id = id
+    #marker.scale.x, marker.scale.y, marker.scale.z = 0.04, 0.005, 0.1
+    marker.scale.x, marker.scale.y = 0.01, 0.01
+    marker.color.r, marker.color.g, marker.color.b, marker.color.a = 20, 50, 100, 1.0
+    marker.lifetime = rospy.Duration(100)
+    marker.pose.position = Point(x=0,y=0,z=0)
+    marker.pose.orientation.w = 1
+    #marker.points = [Point(y=0.1,z=-0.1),Point(y=0.1,z=0.1),Point(y=-0.1,z=0.1),Point(y=0.1,z=0.1)]
+    marker.points = ptlist
+    marker_pub.publish(marker)
+
 def reset_simulation():
     global justina_origin_pose, obj_shape, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts
     change_gazebo_object_pose(state_msg, generate_random_pose(), obj_shape)
     change_gazebo_object_pose(state_msg, justina_origin_pose, "justina")
+    msg_hd.data = [random.uniform(-0.4,0.4),-random.uniform(1.0, 1.2)]
     num_loops = 0
     left_gripper_made_contact = False
     right_gripper_made_contact = False
@@ -191,6 +257,8 @@ def reset_simulation():
 
 
 def main():
+    torch.set_default_dtype(torch.float32)
+    torch.set_default_device(DEVICE)
     global ik_srv, state_msg, grasp_trajectory_found, justina_origin_pose, obj_shape, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
     global set_state, z, marker_pub
     z = 0.74
@@ -213,8 +281,15 @@ def main():
     obj_shape = rospy.get_param("/obj","056_tennis_ball")
     rospy.sleep(1)
     loop = rospy.Rate(1)
-    grasp_network = load_model(MODELS_PATH + "dual_model_28ks_nwl_dh_tansphere_1.pt")
-    grasp_network.eval()
+    #grasp_network = load_model(MODELS_PATH + "dual_fb_jmdn128_dropout_wgp_model_sql_5ks_nwl_dh_tansphere_scratch_ep92.pt")
+    #grasp_network.eval()
+
+    #pos_network = load_model(model_path=MODELS_PATH + "dummy_pos_net_1ks_ep50.pt")
+    #pos_network.eval()
+
+    jmdgn = quick_create_test()
+    jmdgn.eval()
+
     while not rospy.is_shutdown():
         print("Type r to reset sim to a random pose, and l to loop simulation for samples")
         command = input()
@@ -256,18 +331,76 @@ def main():
                 pcd = pcd.unsqueeze(0).to(DEVICE)
                 print(pcd)
                 with torch.no_grad():
-                    pos, ori = grasp_network(pcd)
+                    #pos, ori, x = grasp_network(pcd)
+                    with torch.device(DEVICE):
+                        pos, ori, x = jmdgn(pcd)
                     predicted_gripper_center_pose = torch.cat((pos,ori),dim=1)
                 print(predicted_gripper_center_pose)
                 predicted_pose = tensor_to_pose(predicted_gripper_center_pose)
                 #predicted_pose.orientation.normalize()
                 #broadcaster_frame_object("camera_rgb_optical_frame","grasp_frame",predicted_pose)
                 broadcaster_frame_object("base_link","grasp_frame",predicted_pose)
-                ptlist = [Point(y=0.04),Point(y=-0.04)]
-                create_cube_marker_from_pt(ptlist,[0.04, 0.005, 0.1],1)
-                create_cube_marker_from_pt([Point(z=0.03)],[0.06, 0.03525, 0.03525],2)
-                create_arrow_marker_from_pt([Point(z=0.03),Point(z=0.03,x=0.1)])
+                ptlist = [Point(x=0.04),Point(x=-0.04)]
+                create_cube_marker_from_pt(ptlist,[0.005, 0.04, 0.1],1)
+                create_cube_marker_from_pt([Point(z=-0.03)],[0.06, 0.03525, 0.03525],2)
+                create_arrow_marker_from_pt([Point(z=-0.03),Point(z=-0.03,y=0.1)])
                 print(predicted_pose)
+
+        if command == "p":
+            reset_simulation()
+            ptlist = []
+            head = Header()
+            pcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
+            pcd = transform_pointcloud(PreprocessPointCloudRequest(pcd)).output_cloud
+            obj_pt = get_object_relative_pose(obj_shape,"justina::base_link").pose.position
+            mat = gn.ros_pc2_to_npmatrix(pcd)
+            t_pt = obj_pt
+            #t_pt = gn.c(obj_pt)
+            u, v, object_in_range = gn.find_nearest_pt_in_pc(mat,t_pt)
+            if object_in_range:
+                pcd = gn.cut_pc(u,v,mat)
+                pcd = gn.npmatrix_to_torch(pcd)
+                pcd = pcd.unsqueeze(0).to(DEVICE)
+                #print(pcd)
+                with torch.no_grad():
+                    for i in range(100):
+                        _, pos  = pos_network(pcd)
+                        ptlist.append(tensor_to_point(pos))
+                create_points_marker_from_pt(ptlist,[0.04, 0.005, 0.1],5)
+                rospy.sleep(10)
+
+        if command == "jp":
+            reset_simulation()
+            ptlist = []
+            head = Header()
+            pcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
+            pcd = transform_pointcloud(PreprocessPointCloudRequest(pcd)).output_cloud
+            obj_pt = get_object_relative_pose(obj_shape,"justina::base_link").pose.position
+            mat = gn.ros_pc2_to_npmatrix(pcd)
+            t_pt = obj_pt
+            #t_pt = gn.c(obj_pt)
+            u, v, object_in_range = gn.find_nearest_pt_in_pc(mat,t_pt)
+            if object_in_range:
+                pcd = gn.cut_pc(u,v,mat)
+                pcd = gn.npmatrix_to_torch(pcd)
+                pcd = pcd.unsqueeze(0).to(DEVICE)
+                #print(pcd)
+                with torch.no_grad():
+                    for i in range(100):
+                        pos, ori, x  = jmdgn(pcd)
+                        ptlist.append(tensor_to_point(pos))
+                create_points_marker_from_pt(ptlist,[0.04, 0.005, 0.1],5)
+                rospy.sleep(10)
+                # print(predicted_gripper_center_pose)
+                # predicted_pose = tensor_to_pose(predicted_gripper_center_pose)
+                # #predicted_pose.orientation.normalize()
+                # #broadcaster_frame_object("camera_rgb_optical_frame","grasp_frame",predicted_pose)
+                # broadcaster_frame_object("base_link","grasp_frame",predicted_pose)
+                # ptlist = [Point(x=0.04),Point(x=-0.04)]
+                # create_cube_marker_from_pt(ptlist,[0.005, 0.04, 0.1],1)
+                # create_cube_marker_from_pt([Point(z=-0.03)],[0.06, 0.03525, 0.03525],2)
+                # create_arrow_marker_from_pt([Point(z=-0.03),Point(z=-0.03,y=0.1)])
+                # print(predicted_pose)
 
         loop.sleep()
 

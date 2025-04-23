@@ -5,31 +5,31 @@ import rospkg
 import random
 import math
 import os
+import h5py
 import matplotlib.pyplot as plt
 import tf.transformations as tft
 import numpy as np
 import vg
 import tf
-import tf2_ros
-import h5py
 from gazebo_msgs.msg import ModelState, ContactsState 
 from gazebo_msgs.srv import SetModelState, GetModelState
-from std_msgs.msg import String, Float64MultiArray, Header
+from std_msgs.msg import String, Float64MultiArray
 from sensor_msgs.msg import PointCloud2
-from geometry_msgs.msg import Pose, Quaternion, Point, PoseStamped
+from geometry_msgs.msg import Pose, Quaternion  
 from manip_msgs.srv import DataCapture, InverseKinematicsPose2TrajRequest, InverseKinematicsPose2Traj
 from vision_msgs.srv import PreprocessPointCloud, PreprocessPointCloudRequest
-from visualization_msgs.msg import Marker
+from dataset_utils import save_data_to_file, find_nearest_pt_in_pc, camera_link_to_optical_frame, ros_pc2_to_npmatrix
 
-from dataset_utils import save_data_to_file, find_nearest_pt_in_pc, camera_link_to_optical_frame, ros_pc2_to_npmatrix, save_pcd_to_db, save_grasp_to_db
 BASE_JUSTINA_VECTOR = np.array([0.0,-1.0,0.0])
+POINTCLOUD_TOPIC = "/camera/depth_registered/points"
 CONIC_ANGLE = math.cos(math.radians(30))
+BG_PATH = "/home/robocup/billion_grasps/21_ycb_object_grasps/"
 VG_PLANE = {
     "XY": vg.basis.z,
     "YZ": vg.basis.x,
     "ZX": vg.basis.y
 }
-BG_PATH = "/home/robocup/billion_grasps/21_ycb_object_grasps/"
+
 
 def get_Z_obj():
     global obj_shape
@@ -109,11 +109,8 @@ def change_gazebo_object_pose(state_msg, state_pose, mod_name):
     global set_state
     state_msg.model_name = mod_name
     state_msg.pose = state_pose
-    #rospy.wait_for_service('/gazebo/set_model_state')
     try:
-        #set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
         resp = set_state( state_msg )
-
     except rospy.ServiceException:
         pass      
 
@@ -147,28 +144,25 @@ def callback_right_grip_sensor(msg):
 
 def create_origin_pose():
     jop = Pose()
-    jop.position.x = 2.6
-    jop.position.y = 1.8
+    jop.position.x = 0.0
+    jop.position.y = 0.0
     jop.position.z = 0.0
-    jop.orientation.x = 0
-    jop.orientation.y = 0
-    jop.orientation.z = 0.7068252
-    jop.orientation.w = 0.7073883
+    jop.orientation.x = 0.0
+    jop.orientation.y = 0.0
+    jop.orientation.z = 0.0
+    jop.orientation.w = 1
     return jop
     
 def reset_simulation():
-    global justina_origin_pose, obj_shape, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts
+    global justina_origin_pose, obj_shape, num_loops, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts
     change_gazebo_object_pose(state_msg, generate_random_pose(), obj_shape)
     change_gazebo_object_pose(state_msg, justina_origin_pose, "justina")
     msg_hd.data = [random.uniform(-0.4,0.4),-random.uniform(1.0, 1.2)]
     num_loops = 0
     left_gripper_made_contact = False
     right_gripper_made_contact = False
-    #pub_la.publish(msg_la)
     pub_hd.publish(msg_hd)
     rospy.sleep(0.1)
-    #pub_object.publish(obj_shape)
-    #pub_object.publish(obj_shape)
     grasp_attempts = 0
     
 def show_graph(V1,V2,W1,W2):
@@ -230,7 +224,7 @@ def get_orientation_in_range(q):
     qr.w = qf[3]
     return qr
 
-def get_quaternion_in_hemihypersphere_dot(q):
+def get_quaternion_in_hemihypersphere(q):
     qo = np.array([q.x,q.y,q.z,q.w])
     if np.dot(qo,np.array([0,0,0,-1])) < 0:
         #print("Positive quaternion :)")
@@ -244,23 +238,6 @@ def get_quaternion_in_hemihypersphere_dot(q):
         qr.w = qo[3]
         #print("Rotating quaternion :O")
         return qr
-
-def get_quaternion_in_hemihypersphere(q):
-    if q.w >= 0:
-        #print("Positive quaternion :)")
-        return q
-    else:
-        #qo = qo * -1
-        qr = Quaternion()
-        qr.x = -q.x
-        qr.y = -q.y
-        qr.z = -q.z
-        qr.w = -q.w
-        #print("Rotating quaternion :O")
-        return qr
-
-def pose_to_nparray(ps):
-    return np.array([ps.position.x,ps.position.y,ps.position.z,ps.orientation.x,ps.orientation.y,ps.orientation.z,ps.orientation.w])
 
 def score_calculation(articular_array):
     a = sum(articular_array)
@@ -302,28 +279,11 @@ def get_ik_la(msg_pose):
     except:
         print("Could not find IK")
 
-def create_points_marker_from_pt(ptlist, size, id):
-    global marker_pub
-    marker = Marker()
-    marker.header.frame_id = "base_link"
-    marker.type = Marker.POINTS
-    marker.ns = "gr"
-    marker.header.stamp = rospy.Time.now()
-    marker.action = marker.ADD
-    marker.id = id
-    #marker.scale.x, marker.scale.y, marker.scale.z = 0.04, 0.005, 0.1
-    marker.scale.x, marker.scale.y = 0.01, 0.01
-    marker.color.r, marker.color.g, marker.color.b, marker.color.a = 20, 50, 100, 1.0
-    marker.lifetime = rospy.Duration(100)
-    marker.pose.position = Point(x=0,y=0,z=0)
-    marker.pose.orientation.w = 1
-    #marker.points = [Point(y=0.1,z=-0.1),Point(y=0.1,z=0.1),Point(y=-0.1,z=0.1),Point(y=0.1,z=0.1)]
-    marker.points = ptlist
-    marker_pub.publish(marker)
 
-def main():
+
+def old_main():
     global ik_srv, state_msg, grasp_trajectory_found, justina_origin_pose, obj_shape, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
-    global set_state, get_object_relative_pose, z, marker_pub, tf_listener
+    global set_state, get_object_relative_pose, z
     state_msg = ModelState()
     deserialized_gripper_model_state = ModelState()
     justina_origin_pose = create_origin_pose()
@@ -341,25 +301,17 @@ def main():
     obj_shape = '001_chips_can'
     rospy.init_node('dataset_generator')
     print("Starting grip test")
-    # rospy.Subscriber('/manipulation/grasp/grasp_status' ,String ,callback_grasp_status)
-    # rospy.Subscriber('/gr_left_arm_grip_left_sensor' ,ContactsState ,callback_left_grip_sensor)
-    # rospy.Subscriber('/gr_left_arm_grip_right_sensor' ,ContactsState ,callback_right_grip_sensor)
     rospy.wait_for_service('/manipulation/grasp/data_capture_service')
     ik_srv           = rospy.ServiceProxy( '/manipulation/la_ik_trajectory' , InverseKinematicsPose2Traj )
     get_object_relative_pose = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
     capture = rospy.ServiceProxy('/manipulation/grasp/data_capture_service', DataCapture)
     set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
     transform_pointcloud = rospy.ServiceProxy("/vision/point_cloud_to_base_link",PreprocessPointCloud)
-    #pub_object = rospy.Publisher("/plannning/simple_task/take_object", String, queue_size=10)
     pub_la = rospy.Publisher("/hardware/left_arm/goal_pose", Float64MultiArray, queue_size=10)
     pub_hd = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=10)
     obj_shape = rospy.get_param("/obj","056_tennis_ball")
     sample_start = rospy.get_param("/sample_start",0)
     sample_stop = rospy.get_param("/sample_stop",100)
-    marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10)
-
-    tf_buf = tf2_ros.Buffer()
-    tf_listener = tf2_ros.TransformListener(tf_buf)
 
     print(sample_start,sample_stop)
     rospy.sleep(1)
@@ -382,9 +334,6 @@ def main():
 
     reset_simulation()
     pub_hd.publish(msg_hd)
-    #POSE_DATA_PATH = "./catkin_ws/src/manipulation/object_manipulation/pose_data/"
-    #objmanpkg_path = rospkg.get_ros_package_path()
-    #print(objmanpkg_path)
     rospack = rospkg.RosPack()
     objmanpkg_path = rospack.get_path('object_manipulation')
     print(objmanpkg_path)
@@ -603,59 +552,50 @@ def main():
                 get_object_relative_pose(obj_shape,"world").pose.position
 
                 rospy.sleep(4)
-        if command == 'h':
-            show_rviz = True
-            reset_simulation()
-            FILE_PATH = BG_PATH + obj_shape + "/grasps.h5"
-            f = h5py.File(FILE_PATH,'r')
-            index = np.random.choice(len(f['poses']),500, replace=False)
-            grasp = f['poses'][:]
-            grasp = grasp[index]
-            head = Header(frame_id='object_frame')
-            pose_list = [PoseStamped(header=head, pose=Pose(position=Point(x=g[0],y=g[1],z=g[2]),orientation=Quaternion(x=g[3],y=g[4],z=g[5], w=g[6]))) for g in grasp]
-            target_pose = [tf_buf.transform(pose, "base_link") for pose in pose_list]
-            if show_rviz:
-                ptlist = np.array([tpose.pose.position for tpose in target_pose])
-                ptlist = ptlist[[pt.z > 0.78 for pt in ptlist]]
-                create_points_marker_from_pt(ptlist,[0.04, 0.005, 0.1],1)
-            rospy.sleep(20)
-        if command == 'db':
-            show_rviz = True
-            FILE_PATH = BG_PATH + obj_shape + "/grasps.h5"
-            f = h5py.File(FILE_PATH,'r')
-            found_examples = sample_start
-            desired_samples = sample_stop
-            #index = np.random.choice(len(f['poses']),500, replace=False)
-            poses = f['poses'][:]
-            while((not rospy.is_shutdown()) and found_examples < desired_samples):
+
+        loop.sleep()
+
+
+def main():
+    #-----------init_ros_env()
+    rospy.init_node('dataset_generator')
+    print("Starting grip test")
+    rospy.wait_for_service('/manipulation/grasp/data_capture_service')
+    get_object_relative_pose = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
+    capture = rospy.ServiceProxy('/manipulation/grasp/data_capture_service', DataCapture)
+    set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
+    transform_pointcloud = rospy.ServiceProxy("/vision/point_cloud_to_base_link",PreprocessPointCloud)
+    obj_shape = rospy.get_param("/obj","056_tennis_ball")
+    sample_start = rospy.get_param("/sample_start",0)
+    sample_stop = rospy.get_param("/sample_stop",100)
+
+    #-----------init_variables()
+    saved_examples = sample_start
+    desired_examples = sample_stop
+    while(not rospy.is_shutdown()):
+        print("Type r to reset sim to a random pose, and l to loop simulation for samples")
+        if command == "default": 
+            command = input()
+            rospy.set_param('/cmd',command)
+        if command == 'gen':
+            #init_loop_variables():
+            while(not rospy.is_shutdown() and saved_examples < desired_examples):
                 reset_simulation()
+                print("Testing new position")
+                angles = []
                 tpcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
-                tpcd = transform_pointcloud(PreprocessPointCloudRequest(tpcd)).output_cloud
-                obpos = get_object_relative_pose(obj_shape,"justina::base_link").pose.position
-                _,_, in_frame = find_nearest_pt_in_pc(ros_pc2_to_npmatrix(tpcd),obpos)
-                if not in_frame: continue
-                index = np.random.choice(len(f['poses']),100, replace=False)
-                grasp = poses[index]
-                head = Header(frame_id='object_frame')
-                pose_list = [PoseStamped(header=head, pose=Pose(position=Point(x=g[0],y=g[1],z=g[2]),orientation=Quaternion(x=g[3],y=g[4],z=g[5], w=g[6]))) for g in grasp]
-                target_pose = np.array([tf_buf.transform(pose, "base_link") for pose in pose_list])
-                target_pose = target_pose[[tp.pose.position.z > 0.78 for tp in target_pose]]
-                valid_grasps = [pose_to_nparray(tp.pose) for tp in target_pose]
-                ##Saving
-                tpcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
-                tpcd = transform_pointcloud(PreprocessPointCloudRequest(tpcd)).output_cloud
-                found_examples = save_pcd_to_db(ros_pc2_to_npmatrix(tpcd))
-                for valid in valid_grasps:
-                    found_grasps = save_grasp_to_db(valid,obj_shape,categorize_objs(obj_shape),found_examples)
-                if show_rviz:
-                    ptlist = [tp.pose.position for tp in target_pose]
-                    create_points_marker_from_pt(ptlist,[0.04, 0.005, 0.1],1)
-                print(found_examples,found_grasps)
-                rospy.sleep(0.1)
+                gpwrtcam = get_object_relative_pose(obj_shape,"justina::camera_link").pose.position
+                _,_, object_in_frame = find_nearest_pt_in_pc(ros_pc2_to_npmatrix(tpcd),camera_link_to_optical_frame(gpwrtcam))
+                if not object_in_frame: continue
+                best_grasp = test_grasps()
+                if best_grasp != invalid_grasp:
+                    saved_examples = save_data_to_file(saved_examples) + 1
+                    rospy.set_param('/sample_start',saved_examples)
             print("Finished taking samples")
             rospy.set_param('/cmd',"default")
-            rospy.signal_shutdown('Finished taking samples')
-        loop.sleep()
+        if command == 'h':
+            change_gazebo_object_pose(state_msg, generate_random_pose(), obj_shape)
+
 
 if __name__ == '__main__':
     try:

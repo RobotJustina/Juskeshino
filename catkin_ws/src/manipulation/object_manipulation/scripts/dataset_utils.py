@@ -18,6 +18,9 @@ from geometry_msgs.msg import Point, PointStamped, PoseStamped
 from gazebo_msgs.srv import GetModelState
 from visualization_msgs.msg import Marker
 from scipy.spatial import cKDTree
+from tempfile import TemporaryFile
+from io import BytesIO
+import sqlite3
 
 MAX_POINTS = 25600
 #DATASET_PATH = 'catkin_ws/src/graspnet/dataset/'
@@ -32,6 +35,8 @@ rospack = rospkg.RosPack()
 graspnet_path = rospack.get_path('graspnet')
 print(graspnet_path)
 DATASET_PATH = graspnet_path + "/training_dataset/"
+DATABASE_PATH = graspnet_path + '/grasp_database_test_siu.db'
+#DATABASE_PATH = graspnet_path + '/grasp_database_test_cracker_box.db'
 #DATASET_PATH = graspnet_path + "/validate_dataset/"
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -89,6 +94,53 @@ def save_to_file(pcd, grasp, gr_pose, obj_relative_pos, head_pose_q, obj_type, s
         with open(file_path, 'wb') as file:
             pickle.dump(output_dict, file)
 
+def save_grasp_to_db(grasp,obj_shape,obj_type,pcd_id):
+    x,y,z,i,j,k,w = grasp
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+    INSERT INTO grasps_table(x,y,z,i,j,k,w,obj_shape,obj_type,pcd_id)
+    VALUES (?,?,?,?,?,?,?,?,?,?)
+    ''',(x,y,z,i,j,k,w,obj_shape,obj_type,pcd_id))
+    grasp_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return grasp_id
+
+def save_pcd_to_db(pcd):
+    binary_stream = BytesIO()
+    np.save(binary_stream,pcd)
+    pcd_binary = binary_stream.getvalue()
+    print(pcd_binary)
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+    INSERT INTO point_clouds_table(pcd_binary)
+    VALUES (?)
+    ''',(pcd_binary,))
+    pcd_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return pcd_id
+
+def load_grasp_from_db(id):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT x,y,z,i,j,k,w, (SELECT pcd_binary FROM point_clouds_table WHERE point_clouds_table.pcd_id = grasps_table.pcd_id) FROM grasps_table WHERE grasp_id = {}".format(id))
+    row = cursor.fetchall()
+    conn.commit()
+    conn.close()
+    return row
+
+def load_pcd_from_db(id):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM point_clouds_table WHERE pcd_id = {}".format(id))
+    row = cursor.fetchall()
+    conn.commit()
+    conn.close()
+    return row
+
 def show_pcd_from_file(path):
     data = np.load(os.path.abspath(path), allow_pickle=True)
     pcd = data['pcd']
@@ -119,6 +171,17 @@ def show_pcd_from_npmatrix(mat):
     debug_type(rgb, "Reshaped pcd ")
     view_point_cloud.points = open3d.utility.Vector3dVector(copy.deepcopy(rgb[:,:3]))
     view_point_cloud.colors = open3d.utility.Vector3dVector(copy.deepcopy(rgb[:,3:6]))
+    open3d.visualization.draw_geometries([view_point_cloud])
+
+def show_pcd_from_unstructured_npmatrix(mat):
+    rgb = copy.deepcopy(mat)
+    rgb = rgb.reshape(-1)
+    #rgb = rf.structured_to_unstructured(rgb)
+    rgb = rgb[~np.isnan(rgb).any(axis=1)]
+    view_point_cloud = open3d.geometry.PointCloud()
+    debug_type(rgb, "Reshaped pcd ")
+    view_point_cloud.points = open3d.utility.Vector3dVector(copy.deepcopy(rgb[:,:3]))
+    #view_point_cloud.colors = open3d.utility.Vector3dVector(copy.deepcopy(rgb[:,3:6]))
     open3d.visualization.draw_geometries([view_point_cloud])
 
 def nparray_pc_to_torch(pc):
@@ -290,6 +353,41 @@ def main():
             u, v = find_nearest_pt_in_pc(mat,t_pt)
             found_pt = Point(x=mat[u,v]['x'], y=mat[u,v]['y'], z=mat[u,v]['z'])
             create_marker_from_pt(found_pt)
+        if command == 'l':
+            print("What grasp to get?")
+            id = input()
+            g = load_grasp_from_db(int(id))
+            # print(type(g))
+            # print(len(g))
+            # print(type(g[0]))
+            # print(len(g[0]))
+            print(type(g[0][7]))
+            print(len(g[0][7]))
+            #pcd = np.array(g[0][7],dtype=np.float32)
+            pcd = np.frombuffer(g[0][7],dtype='float')
+            pcd = pcd.reshape((480,640,3))
+            print(type(pcd))
+            print(pcd.shape)
+            print(type(pcd[0]))
+            print(pcd[0].shape)
+            show_pcd_from_unstructured_npmatrix(pcd)
+            #fileobj = BytesIO(bytes.fromhex(g[0][7]))
+            #pcd = np.load(fileobj)
+            # pcd = np.frombuffer(g[0][7])
+            # pcd.reshape((480,640,3))
+            # show_pcd_from_npmatrix(pcd)
+        if command == 'sdb':
+            x = np.arange(28*28).reshape(28, 28)
+            save_pcd_to_db(x)
+            print("What grasp to get?")
+            id = input()
+            g = load_pcd_from_db(int(id))
+            print(type(g))
+            print(len(g))
+            print(type(g[0][1]))
+            print(len(g[0][1]))
+            pcd = np.load(BytesIO(g[0][1]))
+            print(pcd)
 
 if __name__ == '__main__':
     try:
