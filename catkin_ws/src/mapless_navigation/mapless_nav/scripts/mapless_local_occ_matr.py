@@ -121,8 +121,8 @@ def occGridCallback(msg):
 
             else:
                 linx = y_pred[0] / (10*abs(last_goal[1]))
-                print("XXXXXXXXXXXXXXXX linx", linx, end='\n')
-                print("XXXXXXXXXXXXXXXX linx", linx, end='\n')
+                print("control linx", linx, end='\n')
+                print("control linx", linx, end='\n')
                 angz = y_pred[1] * speed_factor
             
         else:
