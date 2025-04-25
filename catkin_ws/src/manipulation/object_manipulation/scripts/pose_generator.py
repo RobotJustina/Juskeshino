@@ -119,11 +119,11 @@ def rotation_object():
     if obj_shape == "small_box":
         quaternion_obj = tft.quaternion_from_euler(rotation[0],rotation[1],rotation[2] ,'sxyz')
         if (rotation[0]  == 0) and (rotation[1] == 0):
-            return z3
+            return quaternion_obj, z3
         if (rotation[0]  == 0) and (rotation[1] != 0):
-            return z2
+            return  quaternion_obj ,z2
         if (rotation[1]  == 0) and (rotation[0] != 0):
-            return z1
+            return  quaternion_obj , z1
 
 
 
