@@ -108,7 +108,7 @@ def save_grasp_to_db(grasp,obj_shape,obj_type,pcd_id):
     return grasp_id
 
 def save_pcd_to_db(pcd):
-    print(pcd.shape)
+    #print(pcd.shape)
     binary_stream = BytesIO()
     np.save(binary_stream,pcd)
     pcd_binary = binary_stream.getvalue()
@@ -277,7 +277,7 @@ def find_nearest_pt_in_pc(pc, pt):
     u = math.floor(nearest/pc.shape[1])
     v = nearest%pc.shape[1]
     if 100 < u < 380 and 100 < v < 540: valid = True
-    print(u,v,valid)
+    #print(u,v,valid)
     return u,v,valid
 
 def find_pt_in_pc(position_obj, pc):

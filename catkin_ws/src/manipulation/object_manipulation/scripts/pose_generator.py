@@ -77,7 +77,7 @@ def categorize_objs(name):
     prismatic = ['001_chips_can', '007_tuna_fish_can', '002_master_chef_can', '005_tomato_soup_can']
     spherical = ['054_softball', '055_baseball', '056_tennis_ball']
     flat      = ['006_mustard_bottle', '021_bleach_cleanser', '035_power_drill', ]
-    box       = ['pudding_box', '003_cracker_box', '004_sugar_box', '009_gelatin_box', '036_wood_block', '061_foam_brick']
+    box       = ['008_pudding_box', '003_cracker_box', '004_sugar_box', '009_gelatin_box', '036_wood_block', '061_foam_brick']
     cubic     = ['077_rubiks_cube']
     two_faces = ['011_banana', '048_hammer', '044_flat_screwdriver', '037_scissors', '040_large_marker', '051_large_clamp', '052_extra_large_clamp']
     if   name in dishes:    return 'dishes'
