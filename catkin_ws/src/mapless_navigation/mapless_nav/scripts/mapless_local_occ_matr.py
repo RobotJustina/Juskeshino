@@ -106,8 +106,8 @@ def occGridCallback(msg):
         #         linx = y_pred[0] * speed_factor
         #     else:
         #         linx = y_pred[0] / (10*abs(last_goal[1]))
-        #         print("XXXXXXXXXXXXXXXX linx", linx, end='\n')
-        #         print("XXXXXXXXXXXXXXXX linx", linx, end='\n')
+        #         print(" linx", linx, end='\n')
+        #         print(" linx", linx, end='\n')
                 
         #     #linx = 0
         #     if linx > 1:

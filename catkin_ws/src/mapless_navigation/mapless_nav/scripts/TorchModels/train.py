@@ -55,8 +55,8 @@ Hyperparameters
 """
 # PARAMS
 batch_size = 4 # 8
-learn_r = 0.0001 # 1e-3
-epochs = 3
+learn_r = 1e-4 # 1e-3
+epochs = 5
 
 
 cad = "stack_n_channels " + str(stack_n_channels)
@@ -298,7 +298,9 @@ plt.plot(x, results["valid_loss"], label="valid_loss")
 plt.xlabel("epoch")
 plt.ylabel("loss")
 plt.legend()
+plt.savefig(pkg_path + '/scripts/TorchModels/train.png')
 plt.show()
+
 
 tf = time.time()
 from datetime import timedelta
