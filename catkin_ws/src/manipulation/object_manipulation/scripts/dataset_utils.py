@@ -94,6 +94,38 @@ def save_to_file(pcd, grasp, gr_pose, obj_relative_pos, head_pose_q, obj_type, s
         with open(file_path, 'wb') as file:
             pickle.dump(output_dict, file)
 
+def update_grasp_to_db_by_id(grasp,obj_shape,obj_type,pcd_id, id):
+    x,y,z,i,j,k,w = grasp
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+    UPDATE grasps_table
+    SET x = ?, y=?, z=?, i=?, j=?, k=?, w=?, obj_shape=?, obj_type=?, pcd_id=?
+    WHERE id = ?;
+    ''',(x,y,z,i,j,k,w,obj_shape,obj_type,pcd_id, id))
+    grasp_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return grasp_id
+
+def update_pcd_to_db_by_id(pcd):
+    #print(pcd.shape)
+    binary_stream = BytesIO()
+    np.save(binary_stream,pcd)
+    pcd_binary = binary_stream.getvalue()
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+    UPDATE point_clouds_table
+    SET pcd_binary = ?
+    WHERE id = ?
+    ''',(pcd_binary, id))
+    pcd_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return pcd_id
+
+
 def save_grasp_to_db(grasp,obj_shape,obj_type,pcd_id):
     x,y,z,i,j,k,w = grasp
     conn = sqlite3.connect(DATABASE_PATH)
