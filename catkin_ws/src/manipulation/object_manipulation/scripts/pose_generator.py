@@ -47,9 +47,9 @@ def get_Z_obj():
         '005_tomato_soup_can':  [0.733, 0.758, 0],
         '006_mustard_bottle':   [0.729, 0.783, 0],
         '007_tuna_fish_can':    [0.743, 0.717, 0],
-        '008_pudding_box':      [0.746, 0.754, 0.717],
-        '009_gelatin_box':      [0.737, 0.746, 0.714],
-        '010_potted_meat_can':  [0.727, 0.740, 0],
+        '008_pudding_box':      [0.717, 0.746, 0.754],
+        '009_gelatin_box':      [0.714, 0.744, 0.735],
+        '010_potted_meat_can':  [0.741, 0.751, 0.728],
         '011_banana':           [0.717, 0.717, 0], 
         '019_pitcher_base':     [0.835, 0.835, 0],
         '021_bleach_cleanser':  [0.728, 0.804, 0],
@@ -78,9 +78,9 @@ def categorize_objs(name):
     dishes    = ['024_bowl', '019_pitcher_base', '025_mug', ]
     prismatic = ['001_chips_can', '007_tuna_fish_can', '002_master_chef_can', '005_tomato_soup_can']
     spherical = ['054_softball', '055_baseball', '056_tennis_ball']
-    flat      = ['006_mustard_bottle', '021_bleach_cleanser', '035_power_drill', ]
+    flat      = ['006_mustard_bottle', '021_bleach_cleanser' ]
     box       = ['003_cracker_box', '004_sugar_box', '036_wood_block', '061_foam_brick']
-    small_box = ['008_pudding_box',  '009_gelatin_box']
+    small_box = ['008_pudding_box',  '009_gelatin_box', '010_potted_meat_can']
     cubic     = ['077_rubiks_cube']
     two_faces = ['011_banana', '048_hammer', '044_flat_screwdriver', '037_scissors', '040_large_marker', '051_large_clamp', '052_extra_large_clamp']
     if   name in dishes:    return 'dishes'
@@ -91,14 +91,15 @@ def categorize_objs(name):
     elif name in cubic:     return 'cubic'
     elif name in two_faces: return '2faces'
     elif name in small_box: return 'small_box'
-    elif name in small_box: return 'drill'
+    elif name in drill: return 'drill'
 
     
 
 def rotation_object():
     global obj_shape
+    print("OBJ SHAPE:", obj_shape)
     geometric_shape_dic = {
-                            "drill":    [[0, 0, np.deg2rad(random.randint(0, int(359)))], [0, 1.57, np.deg2rad(random.randint(0, int(359)))]],
+                            "drill":    [[0, 0, np.deg2rad(random.randint(0, int(359)))], [0, -1.57, np.deg2rad(random.randint(0, int(359)))]],
                             "dishes":   [[0, 0, np.deg2rad(random.randint(0, int(359)))]],
                             "prismatic":[[0, 0, np.deg2rad(random.randint(0, int(359)))], [0, 1.57, np.deg2rad(random.randint(0, int(359)))] ],
                             "spherical":[[np.deg2rad(random.randint(0, int(359))) , np.deg2rad(random.randint(0, int(359))) ,np.deg2rad(random.randint(0, int(359)))]],
@@ -113,17 +114,22 @@ def rotation_object():
                                          ],
                             "2faces":   [[0, 0, np.deg2rad(random.randint(0, int(359)))] ,  [0, 3.14, np.deg2rad(random.randint(0, int(359)))]]
     }
+    print(categorize_objs(obj_shape))
     rotation = random.choice(geometric_shape_dic[categorize_objs(obj_shape)])
     z1, z2 , z3 = get_Z_obj()
-    
-    if obj_shape == "small_box":
+    o_shape = categorize_objs(obj_shape)
+    print("ROTATION EULER", rotation)
+    if o_shape == "small_box":
         quaternion_obj = tft.quaternion_from_euler(rotation[0],rotation[1],rotation[2] ,'sxyz')
         if (rotation[0]  == 0) and (rotation[1] == 0):
-            return quaternion_obj, z3
+            print("Z1", z1)
+            return quaternion_obj, z1
         if (rotation[0]  == 0) and (rotation[1] != 0):
-            return  quaternion_obj ,z2
-        if (rotation[1]  == 0) and (rotation[0] != 0):
-            return  quaternion_obj , z1
+            print("z3",z3)
+            return  quaternion_obj ,z3
+        if (rotation[0]  != 0) and (rotation[1] == 0):
+            print("z2",z2)
+            return  quaternion_obj , z2
 
 
 
@@ -131,6 +137,7 @@ def rotation_object():
     else:z = z1
     quaternion_obj = tft.quaternion_from_euler(rotation[0],rotation[1],rotation[2] ,'sxyz')
     return quaternion_obj, z
+
 
 
 def generate_random_pose():
