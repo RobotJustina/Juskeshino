@@ -64,7 +64,7 @@ def ros_pc2_to_nparray(pc):
     return rgb
 
 def ros_pc2_to_npmatrix(pc):
-    print(pc.header.frame_id)
+    #print(pc.header.frame_id)
     data = ros_numpy.point_cloud2.pointcloud2_to_array(pc)
     #debug_type(data,"Split points")
     rgb = ros_numpy.point_cloud2.split_rgb_field(data)

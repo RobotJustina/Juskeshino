@@ -809,6 +809,8 @@ def main():
             og_pose.pose.orientation.w = 1
             #index = np.random.choice(len(f['poses']),500, replace=False)
             poses = f['poses'][:]
+            len_poses = len(f['poses'])
+            print(len_poses)
             while((not rospy.is_shutdown()) and found_examples < desired_samples):
                 reset_simulation()
                 tpcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
@@ -816,7 +818,7 @@ def main():
                 obpos = get_object_relative_pose(obj_shape,"justina::base_link").pose.position
                 _,_, in_frame = find_nearest_pt_in_pc(ros_pc2_to_npmatrix(tpcd),obpos)
                 if not in_frame: continue
-                index = np.random.choice(len(f['poses']),GRASP_TO_PCD_RATIO*80, replace=False)
+                index = np.random.choice(len_poses,GRASP_TO_PCD_RATIO*50, replace=False)
                 grasp = poses[index]
                 pose_list = np.array([PoseStamped(header=head, pose=Pose(position=Point(x=g[0],y=g[1],z=g[2]),orientation=Quaternion(x=g[3],y=g[4],z=g[5], w=g[6]))) for g in grasp])
                 objwrtcam = tf_buf.transform(og_pose, "object_frame").pose.position
@@ -844,7 +846,7 @@ def main():
                     ptlist = [tp.pose.position for tp in target_pose]
                     create_points_marker_from_pt(ptlist,[0.04, 0.005, 0.1],1)
                 print(found_examples,found_grasps)
-                rospy.sleep(0.1)
+                rospy.sleep(0.05)
             print("Finished taking samples")
             rospy.set_param('/cmd',"default")
             rospy.signal_shutdown('Finished taking samples')
