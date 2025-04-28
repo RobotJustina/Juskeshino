@@ -108,7 +108,7 @@ def update_grasp_to_db_by_id(grasp,obj_shape,obj_type,pcd_id, id):
     conn.close()
     return grasp_id
 
-def update_pcd_to_db_by_id(pcd):
+def update_pcd_to_db_by_id(pcd, id):
     #print(pcd.shape)
     binary_stream = BytesIO()
     np.save(binary_stream,pcd)
