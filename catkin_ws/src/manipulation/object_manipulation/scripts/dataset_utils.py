@@ -36,7 +36,7 @@ graspnet_path = rospack.get_path('graspnet')
 print(graspnet_path)
 DATASET_PATH = graspnet_path + "/training_dataset/"
 #DATABASE_PATH = graspnet_path + '/grasp_database_test_siu.db'
-DATABASE_PATH = graspnet_path + '/grasp_database_quaternion.db'
+DATABASE_PATH = graspnet_path + '/grasp_database_quaternion_backup.db'
 #DATASET_PATH = graspnet_path + "/validate_dataset/"
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -101,15 +101,15 @@ def update_grasp_to_db_by_id(grasp,obj_shape,obj_type,pcd_id, id):
     cursor.execute('''
     UPDATE grasps_table
     SET x = ?, y=?, z=?, i=?, j=?, k=?, w=?, obj_shape=?, obj_type=?, pcd_id=?
-    WHERE id = ?;
+    WHERE grasp_id = ?
     ''',(x,y,z,i,j,k,w,obj_shape,obj_type,pcd_id, id))
-    grasp_id = cursor.lastrowid
+    #grasp_id = cursor.lastrowid
     conn.commit()
     conn.close()
-    return grasp_id
+    return id
 
 def update_pcd_to_db_by_id(pcd, id):
-    #print(pcd.shape)
+    print("id de entrada", id)
     binary_stream = BytesIO()
     np.save(binary_stream,pcd)
     pcd_binary = binary_stream.getvalue()
@@ -118,12 +118,13 @@ def update_pcd_to_db_by_id(pcd, id):
     cursor.execute('''
     UPDATE point_clouds_table
     SET pcd_binary = ?
-    WHERE id = ?
+    WHERE pcd_id = ?
     ''',(pcd_binary, id))
-    pcd_id = cursor.lastrowid
+    #pcd_id = cursor.lastrowid
+    #print("pcd_id" , pcd_id)
     conn.commit()
     conn.close()
-    return pcd_id
+    return id
 
 
 def save_grasp_to_db(grasp,obj_shape,obj_type,pcd_id):
@@ -351,7 +352,8 @@ def main():
     loop = rospy.Rate(1)
     while not rospy.is_shutdown():
         print("Choose command")
-        command = input()
+        #command = input()
+        command = 'qt'
         if command == 'y':
             pcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
             pc = ros_pc2_to_nparray(pcd)
@@ -419,6 +421,23 @@ def main():
             pcd = np.load(BytesIO(g[0]))
             print(pcd)
             show_pcd_from_npmatrix(pcd)
+        if command == 'qt':
+            print("Query test update register.........")
+            x = 12
+            y = 22
+            z = 32
+            i = 42
+            j = 52
+            k = 62
+            w = 72
+            grasp = [x,y,z,i,j,k,w]
+            obj_shape = 'cubic'
+            obj_type = 'drill'
+            pcd_id = 3
+            id = 3
+            update_grasp_to_db_by_id(grasp,obj_shape,obj_type,pcd_id, id)
+
+
 
 if __name__ == '__main__':
     try:

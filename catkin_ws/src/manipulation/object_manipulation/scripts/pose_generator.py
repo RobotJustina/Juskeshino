@@ -24,8 +24,9 @@ from geometry_msgs.msg import Pose, Quaternion, Point, PoseStamped
 from manip_msgs.srv import DataCapture, InverseKinematicsPose2TrajRequest, InverseKinematicsPose2Traj
 from vision_msgs.srv import PreprocessPointCloud, PreprocessPointCloudRequest
 from visualization_msgs.msg import Marker
+from dataset_utils import save_data_to_file, find_nearest_pt_in_pc, camera_link_to_optical_frame, ros_pc2_to_npmatrix, save_pcd_to_db, save_grasp_to_db, cut_pc, update_grasp_to_db_by_id, update_pcd_to_db_by_id
 
-from dataset_utils import save_data_to_file, find_nearest_pt_in_pc, camera_link_to_optical_frame, ros_pc2_to_npmatrix, save_pcd_to_db, save_grasp_to_db, cut_pc
+
 BASE_JUSTINA_VECTOR = np.array([0.0,-1.0,0.0])
 MANIF = Hypersphere(3)
 GRASP_TO_PCD_RATIO = 10
@@ -91,13 +92,12 @@ def categorize_objs(name):
     elif name in cubic:     return 'cubic'
     elif name in two_faces: return '2faces'
     elif name in small_box: return 'small_box'
-    elif name in drill: return 'drill'
+    elif name in drill:     return 'drill'
 
     
 
 def rotation_object():
     global obj_shape
-    print("OBJ SHAPE:", obj_shape)
     geometric_shape_dic = {
                             "drill":    [[0, 0, np.deg2rad(random.randint(0, int(359)))], [0, -1.57, np.deg2rad(random.randint(0, int(359)))]],
                             "dishes":   [[0, 0, np.deg2rad(random.randint(0, int(359)))]],
@@ -114,21 +114,16 @@ def rotation_object():
                                          ],
                             "2faces":   [[0, 0, np.deg2rad(random.randint(0, int(359)))] ,  [0, 3.14, np.deg2rad(random.randint(0, int(359)))]]
     }
-    print(categorize_objs(obj_shape))
     rotation = random.choice(geometric_shape_dic[categorize_objs(obj_shape)])
     z1, z2 , z3 = get_Z_obj()
     o_shape = categorize_objs(obj_shape)
-    print("ROTATION EULER", rotation)
     if o_shape == "small_box":
         quaternion_obj = tft.quaternion_from_euler(rotation[0],rotation[1],rotation[2] ,'sxyz')
         if (rotation[0]  == 0) and (rotation[1] == 0):
-            print("Z1", z1)
             return quaternion_obj, z1
         if (rotation[0]  == 0) and (rotation[1] != 0):
-            print("z3",z3)
             return  quaternion_obj ,z3
         if (rotation[0]  != 0) and (rotation[1] == 0):
-            print("z2",z2)
             return  quaternion_obj , z2
 
 
@@ -857,6 +852,64 @@ def main():
             print("Finished taking samples")
             rospy.set_param('/cmd',"default")
             rospy.signal_shutdown('Finished taking samples')
+
+
+        if command == 'udb':    #update registers of database
+                    show_rviz = True
+                    FILE_PATH = BG_PATH + obj_shape + "/grasps.h5"
+                    f = h5py.File(FILE_PATH,'r')
+                    found_examples = sample_start
+                    found_grasps = found_examples * 10
+                    desired_samples = sample_stop
+                    head = Header(frame_id='object_frame')
+                    og_pose = PoseStamped()
+                    og_pose.header.frame_id = "camera_rgb_optical_frame"
+                    og_pose.pose.orientation.w = 1
+                    #index = np.random.choice(len(f['poses']),500, replace=False)
+                    poses = f['poses'][:]
+                    while((not rospy.is_shutdown()) and found_examples < desired_samples):
+                        reset_simulation()
+                        tpcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
+                        tpcd = transform_pointcloud(PreprocessPointCloudRequest(tpcd)).output_cloud
+                        obpos = get_object_relative_pose(obj_shape,"justina::base_link").pose.position
+                        _,_, in_frame = find_nearest_pt_in_pc(ros_pc2_to_npmatrix(tpcd),obpos)
+                        if not in_frame: continue
+                        index = np.random.choice(len(f['poses']),GRASP_TO_PCD_RATIO*80, replace=False)
+                        grasp = poses[index]
+                        pose_list = np.array([PoseStamped(header=head, pose=Pose(position=Point(x=g[0],y=g[1],z=g[2]),orientation=Quaternion(x=g[3],y=g[4],z=g[5], w=g[6]))) for g in grasp])
+                        objwrtcam = tf_buf.transform(og_pose, "object_frame").pose.position
+                        pose_list = pose_list[[grasp_in_ob_origin_conic(ps.pose.position,objwrtcam) for ps in pose_list]]
+                        target_pose = np.array([tf_buf.transform(pose, "base_link") for pose in pose_list])
+                        target_pose = target_pose[[tp.pose.position.z > 0.78 for tp in target_pose]]
+                        for tp in target_pose: tp.pose.orientation = get_quaternion_in_hemihypersphere(get_antipodal_in_range(tp.pose.orientation))
+                        target_pose = target_pose[[quaternion_in_manifold(tp.pose.orientation) for tp in target_pose]]
+                        if len(target_pose) < GRASP_TO_PCD_RATIO + 5: continue
+                        target_pose = target_pose[np.random.choice(len(target_pose),GRASP_TO_PCD_RATIO, replace=False)]
+                        valid_grasps = [pose_to_nparray(tp.pose) for tp in target_pose]
+                        #print(len(valid_grasps))
+                        ##Saving
+                        tpcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
+                        tpcd = transform_pointcloud(PreprocessPointCloudRequest(tpcd)).output_cloud
+                        obpos = get_object_relative_pose(obj_shape,"justina::base_link").pose.position
+                        tpcd = ros_pc2_to_npmatrix(tpcd)
+                        u,v, in_frame = find_nearest_pt_in_pc(tpcd,obpos)
+                        if not in_frame: continue
+                        tpcd = cut_pc(u,v,tpcd)
+                        found_examples = update_pcd_to_db_by_id(tpcd, found_examples)
+                        for valid in valid_grasps:
+                            found_grasps = update_grasp_to_db_by_id(valid,obj_shape,categorize_objs(obj_shape),found_examples,found_grasps)
+                            found_grasps = found_grasps + 1
+                        if show_rviz:
+                            ptlist = [tp.pose.position for tp in target_pose]
+                            create_points_marker_from_pt(ptlist,[0.04, 0.005, 0.1],1)
+                        found_examples = found_examples + 1
+                        print("found_examples,found_grasps", found_examples,found_grasps)
+                        rospy.sleep(0.1)
+                    print("Finished taking samples")
+                    rospy.set_param('/cmd',"default")
+                    rospy.signal_shutdown('Finished taking samples')
+
+        
         loop.sleep()
 
 if __name__ == '__main__':
