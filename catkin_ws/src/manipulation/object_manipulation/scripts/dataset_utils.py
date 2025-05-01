@@ -36,7 +36,7 @@ graspnet_path = rospack.get_path('graspnet')
 print(graspnet_path)
 DATASET_PATH = graspnet_path + "/training_dataset/"
 #DATABASE_PATH = graspnet_path + '/grasp_database_test_siu.db'
-DATABASE_PATH = graspnet_path + '/grasp_database_quaternion.db'
+DATABASE_PATH = graspnet_path + '/grasp_database_quaternion_backup.db'
 #DATASET_PATH = graspnet_path + "/validate_dataset/"
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -64,7 +64,7 @@ def ros_pc2_to_nparray(pc):
     return rgb
 
 def ros_pc2_to_npmatrix(pc):
-    print(pc.header.frame_id)
+    #print(pc.header.frame_id)
     data = ros_numpy.point_cloud2.pointcloud2_to_array(pc)
     #debug_type(data,"Split points")
     rgb = ros_numpy.point_cloud2.split_rgb_field(data)
@@ -94,6 +94,39 @@ def save_to_file(pcd, grasp, gr_pose, obj_relative_pos, head_pose_q, obj_type, s
         with open(file_path, 'wb') as file:
             pickle.dump(output_dict, file)
 
+def update_grasp_to_db_by_id(grasp,obj_shape,obj_type,pcd_id, id):
+    x,y,z,i,j,k,w = grasp
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+    UPDATE grasps_table
+    SET x = ?, y=?, z=?, i=?, j=?, k=?, w=?, obj_shape=?, obj_type=?, pcd_id=?
+    WHERE grasp_id = ?
+    ''',(x,y,z,i,j,k,w,obj_shape,obj_type,pcd_id, id))
+    #grasp_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return id
+
+def update_pcd_to_db_by_id(pcd, id):
+    print("id de entrada", id)
+    binary_stream = BytesIO()
+    np.save(binary_stream,pcd)
+    pcd_binary = binary_stream.getvalue()
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+    UPDATE point_clouds_table
+    SET pcd_binary = ?
+    WHERE pcd_id = ?
+    ''',(pcd_binary, id))
+    #pcd_id = cursor.lastrowid
+    #print("pcd_id" , pcd_id)
+    conn.commit()
+    conn.close()
+    return id
+
+
 def save_grasp_to_db(grasp,obj_shape,obj_type,pcd_id):
     x,y,z,i,j,k,w = grasp
     conn = sqlite3.connect(DATABASE_PATH)
@@ -108,7 +141,7 @@ def save_grasp_to_db(grasp,obj_shape,obj_type,pcd_id):
     return grasp_id
 
 def save_pcd_to_db(pcd):
-    print(pcd.shape)
+    #print(pcd.shape)
     binary_stream = BytesIO()
     np.save(binary_stream,pcd)
     pcd_binary = binary_stream.getvalue()
@@ -277,7 +310,7 @@ def find_nearest_pt_in_pc(pc, pt):
     u = math.floor(nearest/pc.shape[1])
     v = nearest%pc.shape[1]
     if 100 < u < 380 and 100 < v < 540: valid = True
-    print(u,v,valid)
+    #print(u,v,valid)
     return u,v,valid
 
 def find_pt_in_pc(position_obj, pc):
@@ -319,7 +352,8 @@ def main():
     loop = rospy.Rate(1)
     while not rospy.is_shutdown():
         print("Choose command")
-        command = input()
+        #command = input()
+        command = 'qt'
         if command == 'y':
             pcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
             pc = ros_pc2_to_nparray(pcd)
@@ -387,6 +421,23 @@ def main():
             pcd = np.load(BytesIO(g[0]))
             print(pcd)
             show_pcd_from_npmatrix(pcd)
+        if command == 'qt':
+            print("Query test update register.........")
+            x = 12
+            y = 22
+            z = 32
+            i = 42
+            j = 52
+            k = 62
+            w = 72
+            grasp = [x,y,z,i,j,k,w]
+            obj_shape = 'cubic'
+            obj_type = 'drill'
+            pcd_id = 3
+            id = 3
+            update_grasp_to_db_by_id(grasp,obj_shape,obj_type,pcd_id, id)
+
+
 
 if __name__ == '__main__':
     try:
