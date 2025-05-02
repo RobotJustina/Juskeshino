@@ -28,11 +28,11 @@ from torch.profiler import profile, record_function, ProfilerActivity
 ##Environment Config and paths
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 torch.backends.cudnn.benchmark = True
-torch.backends.cuda.matmul.allow_tf32 = True
+#torch.backends.cuda.matmul.allow_tf32 = True
 #torch.cuda.set_device('cuda:0')
 #torch.set_default_tensor_type('torch.cuda.FloatTensor')
 torch.set_default_dtype(torch.float32)
-torch.set_flush_denormal(True)
+torch.set_flush_denormal(False)
 #torch.set_default_device()
 #torch.multiprocessing.set_start_method('spawn')
 
@@ -160,15 +160,16 @@ class Orientation_network(nn.Module):
 class SQL_GraspDataset(torch.utils.data.Dataset):
     def __init__(self, set_type, path = DATABASE_PATH, samples = -1):
         self.conn = sqlite3.connect(path)
+        #self.conn.s
         self.cursor = self.conn.cursor()
         self.dataset_type = set_type
         self.bytes_io = BytesIO
         self.BASE_POINT = torch.tensor([0.0,0.0,0.0,1.0],dtype=torch.float64)
         self.space = Hypersphere(3)
         if samples > 0:
-            self.indices = list(range(1,samples+1))
+            self.indices = np.array(list(range(1,samples+1)))
         else:
-            self.indices = list(range(1,self.max_len()))
+            self.indices = np.array(list(range(1,self.max_len())))
         #print(self.indices)
     def tuple_to_tensors(self, qry):
         points_t = []
@@ -183,11 +184,14 @@ class SQL_GraspDataset(torch.utils.data.Dataset):
             points = torch.permute(points,(2,1,0))
             pos = torch.tensor([x,y,z],dtype=torch.float32)
             ori = torch.tensor([i,j,k,w],dtype=torch.float64)
-            ori = self.space.metric.log(ori,self.BASE_POINT)
+            #ori = self.space.metric.log(ori,self.BASE_POINT)
             #print(ori)
             points_t.append(points)
             pos_t.append(pos)
             ori_t.append(ori)
+        points_t = torch.stack(points_t,dim=0)
+        pos_t = torch.stack(pos_t,dim=0)
+        ori_t = torch.stack(ori_t,dim=0)
         return points_t, pos_t, ori_t
     
     def query_to_sample(self, qry):
@@ -232,11 +236,12 @@ class SQL_GraspDataset(torch.utils.data.Dataset):
         points = torch.permute(points,(2,1,0))
         pos = torch.tensor([x,y,z],dtype=torch.float32)
         ori = torch.tensor([i,j,k,w],dtype=torch.float64)
-        ori = self.space.metric.log(ori,self.BASE_POINT)
+        #ori = self.space.metric.log(ori,self.BASE_POINT)
         #print(ori)
         return points, pos, ori
     
-    def __getitem__(self, index):
+    def collate(self, index):
+        #print(type(index))
         if isinstance(index, slice):
             #print(self.get_slice(index).shape)
             return self.get_slice(index)
@@ -247,6 +252,9 @@ class SQL_GraspDataset(torch.utils.data.Dataset):
             #print(self.get_single(index).shape)
             return self.get_single(index)
         raise ValueError("Type of %s not supported by __getitem()__" % str(index))
+    
+    def __getitem__(self,index):
+        return self.indices[index]
     
     def max_len(self):
         self.cursor.execute('SELECT seq FROM sqlite_sequence WHERE name="grasps_table"')
@@ -267,9 +275,9 @@ def get_SQL_dataloaders(train_path=DATABASE_PATH, val_path=DATABASE_PATH, n_samp
     else:
         train_dataset = SQL_GraspDataset(set_type="test",path=train_path,samples=n_samples)
         valid_dataset = SQL_GraspDataset(set_type="validate",path=val_path,samples=n_samples)
-    train_loader = torch.utils.data.DataLoader(train_dataset, BATCH_SIZE, shuffle=True, num_workers=14, prefetch_factor=6, persistent_workers=True, pin_memory=True, generator=torch.Generator('cpu'))
+    train_loader = torch.utils.data.DataLoader(train_dataset, BATCH_SIZE, shuffle=True, num_workers=14, prefetch_factor=6, persistent_workers=True, pin_memory=True, generator=torch.Generator('cpu'), collate_fn=train_dataset.dataset.collate)
     print(len(train_loader))
-    valid_loader = torch.utils.data.DataLoader(valid_dataset, BATCH_SIZE, shuffle=True, num_workers=6, prefetch_factor=5, persistent_workers=True, pin_memory=True, generator=torch.Generator('cpu'))
+    valid_loader = torch.utils.data.DataLoader(valid_dataset, BATCH_SIZE, shuffle=True, num_workers=6, prefetch_factor=5, persistent_workers=True, pin_memory=True, generator=torch.Generator('cpu'), collate_fn=valid_dataset.dataset.collate)
 
     return train_loader, valid_loader
 
@@ -321,6 +329,7 @@ def train_network(num_epochs,model_name,cae_file, model_path=None,samples =-1):
         model.train()
 
         for batch, (pcd, pos, target_ori) in enumerate(train_loader,0):
+            #print(target_ori)
             pcd, pos, target_ori = pcd.to(DEVICE, non_blocking = True), pos.to(DEVICE, non_blocking = True), target_ori.to(DEVICE, non_blocking = True)
             #print(pos)
             with torch.device(DEVICE):
@@ -418,7 +427,8 @@ def quick_create_test():
 
 def main():
     cae_file = MODELS_PATH + 'dummy_cae_10ks_ep97_split_dict.pt'
-    train_network(30,'orient_net_more_rest_tradfc_flush_50k_silu',cae_file,samples=50000)
+    model_file = MODELS_PATH + 'orient_net_more_rest_tradfc_flush_50k_silu_ep40.pt'
+    train_network(120,'orient_net_more_rest_tradfc_flush_50k_silu',cae_file,samples=50000)
     #print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=30))
             
     #quick_create_test()
