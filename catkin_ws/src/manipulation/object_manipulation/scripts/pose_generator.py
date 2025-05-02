@@ -858,9 +858,9 @@ def main():
                     show_rviz = True
                     FILE_PATH = BG_PATH + obj_shape + "/grasps.h5"
                     f = h5py.File(FILE_PATH,'r')
-                    found_examples = sample_start
-                    found_grasps = found_examples * 10
-                    desired_samples = sample_stop
+                    found_examples = sample_start + 1
+                    found_grasps = (sample_start * 10) + 1
+                    desired_samples = sample_stop + 1
                     head = Header(frame_id='object_frame')
                     og_pose = PoseStamped()
                     og_pose.header.frame_id = "camera_rgb_optical_frame"
@@ -874,7 +874,7 @@ def main():
                         obpos = get_object_relative_pose(obj_shape,"justina::base_link").pose.position
                         _,_, in_frame = find_nearest_pt_in_pc(ros_pc2_to_npmatrix(tpcd),obpos)
                         if not in_frame: continue
-                        index = np.random.choice(len(f['poses']),GRASP_TO_PCD_RATIO*80, replace=False)
+                        index = np.random.choice(len(f['poses']),GRASP_TO_PCD_RATIO*50, replace=False)
                         grasp = poses[index]
                         pose_list = np.array([PoseStamped(header=head, pose=Pose(position=Point(x=g[0],y=g[1],z=g[2]),orientation=Quaternion(x=g[3],y=g[4],z=g[5], w=g[6]))) for g in grasp])
                         objwrtcam = tf_buf.transform(og_pose, "object_frame").pose.position

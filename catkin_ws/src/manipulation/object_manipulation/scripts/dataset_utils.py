@@ -36,7 +36,7 @@ graspnet_path = rospack.get_path('graspnet')
 print(graspnet_path)
 DATASET_PATH = graspnet_path + "/training_dataset/"
 #DATABASE_PATH = graspnet_path + '/grasp_database_test_siu.db'
-DATABASE_PATH = graspnet_path + '/grasp_database_quaternion_backup.db'
+DATABASE_PATH = graspnet_path + '/grasp_database_quaternion.db'
 #DATASET_PATH = graspnet_path + "/validate_dataset/"
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
