@@ -146,14 +146,16 @@ def main():
     function of the GMM for visualization.
     """
     #plots = expectation_maximisation_poincare_ball()
-    manif = Hypersphere(2)
+    manif = Hypersphere(3)
+    EM = RiemannianEM(manif, n_gaussians=8, initialisation_method="kmeans")
+
     gmm = GaussianMixtureModel(manif)
-    print(gmm)
+    #print(gmm)
     #plots.show()
 
 
 if __name__ == "__main__":
-    if os.environ.get("GEOMSTATS_BACKEND", "numpy") != "numpy":
+    if os.environ.get("GEOMSTATS_BACKEND", "numpy") != "pytorch":
         print(
             "Expectation Maximization example\n"
             "works with\n"

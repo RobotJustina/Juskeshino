@@ -14,7 +14,7 @@ os.environ['NUMEXPR_NUM_THREADS'] = '20'
 import sqlite3
 import gc
 import matplotlib.pyplot as plt
-import open3d
+#import open3d
 import random
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Subset
