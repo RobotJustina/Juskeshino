@@ -1,4 +1,4 @@
-#!/home/robocup/venvs/python3_11/bin/python
+#!/home/robocup/venvs/python3_9/bin/python
 
 import torch
 import torch.nn as nn
@@ -44,7 +44,7 @@ VAL_DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/validate_dat
 DATABASE_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/" + '/grasp_database_quaternion.db'
 VAL_TO_TEST_RATIO = 0.1
 FULL_DATASET = -1
-BATCH_SIZE = 128
+BATCH_SIZE = 192
 
 ##
 y_loss = {}
@@ -56,13 +56,13 @@ ori_err['val'] = []
 x_epoch = []
 
 class Orientation_head(nn.Module):
-    def __init__(self,kcenters = None):
+    def __init__(self):
         super().__init__()
-        if not kcenters:
-            kcenters = find_kmeans_centers(256,4,max_iter=2000)
-        self.kmm = Kernel_Mixture_Network(1027,128,len(kcenters),kcenters,4,250)
+        kcenters = torch.load(MODELS_PATH + 'kcenters_256.pt',weights_only=True)
+        self.kmm = Kernel_Mixture_Network(1027,256,len(kcenters),kcenters,4,320)
         self.space = Hypersphere(3)
         self.BASE_POINT = torch.tensor([0.0,0.0,0.0,1.0],dtype=torch.float64).to(DEVICE)
+        #print(self)
 
     def forward(self, x, pos):
         x = torch.cat((x,pos),dim=1)
@@ -82,15 +82,17 @@ class Orientation_head(nn.Module):
     
 
 class Orientation_network(nn.Module):
-    def __init__(self, enc_state_dict, kcenters = None):
+    def __init__(self, enc_state_dict = None, kcenters = None):
         super().__init__()
         self.enc = Encoder().float()
-        self.enc.load_state_dict(enc_state_dict)
-        if not kcenters:
+        if enc_state_dict:
+            self.enc.load_state_dict(enc_state_dict)
+        if kcenters == None:
             kcenters = find_kmeans_centers(256,4,max_iter=2000)
             #print(kcenters)
             #print(kcenters.dtype)
-        self.kmm = Kernel_Mixture_Network(1027,128,len(kcenters),kcenters,4,300)
+        print(kcenters)
+        self.kmm = Kernel_Mixture_Network(1027,256,len(kcenters),kcenters,4,320)
         self.space = Hypersphere(3)
         self.BASE_POINT = torch.tensor([0.0,0.0,0.0,1.0],dtype=torch.float64).to(DEVICE)
         #print(self)
@@ -98,7 +100,7 @@ class Orientation_network(nn.Module):
     def forward(self, x, pos):
         x = self.enc(x)
         x = torch.cat((x,pos),dim=1)
-        ori = self.kmm.sample(x)
+        ori = self.kmm(x)
         return x, ori
     
     def L1_loss(self, q1, q2):
@@ -111,6 +113,9 @@ class Orientation_network(nn.Module):
     
     def prob_loss(self, x, y):
         return self.kmm.loss(x,y)
+    
+    def predict(self, x):
+        return self.kmm.sample(x)
 
 
 class SQL_GraspDataset(torch.utils.data.Dataset):
@@ -163,6 +168,14 @@ class SQL_GraspDataset(torch.utils.data.Dataset):
             samples.append(points,pose)
         return samples
     
+    def get_quat(self):
+        self.cursor.execute("SELECT i,j,k,w FROM grasps_table WHERE grasp_id in (%s)" % ",".join([str(x) for x in self.indices]))
+        quat = self.cursor.fetchall()
+        self.conn.commit()
+        quat = torch.from_numpy(np.asarray(quat))
+        return quat
+
+    
     def get_list(self, idx: list):
         self.cursor.execute("SELECT x,y,z,i,j,k,w, (SELECT pcd_binary FROM point_clouds_table WHERE point_clouds_table.pcd_id = grasps_table.pcd_id) FROM grasps_table WHERE grasp_id in (%s)" % ",".join([str(x) for x in idx]))
         qry = self.cursor.fetchall()
@@ -180,7 +193,7 @@ class SQL_GraspDataset(torch.utils.data.Dataset):
         )
         assert not start is None and not stop is None
         return self.get_list(list(range(start, stop, step)))
-    
+     
     def get_single(self, idx):
         self.cursor.execute("SELECT x,y,z,i,j,k,w, (SELECT pcd_binary FROM point_clouds_table WHERE point_clouds_table.pcd_id = grasps_table.pcd_id) FROM grasps_table WHERE grasp_id = {}".format(self.indices[idx]))
         x,y,z,i,j,k,w,pcd_binary = self.cursor.fetchone()
@@ -231,13 +244,13 @@ def get_SQL_dataloaders(train_path=DATABASE_PATH, val_path=DATABASE_PATH, n_samp
     else:
         train_dataset = SQL_GraspDataset(set_type="test",path=train_path,samples=n_samples)
         valid_dataset = SQL_GraspDataset(set_type="validate",path=val_path,samples=n_samples)
-    train_loader = torch.utils.data.DataLoader(train_dataset, BATCH_SIZE, shuffle=True, num_workers=14, prefetch_factor=6, persistent_workers=True, pin_memory=True, generator=torch.Generator('cpu'), collate_fn=train_dataset.dataset.collate)
+    train_loader = torch.utils.data.DataLoader(train_dataset, BATCH_SIZE, shuffle=True, num_workers=10, prefetch_factor=5, persistent_workers=True, pin_memory=True, generator=torch.Generator('cpu'), collate_fn=train_dataset.dataset.collate)
     print(len(train_loader))
-    valid_loader = torch.utils.data.DataLoader(valid_dataset, BATCH_SIZE, shuffle=True, num_workers=6, prefetch_factor=5, persistent_workers=True, pin_memory=True, generator=torch.Generator('cpu'), collate_fn=valid_dataset.dataset.collate)
+    valid_loader = torch.utils.data.DataLoader(valid_dataset, BATCH_SIZE, shuffle=True, num_workers=3, prefetch_factor=3, persistent_workers=True, pin_memory=True, generator=torch.Generator('cpu'), collate_fn=valid_dataset.dataset.collate)
 
     return train_loader, valid_loader
 
-def draw_curve():
+def draw_curve_full():
     fig = plt.figure()
     ax0 = fig.add_subplot(121, title="Loss")
     ax1 = fig.add_subplot(122, title="Orientation geodesic error")
@@ -253,6 +266,16 @@ def draw_curve():
     fig.savefig(os.path.join(GRAPHS_PATH, 'new_joined_head.eps'))
     plt.show()
 
+def draw_curve():
+    fig = plt.figure()
+    ax0 = fig.add_subplot(111, title="Loss")
+    ax0.plot(x_epoch, y_loss['train'], 'bo-', label='train')
+    ax0.plot(x_epoch, y_loss['val'], 'ro-', label='val')
+    ax0.grid()
+    fig.supxlabel('Epochs')
+    fig.tight_layout()
+    fig.savefig(os.path.join(GRAPHS_PATH, 'new_joined_head.eps'))
+    plt.show()
 
 def train_network(num_epochs,model_name,cae_file, model_path=None,samples =-1):
     torch.cuda.empty_cache()
@@ -260,7 +283,8 @@ def train_network(num_epochs,model_name,cae_file, model_path=None,samples =-1):
     train_loader, valid_loader = get_SQL_dataloaders(n_samples=samples)
     train_size = len(train_loader.dataset)
     val_size = len(valid_loader.dataset)
-    model = load_model(cae_path=cae_file)
+    kcenters = torch.load(MODELS_PATH + 'kcenters_256.pt',weights_only=True)
+    model = load_model(cae_path=cae_file, kcenters=kcenters)
     model = model.to(DEVICE)
     best_model = copy.deepcopy(model.state_dict())
     #exp_error = nn.L1Loss(reduction='mean')
@@ -270,12 +294,16 @@ def train_network(num_epochs,model_name,cae_file, model_path=None,samples =-1):
     BASE_POINT = torch.tensor([0.0,0.0,0.0,1.0],dtype=torch.float64).to(DEVICE)
 
     #Freeze gradient for encoder module parameters
-    model.BASE_POINT.requires_grad = False
-    for param in model.enc.parameters():
-        param.requires_grad = False
+    #model.BASE_POINT.requires_grad = False
+    # for param in model.enc.parameters():
+    #     param.requires_grad = False
 
-    optimizer = optim.AdamW(model.kmm.wi_network.parameters(),lr=0.01,weight_decay=0.02)
-    lrscheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,'min',factor=0.1,patience=8)
+    optimizer = optim.AdamW([
+                {'params': model.enc.parameters()},
+                {'params': model.kmm.wi_network.parameters(), 'lr': 0.0001}
+            ],lr=0.0001,weight_decay=0.002)
+    #lrscheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,'min',factor=0.1,patience=3,threshold=)
+    lrscheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer=optimizer,max_lr=0.0007,steps_per_epoch=len(train_loader),epochs=num_epochs)
 
     for epoch in range(num_epochs):
         trunning_loss = 0
@@ -289,12 +317,14 @@ def train_network(num_epochs,model_name,cae_file, model_path=None,samples =-1):
             #cpu_ori = copy.deepcopy(target_ori)
             cpu_ori = target_ori
             pcd, pos, target_ori = pcd.to(DEVICE, non_blocking = True), pos.to(DEVICE, non_blocking = True), target_ori.to(DEVICE, non_blocking = True)
+            
             #print(pos)
             with torch.device(DEVICE):
                 #print(target_ori)
                 #print(model.space.belongs(target_ori))
                 
-                x, ori = model(pcd, pos)
+                x, wi = model(pcd, pos)
+                #ori = model.predict(x)
                 #print(ori.shape)
                 tloss = model.kmm.loss(x,cpu_ori).mean()
                 #tloss = model.L2_loss(ori,target_ori)
@@ -302,12 +332,14 @@ def train_network(num_epochs,model_name,cae_file, model_path=None,samples =-1):
                 optimizer.zero_grad()
                 tloss.backward()
                 optimizer.step()
+                lrscheduler.step()
             
                 trunning_loss += tloss.item() * pcd.shape[0]
                 #tori_err += exp_error(ori,space.metric.exp(target_ori,BASE_POINT)).item() * pcd.shape[0]
-                tori_err += exp_error(ori,target_ori).item() * pcd.shape[0]
+                
+                #tori_err += exp_error(ori,target_ori).item() * pcd.shape[0]
 
-                del pcd, ori, target_ori, cpu_ori, pos
+                del pcd, target_ori, cpu_ori, pos, x
                 torch.cuda.empty_cache()
                 gc.collect()
 
@@ -323,15 +355,16 @@ def train_network(num_epochs,model_name,cae_file, model_path=None,samples =-1):
                 target_ori = target_ori.to(DEVICE, non_blocking = True)
                 
                 with torch.device(DEVICE):
-                    x, ori = model(pcd, pos)
+                    x, wi = model(pcd, pos)
+                    #ori = model.predict(x)
                     valloss = model.kmm.loss(x,cpu_ori).mean()
                     #valloss = model.L2_loss(ori, target_ori)
 
                     vrunning_loss += valloss.item() * pcd.shape[0]
                     #vori_err += exp_error(ori,space.metric.exp(target_ori,BASE_POINT)).item() * pcd.shape[0]
-                    vori_err += exp_error(ori,target_ori).item() * pcd.shape[0]
+                    #vori_err += exp_error(ori,target_ori).item() * pcd.shape[0]
 
-                    del pcd, ori, target_ori, cpu_ori, pos
+                    del pcd, target_ori, cpu_ori, pos, x
                     torch.cuda.empty_cache()
                     gc.collect()
             if (vrunning_loss / val_size) < min_loss:
@@ -340,14 +373,14 @@ def train_network(num_epochs,model_name,cae_file, model_path=None,samples =-1):
                 best_model = copy.deepcopy(model.state_dict())       
         print ('Epoch [{}/{}], Training Loss: {:.4f}'.format(epoch+1, num_epochs, trunning_loss / train_size))
         print ('Epoch [{}/{}], Validation Loss: {:.4f}'.format(epoch+1, num_epochs, vrunning_loss / val_size))
-        print ('Epoch [{}/{}], Average error: {:.4f}'.format(epoch+1, num_epochs, vori_err / val_size))
+        #print ('Epoch [{}/{}], Average error: {:.4f}'.format(epoch+1, num_epochs, vori_err / val_size))
         y_loss['train'].append(trunning_loss / train_size)
         y_loss['val'].append(vrunning_loss / val_size)
-        ori_err['train'].append(tori_err / train_size)
-        ori_err['val'].append(vori_err / val_size)
+        #ori_err['train'].append(tori_err / train_size)
+        #ori_err['val'].append(vori_err / val_size)
         x_epoch.append(epoch+1)
 
-        lrscheduler.step(vrunning_loss / val_size)
+        #lrscheduler.step(vrunning_loss / val_size)
         
     model_file = MODELS_PATH + model_name + "_ep" + str(saved_epoch) + ".pt"
     torch.save({
@@ -363,9 +396,19 @@ def train_network(num_epochs,model_name,cae_file, model_path=None,samples =-1):
     print(min_loss)
     print(saved_epoch)
 
-def load_model(model_path=None, cae_path=MODELS_PATH + 'dummy_cae_10ks_ep97_split_dict.pt',kcenters = None):
-    enc_state_dict = torch.load(cae_path,weights_only=True)['encoder_state_dict']
-    model = Orientation_network(enc_state_dict)
+def find_dataset_kernel_centers(num_centers, n_samples):
+    dataset = SQL_GraspDataset(set_type="test",path=DATABASE_PATH,samples=n_samples)
+    quat = dataset.get_quat()
+    kcenters = find_kmeans_centers(num_centers,3,quat)
+    print(kcenters)
+    return kcenters
+
+def load_model(model_path=None, cae_path=None,kcenters = None):
+    if cae_path:
+        enc_state_dict = torch.load(cae_path,weights_only=True)['encoder_state_dict']
+    else:
+        enc_state_dict = None
+    model = Orientation_network(enc_state_dict,kcenters=kcenters)
     if model_path:
         model.load_state_dict(torch.load(model_path,weights_only=True))
     model = model.cuda()
@@ -387,9 +430,12 @@ def quick_create_test():
     print(ori_network)
 
 def main():
-    cae_file = MODELS_PATH + 'dummy_cae_10ks_ep97_split_dict.pt'
+    cae_file = MODELS_PATH + 'conv_autoencoder_final_ep67.pt'
     #model_file = MODELS_PATH + 'orient_net_more_rest_tradfc_flush_50k_silu_ep40.pt'
-    train_network(20,'orient_net_vmf_50k',cae_file,samples=50000)
+    #kcenters = find_dataset_kernel_centers(256,-1)
+    #torch.save(kcenters, MODELS_PATH +'kcenters_256.pt')
+    #print(torch.load(MODELS_PATH + 'kcenters_256.pt'))
+    train_network(20,'orient_net_vmf_encgrad_kc_50k_onecycle_0007_kmeans3',cae_file,samples=50000)
     #print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=30))
             
     #quick_create_test()

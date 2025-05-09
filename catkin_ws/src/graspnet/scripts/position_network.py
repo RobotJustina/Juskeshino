@@ -12,7 +12,6 @@ import os
 import sqlite3
 import gc
 import matplotlib.pyplot as plt
-import open3d
 from mixture_density_network import MixtureDensityNetwork
 from cnn_autoencoder import Encoder
 from sklearn.model_selection import train_test_split
@@ -29,10 +28,10 @@ DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/training_dataset
 MODELS_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/models/"
 GRAPHS_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/graphs/"
 VAL_DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/validate_dataset/"
-DATABASE_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/" + '/grasp_database_nm_test2.db'
+DATABASE_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/" + '/grasp_database_quaternion.db'
 VAL_TO_TEST_RATIO = 0.1
 FULL_DATASET = -1
-BATCH_SIZE = 500
+BATCH_SIZE = 192
 
 ##
 y_loss = {}
@@ -59,7 +58,7 @@ class Position_network(nn.Module):
     def __init__(self, enc_state_dict=None):
         super().__init__()
         self.enc = Encoder()
-        self.pmdn = MixtureDensityNetwork(1024,3,32,128)
+        self.pmdn = MixtureDensityNetwork(1024,3,32,256)
         if enc_state_dict:
             self.enc.load_state_dict(enc_state_dict)
         #print(self)
@@ -85,20 +84,23 @@ class SQL_GraspDataset(torch.utils.data.Dataset):
         points_t = []
         pose_t = []
         for row in qry:
-            x,y,z,i,j,k,w,pcd_binary = row
+            x,y,z,pcd_binary = row
             pcd = np.load(self.bytes_io(pcd_binary))
             pcd = rf.structured_to_unstructured(pcd)
             #pcd = pcd[:,:,:3]
             #points = np.transpose(pcd,(2,1,0))
             #pose = [x,y,z,i,j,k,w]
             points = torch.tensor(pcd[:,:,:3],dtype=torch.float32)
+            points = torch.nan_to_num(points,nan=0.0)
             points = torch.permute(points,(2,1,0))
-            pose = torch.tensor([x,y,z,i,j,k,w],dtype=torch.float32)
+            pose = torch.tensor([x,y,z],dtype=torch.float32)
             points_t.append(points)
             pose_t.append(pose)
         #points_t = torch.tensor(np.array(points_t),dtype=torch.float32)
         #pose_t = torch.tensor(np.array(pose_t),dtype=torch.float32)
         #print(points_t.shape)
+        points_t = torch.stack(points_t,dim=0)
+        pose_t = torch.stack(pose_t,dim=0)
         return points_t, pose_t
         #return points_t.squeeze(0), pose_t.squeeze(0)
     
@@ -149,12 +151,15 @@ class SQL_GraspDataset(torch.utils.data.Dataset):
         pcd = np.load(self.bytes_io(pcd_binary))
         pcd = rf.structured_to_unstructured(pcd)
         points = torch.tensor(pcd[:,:,:3],dtype=torch.float32)
-        #points = torch.nan_to_num(points,nan=0.0)
+        points = torch.nan_to_num(points,nan=0.0)
         points = torch.permute(points,(2,1,0))
         pose = torch.tensor([x,y,z],dtype=torch.float32)
         return points, pose
     
-    def __getitem__(self, index):
+    def __getitem__(self,index):
+        return self.indices[index]
+    
+    def collate(self, index):
         if isinstance(index, slice):
             #print(self.get_slice(index).shape)
             return self.get_slice(index)
@@ -185,9 +190,9 @@ def get_SQL_dataloaders(train_path=DATABASE_PATH, val_path=DATABASE_PATH, n_samp
     else:
         train_dataset = SQL_GraspDataset(set_type="test",path=train_path,samples=n_samples)
         valid_dataset = SQL_GraspDataset(set_type="validate",path=val_path,samples=n_samples)
-    train_loader = torch.utils.data.DataLoader(train_dataset, BATCH_SIZE, shuffle=True, num_workers=1,pin_memory=True)#,generator=torch.Generator(DEVICE))
+    train_loader = torch.utils.data.DataLoader(train_dataset, BATCH_SIZE, shuffle=True, num_workers=10, prefetch_factor=5, persistent_workers=True, pin_memory=True, generator=torch.Generator('cpu'), collate_fn=train_dataset.dataset.collate)
     print(len(train_loader))
-    valid_loader = torch.utils.data.DataLoader(valid_dataset, BATCH_SIZE, shuffle=True, num_workers=1,pin_memory=True)#,generator=torch.Generator(DEVICE))
+    valid_loader = torch.utils.data.DataLoader(valid_dataset, BATCH_SIZE, shuffle=True, num_workers=3, prefetch_factor=3, persistent_workers=True, pin_memory=True, generator=torch.Generator('cpu'), collate_fn=valid_dataset.dataset.collate)
 
     return train_loader, valid_loader
 
@@ -220,10 +225,15 @@ def train_network(num_epochs,model_name,cae_file, model_path=None,samples =-1):
     min_loss = 150000
 
     #Freeze gradient for encoder module parameters
-    for param in model.enc.parameters():
-        param.requires_grad = False
+    #for param in model.enc.parameters():
+    #    param.requires_grad = False
 
-    optimizer = optim.AdamW(model.pmdn.parameters(),lr=0.0001,weight_decay=0.002)
+    optimizer = optim.AdamW([
+                {'params': model.enc.parameters()},
+                {'params': model.pmdn.parameters(), 'lr': 0.0001}
+            ],lr=0.0001,weight_decay=0.002)
+    lrscheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer=optimizer,max_lr=0.001,steps_per_epoch=len(train_loader),epochs=num_epochs)
+
 
     for epoch in range(num_epochs):
         trunning_loss = 0
@@ -240,6 +250,7 @@ def train_network(num_epochs,model_name,cae_file, model_path=None,samples =-1):
             optimizer.zero_grad()
             tloss.backward()
             optimizer.step()
+            lrscheduler.step()
             
             trunning_loss += tloss.item() * pcd.shape[0]
             tpos_err += exp_error(pos,target_pos).item() * pcd.shape[0]
@@ -266,7 +277,8 @@ def train_network(num_epochs,model_name,cae_file, model_path=None,samples =-1):
             if (vrunning_loss / val_size) < min_loss:
                 min_loss = vrunning_loss / val_size
                 saved_epoch = epoch + 1
-                best_model = copy.deepcopy(model.state_dict())       
+                best_enc_model = copy.deepcopy(model.enc.state_dict())       
+                best_pos_model = copy.deepcopy(model.pmdn.state_dict())       
         print ('Epoch [{}/{}], Training Loss: {:.4f}'.format(epoch+1, num_epochs, trunning_loss / train_size))
         print ('Epoch [{}/{}], Validation Loss: {:.4f}'.format(epoch+1, num_epochs, vrunning_loss / val_size))
         y_loss['train'].append(trunning_loss / train_size)
@@ -275,9 +287,15 @@ def train_network(num_epochs,model_name,cae_file, model_path=None,samples =-1):
         pos_err['val'].append(vpos_err / val_size)
         x_epoch.append(epoch+1)
     model_file = MODELS_PATH + model_name + "_ep" + str(saved_epoch) + ".pt"
-    torch.save(best_model,model_file)
+    torch.save({
+        'encoder_state_dict': best_enc_model,
+        'ori_state_dict': best_pos_model
+    },model_file)
     model_file = MODELS_PATH + model_name + "_ep" + str(num_epochs) + ".pt" 
-    torch.save(model.state_dict(),model_file)
+    torch.save({
+        'encoder_state_dict': model.enc.state_dict(),
+        'ori_state_dict': model.pmdn.state_dict()
+    },model_file)
     draw_curve()
     print(min_loss)
     print(saved_epoch)
@@ -305,10 +323,11 @@ def quick_create_test():
     pos_network = Position_network(enc_state_dict)
 
 def main():
-    pos_file = MODELS_PATH + 'dummy_pos_net_1ks_ep50.pt'
-    save_pos_file = MODELS_PATH + 'dummy_pos_net_1ks_ep50_split.pt'
-    #train_network(50,'dummy_pos_net_1ks',cae_file,samples=25000)
-    load_and_split_model(pos_file,save_pos_file)
+    #save_pos_file = MODELS_PATH + 'pos_network_orienc_5k_lr0008_ep25_split.pt'
+    #pos_file = MODELS_PATH + 'pos_network_orienc_5k_lr0008_ep25.pt'
+    enc_file = MODELS_PATH + 'orient_net_vmf_encgrad_kc_50k_onecycle_0008_ep20.pt'
+    train_network(20,'pos_network_orienc_50k_lr001_mish',cae_file=enc_file,samples=50000)
+    #load_and_split_model(pos_file,save_pos_file)
 
 if __name__ == '__main__':
     main()

@@ -1,0 +1,3 @@
+std_msgs/Float32MultiArray np_pcd
+---
+geometry_msgs/Pose predicted_grasp

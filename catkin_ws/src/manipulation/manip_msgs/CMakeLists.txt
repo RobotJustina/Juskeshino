@@ -64,6 +64,7 @@ add_service_files(
   InverseKinematicsPose2Traj.srv
   InverseKinematicsTraj2Traj.srv
   DataCapture.srv
+  Graspnet.srv
 )
 
 ## Generate actions in the 'action' folder

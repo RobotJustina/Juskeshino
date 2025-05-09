@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/home/robocup/venvs/python3_11/bin/python
 
 import torch
 import torch.nn as nn
@@ -12,12 +12,13 @@ import os
 import sqlite3
 import gc
 import matplotlib.pyplot as plt
-import open3d
+#import open3d
 import geomstats.backend as gs
 from geomstats.geometry.hypersphere import Hypersphere, HypersphereMetric
 from mixture_density_network import MixtureDensityNetwork
+from kernel_mixture_network import Kernel_Mixture_Network
 from position_network import Position_head
-from orientation_network import Orientation_head
+from ori_network3 import Orientation_head
 from cnn_autoencoder import Encoder
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Subset
@@ -36,7 +37,7 @@ VAL_DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/validate_dat
 DATABASE_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/" + '/grasp_database_nm_test2.db'
 VAL_TO_TEST_RATIO = 0.1
 FULL_DATASET = -1
-BATCH_SIZE = 1000
+BATCH_SIZE = 192
 
 ##
 y_loss = {}
@@ -63,7 +64,7 @@ class Joint_Mixture_Density_Grasp_Network(nn.Module):
         if pos_state_dict:
             self.pos_head.pmdn.load_state_dict(pos_state_dict)
         if ori_state_dict:
-            self.ori_head.omdn.load_state_dict(ori_state_dict)
+            self.ori_head.kmm.load_state_dict(ori_state_dict)
 
     def forward(self, x):
         x = self.enc(x)
@@ -71,7 +72,7 @@ class Joint_Mixture_Density_Grasp_Network(nn.Module):
         #print(type(x),type(pos), pos)
         #x = torch.cat((x,pos),dim=1)
         ori = self.ori_head(x,pos)
-        ori = self.space.metric.exp(ori,self.BASE_POINT)
+        #ori = self.space.metric.exp(ori,self.BASE_POINT)
         return pos, ori, x
 
 
@@ -309,9 +310,9 @@ def load_model(cae_file=None, pos_file=None, ori_file=None):
     return model
 
 def quick_create_test():
-    cae_file = MODELS_PATH + 'dummy_cae_10ks_ep97_split_dict.pt'
-    save_ori_file = MODELS_PATH +'orient_net_more_rest_tradfc_flush_50k_ep79.pt'
-    save_pos_file = MODELS_PATH + 'dummy_pos_net_1ks_ep50_split.pt'
+    cae_file = MODELS_PATH + 'orient_net_vmf_encgrad_kc_50k_onecycle_0008_ep20.pt'
+    save_ori_file = MODELS_PATH +'orient_net_vmf_encgrad_kc_50k_onecycle_0008_ep20.pt'
+    save_pos_file = MODELS_PATH + 'pos_network_orienc_5k_lr0008_ep25_split.pt'
     # enc_state_dict = torch.load(cae_file,weights_only=True)['encoder_state_dict']
     # for param_tensor in enc_state_dict:
     #     print(param_tensor,'\t', enc_state_dict[param_tensor].size())

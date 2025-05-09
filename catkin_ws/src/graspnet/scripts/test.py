@@ -8,6 +8,7 @@ import os
 import matplotlib.pyplot as plt
 import tf.transformations as tft
 import numpy as np
+import numpy.lib.recfunctions as rf
 import vg
 import tf2_ros
 from tf2_geometry_msgs import PointStamped
@@ -17,14 +18,18 @@ from gazebo_msgs.srv import SetModelState, GetModelState
 from std_msgs.msg import String, Float64MultiArray, Header
 from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import Pose, Point, Quaternion  
+from manip_msgs.srv import Graspnet, GraspnetRequest
 #from train import load_model, DEVICE
 import geometry_msgs
 import grasp_network as gn
 #from position_network import Position_network, load_model, DEVICE
-from joint_var_network import Joint_Mixture_Density_Grasp_Network, quick_create_test, DEVICE
+#from joint_var_network import Joint_Mixture_Density_Grasp_Network, quick_create_test, DEVICE
 from visualization_msgs.msg import Marker
 import geomstats.backend as gs
 from geomstats.geometry.hypersphere import Hypersphere, HypersphereMetric
+from ros_np_multiarray import ros_np_multiarray as rnm
+#from ros_np_multiarray.src.ros_np_multiarray.ros_np_multiarray import _numpy_to_multiarray
+
 
 #from ...manipulation.object_manipulation.scripts import dataset_utils as dutils
 #import ...manipulation.object_manipulation.scripts.dataset_utils as dtutils
@@ -257,8 +262,8 @@ def reset_simulation():
 
 
 def main():
-    torch.set_default_dtype(torch.float32)
-    torch.set_default_device(DEVICE)
+    #torch.set_default_dtype(torch.float32)
+    #torch.set_default_device(DEVICE)
     global ik_srv, state_msg, grasp_trajectory_found, justina_origin_pose, obj_shape, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
     global set_state, z, marker_pub
     z = 0.74
@@ -278,6 +283,7 @@ def main():
     pub_hd = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=10)
     transform_pointcloud = rospy.ServiceProxy("/vision/point_cloud_to_base_link",PreprocessPointCloud)
     marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10)
+    graspnet_qry = rospy.ServiceProxy('/manipulation/grasp/graspnet_request' ,Graspnet)
     obj_shape = rospy.get_param("/obj","056_tennis_ball")
     rospy.sleep(1)
     loop = rospy.Rate(1)
@@ -287,8 +293,8 @@ def main():
     #pos_network = load_model(model_path=MODELS_PATH + "dummy_pos_net_1ks_ep50.pt")
     #pos_network.eval()
 
-    jmdgn = quick_create_test()
-    jmdgn.eval()
+    #jmdgn = quick_create_test()
+    #jmdgn.eval()
 
     while not rospy.is_shutdown():
         print("Type r to reset sim to a random pose, and l to loop simulation for samples")
@@ -327,24 +333,27 @@ def main():
             u, v, object_in_range = gn.find_nearest_pt_in_pc(mat,t_pt)
             if object_in_range:
                 pcd = gn.cut_pc(u,v,mat)
-                pcd = gn.npmatrix_to_torch(pcd)
-                pcd = pcd.unsqueeze(0).to(DEVICE)
-                print(pcd)
-                with torch.no_grad():
+                pcd = rf.structured_to_unstructured(pcd)
+                pcd = rnm.to_multiarray_f32(pcd)
+                #pcd = gn.npmatrix_to_torch(pcd)
+                #pcd = pcd.unsqueeze(0).to(DEVICE)
+                #print(pcd)
+                #with torch.no_grad():
                     #pos, ori, x = grasp_network(pcd)
-                    with torch.device(DEVICE):
-                        pos, ori, x = jmdgn(pcd)
-                    predicted_gripper_center_pose = torch.cat((pos,ori),dim=1)
+                    #with torch.device(DEVICE):
+                    #    pos, ori, x = jmdgn(pcd)
+                    #predicted_gripper_center_pose = torch.cat((pos,ori),dim=1)
+                predicted_gripper_center_pose = graspnet_qry(pcd).predicted_grasp
                 print(predicted_gripper_center_pose)
-                predicted_pose = tensor_to_pose(predicted_gripper_center_pose)
+                #predicted_pose = tensor_to_pose(predicted_gripper_center_pose)
                 #predicted_pose.orientation.normalize()
                 #broadcaster_frame_object("camera_rgb_optical_frame","grasp_frame",predicted_pose)
-                broadcaster_frame_object("base_link","grasp_frame",predicted_pose)
+                broadcaster_frame_object("base_link","grasp_frame",predicted_gripper_center_pose)
                 ptlist = [Point(x=0.04),Point(x=-0.04)]
                 create_cube_marker_from_pt(ptlist,[0.005, 0.04, 0.1],1)
                 create_cube_marker_from_pt([Point(z=-0.03)],[0.06, 0.03525, 0.03525],2)
                 create_arrow_marker_from_pt([Point(z=-0.03),Point(z=-0.03,y=0.1)])
-                print(predicted_pose)
+                #print(predicted_gripper_center_pose)
 
         if command == "p":
             reset_simulation()
