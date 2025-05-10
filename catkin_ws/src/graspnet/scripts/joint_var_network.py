@@ -1,4 +1,4 @@
-#!/home/robocup/venvs/python3_11/bin/python
+#!/home/robocup/venvs/python3_9/bin/python
 
 import torch
 import torch.nn as nn
@@ -12,6 +12,7 @@ import os
 import sqlite3
 import gc
 import matplotlib.pyplot as plt
+import graphviz
 #import open3d
 import geomstats.backend as gs
 from geomstats.geometry.hypersphere import Hypersphere, HypersphereMetric
@@ -23,7 +24,9 @@ from cnn_autoencoder import Encoder
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Subset
 from io import BytesIO
+from torchview import draw_graph
 
+graphviz.set_jupyter_format('png')
 
 ##Environment Config and paths
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -310,9 +313,9 @@ def load_model(cae_file=None, pos_file=None, ori_file=None):
     return model
 
 def quick_create_test():
-    cae_file = MODELS_PATH + 'orient_net_vmf_encgrad_kc_50k_onecycle_0008_ep20.pt'
-    save_ori_file = MODELS_PATH +'orient_net_vmf_encgrad_kc_50k_onecycle_0008_ep20.pt'
-    save_pos_file = MODELS_PATH + 'pos_network_orienc_5k_lr0008_ep25_split.pt'
+    cae_file = MODELS_PATH + 'orient_net_vmf_encgrad_kc_50k_onecycle_0008_kmeans2_ep20.pt'
+    save_ori_file = MODELS_PATH +'orient_net_vmf_encgrad_kc_50k_onecycle_0008_kmeans2_ep20.pt'
+    save_pos_file = MODELS_PATH + 'pos_network_orienc_50k_lr001_mish_nograd_ep20.pt'
     # enc_state_dict = torch.load(cae_file,weights_only=True)['encoder_state_dict']
     # for param_tensor in enc_state_dict:
     #     print(param_tensor,'\t', enc_state_dict[param_tensor].size())
@@ -323,7 +326,10 @@ def quick_create_test():
 def main():
     #cae_file = MODELS_PATH + 'dummy_cae_10ks_ep97_split_dict.pt'
     #train_network(100,'dummy_joint_net_1ks',cae_file,samples=1000)
-    quick_create_test()
+    model = quick_create_test()
+    model_graph = draw_graph(model.enc, input_size=(1, 3, 200, 200), device='meta',expand_nested=True)
+    #model_graph.resize_graph(scale=0.3)
+    model_graph.visual_graph.render('graph',format='pdf', view=True)
 
 if __name__ == '__main__':
     main()

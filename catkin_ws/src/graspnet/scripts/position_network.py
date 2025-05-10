@@ -45,7 +45,7 @@ x_epoch = []
 class Position_head(nn.Module):
     def __init__(self):
         super().__init__()
-        self.pmdn = MixtureDensityNetwork(1024,3,32,128)
+        self.pmdn = MixtureDensityNetwork(1024,3,32,256)
 
     def forward(self, x):
         pos = self.pmdn.sample(x)
@@ -220,16 +220,16 @@ def train_network(num_epochs,model_name,cae_file, model_path=None,samples =-1):
     train_size = len(train_loader.dataset)
     val_size = len(valid_loader.dataset)
     model = load_model(cae_path=cae_file)
-    best_model = copy.deepcopy(model.state_dict())
+    #best_model = copy.deepcopy(model.state_dict())
     exp_error = nn.L1Loss(reduction='mean')
     min_loss = 150000
 
     #Freeze gradient for encoder module parameters
-    #for param in model.enc.parameters():
-    #    param.requires_grad = False
+    for param in model.enc.parameters():
+        param.requires_grad = False
 
     optimizer = optim.AdamW([
-                {'params': model.enc.parameters()},
+                #{'params': model.enc.parameters()},
                 {'params': model.pmdn.parameters(), 'lr': 0.0001}
             ],lr=0.0001,weight_decay=0.002)
     lrscheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer=optimizer,max_lr=0.001,steps_per_epoch=len(train_loader),epochs=num_epochs)
@@ -289,12 +289,12 @@ def train_network(num_epochs,model_name,cae_file, model_path=None,samples =-1):
     model_file = MODELS_PATH + model_name + "_ep" + str(saved_epoch) + ".pt"
     torch.save({
         'encoder_state_dict': best_enc_model,
-        'ori_state_dict': best_pos_model
+        'pos_state_dict': best_pos_model
     },model_file)
     model_file = MODELS_PATH + model_name + "_ep" + str(num_epochs) + ".pt" 
     torch.save({
         'encoder_state_dict': model.enc.state_dict(),
-        'ori_state_dict': model.pmdn.state_dict()
+        'pos_state_dict': model.pmdn.state_dict()
     },model_file)
     draw_curve()
     print(min_loss)
@@ -325,8 +325,8 @@ def quick_create_test():
 def main():
     #save_pos_file = MODELS_PATH + 'pos_network_orienc_5k_lr0008_ep25_split.pt'
     #pos_file = MODELS_PATH + 'pos_network_orienc_5k_lr0008_ep25.pt'
-    enc_file = MODELS_PATH + 'orient_net_vmf_encgrad_kc_50k_onecycle_0008_ep20.pt'
-    train_network(20,'pos_network_orienc_50k_lr001_mish',cae_file=enc_file,samples=50000)
+    enc_file = MODELS_PATH + 'orient_net_vmf_encgrad_kc_50k_onecycle_0008_kmeans2_ep20.pt'
+    train_network(20,'pos_network_orienc_50k_lr001_mish_nograd',cae_file=enc_file,samples=50000)
     #load_and_split_model(pos_file,save_pos_file)
 
 if __name__ == '__main__':
