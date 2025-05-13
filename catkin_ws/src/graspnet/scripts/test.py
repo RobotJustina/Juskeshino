@@ -14,7 +14,7 @@ import tf2_ros
 from tf2_geometry_msgs import PointStamped
 from vision_msgs.srv import PreprocessPointCloud, PreprocessPointCloudRequest
 from gazebo_msgs.msg import ModelState, ContactsState
-from gazebo_msgs.srv import SetModelState, GetModelState
+from gazebo_msgs.srv import SetModelState, GetModelState, SetModelConfiguration, SetModelConfigurationRequest
 from std_msgs.msg import String, Float64MultiArray, Header
 from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import Pose, Point, Quaternion  
@@ -165,6 +165,22 @@ def tensor_to_point(tensor):
 
     return rpose
 
+def graspnet_ref_to_gripper_ref(q):
+    ql = [q.x,q.y,q.z,q.w]
+    rot = tft.quaternion_matrix(ql)
+    y = rot[:3,1]
+    rot[:3,2] = -rot[:3,2]
+    rot[:3,1] = rot[:3,0]
+    rot[:3,0] = y
+    #print(rot)
+    qf = tft.quaternion_from_matrix(rot)
+    qr = Quaternion()
+    qr.x = qf[0]
+    qr.y = qf[1]
+    qr.z = qf[2]
+    qr.w = qf[3]
+    return qr
+
 
 def change_gazebo_object_pose(state_msg, state_pose, mod_name):
     global set_state
@@ -259,13 +275,43 @@ def reset_simulation():
     #pub_object.publish(obj_shape)
     grasp_attempts = 0
 
+def set_gripper_joints(angle):
+    global set_gripper_conf
+    conf = SetModelConfigurationRequest(
+        model_name = 'justina_gripper',
+        urdf_param_name = 'gripper_description',
+        joint_names = ['gr_la_grip_left', 'gr_la_grip_right'],
+        joint_positions = [angle, angle]
+    )
+    resp = set_gripper_conf(conf)
+    return resp
+
+def check_for_contact():
+    left_gripper_made_contact = len(rospy.wait_for_message('/gr_left_arm_grip_left_sensor' ,ContactsState,5).states) > 0
+    right_gripper_made_contact = len(rospy.wait_for_message('/gr_left_arm_grip_right_sensor' ,ContactsState,5).states) > 0
+    return left_gripper_made_contact and right_gripper_made_contact
+
+def evaluate_grip(gr_pose):
+    global set_state
+    set_gripper_joints(0.707)
+    gr_state = ModelState(
+        model_name = 'justina_gripper',
+        pose = gr_pose,
+        reference_frame = 'base_link'
+    )
+    set_state(gr_state)
+    rospy.sleep(0.01)
+    for ds in range(70, -10, -5):
+        set_gripper_joints(ds/10)
+        print(check_for_contact())
+
 
 
 def main():
     #torch.set_default_dtype(torch.float32)
     #torch.set_default_device(DEVICE)
     global ik_srv, state_msg, grasp_trajectory_found, justina_origin_pose, obj_shape, left_gripper_made_contact, right_gripper_made_contact, grasp_attempts, msg_la, pub_la, pub_hd, msg_hd, pub_object, num_loops
-    global set_state, z, marker_pub
+    global set_state, z, marker_pub, set_gripper_conf
     z = 0.74
     state_msg = ModelState()
     deserialized_gripper_model_state = ModelState()
@@ -279,6 +325,7 @@ def main():
     print("Starting grip test")
     get_object_relative_pose = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
     set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
+    set_gripper_conf = rospy.ServiceProxy('/gazebo/set_model_configuration', SetModelConfiguration)
     pub_la = rospy.Publisher("/hardware/left_arm/goal_pose", Float64MultiArray, queue_size=10)
     pub_hd = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=10)
     transform_pointcloud = rospy.ServiceProxy("/vision/point_cloud_to_base_link",PreprocessPointCloud)
@@ -354,6 +401,31 @@ def main():
                 create_cube_marker_from_pt([Point(z=-0.03)],[0.06, 0.03525, 0.03525],2)
                 create_arrow_marker_from_pt([Point(z=-0.03),Point(z=-0.03,y=0.1)])
                 #print(predicted_gripper_center_pose)
+
+        if command == "s":
+            reset_simulation()
+            pcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
+            pcd = transform_pointcloud(PreprocessPointCloudRequest(pcd)).output_cloud
+            obj_pt = get_object_relative_pose(obj_shape,"justina::base_link").pose.position
+            mat = gn.ros_pc2_to_npmatrix(pcd)
+            t_pt = obj_pt
+            #t_pt = gn.c(obj_pt)
+            u, v, object_in_range = gn.find_nearest_pt_in_pc(mat,t_pt)
+            if object_in_range:
+                pcd = gn.cut_pc(u,v,mat)
+                pcd = rf.structured_to_unstructured(pcd)
+                pcd = rnm.to_multiarray_f32(pcd)
+                predicted_gripper_center_pose = graspnet_qry(pcd).predicted_grasp
+                print(predicted_gripper_center_pose)
+                broadcaster_frame_object("base_link","grasp_frame",predicted_gripper_center_pose)
+                ptlist = [Point(x=0.04),Point(x=-0.04)]
+                create_cube_marker_from_pt(ptlist,[0.005, 0.04, 0.1],1)
+                create_cube_marker_from_pt([Point(z=-0.03)],[0.06, 0.03525, 0.03525],2)
+                create_arrow_marker_from_pt([Point(z=-0.03),Point(z=-0.03,y=0.1)])
+                predicted_gripper_center_pose.orientation = graspnet_ref_to_gripper_ref(predicted_gripper_center_pose.orientation)
+                evaluate_grip(predicted_gripper_center_pose)
+                #print(predicted_gripper_center_pose)
+
 
         if command == "p":
             reset_simulation()
