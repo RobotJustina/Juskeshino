@@ -12,7 +12,7 @@ import numpy.lib.recfunctions as rf
 import vg
 import tf2_ros
 from tf2_geometry_msgs import PointStamped
-from vision_msgs.srv import PreprocessPointCloud, PreprocessPointCloudRequest
+from vision_msgs.srv import PreprocessPointCloud, PreprocessPointCloudRequest, RecognizeObject, RecognizeObjectRequest
 from gazebo_msgs.msg import ModelState, ContactsState
 from gazebo_msgs.srv import SetModelState, GetModelState, SetModelConfiguration, SetModelConfigurationRequest
 from std_msgs.msg import String, Float64MultiArray, Header
@@ -338,15 +338,18 @@ def main():
     obj_shape = '056_tennis_ball'
     rospy.init_node('network_tester')
     print("Starting grip test")
-    get_object_relative_pose = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
-    set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
-    set_gripper_conf = rospy.ServiceProxy('/gazebo/set_model_configuration', SetModelConfiguration)
-    pub_la = rospy.Publisher("/hardware/left_arm/goal_pose", Float64MultiArray, queue_size=10)
+    cltGetObjectPose           = rospy.ServiceProxy("/vision/obj_segmentation/get_obj_pose",  RecognizeObject     ) 
+    cltDetectRecogObject       = rospy.ServiceProxy("/vision/obj_reco/detect_and_recognize_object", RecognizeObject     )
+    get_object_relative_pose   = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
+    set_state                  = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
+    set_gripper_conf           = rospy.ServiceProxy('/gazebo/set_model_configuration', SetModelConfiguration)
+    transform_pointcloud       = rospy.ServiceProxy("/vision/point_cloud_to_base_link",PreprocessPointCloud)
+    marker_pub                 = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10)
+    graspnet_qry               = rospy.ServiceProxy('/manipulation/grasp/graspnet_request' ,Graspnet)
     pub_hd = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=10)
-    transform_pointcloud = rospy.ServiceProxy("/vision/point_cloud_to_base_link",PreprocessPointCloud)
-    marker_pub = rospy.Publisher("/vision/object_recognition/markers", Marker, queue_size = 10)
-    graspnet_qry = rospy.ServiceProxy('/manipulation/grasp/graspnet_request' ,Graspnet)
     obj_shape = rospy.get_param("/obj","056_tennis_ball")
+
+
     rospy.sleep(1)
     loop = rospy.Rate(1)
     #grasp_network = load_model(MODELS_PATH + "dual_fb_jmdn128_dropout_wgp_model_sql_5ks_nwl_dh_tansphere_scratch_ep92.pt")
@@ -471,6 +474,54 @@ def main():
                     attempts = attempts + 1
                     rospy.sleep(0.01)
             print("Grasp Accuracy:" + str((grasped/attempts)*100) + '%')
+
+
+        if command == "t2":     # test sistema 2
+            attempts = 0 
+            grasped = 0
+            req     = RecognizeObjectsRequest()
+            ObjPose = RecognizeObjectRequest()
+            while(attempts < 200):
+                reset_simulation()
+                req.point_cloud = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
+
+                try:
+                    resp = cltDetectRecogObject(req)
+                    
+                    ObjPose.point_cloud = resp.recog_object.point_cloud
+                    ObjPose.name        = resp.recog_object.id
+                    ObjPose = cltGetObjectPose(ObjPose)
+                    print("name", ObjPose.name)
+                except:
+                    print(".....")
+                    
+                """
+                pcd = transform_pointcloud(PreprocessPointCloudRequest(pcd)).output_cloud
+                obj_pt = get_object_relative_pose(obj_shape,"justina::base_link").pose.position
+                mat = gn.ros_pc2_to_npmatrix(pcd)
+                t_pt = obj_pt
+                #t_pt = gn.c(obj_pt)
+                u, v, object_in_range = gn.find_nearest_pt_in_pc(mat,t_pt)
+                if object_in_range:
+                    pcd = gn.cut_pc(u,v,mat)
+                    pcd = rf.structured_to_unstructured(pcd)
+                    pcd = rnm.to_multiarray_f32(pcd)
+                    predicted_gripper_center_pose = graspnet_qry(pcd).predicted_grasp
+                    print(predicted_gripper_center_pose)
+                    broadcaster_frame_object("base_link","grasp_frame",predicted_gripper_center_pose)
+                    ptlist = [Point(x=0.04),Point(x=-0.04)]
+                    create_cube_marker_from_pt(ptlist,[0.005, 0.04, 0.1],1)
+                    create_cube_marker_from_pt([Point(z=-0.03)],[0.06, 0.03525, 0.03525],2)
+                    create_arrow_marker_from_pt([Point(z=-0.03),Point(z=-0.03,y=0.1)])
+                    #predicted_gripper_center_pose.orientation = graspnet_ref_to_gripper_ref(predicted_gripper_center_pose.orientation)
+                    if evaluate_grip(predicted_gripper_center_pose):
+                        grasped = grasped + 1
+                    #print(predicted_gripper_center_pose)
+                    attempts = attempts + 1
+                    rospy.sleep(0.01)
+            print("Grasp Accuracy:" + str((grasped/attempts)*100) + '%')
+            """
+
 
         if command == "p":
             reset_simulation()
