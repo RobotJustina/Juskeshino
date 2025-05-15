@@ -39,6 +39,12 @@ MODELS_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/models/"
 # Device configuration
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+GRIPPER_ORIGIN = ModelState()
+GRIPPER_ORIGIN.model_name = "justina_gripper"
+GRIPPER_ORIGIN.pose = Pose()
+GRIPPER_ORIGIN.pose.orientation.w = 1
+GRIPPER_ORIGIN.reference_frame = "world"
+
 def broadcaster_frame_object(frame, child_frame, pose):   # Emite la transformacion en el frame base_link,
     #br = tf2_ros.TransformBroadcaster()
     br =  tf2_ros.StaticTransformBroadcaster()
@@ -287,12 +293,16 @@ def set_gripper_joints(angle):
     return resp
 
 def check_for_contact():
-    left_gripper_made_contact = len(rospy.wait_for_message('/gr_left_arm_grip_left_sensor' ,ContactsState,5).states) > 0
-    right_gripper_made_contact = len(rospy.wait_for_message('/gr_left_arm_grip_right_sensor' ,ContactsState,5).states) > 0
+    global obj_shape
+    left_gripper_contacts = rospy.wait_for_message('/gr_left_arm_grip_left_sensor' ,ContactsState,5).states
+    right_gripper_contacts = rospy.wait_for_message('/gr_left_arm_grip_right_sensor' ,ContactsState,5).states
+    left_gripper_made_contact = len(left_gripper_contacts) > 0 and obj_shape in left_gripper_contacts[0].collision1_name
+    right_gripper_made_contact = len(right_gripper_contacts) > 0 and obj_shape in right_gripper_contacts[0].collision1_name
     return left_gripper_made_contact and right_gripper_made_contact
 
 def evaluate_grip(gr_pose):
     global set_state
+    object_grasped = False
     set_gripper_joints(0.707)
     gr_state = ModelState(
         model_name = 'justina_gripper',
@@ -303,7 +313,12 @@ def evaluate_grip(gr_pose):
     rospy.sleep(0.01)
     for ds in range(70, -10, -5):
         set_gripper_joints(ds/10)
-        print(check_for_contact())
+        #object_grasped = object_grasped or check_for_contact()
+    #print(object_grasped)
+    object_grasped = check_for_contact()
+    set_state(GRIPPER_ORIGIN)
+    rospy.sleep(0.01)
+    return object_grasped
 
 
 
@@ -422,10 +437,40 @@ def main():
                 create_cube_marker_from_pt(ptlist,[0.005, 0.04, 0.1],1)
                 create_cube_marker_from_pt([Point(z=-0.03)],[0.06, 0.03525, 0.03525],2)
                 create_arrow_marker_from_pt([Point(z=-0.03),Point(z=-0.03,y=0.1)])
-                predicted_gripper_center_pose.orientation = graspnet_ref_to_gripper_ref(predicted_gripper_center_pose.orientation)
+                #predicted_gripper_center_pose.orientation = graspnet_ref_to_gripper_ref(predicted_gripper_center_pose.orientation)
                 evaluate_grip(predicted_gripper_center_pose)
                 #print(predicted_gripper_center_pose)
 
+        if command == "sl":
+            attempts = 0
+            grasped = 0
+            while(attempts < 200):
+                reset_simulation()
+                pcd = rospy.wait_for_message("/camera/depth_registered/points", PointCloud2)
+                pcd = transform_pointcloud(PreprocessPointCloudRequest(pcd)).output_cloud
+                obj_pt = get_object_relative_pose(obj_shape,"justina::base_link").pose.position
+                mat = gn.ros_pc2_to_npmatrix(pcd)
+                t_pt = obj_pt
+                #t_pt = gn.c(obj_pt)
+                u, v, object_in_range = gn.find_nearest_pt_in_pc(mat,t_pt)
+                if object_in_range:
+                    pcd = gn.cut_pc(u,v,mat)
+                    pcd = rf.structured_to_unstructured(pcd)
+                    pcd = rnm.to_multiarray_f32(pcd)
+                    predicted_gripper_center_pose = graspnet_qry(pcd).predicted_grasp
+                    print(predicted_gripper_center_pose)
+                    broadcaster_frame_object("base_link","grasp_frame",predicted_gripper_center_pose)
+                    ptlist = [Point(x=0.04),Point(x=-0.04)]
+                    create_cube_marker_from_pt(ptlist,[0.005, 0.04, 0.1],1)
+                    create_cube_marker_from_pt([Point(z=-0.03)],[0.06, 0.03525, 0.03525],2)
+                    create_arrow_marker_from_pt([Point(z=-0.03),Point(z=-0.03,y=0.1)])
+                    #predicted_gripper_center_pose.orientation = graspnet_ref_to_gripper_ref(predicted_gripper_center_pose.orientation)
+                    if evaluate_grip(predicted_gripper_center_pose):
+                        grasped = grasped + 1
+                    #print(predicted_gripper_center_pose)
+                    attempts = attempts + 1
+                    rospy.sleep(0.01)
+            print("Grasp Accuracy:" + str((grasped/attempts)*100) + '%')
 
         if command == "p":
             reset_simulation()
