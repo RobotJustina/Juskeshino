@@ -313,9 +313,12 @@ def load_model(cae_file=None, pos_file=None, ori_file=None):
     return model
 
 def quick_create_test():
-    cae_file = MODELS_PATH + 'orient_net_vmf_encgrad_kc_50k_onecycle_0008_kmeans2_ep20.pt'
-    save_ori_file = MODELS_PATH +'orient_net_vmf_encgrad_kc_50k_onecycle_0008_kmeans2_ep20.pt'
-    save_pos_file = MODELS_PATH + 'pos_network_orienc_50k_lr001_mish_nograd_ep20.pt'
+    #cae_file = MODELS_PATH + 'orient_net_vmf_encgrad_kc_50k_onecycle_0008_kmeans2_ep20.pt'
+    #save_ori_file = MODELS_PATH +'orient_net_vmf_encgrad_kc_50k_onecycle_0008_kmeans2_ep20.pt'
+    #save_pos_file = MODELS_PATH + 'pos_network_orienc_50k_lr001_mish_nograd_ep20.pt'
+    cae_file = MODELS_PATH + 'joint_model1.pt'
+    save_ori_file = MODELS_PATH +'joint_model1.pt'
+    save_pos_file = MODELS_PATH + 'joint_model1.pt'
     # enc_state_dict = torch.load(cae_file,weights_only=True)['encoder_state_dict']
     # for param_tensor in enc_state_dict:
     #     print(param_tensor,'\t', enc_state_dict[param_tensor].size())

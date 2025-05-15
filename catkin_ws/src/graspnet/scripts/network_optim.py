@@ -14,6 +14,7 @@ from scipy.spatial import cKDTree
 import math
 import optuna
 from optuna.trial import TrialState
+from optuna.pruners import PercentilePruner
 import optuna.visualization as opvis
 import torch.utils.data
 import os
@@ -37,7 +38,7 @@ PRUNING_EPOCHS = 1
 BATCH_SIZE = 192
 DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/training_dataset/"
 MODELS_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/models/"
-BEST_MODEL_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/models/best_ori_model.pt"
+BEST_MODEL_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/models/best_joint_model.pt"
 GRAPHS_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/graphs/"
 VAL_DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/validate_dataset/"
 VAL_TO_TEST_RATIO = 0.1
@@ -118,7 +119,7 @@ def train_network(num_epochs, trial, train_loader, valid_loader):
     enc_dict = torch.load(cae_path,weights_only=True)['encoder_state_dict']
     kcenters = torch.load(MODELS_PATH + 'kcenters_256.pt',weights_only=True)
     model = Prototype_network(trial, enc_dict, kcenters).to(DEVICE)
-    min_loss = best_model_loss
+    min_loss = 1000
     suggested_weight_decay = trial.suggest_float('weight_decay',1e-4,1e-1, log=False)
     suggested_initlr = trial.suggest_float('init_lr',1e-5,2e-4, log=False)
     suggested_maxlr = trial.suggest_float('max_lr',3e-4,1e-2, log=False)
@@ -141,7 +142,7 @@ def train_network(num_epochs, trial, train_loader, valid_loader):
                 x, wi = model(pcd, pos)
                 #ori = model.predict(x)
                 #print(ori.shape)
-                tloss = model.pmdm.loss(x,pos).mean() + 10*model.kmm.loss(torch.cat((x,pos),dim=1),cpu_ori).mean()
+                tloss = model.pmdm.loss(x,pos).mean() + model.kmm.loss(torch.cat((x,pos),dim=1),cpu_ori).mean()
                 #tloss = model.L2_loss(ori,target_ori)
 
                 optimizer.zero_grad()
@@ -169,7 +170,7 @@ def train_network(num_epochs, trial, train_loader, valid_loader):
                 with torch.device(DEVICE):
                     x, wi = model(pcd, pos)
                     #ori = model.predict(x)
-                    valloss = model.pmdm.loss(x,pos).mean() + 10*model.kmm.loss(torch.cat((x,pos),dim=1),cpu_ori).mean()
+                    valloss = model.pmdm.loss(x,pos).mean() + model.kmm.loss(torch.cat((x,pos),dim=1),cpu_ori).mean()
                     #valloss = model.L2_loss(ori, target_ori)
 
                     vrunning_loss += valloss.item() * pcd.shape[0]
@@ -180,13 +181,14 @@ def train_network(num_epochs, trial, train_loader, valid_loader):
                     torch.cuda.empty_cache()
                     gc.collect()
             if (vrunning_loss / val_size) < min_loss:
-                torch.save({
-                    'encoder_state_dict': model.enc.state_dict(),
-                    'ori_state_dict': model.kmm.state_dict(),
-                    'pos_state_dict':model.pmdm.parameters()
-                },BEST_MODEL_PATH)
                 min_loss = vrunning_loss / val_size
-                best_model_loss = vrunning_loss / val_size
+                if min_loss < best_model_loss:
+                    best_model_loss = min_loss
+                    torch.save({
+                        'encoder_state_dict': model.enc.state_dict(),
+                        'ori_state_dict': model.kmm.state_dict(),
+                        'pos_state_dict':model.pmdm.state_dict()
+                    },BEST_MODEL_PATH)
         #print ('Epoch [{}/{}], Training Loss: {:.4f}'.format(epoch+1, num_epochs, trunning_loss / train_size))
         #print ('Epoch [{}/{}], Validation Loss: {:.4f}'.format(epoch+1, num_epochs, vrunning_loss / val_size))
 
@@ -217,11 +219,11 @@ def objective(trial):
 def main():
     global best_model_loss
     best_model_loss = 10
-    study_number = 1
+    study_number = 2
     study_id = "joint_network_optim" + str(study_number) # Unique identifier of the study.
     study_storage = "sqlite:///catkin_ws/src/graspnet/{}.db".format(study_id)
-    study = optuna.create_study(study_name=study_id,storage=study_storage, direction="minimize")
-    study.enqueue_trial({'init_lr':0.0001,'max_lr':0.0008,'kappa':320,'weight_decay':0.002, 'mdm_mixtures':32})
+    study = optuna.create_study(study_name=study_id,storage=study_storage, direction="minimize", load_if_exists=True, pruner=PercentilePruner(25.0,n_startup_trials=10,n_min_trials=10))
+    #study.enqueue_trial({'init_lr':0.0001,'max_lr':0.0008,'kappa':320,'weight_decay':0.002, 'mdm_mixtures':32})
     study.optimize(objective, n_trials=200, timeout=None)
 
     pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
