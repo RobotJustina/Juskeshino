@@ -28,10 +28,12 @@ from torch.utils.data import Subset
 from cnn_autoencoder import Encoder
 from ori_network3 import get_SQL_dataloaders, find_kmeans_centers
 from kernel_mixture_network import Kernel_Mixture_Network
+from mixture_density_network import MixtureDensityNetwork
+from tqdm import tqdm, trange
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-MAX_TRIAL_EPOCHS = 20
-PRUNING_EPOCHS = 2
+MAX_TRIAL_EPOCHS = 10
+PRUNING_EPOCHS = 1
 BATCH_SIZE = 192
 DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/training_dataset/"
 MODELS_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/models/"
@@ -70,7 +72,7 @@ class Orientation_head(nn.Module):
         return self.kmm.loss(x,y)
     
 
-class Orientation_network(nn.Module):
+class Prototype_network(nn.Module):
     def __init__(self, trial, enc_state_dict = None, kcenters = None):
         super().__init__()
         self.enc = Encoder().float()
@@ -80,16 +82,17 @@ class Orientation_network(nn.Module):
             kcenters = torch.load(MODELS_PATH + 'kcenters_256.pt',weights_only=True)
             #print(kcenters)
             #print(kcenters.dtype)
-        print(kcenters)
+        #print(kcenters)
         self.kmm = Kernel_Mixture_Network(1027,256,len(kcenters),kcenters,4,trial.suggest_int('kappa',25,500))
+        self.pmdm = MixtureDensityNetwork(1024,3,trial.suggest_int('mdm_mixtures',8,64),256)
         self.space = Hypersphere(3)
         self.BASE_POINT = torch.tensor([0.0,0.0,0.0,1.0],dtype=torch.float64).to(DEVICE)
         #print(self)
 
     def forward(self, x, pos):
         x = self.enc(x)
-        x = torch.cat((x,pos),dim=1)
-        ori = self.kmm(x)
+        #x = torch.cat((x,pos),dim=1)
+        ori = self.kmm(torch.cat((x,pos),dim=1))
         return x, ori
     
     def L1_loss(self, q1, q2):
@@ -114,23 +117,23 @@ def train_network(num_epochs, trial, train_loader, valid_loader):
     cae_path = MODELS_PATH + 'conv_autoencoder_final_ep67.pt'
     enc_dict = torch.load(cae_path,weights_only=True)['encoder_state_dict']
     kcenters = torch.load(MODELS_PATH + 'kcenters_256.pt',weights_only=True)
-    model = Orientation_network(trial, enc_dict, kcenters).to(DEVICE)
+    model = Prototype_network(trial, enc_dict, kcenters).to(DEVICE)
     min_loss = best_model_loss
     suggested_weight_decay = trial.suggest_float('weight_decay',1e-4,1e-1, log=False)
-    suggested_initlr = trial.suggest_float('init_lr',1e-6,1e-5, log=False)
-    suggested_maxlr = trial.suggest_float('max_lr',1e-4,1e-2, log=False)
+    suggested_initlr = trial.suggest_float('init_lr',1e-5,2e-4, log=False)
+    suggested_maxlr = trial.suggest_float('max_lr',3e-4,1e-2, log=False)
     optimizer = optim.AdamW([
                 {'params': model.enc.parameters()},
                 {'params': model.kmm.wi_network.parameters(), 'lr': suggested_initlr}
             ],lr=suggested_initlr,weight_decay=suggested_weight_decay)
     #lrscheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,'min',factor=0.1,patience=3,threshold=)
     lrscheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer=optimizer,max_lr=suggested_maxlr,steps_per_epoch=len(train_loader),epochs=num_epochs)
-    for epoch in range(num_epochs):
+    for epoch in trange(num_epochs, desc='Trial_progress:', unit='epoch', position=1):
         trunning_loss = 0
         vrunning_loss = 0
         model.train()
 
-        for batch, (pcd, pos, target_ori) in enumerate(train_loader,0):
+        for batch, (pcd, pos, target_ori) in enumerate(tqdm(train_loader,desc='Epoch progress:', total=len(train_loader), unit='batches', position=0, leave=False),0):
             cpu_ori = target_ori
             pcd, pos, target_ori = pcd.to(DEVICE, non_blocking = True), pos.to(DEVICE, non_blocking = True), target_ori.to(DEVICE, non_blocking = True)
 
@@ -138,7 +141,7 @@ def train_network(num_epochs, trial, train_loader, valid_loader):
                 x, wi = model(pcd, pos)
                 #ori = model.predict(x)
                 #print(ori.shape)
-                tloss = model.kmm.loss(x,cpu_ori).mean()
+                tloss = model.pmdm.loss(x,pos).mean() + 10*model.kmm.loss(torch.cat((x,pos),dim=1),cpu_ori).mean()
                 #tloss = model.L2_loss(ori,target_ori)
 
                 optimizer.zero_grad()
@@ -166,7 +169,7 @@ def train_network(num_epochs, trial, train_loader, valid_loader):
                 with torch.device(DEVICE):
                     x, wi = model(pcd, pos)
                     #ori = model.predict(x)
-                    valloss = model.kmm.loss(x,cpu_ori).mean()
+                    valloss = model.pmdm.loss(x,pos).mean() + 10*model.kmm.loss(torch.cat((x,pos),dim=1),cpu_ori).mean()
                     #valloss = model.L2_loss(ori, target_ori)
 
                     vrunning_loss += valloss.item() * pcd.shape[0]
@@ -179,7 +182,8 @@ def train_network(num_epochs, trial, train_loader, valid_loader):
             if (vrunning_loss / val_size) < min_loss:
                 torch.save({
                     'encoder_state_dict': model.enc.state_dict(),
-                    'ori_state_dict': model.kmm.state_dict()
+                    'ori_state_dict': model.kmm.state_dict(),
+                    'pos_state_dict':model.pmdm.parameters()
                 },BEST_MODEL_PATH)
                 min_loss = vrunning_loss / val_size
                 best_model_loss = vrunning_loss / val_size
@@ -198,14 +202,15 @@ def train_network(num_epochs, trial, train_loader, valid_loader):
     #         'encoder_state_dict': best_enc_model,
     #         'ori_state_dict': best_ori_model
     #     },BEST_MODEL_PATH)
-
+    print('\n')
+    print('\n')
     print ('Trial number [{}], Validation Loss: {:.8f}'.format(trial.number,min_loss))
     return(min_loss)
 
 def objective(trial):
     torch.cuda.empty_cache()
     gc.collect()
-    train_loader, valid_loader = get_SQL_dataloaders(n_samples=4200)
+    train_loader, valid_loader = get_SQL_dataloaders(n_samples=12500)
     trial_loss = train_network(MAX_TRIAL_EPOCHS,trial,train_loader,valid_loader)
     return trial_loss
 
@@ -213,9 +218,10 @@ def main():
     global best_model_loss
     best_model_loss = 10
     study_number = 1
-    study_id = "ori_network_optim" + str(study_number) # Unique identifier of the study.
+    study_id = "joint_network_optim" + str(study_number) # Unique identifier of the study.
     study_storage = "sqlite:///catkin_ws/src/graspnet/{}.db".format(study_id)
     study = optuna.create_study(study_name=study_id,storage=study_storage, direction="minimize")
+    study.enqueue_trial({'init_lr':0.0001,'max_lr':0.0008,'kappa':320,'weight_decay':0.002, 'mdm_mixtures':32})
     study.optimize(objective, n_trials=200, timeout=None)
 
     pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])

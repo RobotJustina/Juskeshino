@@ -128,10 +128,20 @@ class SQL_GraspDataset(torch.utils.data.Dataset):
         self.BASE_POINT = torch.tensor([0.0,0.0,0.0,1.0],dtype=torch.float64)
         self.space = Hypersphere(3)
         if samples > 0:
-            self.indices = np.array(list(range(1,samples+1)))
+            #self.indices = np.array(list(range(1,samples+1)))
+            self.indices = self.get_samples_ids(samples)
         else:
             self.indices = np.array(list(range(1,self.max_len())))
         #print(self.indices)
+    
+    def get_samples_ids(self, samples):
+        self.cursor.execute('SELECT grasp_id FROM (SELECT ROW_NUMBER() OVER (PARTITION BY "obj_shape" ORDER BY random()) AS "rnk", * FROM "grasps_table") sub WHERE "sub"."rnk" <= {} ' \
+        'ORDER BY "sub"."obj_shape" ASC,"sub"."grasp_id" ASC'.format(samples))
+        qry = self.cursor.fetchall()
+        qry = np.asarray(qry).flatten()
+        self.conn.commit()
+        return qry
+
     def tuple_to_tensors(self, qry):
         points_t = []
         pos_t = []
@@ -442,6 +452,10 @@ def main():
     #ori_file = MODELS_PATH + 'dummy_ori_net_1ks_ep100.pt'
     #save_ori_file = MODELS_PATH +'dummy_ori_net_1ks_ep100_split.pt'
     #load_and_split_model(ori_file,save_ori_file)
+
+    #dataset = SQL_GraspDataset('train',samples=12500)
+    #print(dataset.indices.shape)
+    #print(dataset.get_samples_ids(5))
 
 if __name__ == '__main__':
     main()
