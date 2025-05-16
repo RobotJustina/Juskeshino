@@ -33,7 +33,7 @@ from mixture_density_network import MixtureDensityNetwork
 from tqdm import tqdm, trange
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-MAX_TRIAL_EPOCHS = 10
+MAX_TRIAL_EPOCHS = 12
 PRUNING_EPOCHS = 1
 BATCH_SIZE = 192
 DATASET_PATH = "/home/robocup/Juskeshino/catkin_ws/src/graspnet/training_dataset/"
@@ -121,12 +121,13 @@ def train_network(num_epochs, trial, train_loader, valid_loader):
     model = Prototype_network(trial, enc_dict, kcenters).to(DEVICE)
     min_loss = 1000
     suggested_weight_decay = trial.suggest_float('weight_decay',1e-4,1e-1, log=False)
-    suggested_initlr = trial.suggest_float('init_lr',1e-5,2e-4, log=False)
+    #suggested_initlr = trial.suggest_float('init_lr',1e-5,2e-4, log=False)
     suggested_maxlr = trial.suggest_float('max_lr',3e-4,1e-2, log=False)
     optimizer = optim.AdamW([
                 {'params': model.enc.parameters()},
-                {'params': model.kmm.wi_network.parameters(), 'lr': suggested_initlr}
-            ],lr=suggested_initlr,weight_decay=suggested_weight_decay)
+                {'params': model.kmm.wi_network.parameters()},
+                {'params':model.pmdm.parameters()}
+            ],lr=0.0001,weight_decay=suggested_weight_decay)
     #lrscheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,'min',factor=0.1,patience=3,threshold=)
     lrscheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer=optimizer,max_lr=suggested_maxlr,steps_per_epoch=len(train_loader),epochs=num_epochs)
     for epoch in trange(num_epochs, desc='Trial_progress:', unit='epoch', position=1):
@@ -212,18 +213,18 @@ def train_network(num_epochs, trial, train_loader, valid_loader):
 def objective(trial):
     torch.cuda.empty_cache()
     gc.collect()
-    train_loader, valid_loader = get_SQL_dataloaders(n_samples=12500)
+    train_loader, valid_loader = get_SQL_dataloaders(n_samples=2500)
     trial_loss = train_network(MAX_TRIAL_EPOCHS,trial,train_loader,valid_loader)
     return trial_loss
 
 def main():
     global best_model_loss
     best_model_loss = 10
-    study_number = 2
+    study_number = 3
     study_id = "joint_network_optim" + str(study_number) # Unique identifier of the study.
     study_storage = "sqlite:///catkin_ws/src/graspnet/{}.db".format(study_id)
     study = optuna.create_study(study_name=study_id,storage=study_storage, direction="minimize", load_if_exists=True, pruner=PercentilePruner(25.0,n_startup_trials=10,n_min_trials=10))
-    #study.enqueue_trial({'init_lr':0.0001,'max_lr':0.0008,'kappa':320,'weight_decay':0.002, 'mdm_mixtures':32})
+    study.enqueue_trial({'max_lr':0.0008,'kappa':320,'weight_decay':0.0001, 'mdm_mixtures':32})
     study.optimize(objective, n_trials=200, timeout=None)
 
     pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
