@@ -6,10 +6,10 @@ save_weights_only True
 
 batch_size 4
 learn_r	0.0001
-epochs	3
+epochs	5
 
-Data_X.shape	(1515, 4, 82, 80)
-Data_Y.shape	(1515, 2)
+Data_X.shape	(970, 4, 82, 80)
+Data_Y.shape	(970, 2)
 
 model.name	Param_CNN
 optimizer	Adam

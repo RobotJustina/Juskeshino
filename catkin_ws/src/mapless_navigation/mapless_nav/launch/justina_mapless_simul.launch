@@ -1,5 +1,5 @@
 <launch>
-  <arg name="posx" default="-2.0" /> <!-- -12.0 -->
+  <arg name="posx" default="1.0" /> <!-- -12.0 -->
   <!-- 3.75   -5.0 -->
   <arg name="posy" default="0.0" />
   <!-- 12.0   -2.0 -->
