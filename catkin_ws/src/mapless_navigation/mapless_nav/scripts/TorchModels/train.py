@@ -50,13 +50,15 @@ save_weights_only = True
 # PARAM <print_sample>: show random occ_grid sample
 print_sample = False
 
+ignore_linvel_y = False
+
 """
 Hyperparameters
 """
 # PARAMS
-batch_size = 4 # 8
-learn_r = 1e-4 # 1e-3
-epochs = 5
+batch_size = 8 # 8
+learn_r = 1e-5# 1e-3
+epochs = 30
 
 
 cad = "stack_n_channels " + str(stack_n_channels)
@@ -130,10 +132,11 @@ for info in data:
 data_Y = np.array(data_Y, dtype=np.float32)
 data_X = np.array(data_X, dtype=np.float32)
 
+if ignore_linvel_y:
 # ignore lin_vel_y (move lateral) ---
-lvel_x = data_Y[:, 0]
-Avel_z = data_Y[:, 2]
-data_Y = np.stack((lvel_x, Avel_z), axis=1)
+    lvel_x = data_Y[:, 0]
+    Avel_z = data_Y[:, 2]
+    data_Y = np.stack((lvel_x, Avel_z), axis=1)
 
 print("Data_X.shape:", data_X.shape)
 print("Data_Y.shape:", data_Y.shape)
@@ -199,7 +202,7 @@ y_val = torch.tensor(y_val, dtype=torch.float32, device=device)
 Model
 """
 # PARAM model = nn_models.<model_name>()
-model = nn_models.Param_CNN(channels=stack_n_channels, img_size=data_X.shape[-1])
+model = nn_models.Param_CNN_B(channels=stack_n_channels, img_size=data_X.shape[-1])
 model.to(device)
 
 optimizer = Adam(model.parameters(), lr=learn_r)

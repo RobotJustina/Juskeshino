@@ -13,7 +13,7 @@ from TorchModels.utils import models
 n_channels = 4
 
 occ_grid_meters = 4
-model = models.Param_CNN(channels=n_channels, img_size=int(20*occ_grid_meters))
+model = models.Param_CNN_B(channels=n_channels, img_size=int(20*occ_grid_meters))
 
 package_path = rospkg.RosPack().get_path("mapless_nav")
 model_path = package_path + "/scripts/TorchModels/" 
@@ -117,13 +117,16 @@ def occGridCallback(msg):
         if turn_help:
             if abs(last_goal[1]) < 0.5:
                 linx = y_pred[0] #* speed_factor
-                angz = y_pred[1]
+                angz = y_pred[2] *0.4
+                liny = y_pred[1]
 
             else:
-                linx = y_pred[0] / (10*abs(last_goal[1]))
+                linx = y_pred[0] / (5*abs(last_goal[1]))
+                liny = y_pred[1] / (10*abs(last_goal[1]))
                 print("control linx", linx, end='\n')
-                print("control linx", linx, end='\n')
-                angz = y_pred[1] * speed_factor
+                print("control liny", liny, end='\n')
+                angz = y_pred[2] * speed_factor
+            
             
         else:
             #linx = speed_factor*( (linx+1)/2 )
@@ -131,10 +134,10 @@ def occGridCallback(msg):
             linx = y_pred[0]
 
             """Deleted"""
-            #liny = y_pred[1]
+            liny = y_pred[1]
 
             """changed"""
-            angz = y_pred[1]
+            angz = y_pred[2]
             #angz = y_pred[2]
             #angz = (angz -0.5)*100
             # if angz > 2:
@@ -181,7 +184,7 @@ def main():
     cad = ""
     while not rospy.is_shutdown():
         msg.linear.x = linx
-        #msg.linear.y = liny
+        msg.linear.y = liny
         msg.angular.z = angz
         d = last_goal[0]
         th = last_goal[1]

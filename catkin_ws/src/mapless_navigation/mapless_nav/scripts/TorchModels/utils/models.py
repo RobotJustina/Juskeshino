@@ -453,3 +453,99 @@ class Param_CNN(torch.nn.Module):
         #print("out.shape", x.shape)
 
         return x
+
+
+class Param_CNN_B(torch.nn.Module):
+    def __init__(self, channels=5, img_size=80):
+        super(Param_CNN_B, self).__init__()
+        """
+        A fully convolutional NN
+        """
+        self.name = "Param_CNN_B"
+        self.channels = channels
+        self.img_shape = (img_size, img_size)
+        #print(self.name, self.img_shape)
+        
+        # layers
+        self.conv1 = torch.nn.Conv2d(self.channels, 16, 3)
+        self.conv2 = torch.nn.Conv2d(16, 32, 3)
+        self.batch_norm_32 = torch.nn.BatchNorm2d(32)
+        self.max_pool = torch.nn.MaxPool2d(5, 3)
+        self.conv3 = torch.nn.Conv2d(32, 8, 3)
+
+        #width=((W-F+2*P )/S)+1 
+        width = (((img_size-4-5)/3)+1) // 1
+        height = (((img_size-2-5)/3)+1) // 1
+        width = (((width-2-5)/3)+1) // 1
+        height = (((height-2-5)/3)+1) // 1
+        
+        print("width", width)
+        print("height", height)
+        n_chan = int(8 * height * width) +  2*img_size
+        print("n_chan", n_chan)
+        #n_chan *= channels
+        #print("n_chan", n_chan)
+
+
+        self.flat1 = torch.nn.Linear(n_chan, 120)
+        self.flat2 = torch.nn.Linear(120, 80)
+        self.out = torch.nn.Linear(80, 3)
+
+        self.dropout_20 = torch.nn.Dropout(p=0.2)
+        self.dropout_15 = torch.nn.Dropout(p=0.15)
+        self.dropout_10 = torch.nn.Dropout(p=0.1)
+
+
+    def forward(self, x):
+        # vector: d, th
+        vect = x[:, 0, -2:, :]  # [batch_s, channel, col, row]
+        #vect = torch.reshape(vect, (5, 1, 2*vect.shape[2]))
+        vect = torch.flatten(vect, 1)
+        #print("vect.shape", vect.shape)
+        
+        #vect.shape torch.Size([5, 2, 80])
+        #print(vect)
+
+        # image
+        # [batch_s, channel, col, row]
+        #x = x[:, :, :-2]
+        #print("x.shape", x.shape)
+
+        x = self.conv1(x)
+        x = torch.nn.functional.relu(x)
+        #print("x1.shape", x.shape)
+
+        x = self.conv2(x)
+        x = self.batch_norm_32(x)
+        x = self.max_pool(x)
+        x = torch.nn.functional.relu(x)
+        #print("x2.shape", x.shape)
+  
+        x = self.conv3(x)
+        x = self.max_pool(x)
+        x = torch.nn.functional.relu(x)
+        #print("x3.shape", x.shape)
+        
+        x = torch.flatten(x, 1)
+        #print("flat.shape", x.shape)
+        #print(x[:,-20])
+
+        x = torch.cat((x, vect), 1)
+        #print("cat.shape", x.shape)
+        #print(x[0])
+
+        x = self.flat1(x)
+        x = torch.nn.functional.relu(x)
+        x = self.dropout_20(x)
+        #print("flat1.shape", x.shape)
+
+        x = self.flat2(x)
+        x = torch.nn.functional.relu(x)
+        x = self.dropout_15(x)
+        #print("flat2.shape", x.shape)
+
+        x = self.out(x)
+        x = torch.nn.functional.tanh(x)
+        #print("out.shape", x.shape)
+
+        return x
