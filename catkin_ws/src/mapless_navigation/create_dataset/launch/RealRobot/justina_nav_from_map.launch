@@ -1,0 +1,111 @@
+<launch>
+  <arg name="debug" default="False"/>
+
+  <arg name="world" value="rnd_room_c2_01_obst"/>
+  <arg name="replace" value="True"/>
+  <arg name="posx" default="1.0" />
+  <arg name="posy" default="0.0" />
+  <arg name="yaw" default="3.14159"/> <!-- 1.57079 -->
+  <arg name="static_map_file"  value="$(find config_files)/maps/map_$(arg world).yaml"/>
+  <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/map_$(arg world).yaml"/>
+
+  <!-- This node changes the map in file room_selected.world, relaunch 2 times to visualize the changes -->
+  <node name="load_random_room_world" pkg="create_dataset" type="load_random_room_world.py" 
+  args="--map=$(arg world) --replace=$(arg replace)" output="screen"/>
+
+
+  <!-- occ_grid 4m -->
+  <arg name="min_x" default="0.0"/>
+  <arg name="max_x" default="8.0"/>
+  <arg name="min_y" default="-4.0"/>
+  <arg name="max_y" default="4.0"/>
+
+  <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
+
+
+  <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
+    <arg name="posx" value="$(arg posx)" />
+    <arg name="posy" value="$(arg posy)" />
+    <arg name="yaw" default="$(arg yaw)"/>
+    <arg name="world" value="room_selected"/>
+    <arg name="posz"  value="0.05"/>
+  </include>
+  
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/justina_gazebo.rviz"/>
+  
+  <node name="justina_gui" pkg="justina_gui" type="justina_gui_node" output="screen">
+    <param name="la_predefined" value="$(find config_files)/justina/manipulation/la_predefined.yaml"/>
+    <param name="ra_predefined" value="$(find config_files)/justina/manipulation/ra_predefined.yaml"/>
+    <param name="hd_predefined" value="$(find config_files)/justina/manipulation/hd_predefined.yaml"/>
+    <remap from="/vision/obj_reco/recognize_object" to="/vision/obj_segmentation/get_obj_pose"/>
+  </node>
+
+  <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/>
+
+  <include file="$(find surge_et_ambula)/launch/justina/navigation.launch">
+    <arg name="static_map_file"  value="$(arg static_map_file)"/>
+    <arg name="prohibition_map_file"  value="$(arg prohibition_map_file)"/>
+    <arg name="initial_pose_x" value="$(arg posx)"/>
+    <arg name="initial_pose_y" value="$(arg posy)"/>
+    <arg name="initial_pose_a" value="$(arg yaw)"/>
+    <arg name="move_head" default="False"/>
+
+    <arg name="laser_scan_topic" value="/hardware/scan"/>
+    <arg name="point_cloud_topic" value="/camera/depth_registered/points"/>
+    <arg name="use_lidar" value="True"/>
+    <arg name="use_point_cloud" value="True"/>
+    <arg name="use_pot_fields" value="True"/>
+    <arg name="pot_fields_k_rej" value="0.6"/>
+    <arg name="pot_fields_d0" default="1.0"/>
+    <arg name="cloud_downsampling" value="9"/>
+    <arg name="cloud_points_threshold" value="50"/>
+    <arg name="lidar_points_threshold" value="5"/>
+    <arg name="max_linear_speed" value="1.0"/> <!-- 0.9 -->
+    <arg name="min_linear_speed" default="0.05"/>
+    <arg name="max_angular_speed" value="1.2"/>
+    <arg name="linear_acceleration" default="0.2"/> <!-- 0.1 -->
+
+    <arg name="fine_dist_tolerance" default="0.03"/> <!-- 0.03 -->
+    <arg name="coarse_dist_tolerance" default="0.2"/> <!-- 0.2 -->
+    <arg name="angle_tolerance" default="3.0"/> <!-- 0.05 -->
+    <arg name="smooth_alpha" default="0.1"/> <!-- 0.1 -->
+    <arg name="smooth_beta" default="0.9"/> <!-- 0.9 -->
+    
+    <arg name="control_alpha" default="0.4"/> <!-- 0.8 -->
+    <arg name="control_beta" default="0.6"/>  <!-- 0.5 -->
+    <arg name="no_sensor_data_timeout" default="0.5"/>  <!-- 0.5 -->
+    <arg name="decay_factor" default="10"/> <!-- 10 -->
+    <arg name="patience" default="True"/> <!-- True -->
+    <arg name="proximity_criterion" default="2.0"/> <!-- 2.0 -->
+    <arg name="cost_radius" default="0.5"/> <!-- 0.5 -->
+    <arg name="inflation_radius" default="0.15"/>  <!-- 0.2 -->
+    <arg name="diagonal_paths" default="True"/>  <!-- False -->
+  </include>
+
+
+  <!-- <node name="get_goal_point" pkg="mapless_nav" type="get_goal_point.py"/> -->
+
+  <!-- <node name="local_occ_grid" pkg="local_occ_grid" type="local_occ_grid">
+    <param name="min_x" value="$(arg min_x)"/>
+    <param name="max_x" value="$(arg max_x)"/>
+    <param name="min_y" value="$(arg min_y)"/>
+    <param name="max_y" value="$(arg max_y)"/>
+    <param name="use_lidar" value="true"/>
+    <param name="use_cloud" value="true"/>
+    <param name="laser_scan_topic" value="/hardware/scan"/>
+    <param name="point_cloud_topic" value="/camera/depth_registered/points"/>
+  </node> -->
+
+  <!-- <node name="occ_grid_re_publisher" pkg="create_dataset" type="occ_grid_re_publisher.py"/>
+
+  <node name="joy" pkg="joy" type="joy_node" output="screen">
+    <remap from="/joy" to="/hardware/joy"/>
+  </node>
+
+  <node name="joystick_teleop_improved" pkg="joystick_teleop" type="joystick_teleop_node_improved.py" output="screen">
+    <remap from="/hardware/mobile_base/cmd_vel" to="/cmd_vel"/>
+  </node> -->
+
+  <include file="$(find surge_et_ambula)/launch/justina/hri.launch"/>
+
+</launch>
