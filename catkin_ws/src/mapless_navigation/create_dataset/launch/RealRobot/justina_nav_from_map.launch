@@ -1,13 +1,13 @@
 <launch>
   <arg name="debug" default="False"/>
 
-  <arg name="world" value="rnd_room_c2_02_obst"/>
+  <arg name="world" value="rnd_room_c2_06_obst"/>
   <arg name="replace" value="True"/>
   <arg name="posx" default="1.0" />
   <arg name="posy" default="0.0" />
   <arg name="yaw" default="3.14159"/> <!-- 1.57079 -->
-  <arg name="static_map_file"  value="$(find config_files)/maps/map_rnd_room_c2_02_obst.yaml"/>
-  <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/map_rnd_room_c2_02_obst.yaml"/>
+  <arg name="static_map_file"  value="$(find config_files)/maps/map_rnd_room_c2_06_obst.yaml"/>
+  <arg name="prohibition_map_file"  value="$(find config_files)/prohibition_maps/map_rnd_room_c2_06_obst.yaml"/>
 
   <!-- This node changes the map in file room_selected.world, relaunch 2 times to visualize the changes -->
   <node name="load_random_room_world" pkg="create_dataset" type="load_random_room_world.py" 

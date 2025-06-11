@@ -1,7 +1,7 @@
 <launch>
   <arg name="debug" default="False"/>
 
-  <arg name="world" value="rnd_room_c2_02_obst"/>
+  <arg name="world" value="rnd_room_c2_06_obst"/>
   <arg name="replace" value="True"/>
   <arg name="posx" default="1.0" />
   <arg name="posy" default="0.0" />

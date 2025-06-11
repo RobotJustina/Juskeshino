@@ -135,7 +135,7 @@ def main():
     move_goal_pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
     map_msg = rospy.wait_for_message('/augmented_map', OccupancyGrid, timeout=5)
 
-    #save_free_map(map_msg)
+    save_free_map(map_msg)
     with open(file_path+'nav_register.csv', 'w') as f:
         writer = csv.writer(f)
         writer.writerow(['Time', 'origin', 'objective', 'distance', 'arrive', 'trajectory'])

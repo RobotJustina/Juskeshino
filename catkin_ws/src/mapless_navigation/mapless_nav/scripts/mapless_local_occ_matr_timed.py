@@ -114,6 +114,7 @@ def occGridCallback(msg):
 
     turn_help = True
     # print("last_goal", abs(last_goal[0]))
+    #>> 3 params >>
     if (abs(last_goal[0]) > 0.5):
         with torch.no_grad():
             y_pred = model(x_ent)
@@ -139,6 +140,34 @@ def occGridCallback(msg):
             liny = y_pred[1]
             """changed"""
             angz = y_pred[2]
+
+
+    #>> 2 params >
+    # if (abs(last_goal[0]) > 0.5):
+    #     with torch.no_grad():
+    #         y_pred = model(x_ent)
+    #     y_pred = y_pred.cpu().numpy()[0]
+
+    #     if turn_help:
+    #         if abs(last_goal[1]) < 0.3:
+    #             linx = y_pred[0] #* speed_factor
+    #             angz = y_pred[1]
+
+    #         else:
+    #             linx = y_pred[0] / (10*abs(last_goal[1]))
+    #             print("control linx", linx, end='\n')
+    #             print("control linx", linx, end='\n')
+    #             angz = y_pred[1] * speed_factor
+            
+    #     else:
+
+    #         linx = y_pred[0]
+
+    #         """Deleted"""
+    #         #liny = y_pred[1]
+
+    #         """changed"""
+    #         angz = y_pred[1]
 
     else:
         linx = 0.0
