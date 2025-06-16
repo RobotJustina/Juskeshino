@@ -2,27 +2,38 @@
 
 import rospy
 import smach, smach_ros
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, PointStamped
+from std_msgs.msg import Float32MultiArray, Float64MultiArray
 from nav_msgs.msg import OccupancyGrid
 import numpy as np
 import matplotlib.pyplot as plt
-import cv2
+import sys
+from sensor_msgs.msg import LaserScan
+np.set_printoptions(threshold=sys.maxsize)
+
+last_goal = [0, 0] # d, th
 base = None 
+feat = None
+target_reached = True
+
 
 #_________
 class SimpleBase():
     def __init__(self):
         self._base_vel_pub = rospy.Publisher('/hardware/mobile_base/cmd_vel' , Twist, queue_size=10)
-    
+        self.twist = Twist()
+
     def call_base(self):
         print("-BASE-")
 
     def move_vel(self, l_velX, l_velY, a_velZ):
-        twist = Twist()
-        twist.linear.x = l_velX
-        twist.linear.y = l_velY
-        twist.angular.z = a_velZ
-        self._base_vel_pub.publish(twist)
+        self.twist.linear.x = l_velX
+        self.twist.linear.y = l_velY
+        self.twist.angular.z = a_velZ
+        self._base_vel_pub.publish(self.twist)
+
+    def memory():
+        pass
 
 
 class Features():
@@ -31,6 +42,10 @@ class Features():
         self.right_obst = []
         self.cent_obst = []
         self.wall = []
+        self.laser_obst_left = []
+        self.laser_obst_right = []
+        self.laser_obst_cent = []
+        self.laser_wall = []
 
     def set_features(self, left, right, center, wall):
         self.left_obst = left
@@ -44,19 +59,70 @@ class Features():
         c = self.cent_obst
         w = self.wall
         return l, r, c, w
+    
+    def set_laser(self, left, right, center, wall):
+        self.laser_obst_left = left
+        self.laser_obst_right = right
+        self.laser_obst_cent = center
+        self.laser_wall = wall
+    
+    def get_laser(self):
+        l = self.laser_obst_left
+        r = self.laser_obst_right 
+        c = self.laser_obst_cent
+        w = self.laser_wall
+        return l, r, c, w
 
 #_________
+
+def callback_goal(msg):
+    global last_goal, target_reached
+    if target_reached:
+        last_goal[0] = 0.0
+        last_goal[1] = 0.0
+    else:
+        last_goal = list(msg.data)
+        # clear_console()
+        # str = f"Distance to goal: ({last_goal[0]:.3f}, {last_goal[1]:.3f})" + " "*100
+        # sys.stdout.write(str)
+        # sys.stdout.flush()
+        # sys.stdout.write("\n")
+        # sys.stdout.flush()
+
+
+def callback_point(msg):
+    global target_reached
+    clear_console()
+    str = f"\nNew goal: ({msg.point.x:.3f}, {msg.point.y:.3f})" + " "*100
+    sys.stdout.write(str)
+    sys.stdout.flush()
+    sys.stdout.write("\n")
+    sys.stdout.flush()
+    target_reached = False
+
+
+def callback_laser(msg):
+    global feat
+    n = len(msg.ranges) # inx 185 (R to L)
+    c = n//2 + 1
+    #76, c -+ 17
+    left = np.clip( msg.ranges[c+25:] , 0, 11)
+    right = np.clip( msg.ranges[:c-25] , 0, 11)
+    center = np.clip( msg.ranges[c-17:c+17] , 0, 11)
+    wall = np.clip( msg.ranges[c-25:c+25] , 0, 11)
+    feat.set_laser(left, right, center, wall)
 
 
 def occGridCallback(msg):
     global feat
 
     data = np.asarray(msg.data)
+    res = round(msg.info.resolution, 2)
     rows = msg.info.height
     data = np.reshape(data, (rows, rows))
     data = np.rot90(np.flip(data, axis=0))
     c = rows// 2
-
+    near_obst_dist = int(1/res)
 
     data_L = data[c:, :c-6]
     data_L2 = data_L.sum(0)//100
@@ -76,123 +142,366 @@ def occGridCallback(msg):
     # show_image(data_R, "img")
 
 
-    data_C = data[c:, c-6:c+6]
+    data_C = data[-near_obst_dist:, c-6:c+6]
     data_C2 = data_C.sum(0)//100
 
     # print(data_C2)
     # print("Shape ",data_C2.shape)
     # show_image(data_C, "img")
     
-
-    data_F = data[:c, :]
+    #step = int(100*res)
+    data_F = data[-near_obst_dist:-near_obst_dist+3, :]
+    #print("data_F shape", data_F.shape)
     data_F2 = data_F.sum(0)//100
 
     # print(data_F2)
     # print("Shape ",data_F2.shape)
+    # print("Shape ",data_F2.shape)
     # show_image(data_F, "img")
 
     
-    feat.set_features(data_L2, data_R2, data_C2, data_F2)
-    rospy.sleep(0.2)
-    feat.set_features(data_L2, data_R2, data_C2, data_F2)
+    feat.set_features([data_L, data_L2], [data_R, data_R2], 
+                        [data_C, data_C2], [data_F, data_F2])
+
     # weight = 1
     # for i in range(len(data_R2)):
     #     data_R2[i] = data_R2[i] * weight
     #     weight = weight - 1/(len(data_R2))
 
-
-
-
-
+#> Funct()
 def show_image(img, name):
     plt.title(name)
     plt.imshow(img, cmap='gray') 
     plt.show()
 
 
-#>>> STATE MACHINE
-class Initial(smach.State):
-    def __init__(self):
-        smach.State.__init__(self , outcomes=['succ', 'failed'])
-        self.tries = 0
-
-    def execute(self, userdata):
-        rospy.logwarn('--> STATE <: Initial')
-        global base, feat
-        base = SimpleBase()
-        rospy.sleep(1.0)
-        return 'succ'
+def clear_console():
+    blanks = " "*110
+    sys.stdout.write("\033[A" + blanks + "\r")
+    #print(" "*100, end='\r')
+    sys.stdout.flush()
 
 
-class Evaluate(smach.State):
-    def __init__(self):
-        smach.State.__init__(self , outcomes=['succ', 'failed'])
+def shutdown_stop():
+    global base
+    print("Exit ...")
+    base.move_vel(0.0, 0.0, 0.0)
+    rospy.sleep(0.5)
 
-    def execute(self, userdata): 
-        rospy.logwarn('--> STATE <: Evaluate')
-        global feat
-        obst_l, obst_r, obst_c, obst_f = feat.get_features()
-        print("obst left", obst_l)
-        print("obst right", obst_r)
-        print("obst center", obst_c)
-        print("obst front", obst_f)
 
-        # logic
+def turn_direction():
+    if last_goal[1] > 0.2:
+        return 'L'
+    if last_goal[1] < -0.2:
+        return 'R'
+    else:
+        return 'F'
 
-        return 'succ'
+
+def evade_wall(laser_l, laser_r, laser_f):
+    fl = len(laser_l) * 11
+    fr = len(laser_r) * 11
+
+    l_sum = laser_l.sum()
+    r_sum = laser_r.sum()
+    
+    free_l = l_sum == fl or np.all(laser_l > 1.0)
+    free_r = r_sum == fr or np.all(laser_r > 1.0)
+    
+    if free_l:
+        print("Free Left")         
+    if free_r:
+        print("Free Right")
+
+    if free_l and free_r:
+        if l_sum >= r_sum:
+            best = 'L'
+        else:
+            best = 'R'
+    elif free_l:
+        best = 'L'
+    elif free_r:
+        best = 'R'
+    else:
+        best = 'B'
+
+    return best
+
     
 
-class NavForward(smach.State):
+
+    
+    
+
+
+    # n = len(obst_f)
+    # c = n//2
+
+    # zeros = zero_runs(obst_f)
+    # free_zone = []
+    # for i in range(len(zeros)):
+    #     print(zeros[i])
+    #     print(zeros[i, 1] - zeros[i, 0])
+    #     if zeros[i, 1] - zeros[i, 0] >= 12:
+    #         print("here")
+
+def zero_runs(a):
+    # Create an array that is 1 where a is 0, and pad each end with an extra 0.
+    iszero = np.concatenate(([0], np.equal(a, 0).view(np.int8), [0]))
+    absdiff = np.abs(np.diff(iszero))
+    # Runs start and end where absdiff is 1.
+    ranges = np.where(absdiff == 1)[0].reshape(-1, 2)
+    return ranges
+
+
+
+#>>> STATE MACHINE -------------------------------------------------------
+class Initial(smach.State):
     def __init__(self):
-        smach.State.__init__(self , outcomes=['tries', 'failed', 'succ'])
+        smach.State.__init__(self , outcomes=['failed', 'tries', 'succ'])
         self.tries = 0
-        #self.base_vel_pub = rospy.Publisher('/hardware/mobile_base/cmd_vel' , Twist, queue_size=10)
 
     def execute(self, userdata):
         global base, feat
         if self.tries == 0:
-            rospy.logwarn('--> STATE <: NavForward')
+            rospy.logwarn('--> STATE <: Initial')
+            base = SimpleBase()
+            rospy.sleep(1.0)
+        elif self.tries >0: 
+            clear_console()
+
+        self.tries += 1
+        if target_reached == True: # No objective
+            return 'tries'
+        else:
+            return 'succ'
 
 
-        base.call_base()
-        base.move_vel(1.0, 0.0, 0.0)
+class Evaluate(smach.State):
+    def __init__(self):
+        smach.State.__init__(self , outcomes=['failed', 'tries', 'succ', 'free', 'L', 'R', 'B'], output_keys=['command_time', 'advance'])
+        self.tries = 0
+        self.rnd_direction = 0
 
-        self.tries = self.tries + 1
+    def execute(self, userdata): 
+        global last_goal
+        global feat
+        verbose = True
+        if self.tries == 0:
+            rospy.logwarn('--> STATE <: Evaluate')
+            rospy.sleep(0.2)
+        elif self.tries >0:
+            clear_console()
+            clear_console()
 
-        if self.tries > 500:
+        self.tries += 1
+        
+        obst_l, obst_r, obst_c, obst_f = feat.get_features()
+
+        if verbose:
+            print("obst left", obst_l[1])
+            print("obst right", obst_r[1])
+            print("obst center", obst_c[1])
+            print("obst front", obst_f[1])
+            print()
+
+        #print(zero_runs(obst_f[1]))
+        #print(obst_f[1].sum())
+        
+        #show_image(obst_f[0], "f")
+        # logic
+        print()
+        userdata.command_time = 400
+        if obst_c[1].sum() == 0 and last_goal[0] > 0.5: # No obstacle front
+            self.tries = 0
+            
+            userdata.advance = True
+            return 'free'
+        elif obst_c[1].sum() > 0:
+            userdata.command_time = 180
+            print("Wall\n")
+            userdata.advance = False
+            laser_l, laser_r, laser_c, laser_f= feat.get_laser()
+            # print("obst left", laser_l)
+            # print("obst right", laser_r)
+            # print("obst center", laser_c)
+            # print("obst front", laser_f)
+
+            decision = evade_wall(laser_l, laser_r, laser_f)
+            print("decision:", decision)
+
+            print("-----\n")
+            return decision # L, R, B
+        else:
+            base.move_vel(0.0, 0.0, 0.0)
+
+
+        if obst_c[1].sum() > 4:
+            return 'B'
+
+        if last_goal[0] < 0.5:
+            return 'succ'
+
+
+        return 'tries'
+    
+
+
+class TurnObjective(smach.State):
+    def __init__(self):
+        smach.State.__init__(self , outcomes=['failed','L', 'R', 'F'], output_keys=['command_time'])
+        self.tries = 0
+
+    def execute(self, userdata): 
+        global last_goal
+        global feat
+        if self.tries == 0:
+            rospy.logwarn('--> STATE <: TurnObjective\n')
+            rospy.sleep(0.2)
+        elif self.tries >0: 
+            clear_console()
+        self.tries += 1
+        userdata.command_time = 500
+        dir = turn_direction()
+
+        return dir
+
+
+class MoveLeft(smach.State):
+    def __init__(self):
+        smach.State.__init__(self , outcomes=['failed', 'tries', 'succ'], input_keys=['command_time'])
+        self.tries = 0
+
+    def execute(self, userdata):
+        global base, feat
+        if self.tries == 0:
+            rospy.logwarn('--> STATE <: MoveLeft')
+            rospy.sleep(0.2)
+        elif self.tries >1: 
+            clear_console()
+
+        base.move_vel(0.0, 0.0, 0.5)
+        self.tries += 1
+
+        if self.tries > userdata.command_time:#500
+            self.tries = 0
+            return 'succ'
+
+        return 'tries'
+    
+
+class MoveRight(smach.State):
+    def __init__(self):
+        smach.State.__init__(self , outcomes=['failed', 'tries', 'succ'], input_keys=['command_time'])
+        self.tries = 0
+
+    def execute(self, userdata):
+        global base, feat
+        if self.tries == 0:
+            rospy.logwarn('--> STATE <: MoveRight')
+            rospy.sleep(0.2)
+        elif self.tries >1: 
+            clear_console()
+
+        base.move_vel(0.0, 0.0, -0.5)
+        self.tries += 1
+
+        if self.tries > userdata.command_time:#500
+            self.tries = 0
             return 'succ'
 
         return 'tries'
 
 
-def shutdown_stop():
-    global base
-    print("Exit")
-    base.call_base()
-    base.move_vel(0.0, 0.0, 0.0)
-    rospy.sleep(0.5)
+class MoveForward(smach.State):
+    def __init__(self):
+        smach.State.__init__(self , outcomes=['failed', 'tries', 'succ', 'turn'], input_keys=['command_time', 'advance'])
+        self.tries = 0
+
+    def execute(self, userdata):
+        global base, feat
+        if self.tries == 0:
+            rospy.logwarn('--> STATE <: MoveForward')
+            rospy.sleep(0.2)
+        elif self.tries >1: 
+            clear_console()
+
+        base.move_vel(1.0, 0.0, 0.0)
+        self.tries = self.tries + 1
+
+        if self.tries > userdata.command_time:#500
+            self.tries = 0
+            if userdata.advance:
+                return 'turn'
+            return 'succ'
+
+        return 'tries'
+
+
+class MoveBackward(smach.State):
+    def __init__(self):
+        smach.State.__init__(self , outcomes=['failed', 'tries', 'succ'], input_keys=['command_time'])
+        self.tries = 0
+
+    def execute(self, userdata):
+        global base, feat
+        if self.tries == 0:
+            rospy.logwarn('--> STATE <: MoveBackward')
+            rospy.sleep(0.2)
+        elif self.tries >1: 
+            clear_console()
+
+        base.move_vel(-1.0, 0.0, 0.0)
+        self.tries = self.tries + 1
+
+        if self.tries > userdata.command_time:#500
+            self.tries = 0
+            return 'succ'
+
+        return 'tries'
+
 
 
 if __name__ == '__main__':
-    global feat
     print("State machine")
     rospy.init_node('smach_react_nav')
     
     rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
-
+    rospy.Subscriber("/hardware/scan", LaserScan, callback_laser)
+    rospy.Subscriber("/clicked_point", PointStamped, callback_point)
+    rospy.Subscriber("/NN_goal", Float32MultiArray, callback_goal)
     feat = Features()
+    pubHeadPos = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=1)
+    msgHeadPos = Float64MultiArray()
+    msgHeadPos.data = [0.0, -0.4]
+    pubHeadPos.publish(msgHeadPos)
+    rospy.sleep(1)
+    pubHeadPos.publish(msgHeadPos)
+
 
     sm = smach.StateMachine(outcomes=['END'])
     sis = smach_ros.IntrospectionServer('SMACH_VIEW_SERVER', sm, '/SM_REACTIVE_NAV')
     sis.start()
 
     with sm:
-        smach.StateMachine.add("INITIAL", Initial(), transitions={'failed':'INITIAL', 'succ':'EVALUATE'})
+        smach.StateMachine.add("INITIAL", Initial(), transitions={'failed':'INITIAL', 'tries':'INITIAL', 'succ':'EVALUATE'})
 
-        smach.StateMachine.add("EVALUATE", Evaluate(), transitions={'failed':'INITIAL', 'succ':'NAV_FORWARD'})
+        smach.StateMachine.add("EVALUATE", Evaluate(), transitions={'failed':'INITIAL', 'tries':'EVALUATE', 'succ':'END',
+                                                                    'free':'MOVE_FORWARD', 'L':'MOVE_LEFT', 'R':'MOVE_RIGHT',
+                                                                    'B':'MOVE_BACKWARD'})
 
-        smach.StateMachine.add("NAV_FORWARD", NavForward(), transitions={'failed':'INITIAL', 'tries':'NAV_FORWARD', 'succ':'END'})
+        smach.StateMachine.add("TURN_OBJECTIVE", TurnObjective(), transitions={'failed':'INITIAL', 'L':'MOVE_LEFT',
+                                                                               'R':'MOVE_RIGHT', 'F':'MOVE_FORWARD'})
 
+        smach.StateMachine.add("MOVE_LEFT", MoveLeft(), transitions={'failed':'INITIAL', 'tries':'MOVE_LEFT', 'succ':'EVALUATE'})
+
+        smach.StateMachine.add("MOVE_RIGHT", MoveRight(), transitions={'failed':'INITIAL', 'tries':'MOVE_RIGHT', 'succ':'EVALUATE'})
+
+        smach.StateMachine.add("MOVE_FORWARD", MoveForward(), transitions={'failed':'INITIAL', 'tries':'MOVE_FORWARD', 'succ':'EVALUATE',
+                                                                           'turn':'TURN_OBJECTIVE'})
+
+        smach.StateMachine.add("MOVE_BACKWARD", MoveBackward(), transitions={'failed':'INITIAL', 'tries':'MOVE_BACKWARD', 'succ':'EVALUATE'})
+        
     rospy.on_shutdown(shutdown_stop)
     outcome = sm.execute()
     rospy.signal_shutdown('')
