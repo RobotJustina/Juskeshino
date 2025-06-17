@@ -9,13 +9,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 from sensor_msgs.msg import LaserScan
+import copy
+
 np.set_printoptions(threshold=sys.maxsize)
 
 last_goal = [0, 0] # d, th
 base = None 
 feat = None
 target_reached = True
-
+obst_detected = [False, False, False] # L, R, C
+obst_memory = [False, False, False]
+speed_factor = 1
 
 #_________
 class SimpleBase():
@@ -31,9 +35,6 @@ class SimpleBase():
         self.twist.linear.y = l_velY
         self.twist.angular.z = a_velZ
         self._base_vel_pub.publish(self.twist)
-
-    def memory():
-        pass
 
 
 class Features():
@@ -82,12 +83,6 @@ def callback_goal(msg):
         last_goal[1] = 0.0
     else:
         last_goal = list(msg.data)
-        # clear_console()
-        # str = f"Distance to goal: ({last_goal[0]:.3f}, {last_goal[1]:.3f})" + " "*100
-        # sys.stdout.write(str)
-        # sys.stdout.flush()
-        # sys.stdout.write("\n")
-        # sys.stdout.flush()
 
 
 def callback_point(msg):
@@ -197,8 +192,9 @@ def turn_direction():
     else:
         return 'F'
 
-
-def evade_wall(laser_l, laser_r, laser_f):
+    
+def evade_wall(laser_l, laser_r, obst_l, obst_r):
+    global obst_detected
     fl = len(laser_l) * 11
     fr = len(laser_r) * 11
 
@@ -207,43 +203,36 @@ def evade_wall(laser_l, laser_r, laser_f):
     
     free_l = l_sum == fl or np.all(laser_l > 1.0)
     free_r = r_sum == fr or np.all(laser_r > 1.0)
-    
-    if free_l:
-        print("Free Left")         
-    if free_r:
+    dense_l = obst_l.sum()
+    dense_r = obst_r.sum()
+
+    density = 40
+    if free_l and dense_l < density:
+        print("Free Left")
+        obst_detected[0] = False
+    else:
+        obst_detected[0] = True
+      
+    if free_r and dense_r < density:
         print("Free Right")
+        obst_detected[1] = False
+    else:
+        obst_detected[1] = True
 
     if free_l and free_r:
-        if l_sum >= r_sum:
+        if l_sum + dense_l >= r_sum + dense_r:
             best = 'L'
         else:
             best = 'R'
-    elif free_l:
+    elif free_l and dense_l < density:
         best = 'L'
-    elif free_r:
+    elif free_r and dense_r < density:
         best = 'R'
     else:
         best = 'B'
 
     return best
-
     
-
-
-    
-    
-
-
-    # n = len(obst_f)
-    # c = n//2
-
-    # zeros = zero_runs(obst_f)
-    # free_zone = []
-    # for i in range(len(zeros)):
-    #     print(zeros[i])
-    #     print(zeros[i, 1] - zeros[i, 0])
-    #     if zeros[i, 1] - zeros[i, 0] >= 12:
-    #         print("here")
 
 def zero_runs(a):
     # Create an array that is 1 where a is 0, and pad each end with an extra 0.
@@ -279,14 +268,15 @@ class Initial(smach.State):
 
 class Evaluate(smach.State):
     def __init__(self):
-        smach.State.__init__(self , outcomes=['failed', 'tries', 'succ', 'free', 'L', 'R', 'B'], output_keys=['command_time', 'advance'])
+        smach.State.__init__(self , outcomes=['failed', 'tries', 'succ', 'free', 'obstacle'], 
+                                output_keys=['command_time', 'evasion'])
         self.tries = 0
         self.rnd_direction = 0
 
     def execute(self, userdata): 
         global last_goal
-        global feat
-        verbose = True
+        global base, feat
+        global obst_detected, obst_memory
         if self.tries == 0:
             rospy.logwarn('--> STATE <: Evaluate')
             rospy.sleep(0.2)
@@ -297,13 +287,7 @@ class Evaluate(smach.State):
         self.tries += 1
         
         obst_l, obst_r, obst_c, obst_f = feat.get_features()
-
-        if verbose:
-            print("obst left", obst_l[1])
-            print("obst right", obst_r[1])
-            print("obst center", obst_c[1])
-            print("obst front", obst_f[1])
-            print()
+        laser_l, laser_r, laser_c, laser_f= feat.get_laser()
 
         #print(zero_runs(obst_f[1]))
         #print(obst_f[1].sum())
@@ -311,40 +295,97 @@ class Evaluate(smach.State):
         #show_image(obst_f[0], "f")
         # logic
         print()
-        userdata.command_time = 400
+        userdata.command_time = 300
         if obst_c[1].sum() == 0 and last_goal[0] > 0.5: # No obstacle front
+            print("free ...")
             self.tries = 0
             
-            userdata.advance = True
+            userdata.evasion = '-'
             return 'free'
         elif obst_c[1].sum() > 0:
-            userdata.command_time = 180
-            print("Wall\n")
-            userdata.advance = False
-            laser_l, laser_r, laser_c, laser_f= feat.get_laser()
-            # print("obst left", laser_l)
-            # print("obst right", laser_r)
-            # print("obst center", laser_c)
-            # print("obst front", laser_f)
-
-            decision = evade_wall(laser_l, laser_r, laser_f)
-            print("decision:", decision)
-
-            print("-----\n")
-            return decision # L, R, B
+            decision = evade_wall(laser_l, laser_r, obst_l[1], obst_r[1])
+            userdata.evasion = decision
+            
+            obst_detected[2] = obst_c[1].sum() != 0
+            obst_memory = copy.deepcopy(obst_detected)
+            print("---------------Wall---------------\n")
+            print("---------------Wall---------------\n")
+            #base.move_vel(0.0, 0.0, 0.0)
+            self.tries = 0
+            return 'obstacle' 
         else:
             base.move_vel(0.0, 0.0, 0.0)
 
 
-        if obst_c[1].sum() > 4:
-            return 'B'
+        # if obst_c[1].sum() > 4:
+        #     return 'B'
 
         if last_goal[0] < 0.5:
+            self.tries = 0
             return 'succ'
 
 
         return 'tries'
-    
+
+
+class EvadeObstacle(smach.State):
+    def __init__(self):
+        smach.State.__init__(self , outcomes=['failed', 'succ', 'L', 'R', 'B', 'F'], output_keys=['command_time', 'evasion'], 
+                            input_keys=['evasion'])
+        self.tries = 0
+        self.rnd_direction = 0
+
+    def execute(self, userdata): 
+        global feat
+        global obst_detected, obst_memory
+        verbose = True
+        #if self.tries == 0:
+        rospy.logwarn('--> STATE <: EvadeObstacle')
+        rospy.sleep(0.2)
+        # elif self.tries >0:
+        #     clear_console()
+        #     clear_console()
+
+        userdata.command_time = 180
+        obst_l, obst_r, obst_c, obst_f = feat.get_features()
+        laser_l, laser_r, laser_c, laser_f= feat.get_laser()
+        obst_detected[2] = obst_c[1].sum() != 0
+        evade_wall(laser_l, laser_r, obst_l[1], obst_r[1])
+        if verbose:
+            print("obst left", obst_l[1])
+            print("obst right", obst_r[1])
+            print("obst center", obst_c[1])
+            print("obst front", obst_f[1])
+
+        print("??Evasion", userdata.evasion)
+        print("Memory", obst_memory)
+        print("obst detected", obst_detected)
+        print()
+
+        if userdata.evasion == 'B':
+            if obst_detected == obst_memory:
+                return userdata.evasion
+            else:
+                return 'succ'
+
+        else: # L or R -----------------------------------------<
+            
+            if userdata.evasion == 'L':
+                obstacle_remains = obst_memory[0]
+            else:
+                obstacle_remains = obst_memory[1]
+            print("<<<<<<< obstacle remains")
+            if obst_c[1].sum() > 0 and obstacle_remains:
+                userdata.command_time = 800
+                return 'B'
+            else:
+                return 'succ'
+        
+        #return 'succ'
+
+
+
+
 
 
 class TurnObjective(smach.State):
@@ -361,15 +402,23 @@ class TurnObjective(smach.State):
         elif self.tries >0: 
             clear_console()
         self.tries += 1
-        userdata.command_time = 500
+        userdata.command_time = 400
         dir = turn_direction()
 
         return dir
 
 
+
+
+
+
+
+
+
 class MoveLeft(smach.State):
     def __init__(self):
-        smach.State.__init__(self , outcomes=['failed', 'tries', 'succ'], input_keys=['command_time'])
+        smach.State.__init__(self , outcomes=['failed', 'tries', 'succ', 'F'],  output_keys=['command_time'], 
+                             input_keys=['command_time', 'evasion'])
         self.tries = 0
 
     def execute(self, userdata):
@@ -380,11 +429,14 @@ class MoveLeft(smach.State):
         elif self.tries >1: 
             clear_console()
 
-        base.move_vel(0.0, 0.0, 0.5)
+        base.move_vel(0.0, 0.0, 0.5*speed_factor)
         self.tries += 1
 
         if self.tries > userdata.command_time:#500
             self.tries = 0
+            if userdata.evasion != '-':
+                userdata.command_time = 400
+                return 'F'
             return 'succ'
 
         return 'tries'
@@ -392,7 +444,8 @@ class MoveLeft(smach.State):
 
 class MoveRight(smach.State):
     def __init__(self):
-        smach.State.__init__(self , outcomes=['failed', 'tries', 'succ'], input_keys=['command_time'])
+        smach.State.__init__(self , outcomes=['failed', 'tries', 'succ', 'F'], output_keys=['command_time'], 
+                             input_keys=['command_time', 'evasion'])
         self.tries = 0
 
     def execute(self, userdata):
@@ -403,11 +456,14 @@ class MoveRight(smach.State):
         elif self.tries >1: 
             clear_console()
 
-        base.move_vel(0.0, 0.0, -0.5)
+        base.move_vel(0.0, 0.0, -0.5*speed_factor)
         self.tries += 1
 
         if self.tries > userdata.command_time:#500
             self.tries = 0
+            if userdata.evasion != '-':
+                userdata.command_time = 400
+                return 'F'
             return 'succ'
 
         return 'tries'
@@ -415,7 +471,8 @@ class MoveRight(smach.State):
 
 class MoveForward(smach.State):
     def __init__(self):
-        smach.State.__init__(self , outcomes=['failed', 'tries', 'succ', 'turn'], input_keys=['command_time', 'advance'])
+        smach.State.__init__(self , outcomes=['failed', 'tries', 'succ', 'obstacle'], input_keys=['command_time', 'evasion'], 
+                             output_keys=['command_time'])
         self.tries = 0
 
     def execute(self, userdata):
@@ -426,13 +483,14 @@ class MoveForward(smach.State):
         elif self.tries >1: 
             clear_console()
 
-        base.move_vel(1.0, 0.0, 0.0)
+        base.move_vel(0.8*speed_factor, 0.0, 0.0)
         self.tries = self.tries + 1
 
         if self.tries > userdata.command_time:#500
             self.tries = 0
-            if userdata.advance:
-                return 'turn'
+            if userdata.evasion != '-':
+                userdata.command_time = 300
+                return 'obstacle'
             return 'succ'
 
         return 'tries'
@@ -440,7 +498,8 @@ class MoveForward(smach.State):
 
 class MoveBackward(smach.State):
     def __init__(self):
-        smach.State.__init__(self , outcomes=['failed', 'tries', 'succ'], input_keys=['command_time'])
+        smach.State.__init__(self , outcomes=['failed', 'tries', 'succ', 'obstacle', 'L', 'R'], output_keys=['command_time'],
+                                             input_keys=['command_time', 'evasion'])
         self.tries = 0
 
     def execute(self, userdata):
@@ -451,11 +510,20 @@ class MoveBackward(smach.State):
         elif self.tries >1: 
             clear_console()
 
-        base.move_vel(-1.0, 0.0, 0.0)
+        base.move_vel(-0.3*speed_factor, 0.0, 0.0)
         self.tries = self.tries + 1
 
         if self.tries > userdata.command_time:#500
             self.tries = 0
+            if userdata.evasion == 'B':
+                return 'obstacle'
+            elif userdata.evasion == 'L':
+                userdata.command_time = 2000
+                return 'L'
+            elif userdata.evasion == 'R':
+                userdata.command_time = 2000
+                return 'R'
+
             return 'succ'
 
         return 'tries'
@@ -487,20 +555,25 @@ if __name__ == '__main__':
         smach.StateMachine.add("INITIAL", Initial(), transitions={'failed':'INITIAL', 'tries':'INITIAL', 'succ':'EVALUATE'})
 
         smach.StateMachine.add("EVALUATE", Evaluate(), transitions={'failed':'INITIAL', 'tries':'EVALUATE', 'succ':'END',
-                                                                    'free':'MOVE_FORWARD', 'L':'MOVE_LEFT', 'R':'MOVE_RIGHT',
-                                                                    'B':'MOVE_BACKWARD'})
+                                                                    'free':'TURN_OBJECTIVE', 'obstacle':'EVADE_OBSTACLE'})
 
+        smach.StateMachine.add("EVADE_OBSTACLE", EvadeObstacle(), transitions={'failed':'INITIAL', 'succ':'EVALUATE', 'L':'MOVE_LEFT',
+                                                                               'R':'MOVE_RIGHT', 'F':'MOVE_FORWARD', 'B':'MOVE_BACKWARD'})
+        
         smach.StateMachine.add("TURN_OBJECTIVE", TurnObjective(), transitions={'failed':'INITIAL', 'L':'MOVE_LEFT',
                                                                                'R':'MOVE_RIGHT', 'F':'MOVE_FORWARD'})
 
-        smach.StateMachine.add("MOVE_LEFT", MoveLeft(), transitions={'failed':'INITIAL', 'tries':'MOVE_LEFT', 'succ':'EVALUATE'})
+        smach.StateMachine.add("MOVE_LEFT", MoveLeft(), transitions={'failed':'INITIAL', 'tries':'MOVE_LEFT', 'succ':'EVALUATE',
+                                                                     'F':'MOVE_FORWARD'})
 
-        smach.StateMachine.add("MOVE_RIGHT", MoveRight(), transitions={'failed':'INITIAL', 'tries':'MOVE_RIGHT', 'succ':'EVALUATE'})
+        smach.StateMachine.add("MOVE_RIGHT", MoveRight(), transitions={'failed':'INITIAL', 'tries':'MOVE_RIGHT', 'succ':'EVALUATE',
+                                                                       'F':'MOVE_FORWARD'})
 
         smach.StateMachine.add("MOVE_FORWARD", MoveForward(), transitions={'failed':'INITIAL', 'tries':'MOVE_FORWARD', 'succ':'EVALUATE',
-                                                                           'turn':'TURN_OBJECTIVE'})
+                                                                           'obstacle':'EVADE_OBSTACLE'})
 
-        smach.StateMachine.add("MOVE_BACKWARD", MoveBackward(), transitions={'failed':'INITIAL', 'tries':'MOVE_BACKWARD', 'succ':'EVALUATE'})
+        smach.StateMachine.add("MOVE_BACKWARD", MoveBackward(), transitions={'failed':'INITIAL', 'tries':'MOVE_BACKWARD', 'succ':'EVALUATE', 
+                                                                        'obstacle':'EVADE_OBSTACLE', 'L':'MOVE_LEFT', 'R':'MOVE_RIGHT'})
         
     rospy.on_shutdown(shutdown_stop)
     outcome = sm.execute()
