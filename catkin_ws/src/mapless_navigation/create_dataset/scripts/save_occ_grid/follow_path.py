@@ -29,16 +29,14 @@ def getRobotPoseWrtOdom():
         return [0, 0, 0]
 
 
-
-
 def update_delta(p):
 
     listener = tf.TransformListener()
     try:
         listener.waitForTransform('odom', 'base_link', rospy.Time(0), rospy.Duration(2.0))
         ([x, y, z], rot) = listener.lookupTransform('odom', 'base_link', rospy.Time(0))
-
         theta = 2*math.atan2(rot[2], rot[3])
+
         if abs(theta) > math.pi:
             theta = theta - (np.sign(theta)*2*math.pi)
         pos = p.pose.position
@@ -56,6 +54,7 @@ def update_delta(p):
         rospy.logwarn('Failed to get the transformation:\n%s' % str(e))			
         return 0, 0, 0, 0
 
+
 def pathFollowerCalback(msg):
     m = Path()
     first = True
@@ -63,18 +62,11 @@ def pathFollowerCalback(msg):
     for p in msg.poses:
         if first:
             first = False
+
         else:
-
             delta_angle, distance = update_delta(p)
-
-            # print("a_goal", angle_to_goal)
-            # print("d_a", delta_angle)
             while abs(delta_angle) > 0.3 and distance < 0.3:
                 print(">><<")
-                # print("a_goal", angle_to_goal)
-                # print("d_a", delta_angle)
-                # dir = (delta_angle) / abs(delta_angle)
-
                 JuskeshinoNavigation.startMoveDistAngle(0, delta_angle)
                 delta_angle, distance = update_delta(p)
                 print("delta_angle", delta_angle)
@@ -82,7 +74,6 @@ def pathFollowerCalback(msg):
                     delta_angle = delta_angle - (np.sign(delta_angle)*2*math.pi)
 
                 print("delta_angle", delta_angle)
-            #print("dist", distance)
             while distance > 0.3:
                 print("--")
                 print("dist", distance)
@@ -102,7 +93,6 @@ def pathFollowerCalback(msg):
 def main():
     global pub, listener
 
-    
     rospy.init_node('follow_path')
     rospy.logwarn("follow path")
     JuskeshinoNavigation.setNodeHandle()

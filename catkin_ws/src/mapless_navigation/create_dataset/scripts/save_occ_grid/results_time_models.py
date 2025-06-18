@@ -69,7 +69,6 @@ def load_free_map():
     print("Load coords ...")
     df_map = pd.read_csv(file_path+"free_map.csv",  sep=",", header=0,index_col=0)
     map = df_map.values
-
     df_map_inf = pd.read_csv(file_path+"free_map_info.csv",  sep=",", header=0,index_col=0)
     map_info = df_map_inf.to_numpy()
     resolution = float(map_info[0][0])
@@ -85,25 +84,10 @@ def load_free_map():
 
 def random_goal(free_spaces, map_info):
     # val 0 is free
-    #res = np.round(msg.info.resolution, 3)
     res = map_info[0]
-    #cent = np.array([msg.info.origin.position.x, msg.info.origin.position.y])
     cent = map_info[1]
-    #width = msg.info.width
-    width = map_info[2]
-    #height = msg.info.height
-    height = map_info[2]
-    # map_grid = np.array(msg.data)
-    # map_grid = np.reshape(map_grid, (height, width))
-    # #occ_map = Map(res, cent, width, height, map_grid)   
-    # free_spaces = np.argwhere(map_grid==0)
-
-    # get_free_random_pose(self)
-    # Get free position
     max = len(free_spaces)
     selection = int(np.random.uniform(0, max))
-    #index = np.random.randint(0, selection.size)
-    #selection = int(selection[index])
     map_x = free_spaces[selection][1]
     map_y = free_spaces[selection][0]
     position = Point(round(map_x, 2), round(map_y, 2), 0)
@@ -128,8 +112,8 @@ def main():
     global point1, point2, nav_fails
     global trajectory, distance
 
-    rospy.init_node('follow_path')
-    rospy.logwarn("follow path")
+    rospy.init_node('results_time_models')
+    rospy.logwarn("results time models")
     JuskeshinoNavigation.setNodeHandle()
     listener = tf.TransformListener()
 
@@ -137,10 +121,8 @@ def main():
 
     move_goal_pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
     goal_stat_pub = rospy.Publisher('/maples_nav/goal_reached', Int8, queue_size=1)   
-    #map_msg = rospy.wait_for_message('/augmented_map', OccupancyGrid, timeout=5)
-    free_spaces, map_info = load_free_map()
 
-    #save_free_map(map_msg)
+    free_spaces, map_info = load_free_map()
     with open(file_path+'nav_register.csv', 'w') as f:
         writer = csv.writer(f)
         writer.writerow(['Time', 'origin', 'objective', 'distance', 'arrive', 'trajectory'])
@@ -167,16 +149,12 @@ def main():
 
         else:
             trajectory.append(get_position())
-            #print(get_position())
-
             rospy.sleep(.5)
             timer = time.time() - t0
             if timer > 60:
                 goal_stat_pub.publish(4)
                 print("Nav Fail, time:", timer)
                 navigating = False
-
-    
 
 
 if __name__ == '__main__':

@@ -73,11 +73,9 @@ def save_free_map(msg):
     height = msg.info.height
     map_grid = np.array(msg.data)
     map_grid = np.reshape(map_grid, (height, width))
-    #occ_map = Map(res, cent, width, height, map_grid)   
     free_spaces = np.argwhere(map_grid==0)
     print("Save map ...")
     print(type(free_spaces))
-    
     df = pd.DataFrame(free_spaces)
     df.to_csv(file_path+"free_map.csv")
     df = pd.DataFrame(np.array([res, cent, width, height]))
@@ -92,15 +90,9 @@ def random_goal(msg):
     height = msg.info.height
     map_grid = np.array(msg.data)
     map_grid = np.reshape(map_grid, (height, width))
-    #occ_map = Map(res, cent, width, height, map_grid)   
     free_spaces = np.argwhere(map_grid==0)
-
-    # get_free_random_pose(self)
-    # Get free position
     max = len(free_spaces)
     selection = int(np.random.uniform(0, max))
-    #index = np.random.randint(0, selection.size)
-    #selection = int(selection[index])
     map_x = free_spaces[selection][1]
     map_y = free_spaces[selection][0]
     position = Point(round(map_x, 2), round(map_y, 2), 0)
@@ -125,8 +117,8 @@ def main():
     global point1, point2, nav_fails
     global trajectory, distance
 
-    rospy.init_node('follow_path')
-    rospy.logwarn("follow path")
+    rospy.init_node('results_time_map')
+    rospy.logwarn("results time map")
     JuskeshinoNavigation.setNodeHandle()
     listener = tf.TransformListener()
 
@@ -162,10 +154,8 @@ def main():
 
         else:
             trajectory.append(get_position())
-            #print(get_position())
-
             rospy.sleep(.5)
-        #print("time:", time.time() - t0)
+
     
 
 
