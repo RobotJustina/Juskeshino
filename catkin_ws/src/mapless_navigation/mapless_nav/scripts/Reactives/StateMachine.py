@@ -2,8 +2,8 @@
 
 import rospy
 import smach, smach_ros
-from geometry_msgs.msg import Twist, PointStamped
-from std_msgs.msg import Float32MultiArray, Float64MultiArray
+from geometry_msgs.msg import Twist, PointStamped, PoseStamped
+from std_msgs.msg import Float32MultiArray, Float64MultiArray, Int8
 from nav_msgs.msg import OccupancyGrid
 import numpy as np
 import matplotlib.pyplot as plt
@@ -67,6 +67,24 @@ class Features():
         return l, r, c
 
 #_________
+
+
+def moveGoalCallback(msg):
+    global target_reached
+    pos = msg.pose.position
+
+    clp_pub = rospy.Publisher("/clicked_point", PointStamped, queue_size=10)
+    point = PointStamped()
+    point.header.frame_id = "odom"
+    point.header.stamp = rospy.Time.now()
+    point.point = pos
+    
+    clp_pub.publish(point)
+
+    print(f"\nNew goal: ({pos.x:.3f}, {pos.y:.3f})", end="\r") 
+    print(end='\n')
+    target_reached = False
+
 
 def callback_goal(msg):
     global last_goal, target_reached
@@ -245,15 +263,20 @@ class Initial(smach.State):
         global base
         if self.tries == 0:
             rospy.logwarn('--> STATE <: Initial')
+            print("Waiting for a new goal ...")
+            print("target_reached", target_reached)
             base = SimpleBase()
             rospy.sleep(1.0)
         elif self.tries >0: 
             clear_console()
 
         self.tries += 1
+        
         if target_reached == True: # No objective
             return 'tries'
         else:
+            self.tries = 0
+            print("target_reached", target_reached)
             return 'succ'
 
 
@@ -267,6 +290,7 @@ class Evaluate(smach.State):
         global last_goal
         global base, feat
         global obst_detected, obst_memory
+        global goal_stat_pub, target_reached
         if self.tries == 0:
             rospy.logwarn('--> STATE <: Evaluate')
             rospy.sleep(0.2)
@@ -294,9 +318,15 @@ class Evaluate(smach.State):
         else:
             base.move_vel(0.0, 0.0, 0.0)
 
+        # Arrive to objective
         if last_goal[0] < 0.5:
             self.tries = 0
-            return 'succ'
+            target_reached = True
+            print("target_reached", target_reached)
+            status = Int8()
+            status = 3
+            goal_stat_pub.publish(status)
+            return 'failed' #'succ'
 
         return 'tries'
 
@@ -498,6 +528,7 @@ class MoveBackward(smach.State):
 
 
 if __name__ == '__main__':
+    global goal_stat_pub
     print("State machine")
     rospy.init_node('smach_react_nav')
     
@@ -505,7 +536,9 @@ if __name__ == '__main__':
     rospy.Subscriber("/hardware/scan", LaserScan, callback_laser)
     rospy.Subscriber("/clicked_point", PointStamped, callback_point)
     rospy.Subscriber("/NN_goal", Float32MultiArray, callback_goal)
+    rospy.Subscriber('/move_base_simple/goal', PoseStamped, moveGoalCallback)
     feat = Features()
+    goal_stat_pub = rospy.Publisher('/maples_nav/goal_reached', Int8, queue_size=1)
     pubHeadPos = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=1)
     msgHeadPos = Float64MultiArray()
     msgHeadPos.data = [0.0, -0.4]
