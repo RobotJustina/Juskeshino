@@ -28,6 +28,9 @@ class SimpleBase():
         self._base_vel_pub = rospy.Publisher('/hardware/mobile_base/cmd_vel' , Twist, queue_size=10)
         self.twist = Twist()
 
+    def call_base(self):
+        print("-BASE-")
+
     def move_vel(self, l_velX, l_velY, a_velZ):
         self.twist.linear.x = l_velX
         self.twist.linear.y = l_velY
@@ -40,31 +43,37 @@ class Features():
         self.left_obst = []
         self.right_obst = []
         self.cent_obst = []
+        self.wall = []
         self.laser_obst_left = []
         self.laser_obst_right = []
         self.laser_obst_cent = []
+        self.laser_wall = []
 
-    def set_features(self, left, right, center):
+    def set_features(self, left, right, center, wall):
         self.left_obst = left
         self.right_obst = right
         self.cent_obst = center
+        self.wall = wall
     
     def get_features(self):
         l = self.left_obst
         r = self.right_obst 
         c = self.cent_obst
-        return l, r, c
+        w = self.wall
+        return l, r, c, w
     
-    def set_laser(self, left, right, center):
+    def set_laser(self, left, right, center, wall):
         self.laser_obst_left = left
         self.laser_obst_right = right
         self.laser_obst_cent = center
+        self.laser_wall = wall
     
     def get_laser(self):
         l = self.laser_obst_left
         r = self.laser_obst_right 
         c = self.laser_obst_cent
-        return l, r, c
+        w = self.laser_wall
+        return l, r, c, w
 
 #_________
 
@@ -96,7 +105,8 @@ def callback_laser(msg):
     left = np.clip( msg.ranges[c+25:] , 0, 11)
     right = np.clip( msg.ranges[:c-25] , 0, 11)
     center = np.clip( msg.ranges[c-17:c+17] , 0, 11)
-    feat.set_laser(left, right, center)
+    wall = np.clip( msg.ranges[c-25:c+25] , 0, 11)
+    feat.set_laser(left, right, center, wall)
 
 
 def occGridCallback(msg):
@@ -114,21 +124,57 @@ def occGridCallback(msg):
     data_L2 = data_L.sum(0)//100
     data_L2 = data_L2[len(data_L2)//2:]
     
+    # print(data_L2)
+    # print("Shape ",data_L2.shape)
+    # show_image(data_L, "img")
+
+
     data_R = data[c:, c+6:]
     data_R2 = data_R.sum(0)//100# Y 0-34, X 1-40
     data_R2 = data_R2[:len(data_R2)//2]
 
+    # print(data_R2)
+    # print("Shape ",data_R2.shape)
+    # show_image(data_R, "img")
+
+
     data_C = data[-near_obst_dist:, c-6:c+6]
     data_C2 = data_C.sum(0)//100
 
+    # print(data_C2)
+    # print("Shape ",data_C2.shape)
+    # show_image(data_C, "img")
+    
+    #step = int(100*res)
+    data_F = data[-near_obst_dist:-near_obst_dist+3, :]
+    #print("data_F shape", data_F.shape)
+    data_F2 = data_F.sum(0)//100
+
+    # print(data_F2)
+    # print("Shape ",data_F2.shape)
+    # print("Shape ",data_F2.shape)
+    # show_image(data_F, "img")
+
+    
     feat.set_features([data_L, data_L2], [data_R, data_R2], 
-                        [data_C, data_C2])
+                        [data_C, data_C2], [data_F, data_F2])
+
+    # weight = 1
+    # for i in range(len(data_R2)):
+    #     data_R2[i] = data_R2[i] * weight
+    #     weight = weight - 1/(len(data_R2))
 
 #> Funct()
+def show_image(img, name):
+    plt.title(name)
+    plt.imshow(img, cmap='gray') 
+    plt.show()
+
 
 def clear_console():
     blanks = " "*110
     sys.stdout.write("\033[A" + blanks + "\r")
+    #print(" "*100, end='\r')
     sys.stdout.flush()
 
 
@@ -149,27 +195,36 @@ def turn_direction():
 
     
 def free_side(laser_l, laser_r, obst_l, obst_r):
+    print("free_side()")
     global obst_detected
-
     fl = len(laser_l) * 11
     fr = len(laser_r) * 11
+
     l_sum = laser_l.sum()
     r_sum = laser_r.sum()
+    
     free_l = l_sum == fl or np.all(laser_l > 1.0)
     free_r = r_sum == fr or np.all(laser_r > 1.0)
     dense_l = obst_l.sum()
     dense_r = obst_r.sum()
+    print("** Dense L", dense_l)
+    print("** Dense R", dense_r)
 
+    density = 40
+    print(free_l, free_r)
     if free_l and dense_l < len(laser_l):
+        print("-Free Left")
         obst_detected[0] = False
     else:
         obst_detected[0] = True
       
     if free_r and dense_r < len(laser_r):
+        print("-Free Right")
         obst_detected[1] = False
     else:
         obst_detected[1] = True
 
+    print()
     if free_l and free_r:
         if l_sum + dense_l >= r_sum + dense_r:
             best = 'R'
@@ -187,48 +242,71 @@ def free_side(laser_l, laser_r, obst_l, obst_r):
 
 def laser_side():
     global feat
+    print("laser_side()")
+    laser_l, laser_r, laser_c, laser_f = feat.get_laser()
+    #print('laser_l', laser_l)
+    # print('laser_r', laser_r)
+    #print('laser_c', laser_c)
+    print('--')
+    
 
-    laser_l, laser_r, laser_c = feat.get_laser()
     free_l = zero_runs(np.where(laser_l > 1, 0, 1))
+    print(np.where(laser_l > 1, 0, 1))
     max_l_range = [0, 0]
     for range in free_l:
         n = range[1] - range[0]
         if n > len(laser_c):
+            print("space", range)
             if n > max_l_range[1] - max_l_range[0]:
                 max_l_range = range
     
+    print("max L", max_l_range)
     l_range = max_l_range[1] - max_l_range[0]
+    l_space = l_range > 0
+    #if l_space and not obst_detected[0]:
+    #    print('left is free :)')
 
     free_r = zero_runs(np.where(laser_r > 1, 0, 1))
+    print(np.where(laser_r > 1, 0, 1))
     max_r_range = [0, 0]
     for range in free_r:
         n = range[1] - range[0]
         if n > len(laser_c):
+            print("space", range)
             if n > max_r_range[1] - max_r_range[0]:
                 max_r_range = range
     
+    print("max R", max_r_range)
     r_range =  max_r_range[1] - max_r_range[0] 
+    r_space =  r_range > 0
+
     if r_range == l_range == 0:
+        print("no space")
         return 'B'
     
     if l_range >= r_range:
         return 'L'
     else:
         return 'R'
+    
+
+    
+
 
 
 def zero_runs(a):
+    # Create an array that is 1 where a is 0, and pad each end with an extra 0.
     iszero = np.concatenate(([0], np.equal(a, 0).view(np.int8), [0]))
     absdiff = np.abs(np.diff(iszero))
+    # Runs start and end where absdiff is 1.
     ranges = np.where(absdiff == 1)[0].reshape(-1, 2)
-
     return ranges
 
 
 def move_robot(vel, timer):
     global base
-
     t0 = time.time()
+    
     while True:
         base.move_vel(vel[0], vel[1], vel[2])
         if time.time() - t0 >= timer:
@@ -242,7 +320,7 @@ class Initial(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
-        global base
+        global base, feat
         if self.tries == 0:
             rospy.logwarn('--> STATE <: Initial')
             base = SimpleBase()
@@ -262,6 +340,7 @@ class Evaluate(smach.State):
         smach.State.__init__(self , outcomes=['failed', 'tries', 'succ', 'free', 'obstacle'], 
                                 output_keys=['command_time', 'evasion'])
         self.tries = 0
+        self.rnd_direction = 0
 
     def execute(self, userdata): 
         global last_goal
@@ -275,28 +354,37 @@ class Evaluate(smach.State):
             clear_console()
 
         self.tries += 1
-        obst_l, obst_r, obst_c = feat.get_features()
-        laser_l, laser_r, laser_c = feat.get_laser()
+        
+        obst_l, obst_r, obst_c, obst_f = feat.get_features()
+        laser_l, laser_r, laser_c, laser_f= feat.get_laser()
+
+        print()
         userdata.command_time = 300
         if obst_c[1].sum() == 0 and last_goal[0] > 0.5: # No obstacle front
+            print("free ...")
             self.tries = 0
+            
             userdata.evasion = '-'
             return 'free'
-        
         elif obst_c[1].sum() > 0:
             decision = free_side(laser_l, laser_r, obst_l[1], obst_r[1])
             userdata.evasion = decision
+            
             obst_detected[2] = obst_c[1].sum() != 0
             obst_memory = copy.deepcopy(obst_detected)
+            print("---------------Wall---------------\n")
+            print("---------------Wall---------------\n")
+            print("decision", decision)
+            #base.move_vel(0.0, 0.0, 0.0)
             self.tries = 0
-            return 'obstacle'
-         
+            return 'obstacle' 
         else:
             base.move_vel(0.0, 0.0, 0.0)
 
         if last_goal[0] < 0.5:
             self.tries = 0
             return 'succ'
+
 
         return 'tries'
 
@@ -305,26 +393,44 @@ class EvadeObstacle(smach.State):
     def __init__(self):
         smach.State.__init__(self , outcomes=['failed', 'succ', 'free', 'tries'], output_keys=['command_time', 'evasion'], 
                             input_keys=['evasion'])
+        self.rnd_direction = 0
 
     def execute(self, userdata): 
         global feat
-        global obst_detected
-
+        global obst_detected, obst_memory
+        verbose = False
         rospy.logwarn('--> STATE <: EvadeObstacle')
         rospy.sleep(0.2)
 
-        userdata.command_time = 180
-        obst_l, obst_r, obst_c = feat.get_features()
-        laser_l, laser_r, laser_c = feat.get_laser()
-        obst_detected[2] = obst_c[1].sum() != 0
 
+        userdata.command_time = 180
+        obst_l, obst_r, obst_c, obst_f = feat.get_features()
+        laser_l, laser_r, laser_c, laser_f= feat.get_laser()
+        obst_detected[2] = obst_c[1].sum() != 0
         free_side(laser_l, laser_r, obst_l[1], obst_r[1])
+        if verbose:
+            print("obst left", obst_l[1])
+            print("obst right", obst_r[1])
+            print("obst center", obst_c[1])
+            print("obst front", obst_f[1])
+
+
+        print("??Evasion", userdata.evasion)
+        print("Memory", obst_memory)
+        print("obst detected", obst_detected)
+        print()
+
         lid_side = laser_side()
+        print("laser side", lid_side)
         
         if userdata.evasion == 'B':
+            print('evade back _')
+            # move_robot([-0.3*speed_factor, 0.0, 0.0], 1.5)
             if lid_side  == 'B':  
+            #     return 'succ'
                 sign = np.random.randint(-1, 2)
                 sign = -1 if sign < 0 else 1
+                print('sign', sign)
                 speed = sign *0.5
             
             if lid_side == 'L':
@@ -334,33 +440,57 @@ class EvadeObstacle(smach.State):
             base.move_vel(0.0, 0.0, speed * speed_factor)
             return 'succ'
 
+
+
         if userdata.evasion == 'L':
+            print('evade left <')
             speed = 0.5
+            # if laser_side == 'L':
+            #     speed = 1
             index = 0
 
+        #     move_robot([0.0, 0.0, 0.5*speed_factor], 1.5)
+         
         if userdata.evasion == 'R':
+            print('evade right >')
             speed = -0.5
+            # if laser_side == 'R':
+            #     speed = -1
             index = 1
         
+        times = 0
         while obst_c[1].sum() > 0:
-            obst_l, obst_r, obst_c = feat.get_features()
+            times += 1
+            obst_l, obst_r, obst_c, obst_f = feat.get_features()
             base.move_vel(0.0, 0.0, speed * speed_factor)
             
+        print("FRONT --->")
         move_robot([0.5*speed_factor, 0.0, 0.0], 1.0)
-        obst_l, obst_r, obst_c = feat.get_features()
-        laser_l, laser_r, laser_c = feat.get_laser()            
+        ##rospy.sleep(0.2)
+        obst_l, obst_r, obst_c, obst_f = feat.get_features()
+        laser_l, laser_r, laser_c, laser_f= feat.get_laser()            
         free_side(laser_l, laser_r, obst_l[1], obst_r[1])
+        print("1111111111111111111111111111111111111111111111111111111111111111111111111111111")
+        
+        print( obst_c[1])
+        print("obstacleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
 
         if last_goal[0] < 1.2:
+            print("O_O so close")
             self.tries = 0
             userdata.evasion = '-'
             return 'free'
 
+        print("obst detected", obst_detected)
         if not obst_detected[index]:
+            #if not obst_detected[2]:
             return 'succ'
 
         move_robot([-0.5*speed_factor, 0.0, 0.0], 0.5)
         return 'tries'
+
+
+
 
 
 class TurnObjective(smach.State):
@@ -369,7 +499,8 @@ class TurnObjective(smach.State):
         self.tries = 0
 
     def execute(self, userdata): 
-
+        global last_goal
+        global feat
         if self.tries == 0:
             rospy.logwarn('--> STATE <: TurnObjective\n')
             rospy.sleep(0.2)
@@ -377,9 +508,16 @@ class TurnObjective(smach.State):
             clear_console()
         self.tries += 1
         userdata.command_time = 400
-        dir = turn_direction() # L R F
+        dir = turn_direction()
 
         return dir
+
+
+
+
+
+
+
 
 
 class MoveLeft(smach.State):
@@ -389,7 +527,7 @@ class MoveLeft(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
-        global base
+        global base, feat
         if self.tries == 0:
             rospy.logwarn('--> STATE <: MoveLeft')
             rospy.sleep(0.2)
@@ -416,7 +554,7 @@ class MoveRight(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
-        global base
+        global base, feat
         if self.tries == 0:
             rospy.logwarn('--> STATE <: MoveRight')
             rospy.sleep(0.2)
@@ -443,7 +581,7 @@ class MoveForward(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
-        global base
+        global base, feat
         if self.tries == 0:
             rospy.logwarn('--> STATE <: MoveForward')
             rospy.sleep(0.2)
@@ -470,7 +608,7 @@ class MoveBackward(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
-        global base
+        global base, feat
         if self.tries == 0:
             rospy.logwarn('--> STATE <: MoveBackward')
             rospy.sleep(0.2)
