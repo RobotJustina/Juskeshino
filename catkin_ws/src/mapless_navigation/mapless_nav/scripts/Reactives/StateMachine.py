@@ -262,9 +262,9 @@ class Initial(smach.State):
     def execute(self, userdata):
         global base
         if self.tries == 0:
+            print("\n")
             rospy.logwarn('--> STATE <: Initial')
             print("Waiting for a new goal ...")
-            print("target_reached", target_reached)
             base = SimpleBase()
             rospy.sleep(1.0)
         elif self.tries >0: 
@@ -276,7 +276,6 @@ class Initial(smach.State):
             return 'tries'
         else:
             self.tries = 0
-            print("target_reached", target_reached)
             return 'succ'
 
 
@@ -320,9 +319,9 @@ class Evaluate(smach.State):
 
         # Arrive to objective
         if last_goal[0] < 0.5:
+            rospy.logwarn('>>>>> target_reached <<<<<')
             self.tries = 0
             target_reached = True
-            print("target_reached", target_reached)
             status = Int8()
             status = 3
             goal_stat_pub.publish(status)
