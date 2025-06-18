@@ -39,7 +39,7 @@ Report file will be save as "nav_register.csv" in  this folder
 - run the node "mapless_local_occ_matr_timed.py" from pkg="mapless_nav"
 - run the node "results_time_reactive.py" from pkg="create_dataset"
 
-## Mapless navigation using State machine
+## Mapless navigation using State Machine
 - launch "justina_mapless_simul_maped.launch" from pkg="mapless_nav"
 - run the node "StateMachine.py" from pkg="mapless_nav"
 - run the node "results_time_reactive.py" from pkg="create_dataset"
