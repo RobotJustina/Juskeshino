@@ -20,6 +20,7 @@ feat = None
 target_reached = True
 obst_detected = [False, False, False] # L, R, C
 obst_memory = [False, False, False]
+interrupt = False
 speed_factor = 0.8
 
 #_________
@@ -65,7 +66,6 @@ class Features():
         r = self.laser_obst_right 
         c = self.laser_obst_cent
         return l, r, c
-
 #_________
 
 
@@ -80,7 +80,6 @@ def moveGoalCallback(msg):
     point.point = pos
     
     clp_pub.publish(point)
-
     print(f"\nNew goal: ({pos.x:.3f}, {pos.y:.3f})", end="\r") 
     print(end='\n')
     target_reached = False
@@ -88,11 +87,16 @@ def moveGoalCallback(msg):
 
 def callback_goal(msg):
     global last_goal, target_reached
+    global interrupt
     if target_reached:
         last_goal[0] = 0.0
         last_goal[1] = 0.0
     else:
         last_goal = list(msg.data)
+        if last_goal[0] < 0.5:
+            interrupt = True
+        else:
+            interrupt = False
 
 
 def callback_point(msg):
@@ -143,7 +147,6 @@ def occGridCallback(msg):
                         [data_C, data_C2])
 
 #> Funct()
-
 def clear_console():
     blanks = " "*110
     sys.stdout.write("\033[A" + blanks + "\r")
@@ -216,7 +219,6 @@ def laser_side():
                 max_l_range = range
     
     l_range = max_l_range[1] - max_l_range[0]
-
     free_r = zero_runs(np.where(laser_r > 1, 0, 1))
     max_r_range = [0, 0]
     for range in free_r:
@@ -252,6 +254,7 @@ def move_robot(vel, timer):
         if time.time() - t0 >= timer:
             break
     base.move_vel(0.0, 0.0, 0.0)
+
 
 #>>> STATE MACHINE -------------------------------------------------------
 class Initial(smach.State):
@@ -297,6 +300,16 @@ class Evaluate(smach.State):
             clear_console()
             clear_console()
 
+        if last_goal[0] < 0.5 or interrupt:
+            rospy.logwarn('>>>>> STOPPED <<<<<')
+            base.move_vel(0.0, 0.0, 0.0)
+            self.tries = 0
+            target_reached = True
+            status = Int8()
+            status = 3
+            goal_stat_pub.publish(status)
+            return 'failed'
+
         self.tries += 1
         obst_l, obst_r, obst_c = feat.get_features()
         laser_l, laser_r, laser_c = feat.get_laser()
@@ -305,7 +318,6 @@ class Evaluate(smach.State):
             self.tries = 0
             userdata.evasion = '-'
             return 'free'
-        
         elif obst_c[1].sum() > 0:
             decision = free_side(laser_l, laser_r, obst_l[1], obst_r[1])
             userdata.evasion = decision
@@ -316,17 +328,6 @@ class Evaluate(smach.State):
          
         else:
             base.move_vel(0.0, 0.0, 0.0)
-
-        # Arrive to objective
-        if last_goal[0] < 0.5:
-            rospy.logwarn('>>>>> target_reached <<<<<')
-            self.tries = 0
-            target_reached = True
-            status = Int8()
-            status = 3
-            goal_stat_pub.publish(status)
-            return 'failed' #'succ'
-
         return 'tries'
 
 
@@ -335,8 +336,9 @@ class EvadeObstacle(smach.State):
         smach.State.__init__(self , outcomes=['failed', 'succ', 'free', 'tries'], output_keys=['command_time', 'evasion'], 
                             input_keys=['evasion'])
 
+        self.tries = 0
     def execute(self, userdata): 
-        global feat
+        global feat, interrupt
         global obst_detected
 
         rospy.logwarn('--> STATE <: EvadeObstacle')
@@ -350,7 +352,13 @@ class EvadeObstacle(smach.State):
         free_side(laser_l, laser_r, obst_l[1], obst_r[1])
         lid_side = laser_side()
         
+        if interrupt:
+            return 'succ'
+
+        print("EVASION ", userdata.evasion )
+        print("lidar: ", lid_side)
         if userdata.evasion == 'B':
+            
             if lid_side  == 'B':  
                 sign = np.random.randint(-1, 2)
                 sign = -1 if sign < 0 else 1
@@ -360,24 +368,33 @@ class EvadeObstacle(smach.State):
                 speed = 0.5
             if lid_side == 'R':
                 speed = -0.5
-            base.move_vel(0.0, 0.0, speed * speed_factor)
+            base.move_vel(-0.05, 0.0, speed * speed_factor)
             return 'succ'
 
         if userdata.evasion == 'L':
-            speed = 0.5
+            speed = 0.4
             index = 0
+            if lid_side == 'L':
+                speed = 0.6
+            if lid_side == 'R':
+                speed = -0.5
 
         if userdata.evasion == 'R':
-            speed = -0.5
+            speed = -0.4
             index = 1
-        
+            if lid_side == 'L':
+                speed = 0.5
+            if lid_side == 'R':
+                speed = -0.6
+
         while obst_c[1].sum() > 0:
             obst_l, obst_r, obst_c = feat.get_features()
             base.move_vel(0.0, 0.0, speed * speed_factor)
             
         move_robot([0.5*speed_factor, 0.0, 0.0], 1.0)
         obst_l, obst_r, obst_c = feat.get_features()
-        laser_l, laser_r, laser_c = feat.get_laser()            
+        laser_l, laser_r, laser_c = feat.get_laser()
+        obst_detected[2] = obst_c[1].sum() != 0       
         free_side(laser_l, laser_r, obst_l[1], obst_r[1])
 
         if last_goal[0] < 1.2:
@@ -385,7 +402,8 @@ class EvadeObstacle(smach.State):
             userdata.evasion = '-'
             return 'free'
 
-        if not obst_detected[index]:
+        if not obst_detected[index]: #!= obst_memory[index]:
+            print("NO obstacle detect")
             return 'succ'
 
         move_robot([-0.5*speed_factor, 0.0, 0.0], 0.5)
@@ -407,7 +425,6 @@ class TurnObjective(smach.State):
         self.tries += 1
         userdata.command_time = 400
         dir = turn_direction() # L R F
-
         return dir
 
 
@@ -418,13 +435,15 @@ class MoveLeft(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
-        global base
+        global base, interrupt
         if self.tries == 0:
             rospy.logwarn('--> STATE <: MoveLeft')
             rospy.sleep(0.2)
         elif self.tries >1: 
             clear_console()
 
+        if interrupt:
+            return 'succ'
         base.move_vel(0.0, 0.0, 0.5*speed_factor)
         self.tries += 1
 
@@ -445,13 +464,15 @@ class MoveRight(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
-        global base
+        global base, interrupt
         if self.tries == 0:
             rospy.logwarn('--> STATE <: MoveRight')
             rospy.sleep(0.2)
         elif self.tries >1: 
             clear_console()
 
+        if interrupt:
+            return 'succ'
         base.move_vel(0.0, 0.0, -0.5*speed_factor)
         self.tries += 1
 
@@ -472,13 +493,15 @@ class MoveForward(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
-        global base
+        global base, interrupt
         if self.tries == 0:
             rospy.logwarn('--> STATE <: MoveForward')
             rospy.sleep(0.2)
         elif self.tries >1: 
             clear_console()
 
+        if interrupt:
+            return 'succ'
         base.move_vel(0.8*speed_factor, 0.0, 0.0)
         self.tries = self.tries + 1
 
@@ -499,13 +522,15 @@ class MoveBackward(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
-        global base
+        global base, interrupt
         if self.tries == 0:
             rospy.logwarn('--> STATE <: MoveBackward')
             rospy.sleep(0.2)
         elif self.tries >1: 
             clear_console()
 
+        if interrupt:
+            return 'succ'
         base.move_vel(-0.3*speed_factor, 0.0, 0.0)
         self.tries = self.tries + 1
 
@@ -519,11 +544,9 @@ class MoveBackward(smach.State):
             elif userdata.evasion == 'R':
                 userdata.command_time = 2000
                 return 'R'
-
             return 'succ'
-
+        
         return 'tries'
-
 
 
 if __name__ == '__main__':
@@ -544,7 +567,6 @@ if __name__ == '__main__':
     pubHeadPos.publish(msgHeadPos)
     rospy.sleep(1)
     pubHeadPos.publish(msgHeadPos)
-
 
     sm = smach.StateMachine(outcomes=['END'])
     sis = smach_ros.IntrospectionServer('SMACH_VIEW_SERVER', sm, '/SM_REACTIVE_NAV')

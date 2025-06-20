@@ -25,9 +25,10 @@ nav_fails = 0
 
 
 def goalCallback(msg):
-    global navigating
+    global navigating, experiments
     global fail_time, nav_fails, nav_time
     global point1, point2, distance, trajectory
+    global t0
     
     print("\n>> GOAL status reached:", msg.data)
     if msg.data == 3:
@@ -36,25 +37,33 @@ def goalCallback(msg):
         nav_time = time.time()
         print("Timer: ", nav_time - t0)
         d = round(math.dist(point1, point2), 2)
-        data = [round(nav_time - t0, 2), point1, point2, d, True, trajectory]
-        with open(file_path+'nav_register.csv', 'a') as f:
-            writer = csv.writer(f)
-            writer.writerow(data)
+        data = [experiments, round(nav_time - t0, 2), point1, point2, d, True, trajectory]
+        if data[1] > 1:
+            with open(file_path+'nav_register.csv', 'a') as f:
+                writer = csv.writer(f)
+                writer.writerow(data)
+                rospy.sleep(0.2)
+        else:
+            experiments -= 1
+
     if msg.data == 4:
         nav_fails += 1
         fail_time = time.time()
         print(" X -- Fails", nav_fails)
-        if nav_fails > 2:
+        if nav_fails > 1:
             print("Stop nav")
-            rospy.sleep(2)
             nav_fails = 0
             navigating = False
             print("Timer: ", fail_time - t0)
             d = round(math.dist(point1, point2), 2)
-            data = [round(fail_time - t0, 2), point1, point2, d, False, trajectory]
-            with open(file_path+'nav_register.csv', 'a') as f:
-                writer = csv.writer(f)
-                writer.writerow(data)
+            data = [experiments, round(fail_time - t0, 2), point1, point2, d, False, trajectory]
+            if data[1] > 1:
+                with open(file_path+'nav_register.csv', 'a') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(data)
+                    rospy.sleep(0.2)
+            else:
+                experiments -= 1
 
 
 def get_position():
@@ -111,6 +120,7 @@ def main():
     global navigating, listener, t0
     global point1, point2, nav_fails
     global trajectory, distance
+    global experiments
 
     rospy.init_node('results_time_models')
     rospy.logwarn("results time models")
@@ -125,7 +135,7 @@ def main():
     free_spaces, map_info = load_free_map()
     with open(file_path+'nav_register.csv', 'w') as f:
         writer = csv.writer(f)
-        writer.writerow(['Time', 'origin', 'objective', 'distance', 'arrive', 'trajectory'])
+        writer.writerow(['Experiment', 'Time', 'origin', 'objective', 'distance', 'arrive', 'trajectory'])
     experiments = 0
     while not rospy.is_shutdown():
 
@@ -154,7 +164,6 @@ def main():
             if timer > 60:
                 goal_stat_pub.publish(4)
                 print("Nav Fail, time:", timer)
-                navigating = False
 
 
 if __name__ == '__main__':
