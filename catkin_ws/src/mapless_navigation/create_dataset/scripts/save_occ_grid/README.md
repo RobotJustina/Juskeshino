@@ -45,7 +45,7 @@ Report file will be save as "nav_register.csv" in  this folder
 - run the node "results_time_reactive.py" from pkg="create_dataset"
 
  Change scenario
-- Manually change world value from "static_map_file" and "prohibition_map_file" in "justina_mapless_save_from_map.launch"
+- FIRST manually change world value from "static_map_file" and "prohibition_map_file" in "justina_mapless_save_from_map.launch"
 - launch "justina_mapless_save_from_map.launch" from pkg="create_dataset"
 - run the node "results_time_map.py" from pkg="create_dataset"
 - close all
