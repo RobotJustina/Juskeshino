@@ -82,30 +82,6 @@
     <arg name="diagonal_paths" default="True"/>  <!-- False -->
   </include>
 
-
-  <!-- <node name="get_goal_point" pkg="mapless_nav" type="get_goal_point.py"/> -->
-
-  <!-- <node name="local_occ_grid" pkg="local_occ_grid" type="local_occ_grid">
-    <param name="min_x" value="$(arg min_x)"/>
-    <param name="max_x" value="$(arg max_x)"/>
-    <param name="min_y" value="$(arg min_y)"/>
-    <param name="max_y" value="$(arg max_y)"/>
-    <param name="use_lidar" value="true"/>
-    <param name="use_cloud" value="true"/>
-    <param name="laser_scan_topic" value="/hardware/scan"/>
-    <param name="point_cloud_topic" value="/camera/depth_registered/points"/>
-  </node> -->
-
-  <!-- <node name="occ_grid_re_publisher" pkg="create_dataset" type="occ_grid_re_publisher.py"/>
-
-  <node name="joy" pkg="joy" type="joy_node" output="screen">
-    <remap from="/joy" to="/hardware/joy"/>
-  </node>
-
-  <node name="joystick_teleop_improved" pkg="joystick_teleop" type="joystick_teleop_node_improved.py" output="screen">
-    <remap from="/hardware/mobile_base/cmd_vel" to="/cmd_vel"/>
-  </node> -->
-
   <include file="$(find surge_et_ambula)/launch/justina/hri.launch"/>
 
 </launch>

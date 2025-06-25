@@ -41,7 +41,7 @@ Report file will be save as "nav_register.csv" in  this folder
 
 ## Mapless navigation using State Machine
 - launch "justina_mapless_simul_maped.launch" from pkg="mapless_nav"
-- run the node "StateMachine.py" from pkg="mapless_nav"
+- run the node "state_machine.py" from pkg="mapless_nav"
 - run the node "results_time_reactive.py" from pkg="create_dataset"
 
  Change scenario
