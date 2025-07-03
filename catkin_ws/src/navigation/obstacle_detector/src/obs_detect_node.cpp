@@ -38,6 +38,7 @@ int   lidar_threshold    = 15;
 int   no_data_cloud_counter  = 0;
 int   no_data_lidar_counter  = 0;
 std::string base_link_name      = "base_footprint";
+std::string target_frame_name = "odom";
 std::string point_cloud_topic   = "/point_cloud";
 std::string laser_scan_topic    = "/scan";
 geometry_msgs::Vector3 rejection_force_lidar;
@@ -56,13 +57,14 @@ Eigen::Affine3d get_transform_to_basefootprint(std::string link_name)
     tf_listener->lookupTransform(base_link_name, link_name, ros::Time(0), tf);
     Eigen::Affine3d e;
     tf::transformTFToEigen(tf, e);
+    
     return e;
 }
 
 void get_robot_pose(float& robot_x, float& robot_y, float& robot_t)
 {
     tf::StampedTransform transform;
-    tf_listener->lookupTransform("map", base_link_name, ros::Time(0), transform);
+    tf_listener->lookupTransform(target_frame_name, base_link_name, ros::Time(0), transform);
     robot_x = transform.getOrigin().x();
     robot_y = transform.getOrigin().y();
     tf::Quaternion q = transform.getRotation();
@@ -81,8 +83,7 @@ float get_search_distance()
 
 bool check_collision_risk_with_cloud(sensor_msgs::PointCloud2::Ptr msg, double& rejection_force_x, double& rejection_force_y)
 {
-    if(current_speed_linear <= 0 && !debug) return false;
-    
+    // if(current_speed_linear <= 0 && !debug) return false;
     float optimal_x = get_search_distance();
     int obstacle_count = 0;
     int force_count = 0;
@@ -94,7 +95,9 @@ bool check_collision_risk_with_cloud(sensor_msgs::PointCloud2::Ptr msg, double& 
     {
         Eigen::Vector3d v(*((float*)(p)), *((float*)(p+4)), *((float*)(p+8)));
         v = tf * v;
-        if(v.x() > minX && v.x() < optimal_x && v.y() > minY && v.y() < maxY && v.z() > minZ && v.z() < maxZ) obstacle_count ++;
+        if(v.x() > minX && v.x() < optimal_x && v.y() > minY && v.y() < maxY && v.z() > minZ && v.z() < maxZ){
+            obstacle_count ++;
+        }
         if(v.z() > minZ && v.norm() < pot_fields_d0)
         {
             float force_mag = pot_fields_k_rej*sqrt(1/v.norm() - 1/pot_fields_d0);
@@ -272,6 +275,7 @@ int main(int argc, char** argv)
     ros::param::param<std::string>("~point_cloud_topic", point_cloud_topic, "/points");
     ros::param::param<std::string>("~laser_scan_topic" ,  laser_scan_topic , "/scan"  );
     ros::param::param<std::string>("/base_link_name"   , base_link_name, "base_link");
+    ros::param::param<std::string>("/target_frame_name"   , target_frame_name, "odom");
 
     std::cout << "ObsDetector.->Starting obs detection using: "<<(use_lidar?"lidar ":"")<<(use_cloud?"point_cloud ":"")<<std::endl;
     std::cout << "ObsDetector.->Using parameters: min_x=" << minX << "  max_x=" << maxX << "  min_y=" << minY << "  max_y=";
@@ -281,6 +285,7 @@ int main(int argc, char** argv)
     std::cout << "ObsDetector.->Params for lidar: threshold="<<lidar_threshold<<"  downsampling="<<lidar_downsampling<<std::endl;
     std::cout << "ObsDetector.->Calculate potential fields: " << (use_pot_fields?"True":"False") << std::endl;
     std::cout << "ObsDetector.->Base link frame: " << base_link_name << std::endl;
+    std::cout << "ObsDetector.->Target frame name: " << target_frame_name << std::endl;
 
     std::cout << "ObsDetector.->Waiting for first messages from active sensors: ";
     std::cout << (use_cloud ? point_cloud_topic : "" ) << " " << (use_lidar ? laser_scan_topic : "") << std::endl;
@@ -293,7 +298,7 @@ int main(int argc, char** argv)
     std::cout << "ObsDetector.->First messages received..." << std::endl;
     
     std::cout << "ObsDetector.->Waiting for transforms to be available..." << std::endl;
-    tf_listener->waitForTransform("map", base_link_name, ros::Time(0), ros::Duration(10.0));
+    tf_listener->waitForTransform(target_frame_name, base_link_name, ros::Time(0), ros::Duration(10.0));
     std::cout << "ObsDetector.->Waiting for sensor transforms" << std::endl;
     if(use_cloud) tf_listener->waitForTransform(base_link_name,ptr_cloud_temp->header.frame_id,ros::Time(0),ros::Duration(10.0));
     if(use_lidar) tf_listener->waitForTransform(base_link_name,ptr_lidar_temp->header.frame_id,ros::Time(0),ros::Duration(10.0));

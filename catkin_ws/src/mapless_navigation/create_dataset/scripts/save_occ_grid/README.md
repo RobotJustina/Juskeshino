@@ -50,3 +50,7 @@ Report file will be save as "nav_register.csv" in  this folder
 - run the node "results_time_map.py" from pkg="create_dataset"
 - close all
 - relaunch "justina_mapless_simul_maped.launch". The new map will be loaded
+
+## Mapless navigation using Potential Fields
+- launch "justina_mapless_simul_maped.launch" from pkg="mapless_nav"
+- run the node "pot_fields.py" from pkg="mapless_nav"

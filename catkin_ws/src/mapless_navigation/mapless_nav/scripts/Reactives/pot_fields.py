@@ -1,21 +1,15 @@
-
 #!/usr/bin/env python3
-#
-# OBSTACLE AVOIDANCE BY POTENTIAL FIELDS
-#
-# Instructions:
-# Complete the code to implement obstacle avoidance by potential fields
-# using the attractive and repulsive fields technique.
-# Tune the constants alpha and beta to get a smooth movement. 
-#
 
 import rospy
 import tf
 import math
 import numpy
 from geometry_msgs.msg import Twist, PoseStamped, Point, Vector3
+from std_msgs.msg import Float64MultiArray, Bool
 from visualization_msgs.msg import Marker
 from sensor_msgs.msg import LaserScan
+from nav_msgs.msg import OccupancyGrid
+import numpy as np
 
 listener    = None
 pub_cmd_vel = None
@@ -24,7 +18,26 @@ laser_readings = None
 v_max = 0.3  # 0.6
 w_max = 0.5  # 1.0
 
-NAME = "FULL NAME"
+
+class Features():
+    def __init__(self):
+        self.left_obst = []
+        self.right_obst = []
+        self.cent_obst = []
+        self.laser_obst_left = []
+        self.laser_obst_right = []
+        self.laser_obst_cent = []
+
+    def set_features(self, left, right, center):
+        self.left_obst = left
+        self.right_obst = right
+        self.cent_obst = center
+    
+    def get_features(self):
+        l = self.left_obst
+        r = self.right_obst 
+        c = self.cent_obst
+        return l, r, c
 
 def calculate_control(goal_x, goal_y, alpha, beta):
     v,w = 0,0
@@ -67,6 +80,7 @@ def rejection_force(laser_readings, zeta, d0):
 
 
 def move_by_pot_fields(global_goal_x, global_goal_y, epsilon, tol, eta, zeta, d0, alpha, beta):
+    global feat, rej_cloud
     [g_x, g_y] = get_goal_point_wrt_robot(global_goal_x, global_goal_y)
     distance = math.sqrt(g_x*g_x + g_y*g_y)
     print("distance", distance)
@@ -74,7 +88,9 @@ def move_by_pot_fields(global_goal_x, global_goal_y, epsilon, tol, eta, zeta, d0
     loop = rospy.Rate(20)
     while distance > tol and not rospy.is_shutdown():
         a_force = attraction_force(global_goal_x, global_goal_y, eta)
+        # TODO: add rejection forces
         r_force = rejection_force(laser_readings, zeta, d0)
+        r_force += rej_cloud
         force = a_force + r_force
         next_p = -epsilon*force
         print("goal", next_p)
@@ -138,18 +154,24 @@ def callback_scan(msg):
 
 
 def callback_pot_fields_goal(msg):
+    enable_obst_detect = Bool()
+    enable_obst_detect.data = True
+    pubObstDetEnable.publish(enable_obst_detect)
     [goal_x, goal_y] = [msg.pose.position.x, msg.pose.position.y]
     print("Moving to goal point " + str([goal_x, goal_y]) + " by potential fields"    )
     epsilon = rospy.get_param('~epsilon', 1.0)  # 0.5
     tol     = rospy.get_param('~tol', 0.02)      # 0.5
     eta     = rospy.get_param('~eta', 1.0)      # 2.0
-    zeta    = rospy.get_param('~zeta', 6.0)     # 6.0
-    d0      = rospy.get_param('~d0', 1.0)       # 1.0
+    zeta    = rospy.get_param('~zeta', 10.0)     # 6.0
+    d0      = rospy.get_param('~d0', 1.4)       # 1.0
     alpha   = rospy.get_param('~alpha', 0.48)    # 0.5
     beta    = rospy.get_param('~beta', 0.9)     # 0.5
     move_by_pot_fields(goal_x, goal_y, epsilon, tol, eta, zeta, d0, alpha, beta)
     pub_cmd_vel.publish(Twist())
     print("Global goal point reached")
+    
+    enable_obst_detect.data = False
+    pubObstDetEnable.publish(enable_obst_detect)
 
 
 def shutdown_stop():
@@ -159,21 +181,78 @@ def shutdown_stop():
     rospy.sleep(0.5)
 
 
+def occGridCallback(msg):
+    global feat
+
+    data = np.asarray(msg.data)
+    res = round(msg.info.resolution, 2)
+    rows = msg.info.height
+    data = np.reshape(data, (rows, rows))
+    data = np.rot90(np.flip(data, axis=0))
+    c = rows// 2
+    near_obst_dist = int(1/res)
+
+    data_L = data[c:, :c-6]
+    data_L2 = data_L.sum(0)//100
+    data_L2 = data_L2[len(data_L2)//2:]
+    
+    data_R = data[c:, c+6:]
+    data_R2 = data_R.sum(0)//100# Y 0-34, X 1-40
+    data_R2 = data_R2[:len(data_R2)//2]
+
+    data_C = data[-near_obst_dist:, c-6:c+6]
+    data_C2 = data_C.sum(0)//100
+
+    feat.set_features([data_L, data_L2], [data_R, data_R2], 
+                        [data_C, data_C2])
+    obst_l, obst_r, obst_c = feat.get_features()
+    # print("obst_l", obst_l)
+    # print("obst_r", obst_r)
+    # print("obst_c", obst_c)
+
+
+def rejCloudCallback(msg):
+    global rej_cloud
+    print("rejCloudCallback ", msg)
+    print("X", msg.x, " Y", msg.y, " Z", msg.z)
+    if msg.x == np.nan or msg.y == np.nan:
+        rej_cloud = numpy.asarray([0, 0])    
+    rej_cloud = numpy.asarray([-msg.x, -msg.y])
+
+
 def main():
     global listener, pub_cmd_vel, pub_markers
-    print("POTENTIAL FIELDS - " + NAME)
+    global pubObstDetEnable, rej_cloud
+    print("pot_fields")
     rospy.init_node("pot_fields")
     rospy.Subscriber("/hardware/scan", LaserScan, callback_scan)
     rospy.Subscriber('/move_base_simple/goal', PoseStamped, callback_pot_fields_goal)
+    rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
+    rospy.Subscriber("/navigation/obs_detector/pf_rejection_force", Vector3, rejCloudCallback)
+
     pub_cmd_vel = rospy.Publisher('/hardware/mobile_base/cmd_vel', Twist,  queue_size=10)#/cmd_vel
     pub_markers = rospy.Publisher('/navigation/pot_field_markers', Marker, queue_size=10)
     listener = tf.TransformListener()
+    
+    pubObstDetEnable = rospy.Publisher("/navigation/obs_detector/enable", Bool, queue_size=1)
+    pubHeadPos = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=1)
+    msgHeadPos = Float64MultiArray()
+    msgHeadPos.data = [0.0, -0.4]
+    pubHeadPos.publish(msgHeadPos)
+    rospy.sleep(1)
+    pubHeadPos.publish(msgHeadPos)
+    enable_obst_detect = Bool()
+    enable_obst_detect.data = False
+    pubObstDetEnable.publish(enable_obst_detect)
+    rej_cloud = numpy.asarray([0, 0])
+
     rospy.on_shutdown(shutdown_stop)
     rospy.spin()
 
 
 if __name__ == '__main__':
     try:
+        feat = Features()
         main()
     except rospy.ROSInterruptException:
         pass
