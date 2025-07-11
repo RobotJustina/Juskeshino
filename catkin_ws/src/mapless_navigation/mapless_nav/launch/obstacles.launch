@@ -4,11 +4,11 @@
 
   <arg name="laser_scan_topic" default="/hardware/scan"/>
   <arg name="point_cloud_topic" default="/camera/depth_registered/points"/>
-  <arg name="use_lidar" default="False"/>
+  <arg name="use_lidar" default="True"/>
   <arg name="use_point_cloud" default="True"/>
-  <arg name="pot_fields_k_rej" default="8"/>
-  <arg name="pot_fields_d0" default="1.23"/> <!-- 1.18 -->
-  <arg name="cloud_downsampling" default="3"/>
+  <arg name="pot_fields_k_rej" default="8"/> <!-- 8 -->
+  <arg name="pot_fields_d0" default="1.2"/> <!-- 1.18 -->
+  <arg name="cloud_downsampling" default="20"/>
   <arg name="cloud_points_threshold" default="20"/>
   <arg name="lidar_points_threshold" default="20"/>
   <arg name="min_z" default="0.05"/>

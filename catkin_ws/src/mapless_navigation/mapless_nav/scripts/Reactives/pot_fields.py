@@ -15,8 +15,8 @@ listener    = None
 pub_cmd_vel = None
 pub_markers = None
 laser_readings = None
-v_max = 0.3  # 0.6
-w_max = 0.5  # 1.0
+v_max = 0.4  # 0.6
+w_max = 0.8  # 1.0
 
 
 class Features():
@@ -42,10 +42,10 @@ class Features():
 def calculate_control(goal_x, goal_y, alpha, beta):
     v,w = 0,0
     error_a = math.atan2(goal_y, goal_x)
-    print("error_a", error_a)
+    #print("error_a", error_a)
     v = v_max * math.exp(-(error_a * error_a)/alpha)
     w = w_max * (2/(1 + math.exp(-error_a/beta)) +1)
-    if error_a < 0: #TODO: DELETE
+    if error_a < 0:
         w = -w
 
     return [v,w]
@@ -79,27 +79,29 @@ def rejection_force(laser_readings, zeta, d0):
     return numpy.asarray([force_x, force_y])
 
 
-def move_by_pot_fields(global_goal_x, global_goal_y, epsilon, tol, eta, zeta, d0, alpha, beta):
+def move_by_pot_fields(global_goal_x, global_goal_y, epsilon, tol, eta, zeta, d0, alpha, beta, gamma):
     global feat, rej_cloud
     [g_x, g_y] = get_goal_point_wrt_robot(global_goal_x, global_goal_y)
     distance = math.sqrt(g_x*g_x + g_y*g_y)
-    print("distance", distance)
+    #print("distance", distance)
 
     loop = rospy.Rate(20)
     while distance > tol and not rospy.is_shutdown():
         a_force = attraction_force(global_goal_x, global_goal_y, eta)
         # TODO: add rejection forces
         r_force = rejection_force(laser_readings, zeta, d0)
-        r_force += rej_cloud
+        #r_force = numpy.asarray([0.0, 0.0])
+        r_force += numpy.asarray([rej_cloud[0], 4.0 *rej_cloud[1]])
+        #r_force += rej_cloud
         force = a_force + r_force
         next_p = -epsilon*force
-        print("goal", next_p)
+        #print("goal", next_p)
         v, w = calculate_control(next_p[0], next_p[1], alpha, beta)
-        publish_speed_and_forces(v, w, a_force, r_force, force)
+        publish_speed_and_forces(v, w, a_force, r_force, force, gamma)
 
         [g_x, g_y] = get_goal_point_wrt_robot(global_goal_x, global_goal_y)
         distance = math.sqrt(g_x*g_x + g_y*g_y)
-        print("distance", distance)
+        #print("distance", distance)
         loop.sleep()
 
     return
@@ -123,9 +125,10 @@ def get_robot_pose(listener):
         return [0,0,0]
 
 
-def publish_speed_and_forces(v, w, Fa, Fr, F):
+def publish_speed_and_forces(v, w, Fa, Fr, F, gamma):
     loop = rospy.Rate(20)
-    pub_cmd_vel.publish(Twist(linear=Vector3(x=v), angular=Vector3(z=w)))
+    # TODO: Rej force lateral
+    pub_cmd_vel.publish(Twist(linear=Vector3(x=v, y= -gamma *rej_cloud[1]), angular=Vector3(z=w)))
     pub_markers.publish(get_force_marker(Fa[0], Fa[1], [0.0, 0.0, 1.0, 1.0], 0))
     pub_markers.publish(get_force_marker(Fr[0], Fr[1], [1.0, 0.0, 0.0, 1.0], 1))
     pub_markers.publish(get_force_marker(F [0], F [1], [0.0, 0.6, 0.0, 1.0], 2))
@@ -159,14 +162,15 @@ def callback_pot_fields_goal(msg):
     pubObstDetEnable.publish(enable_obst_detect)
     [goal_x, goal_y] = [msg.pose.position.x, msg.pose.position.y]
     print("Moving to goal point " + str([goal_x, goal_y]) + " by potential fields"    )
-    epsilon = rospy.get_param('~epsilon', 1.0)  # 0.5
-    tol     = rospy.get_param('~tol', 0.02)      # 0.5
-    eta     = rospy.get_param('~eta', 1.0)      # 2.0
-    zeta    = rospy.get_param('~zeta', 10.0)     # 6.0
-    d0      = rospy.get_param('~d0', 1.4)       # 1.0
-    alpha   = rospy.get_param('~alpha', 0.48)    # 0.5
-    beta    = rospy.get_param('~beta', 0.9)     # 0.5
-    move_by_pot_fields(goal_x, goal_y, epsilon, tol, eta, zeta, d0, alpha, beta)
+    epsilon = rospy.get_param('~epsilon', 0.5)   # 0.5  # Next point scaler
+    tol     = rospy.get_param('~tol', 0.5)      # 0.5
+    eta     = rospy.get_param('~eta', 1.5)       # 2.0  Attraction scaler  
+    zeta    = rospy.get_param('~zeta', 8.5)      # 6.0  Lid scaler
+    d0      = rospy.get_param('~d0', 0.5)        # 1.0   Lid param
+    alpha   = rospy.get_param('~alpha', 0.8)    #.48 0.5  control v
+    beta    = rospy.get_param('~beta', 0.2)    #.9 0.5   control w
+    gamma    = rospy.get_param('~gamma', 0.4)     # 4.0   Cloud scaler
+    move_by_pot_fields(goal_x, goal_y, epsilon, tol, eta, zeta, d0, alpha, beta, gamma)
     pub_cmd_vel.publish(Twist())
     print("Global goal point reached")
     
@@ -215,20 +219,29 @@ def rejCloudCallback(msg):
     global rej_cloud
     print("rejCloudCallback ", msg)
     print("X", msg.x, " Y", msg.y, " Z", msg.z)
+    print()
     if msg.x == np.nan or msg.y == np.nan:
         rej_cloud = numpy.asarray([0, 0])    
     rej_cloud = numpy.asarray([-msg.x, -msg.y])
 
 
+def movingCallback(msg):
+    if enable_obst_detect:
+        print("Navigating ...")
+        robot_x, robot_y, robot_a = get_robot_pose(listener)
+
+
+
 def main():
     global listener, pub_cmd_vel, pub_markers
-    global pubObstDetEnable, rej_cloud
+    global pubObstDetEnable, rej_cloud, enable_obst_detect
     print("pot_fields")
     rospy.init_node("pot_fields")
     rospy.Subscriber("/hardware/scan", LaserScan, callback_scan)
     rospy.Subscriber('/move_base_simple/goal', PoseStamped, callback_pot_fields_goal)
     rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
     rospy.Subscriber("/navigation/obs_detector/pf_rejection_force", Vector3, rejCloudCallback)
+    rospy.Subscriber('/hardware/mobile_base/cmd_vel', Twist, movingCallback)
 
     pub_cmd_vel = rospy.Publisher('/hardware/mobile_base/cmd_vel', Twist,  queue_size=10)#/cmd_vel
     pub_markers = rospy.Publisher('/navigation/pot_field_markers', Marker, queue_size=10)
