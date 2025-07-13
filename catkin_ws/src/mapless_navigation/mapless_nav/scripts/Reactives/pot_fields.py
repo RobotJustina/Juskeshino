@@ -4,45 +4,29 @@ import rospy
 import tf
 import math
 import numpy
-from geometry_msgs.msg import Twist, PoseStamped, Point, Vector3
-from std_msgs.msg import Float64MultiArray, Bool
+from geometry_msgs.msg import Twist, PoseStamped, Point, Vector3, PointStamped
+from std_msgs.msg import Float64MultiArray, Bool, Float32MultiArray, Int8
 from visualization_msgs.msg import Marker
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import OccupancyGrid
 import numpy as np
+import sys
 
 listener    = None
 pub_cmd_vel = None
 pub_markers = None
 laser_readings = None
-v_max = 0.4  # 0.6
-w_max = 0.8  # 1.0
+target_reached = True
+last_goal = [0, 0] # d, th
+v_max = 0.4
+w_max = 0.8
+nav_fails = 0
+stop_nav = False
 
-
-class Features():
-    def __init__(self):
-        self.left_obst = []
-        self.right_obst = []
-        self.cent_obst = []
-        self.laser_obst_left = []
-        self.laser_obst_right = []
-        self.laser_obst_cent = []
-
-    def set_features(self, left, right, center):
-        self.left_obst = left
-        self.right_obst = right
-        self.cent_obst = center
-    
-    def get_features(self):
-        l = self.left_obst
-        r = self.right_obst 
-        c = self.cent_obst
-        return l, r, c
 
 def calculate_control(goal_x, goal_y, alpha, beta):
     v,w = 0,0
     error_a = math.atan2(goal_y, goal_x)
-    #print("error_a", error_a)
     v = v_max * math.exp(-(error_a * error_a)/alpha)
     w = w_max * (2/(1 + math.exp(-error_a/beta)) +1)
     if error_a < 0:
@@ -80,30 +64,38 @@ def rejection_force(laser_readings, zeta, d0):
 
 
 def move_by_pot_fields(global_goal_x, global_goal_y, epsilon, tol, eta, zeta, d0, alpha, beta, gamma):
-    global feat, rej_cloud
+    global rej_cloud
+    global target_reached, stop_nav, nav_fails
+    global goal_stat_pub
+
     [g_x, g_y] = get_goal_point_wrt_robot(global_goal_x, global_goal_y)
     distance = math.sqrt(g_x*g_x + g_y*g_y)
-    #print("distance", distance)
 
+    rospy.sleep(0.1)
     loop = rospy.Rate(20)
     while distance > tol and not rospy.is_shutdown():
         a_force = attraction_force(global_goal_x, global_goal_y, eta)
-        # TODO: add rejection forces
         r_force = rejection_force(laser_readings, zeta, d0)
-        #r_force = numpy.asarray([0.0, 0.0])
         r_force += numpy.asarray([rej_cloud[0], 4.0 *rej_cloud[1]])
-        #r_force += rej_cloud
         force = a_force + r_force
         next_p = -epsilon*force
-        #print("goal", next_p)
         v, w = calculate_control(next_p[0], next_p[1], alpha, beta)
         publish_speed_and_forces(v, w, a_force, r_force, force, gamma)
-
         [g_x, g_y] = get_goal_point_wrt_robot(global_goal_x, global_goal_y)
         distance = math.sqrt(g_x*g_x + g_y*g_y)
-        #print("distance", distance)
         loop.sleep()
-
+        if stop_nav:
+            print(" STOPPED!")
+            rospy.sleep(0.1)
+            print(" STOPPED!")
+            return
+    
+    print("Target reached")
+    status = Int8()
+    status = 3
+    goal_stat_pub.publish(status)
+    nav_fails = 0
+    target_reached = True
     return
         
 
@@ -127,7 +119,6 @@ def get_robot_pose(listener):
 
 def publish_speed_and_forces(v, w, Fa, Fr, F, gamma):
     loop = rospy.Rate(20)
-    # TODO: Rej force lateral
     pub_cmd_vel.publish(Twist(linear=Vector3(x=v, y= -gamma *rej_cloud[1]), angular=Vector3(z=w)))
     pub_markers.publish(get_force_marker(Fa[0], Fa[1], [0.0, 0.0, 1.0, 1.0], 0))
     pub_markers.publish(get_force_marker(Fr[0], Fr[1], [1.0, 0.0, 0.0, 1.0], 1))
@@ -156,12 +147,60 @@ def callback_scan(msg):
     laser_readings = [[msg.ranges[i], msg.angle_min+i*msg.angle_increment] for i in range(len(msg.ranges))]
 
 
-def callback_pot_fields_goal(msg):
+def moveGoalCallback(msg):
+    global target_reached
+
+    target_reached = False
+    pos = msg.pose.position
+    clp_pub = rospy.Publisher("/clicked_point", PointStamped, queue_size=10)
+    point = PointStamped()
+    point.header.frame_id = "odom"
+    point.header.stamp = rospy.Time.now()
+    point.point = pos
+    clp_pub.publish(point)
+    print(f"\nNew goal: ({pos.x:.3f}, {pos.y:.3f})", end="\r")
+    print(end='\n')
+
+
+def shutdown_stop():
+    print("Exit ...")
+    pub_cmd_vel.publish(Twist())
+    pub_cmd_vel.publish(Twist())
+    rospy.sleep(0.5)
+
+
+def rejCloudCallback(msg):
+    global rej_cloud
+    if msg.x == np.nan or msg.y == np.nan:
+        rej_cloud = numpy.asarray([0, 0])    
+    rej_cloud = numpy.asarray([-msg.x, -msg.y])
+
+
+def movingCallback(msg):
+    if enable_obst_detect:
+        # TODO: Use to scape local minima
+        #print("Navigating ...")
+        robot_x, robot_y, robot_a = get_robot_pose(listener)
+
+
+def callback_point(msg):
+    global target_reached
+    global stop_nav
+
+    blanks = " "*110
+    sys.stdout.write("\033[A" + blanks + "\r")
+    sys.stdout.flush()
+    str = f"\nNew goal: ({msg.point.x:.3f}, {msg.point.y:.3f})" + " "*100
+    sys.stdout.write(str)
+    sys.stdout.flush()
+    sys.stdout.write("\n")
+    sys.stdout.flush()
+    target_reached = False
+
     enable_obst_detect = Bool()
     enable_obst_detect.data = True
     pubObstDetEnable.publish(enable_obst_detect)
-    [goal_x, goal_y] = [msg.pose.position.x, msg.pose.position.y]
-    print("Moving to goal point " + str([goal_x, goal_y]) + " by potential fields"    )
+    [goal_x, goal_y] = [msg.point.x, msg.point.y]
     epsilon = rospy.get_param('~epsilon', 0.5)   # 0.5  # Next point scaler
     tol     = rospy.get_param('~tol', 0.5)      # 0.5
     eta     = rospy.get_param('~eta', 1.5)       # 2.0  Attraction scaler  
@@ -172,83 +211,57 @@ def callback_pot_fields_goal(msg):
     gamma    = rospy.get_param('~gamma', 0.4)     # 4.0   Cloud scaler
     move_by_pot_fields(goal_x, goal_y, epsilon, tol, eta, zeta, d0, alpha, beta, gamma)
     pub_cmd_vel.publish(Twist())
-    print("Global goal point reached")
-    
+    stop_nav = False
     enable_obst_detect.data = False
     pubObstDetEnable.publish(enable_obst_detect)
 
 
-def shutdown_stop():
-    print("Exit ...")
-    pub_cmd_vel.publish(Twist())
-    pub_cmd_vel.publish(Twist())
-    rospy.sleep(0.5)
+def callback_goal(msg):
+    global last_goal, target_reached
+    global interrupt
+    if target_reached:
+        last_goal[0] = 0.0
+        last_goal[1] = 0.0
+    else:
+        last_goal = list(msg.data)
+        if last_goal[0] < 0.5:
+            interrupt = True
+        else:
+            interrupt = False
 
 
-def occGridCallback(msg):
-    global feat
+def statusCallback(msg):
+    global stop_nav, nav_fails
 
-    data = np.asarray(msg.data)
-    res = round(msg.info.resolution, 2)
-    rows = msg.info.height
-    data = np.reshape(data, (rows, rows))
-    data = np.rot90(np.flip(data, axis=0))
-    c = rows// 2
-    near_obst_dist = int(1/res)
-
-    data_L = data[c:, :c-6]
-    data_L2 = data_L.sum(0)//100
-    data_L2 = data_L2[len(data_L2)//2:]
-    
-    data_R = data[c:, c+6:]
-    data_R2 = data_R.sum(0)//100# Y 0-34, X 1-40
-    data_R2 = data_R2[:len(data_R2)//2]
-
-    data_C = data[-near_obst_dist:, c-6:c+6]
-    data_C2 = data_C.sum(0)//100
-
-    feat.set_features([data_L, data_L2], [data_R, data_R2], 
-                        [data_C, data_C2])
-    obst_l, obst_r, obst_c = feat.get_features()
-    # print("obst_l", obst_l)
-    # print("obst_r", obst_r)
-    # print("obst_c", obst_c)
-
-
-def rejCloudCallback(msg):
-    global rej_cloud
-    print("rejCloudCallback ", msg)
-    print("X", msg.x, " Y", msg.y, " Z", msg.z)
-    print()
-    if msg.x == np.nan or msg.y == np.nan:
-        rej_cloud = numpy.asarray([0, 0])    
-    rej_cloud = numpy.asarray([-msg.x, -msg.y])
-
-
-def movingCallback(msg):
-    if enable_obst_detect:
-        print("Navigating ...")
-        robot_x, robot_y, robot_a = get_robot_pose(listener)
-
-
+    if msg.data == 4:
+        nav_fails += 1
+        print("nav_fails", nav_fails)
+        if nav_fails > 2:
+            stop_nav = True
+            nav_fails = 0
 
 def main():
     global listener, pub_cmd_vel, pub_markers
     global pubObstDetEnable, rej_cloud, enable_obst_detect
+    global goal_stat_pub
+
     print("pot_fields")
     rospy.init_node("pot_fields")
     rospy.Subscriber("/hardware/scan", LaserScan, callback_scan)
-    rospy.Subscriber('/move_base_simple/goal', PoseStamped, callback_pot_fields_goal)
-    rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
+    rospy.Subscriber('/move_base_simple/goal', PoseStamped, moveGoalCallback)
     rospy.Subscriber("/navigation/obs_detector/pf_rejection_force", Vector3, rejCloudCallback)
     rospy.Subscriber('/hardware/mobile_base/cmd_vel', Twist, movingCallback)
+    rospy.Subscriber("/clicked_point", PointStamped, callback_point)
+    rospy.Subscriber("/NN_goal", Float32MultiArray, callback_goal)
+    rospy.Subscriber('/maples_nav/goal_reached', Int8, statusCallback)
 
     pub_cmd_vel = rospy.Publisher('/hardware/mobile_base/cmd_vel', Twist,  queue_size=10)#/cmd_vel
     pub_markers = rospy.Publisher('/navigation/pot_field_markers', Marker, queue_size=10)
     listener = tf.TransformListener()
-    
     pubObstDetEnable = rospy.Publisher("/navigation/obs_detector/enable", Bool, queue_size=1)
     pubHeadPos = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=1)
+    goal_stat_pub = rospy.Publisher('/maples_nav/goal_reached', Int8, queue_size=1)
+
     msgHeadPos = Float64MultiArray()
     msgHeadPos.data = [0.0, -0.4]
     pubHeadPos.publish(msgHeadPos)
@@ -265,7 +278,7 @@ def main():
 
 if __name__ == '__main__':
     try:
-        feat = Features()
+        # feat = Features()
         main()
     except rospy.ROSInterruptException:
         pass

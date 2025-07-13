@@ -33,18 +33,6 @@
 
   <arg name="laser_scan_topic" default="/hardware/scan"/>
   <arg name="point_cloud_topic" default="/camera/depth_registered/points"/>
-  <arg name="use_lidar" default="False"/>
-  <arg name="use_point_cloud" default="True"/>
-  <arg name="pot_fields_k_rej" default="1.0"/>
-  <arg name="pot_fields_d0" default="1.0"/>
-  <arg name="cloud_downsampling" default="9"/>
-  <arg name="lidar_downsampling" default="2"/>
-  <arg name="cloud_points_threshold" default="100"/>
-  <arg name="lidar_points_threshold" default="20"/>
-  <arg name="min_z" default="0.05"/>
-  <arg name="max_z" default="1.30"/>
-  <arg name="obs_detector_debug" default="false"/>
-  <arg name="no_sensor_data_timeout" default="0.5"/>
 
 
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
@@ -108,7 +96,6 @@
 
   <node name="occ_grid_re_publisher" pkg="create_dataset" type="occ_grid_re_publisher.py"/>
 
-
   <node name="joy" pkg="joy" type="joy_node" output="screen">
     <remap from="/joy" to="/hardware/joy"/>
   </node>
@@ -117,29 +104,5 @@
     <remap from="/hardware/mobile_base/cmd_vel" to="/cmd_vel"/>
   </node>
 
-
-  <!-- <node name="obs_detector"  pkg="obstacle_detector"  type="obs_detect_node"  output="screen">
-    <param name="/base_link_name" value="$(arg /base_link_name)"/>
-    <param name="/target_frame" value="$(arg /target_frame)"/>
-    <param name="laser_scan_topic" value="$(arg laser_scan_topic)"/>
-    <param name="use_lidar" value="$(arg use_lidar)"/>
-    <param name="use_point_cloud" value="$(arg use_point_cloud)"/>
-    <param name="use_pot_fields" value="True"/>
-    <param name="pot_fields_k_rej" value="$(arg pot_fields_k_rej)"/>
-    <param name="pot_fields_d0" value="$(arg pot_fields_d0)"/>
-    <param name="point_cloud_topic" value="$(arg point_cloud_topic)"/>
-    <param name="cloud_downsampling" value="$(arg cloud_downsampling)"/>
-    <param name="lidar_points_threshold" value="$(arg lidar_points_threshold)"/>
-    <param name="cloud_points_threshold" value="$(arg cloud_points_threshold)"/>
-    <param name="max_x" value="1.0"/>
-    <param name="min_x" value="0.2"/>
-    <param name="max_y" value="0.5"/>
-    <param name="min_y" value="0.5"/>
-    <param name="max_z" value="$(arg max_z)"/>
-    <param name="min_z" value="$(arg min_z)"/>
-    <param name="debug" value="$(arg obs_detector_debug)"/>
-    <param name="no_sensor_data_timeout" value="$(arg no_sensor_data_timeout)"/>
-    
-  </node> -->
 
 </launch>
