@@ -34,10 +34,17 @@ Report file will be save as "nav_register.csv" in  this folder
 - Manually change world value from "static_map_file" and "prohibition_map_file" in "justina_nav_from_map.launch"
 
 
-## Mapless navigation using trained models
+## Mapless navigation using trained models (NN)
 - launch "justina_mapless_simul_maped.launch" from pkg="mapless_nav"
 - run the node "mapless_local_occ_matr_timed.py" from pkg="mapless_nav"
 - run the node "results_time_reactive.py" from pkg="create_dataset"
+
+ Change scenario
+- FIRST manually change world value from "static_map_file" and "prohibition_map_file" in "justina_mapless_save_from_map.launch"
+- launch "justina_mapless_save_from_map.launch" from pkg="create_dataset"
+- run the node "results_time_map.py" from pkg="create_dataset"
+- close all
+- relaunch "justina_mapless_simul_maped.launch". The new map will be loaded
 
 ## Mapless navigation using State Machine
 - launch "justina_mapless_simul_maped.launch" from pkg="mapless_nav"
@@ -56,3 +63,10 @@ Report file will be save as "nav_register.csv" in  this folder
 - launch "obstacles.launch" from pkg="mapless_nav"
 - run the node "pot_fields.py" from pkg="mapless_nav"
 - run the node "results_time_reactive.py" from pkg="create_dataset"
+
+ Change scenario
+- FIRST manually change world value from "static_map_file" and "prohibition_map_file" in "justina_mapless_save_from_map.launch"
+- launch "justina_mapless_save_from_map.launch" from pkg="create_dataset"
+- run the node "results_time_map.py" from pkg="create_dataset"
+- close all
+- relaunch "justina_mapless_simul_maped.launch". The new map will be loaded

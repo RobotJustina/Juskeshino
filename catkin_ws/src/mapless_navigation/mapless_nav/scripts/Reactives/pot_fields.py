@@ -11,6 +11,7 @@ from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import OccupancyGrid
 import numpy as np
 import sys
+import time
 
 listener    = None
 pub_cmd_vel = None
@@ -22,7 +23,9 @@ v_max = 0.4
 w_max = 0.8
 nav_fails = 0
 stop_nav = False
-
+t0 = None
+slow = 0
+scape_force = 1
 
 def calculate_control(goal_x, goal_y, alpha, beta):
     v,w = 0,0
@@ -64,21 +67,24 @@ def rejection_force(laser_readings, zeta, d0):
 
 
 def move_by_pot_fields(global_goal_x, global_goal_y, epsilon, tol, eta, zeta, d0, alpha, beta, gamma):
-    global rej_cloud
+    global rej_cloud, scape_force
     global target_reached, stop_nav, nav_fails
-    global goal_stat_pub
+    global goal_stat_pub, t0
 
     [g_x, g_y] = get_goal_point_wrt_robot(global_goal_x, global_goal_y)
     distance = math.sqrt(g_x*g_x + g_y*g_y)
 
     rospy.sleep(0.1)
     loop = rospy.Rate(20)
+    t0 = time.time()
     while distance > tol and not rospy.is_shutdown():
+        print("scape_force", scape_force)
         a_force = attraction_force(global_goal_x, global_goal_y, eta)
         r_force = rejection_force(laser_readings, zeta, d0)
         r_force += numpy.asarray([rej_cloud[0], 4.0 *rej_cloud[1]])
-        force = a_force + r_force
+        force = a_force + r_force *scape_force
         next_p = -epsilon*force
+        print(next_p)
         v, w = calculate_control(next_p[0], next_p[1], alpha, beta)
         publish_speed_and_forces(v, w, a_force, r_force, force, gamma)
         [g_x, g_y] = get_goal_point_wrt_robot(global_goal_x, global_goal_y)
@@ -177,11 +183,26 @@ def rejCloudCallback(msg):
 
 
 def movingCallback(msg):
+    global t0, slow, scape_force
+    
     if enable_obst_detect:
-        # TODO: Use to scape local minima
-        #print("Navigating ...")
-        robot_x, robot_y, robot_a = get_robot_pose(listener)
+        v_x = msg.linear.x
+        if v_x < 0.001:
+            slow += 1
+        else:
+            slow = 0
 
+        if slow == 1:
+            t0 = time.time()
+        if slow > 1:
+            timer = time.time() - t0
+            print(f"msg.linear.x {v_x:.5f}, timer: {timer:.2f}")
+            if timer >= 6.0 and timer <6.5:
+                scape_force = 100
+                t0 = time.time()
+                rospy.sleep(1.5)
+                return
+        scape_force = 1
 
 def callback_point(msg):
     global target_reached
@@ -261,6 +282,7 @@ def main():
     pubObstDetEnable = rospy.Publisher("/navigation/obs_detector/enable", Bool, queue_size=1)
     pubHeadPos = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=1)
     goal_stat_pub = rospy.Publisher('/maples_nav/goal_reached', Int8, queue_size=1)
+    start_pub = rospy.Publisher("/move_base_simple/goal", PoseStamped, queue_size=10)
 
     msgHeadPos = Float64MultiArray()
     msgHeadPos.data = [0.0, -0.4]
@@ -271,6 +293,21 @@ def main():
     enable_obst_detect.data = False
     pubObstDetEnable.publish(enable_obst_detect)
     rej_cloud = numpy.asarray([0, 0])
+
+    get_robot_pose(listener)
+    ([x, y, z], [qx,qy,qz,qw]) = listener.lookupTransform('odom', 'base_link', rospy.Time(0))
+
+    msg = PoseStamped()
+    msg.header.frame_id = "odom"
+    msg.pose.position.x = x
+    msg.pose.position.y = y
+    msg.pose.position.z = 0
+    msg.pose.orientation.x = qx
+    msg.pose.orientation.y = qy
+    msg.pose.orientation.z = qz
+    msg.pose.orientation.w = qw
+    start_pub.publish(msg)
+    #JuskeshinoNavigation.pubMvnPlnGetCloseXYA.publish(msg)
 
     rospy.on_shutdown(shutdown_stop)
     rospy.spin()
