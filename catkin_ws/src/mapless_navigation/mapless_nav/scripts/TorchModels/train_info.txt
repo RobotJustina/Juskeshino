@@ -1,16 +1,16 @@
-stack_n_channels 4
+stack_n_channels 2
 occ_grid_meters	4
 ormalize_label	True
 ormalize_data	False
 save_weights_only True
 
-batch_size 8
-learn_r	1e-05
-epochs	30
+batch_size 3
+learn_r	0.0006
+epochs	40
 
-Data_X.shape	(970, 4, 82, 80)
-Data_Y.shape	(970, 3)
+Data_X.shape	(1940, 2, 82, 80)
+Data_Y.shape	(1940, 3)
 
-model.name	Param_CNN_B
+model.name	RNN
 optimizer	Adam
 loss	MSELoss

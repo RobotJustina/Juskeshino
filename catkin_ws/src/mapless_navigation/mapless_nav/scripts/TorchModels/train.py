@@ -30,7 +30,7 @@ General parameters
 """
 
 # PARAM <stack_n_channels>: stack n samples in channels
-stack_n_channels = 4
+stack_n_channels = 2
 
 # PARAM <occ_grid_meters>: Modify matrix resolution number
 # 1m = 20 pixels, max 8m
@@ -56,10 +56,11 @@ ignore_linvel_y = False
 Hyperparameters
 """
 # PARAMS
-batch_size = 8 # 8
-learn_r = 1e-5# 1e-3
-epochs = 30
-
+batch_size = 3 # 8
+#learn_r = 1e-4# 1e-3
+learn_r = 0.0006# 1e-3
+epochs = 40
+patience = 5
 
 cad = "stack_n_channels " + str(stack_n_channels)
 cad += '\nocc_grid_meters\t' + str(occ_grid_meters)
@@ -143,8 +144,7 @@ print("Data_Y.shape:", data_Y.shape)
 
 cad += '\n\nData_X.shape\t' + str(data_X.shape)
 cad += '\nData_Y.shape\t' + str(data_Y.shape)
-# TODO: Delete
-#np.savez(pkg_path + '/scripts/TorchModels/x_ch_dat.npz', data=data_X)
+
 # show random sample
 if print_sample:
     l_util.show_image_gray(data_X[np.random.randint(0,len(data_X)), 0])
@@ -161,26 +161,11 @@ if normalize_label:
     # normalization lin_vel_x to range[0, 1]
     data_Y[:, 0] = (data_Y[:, 0] - np.amin(data_Y[:, 0])) / np.ptp(data_Y[:, 0])
 
-# Norm y
-# for y in data_Y:
-#     print(y)
-# print("sample", data_Y.shape)
-# ymin = np.amin(data_Y[:, 0])
-# ymax = np.amax(data_Y[:, 0])
-# print("lin_vel_x range: ", ymin, ymax)
-# ymin = np.amin(data_Y[:, 1])
-# ymax = np.amax(data_Y[:, 1])
-# print("ang_vel_z range: ", ymin, ymax)
-
 
 if normalize_data:
     print("normalize X")
     for i in range(len(data_X)):
         data_X[i, :stack_n_channels, :-2]= data_X[i, :stack_n_channels, :-2]/100
-        # print(type(data_X[i]))
-        # print(data_X[i])
-        # print(data_X[i].shape)
-        # print()
 
 
 
@@ -196,13 +181,13 @@ y_val = torch.tensor(y_val, dtype=torch.float32, device=device)
 #y_test = torch.tensor(y_test, dtype=torch.float32, device=device)
 
 
-
-
 """
 Model
 """
 # PARAM model = nn_models.<model_name>()
-model = nn_models.Param_CNN_B(channels=stack_n_channels, img_size=data_X.shape[-1])
+#model = nn_models.Param_CNN_B(channels=stack_n_channels, img_size=data_X.shape[-1])
+model = nn_models.RNN(channels=stack_n_channels, img_size=data_X.shape[-1],
+                     num_layers=4, hidden_size=300)
 model.to(device)
 
 optimizer = Adam(model.parameters(), lr=learn_r)
@@ -232,7 +217,7 @@ train_loss = []
 valid_loss = []
 train_accuracy = []
 valid_accuracy = []
-patience = 3
+
 best_vloss = 1_000_000.
 for epoch in range(epochs):  # for each epoch
     train_batch_loss = 0
