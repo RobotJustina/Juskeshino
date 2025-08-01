@@ -59,7 +59,7 @@ Hyperparameters
 batch_size = 3 # 8
 #learn_r = 1e-4# 1e-3
 learn_r = 0.0006# 1e-3
-epochs = 40
+epochs = 20
 patience = 5
 
 cad = "stack_n_channels " + str(stack_n_channels)
@@ -187,7 +187,7 @@ Model
 # PARAM model = nn_models.<model_name>()
 #model = nn_models.Param_CNN_B(channels=stack_n_channels, img_size=data_X.shape[-1])
 model = nn_models.RNN(channels=stack_n_channels, img_size=data_X.shape[-1],
-                     num_layers=4, hidden_size=300)
+                     num_layers=4, hidden_size=350)
 model.to(device)
 
 optimizer = Adam(model.parameters(), lr=learn_r)

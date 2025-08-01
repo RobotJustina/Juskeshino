@@ -6,7 +6,7 @@ save_weights_only True
 
 batch_size 3
 learn_r	0.0006
-epochs	40
+epochs	20
 
 Data_X.shape	(1940, 2, 82, 80)
 Data_Y.shape	(1940, 3)

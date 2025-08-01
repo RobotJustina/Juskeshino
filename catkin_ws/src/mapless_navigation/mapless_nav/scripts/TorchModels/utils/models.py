@@ -596,42 +596,25 @@ class RNNCell(torch.nn.Module):
 
 
 class RNN(torch.nn.Module):
-    #def __init__(self, channels=5, img_size=80):
-    #def __init__(self, input_size, hidden_size, num_layers, bias, output_size, activation='tanh'):    
     def __init__(self, channels=5, img_size=80, hidden_size=500, num_layers=3, bias=True, output_size=3, activation='tanh'):
         super(RNN, self).__init__()
         self.name = "RNN"
-        
-        """--->"""
         self.input_size = 0
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.bias = bias
         self.output_size = output_size
-
         self.out_ch = channels
-        print()
-        print("MODEL:")
-        print("self.input_size (ch): ", self.input_size)
-        print("img_size: ", img_size)
-        print("self.hidden_size", self.hidden_size)
-        print("self.num_layers", self.num_layers)
-        print("self.bias", self.bias)
-        print("self.output_size", self.output_size)
-        
-        print()
-
 
         """
         convolutional NN
-        """
-        
+        """  
         self.channels = channels
         self.img_shape = (img_size, img_size)
         #print(self.name, self.img_shape)
         
         # layers
-        self.conv1 = torch.nn.Conv2d(self.channels, self.out_ch , 3)
+        self.conv1 = torch.nn.Conv2d(self.channels, self.out_ch, 3)
         self.max_pool = torch.nn.MaxPool2d(7, 3)
 
         #width=((W-F+2*P )/S)+1 
@@ -643,8 +626,6 @@ class RNN(torch.nn.Module):
         print("flat_size", flat_size)
         self.input_size = flat_size
         print("self.input_size (ch): ", self.input_size)
-
-
 
         # Create a list to hold RNN cells
         self.rnn_cell_list = torch.nn.ModuleList()
@@ -662,12 +643,6 @@ class RNN(torch.nn.Module):
         else:
             raise ValueError("Invalid activation.")
 
-        # Final fully connected layer
-        self.fc = torch.nn.Linear(self.hidden_size, self.output_size)
-
-
-
-
         self.flat1 = torch.nn.Linear(self.hidden_size, 120)
         self.flat2 = torch.nn.Linear(120, 80)
         self.out = torch.nn.Linear(80, 3)
@@ -675,7 +650,6 @@ class RNN(torch.nn.Module):
         self.dropout_20 = torch.nn.Dropout(p=0.2)
         self.dropout_15 = torch.nn.Dropout(p=0.15)
         self.dropout_10 = torch.nn.Dropout(p=0.1)
-
 
     def forward(self, x, hx=None):
         # vector: d, th
@@ -706,8 +680,6 @@ class RNN(torch.nn.Module):
         #print("cat.shape", x.shape)
         #print(x[0])
         #---------------------------
-
-
         """
         Forward pass of the RNN.
         
@@ -719,10 +691,7 @@ class RNN(torch.nn.Module):
             out: Output tensor of shape (batch_size, output_size)
         """
         if hx is None:
-            #print("cuda")
             h0 = torch.zeros(self.num_layers, input.size(0), self.hidden_size).cuda()
-            #print("h0c", h0.shape)
-
         else:
             h0 = hx
 
@@ -730,27 +699,20 @@ class RNN(torch.nn.Module):
         hidden = list()
         for layer in range(self.num_layers):
             hidden.append(h0[layer, :, :])
-
         # Process each time step
         for t in range(input.size(1)):
             # Process each layer
             for layer in range(self.num_layers):
                 if layer == 0:
                     hidden_l = self.rnn_cell_list[layer](input[:, t, :], hidden[layer])
-                    # print("l", layer)
-                    # print("hidden_l", hidden_l.shape)
                 else:
                     hidden_l = self.rnn_cell_list[layer](hidden[layer - 1], hidden[layer])
-                    # print("l", layer)
-                    # print("hidden_l", hidden_l.shape)
                 hidden[layer] = hidden_l
             outs.append(hidden_l)
-
         # Take only last time step
         out = outs[-1].squeeze()
         #print("out.shape", out.shape)
         # Pass through final fully connected layer
-
 
         x = self.flat1(out)
         x = torch.nn.functional.relu(x)
@@ -761,15 +723,8 @@ class RNN(torch.nn.Module):
         x = torch.nn.functional.relu(x)
         x = self.dropout_15(x)
         #print("flat2.shape", x.shape)
-        #x---
-
-        #out = self.fc(x)
-        # print("end cicle")
-        # print()
-        # return out
 
         x = self.out(x)
         x = torch.nn.functional.tanh(x)
         #print("out.shape", x.shape)
-
         return x
