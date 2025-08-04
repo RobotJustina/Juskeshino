@@ -116,8 +116,6 @@ def occGridCallback(msg):
 
     turn_help = True
     # print("last_goal", abs(last_goal[0]))
-    print()
-    print("last_goal", last_goal)
     #>> 3 params >>
     if (abs(last_goal[0]) > 0.5):
         with torch.no_grad():
@@ -127,7 +125,7 @@ def occGridCallback(msg):
             y_pred = y_pred.cpu().numpy()
         else:
             y_pred = y_pred.cpu().numpy()[0]
-        print(y_pred)
+            
         if turn_help:
             if abs(last_goal[1]) < 0.5:
                 linx = y_pred[0] #* speed_factor

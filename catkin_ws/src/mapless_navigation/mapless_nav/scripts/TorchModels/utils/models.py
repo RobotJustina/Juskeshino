@@ -643,6 +643,9 @@ class RNN(torch.nn.Module):
         else:
             raise ValueError("Invalid activation.")
 
+        #This is not used but trained model have it so can't run without this line
+        self.fc = torch.nn.Linear(self.hidden_size, self.output_size)#Do not delete
+
         self.flat1 = torch.nn.Linear(self.hidden_size, 120)
         self.flat2 = torch.nn.Linear(120, 80)
         self.out = torch.nn.Linear(80, 3)
