@@ -34,7 +34,6 @@ def calculate_control(goal_x, goal_y, alpha, beta):
     w = w_max * (2/(1 + math.exp(-error_a/beta)) +1)
     if error_a < 0:
         w = -w
-
     return [v,w]
 
 
@@ -43,7 +42,6 @@ def attraction_force(goal_x, goal_y, eta):
     q_goal = get_goal_point_wrt_robot(goal_x, goal_y)
     q_unit = q_goal / numpy.linalg.norm(q_goal)
     force_x, force_y = -eta * q_unit
-    
     return numpy.asarray([force_x, force_y])
 
 
@@ -62,7 +60,6 @@ def rejection_force(laser_readings, zeta, d0):
 
     force_x = force_x / N
     force_y = force_y / N
-
     return numpy.asarray([force_x, force_y])
 
 
@@ -73,7 +70,6 @@ def move_by_pot_fields(global_goal_x, global_goal_y, epsilon, tol, eta, zeta, d0
 
     [g_x, g_y] = get_goal_point_wrt_robot(global_goal_x, global_goal_y)
     distance = math.sqrt(g_x*g_x + g_y*g_y)
-
     rospy.sleep(0.1)
     loop = rospy.Rate(20)
     t0 = time.time()
@@ -111,7 +107,6 @@ def get_goal_point_wrt_robot(goal_x, goal_y):
     delta_y = goal_y - robot_y
     goal_x =  delta_x*math.cos(robot_a) + delta_y*math.sin(robot_a)
     goal_y = -delta_x*math.sin(robot_a) + delta_y*math.cos(robot_a)
-
     return [goal_x, goal_y]
 
 
@@ -307,15 +302,12 @@ def main():
     msg.pose.orientation.z = qz
     msg.pose.orientation.w = qw
     start_pub.publish(msg)
-    #JuskeshinoNavigation.pubMvnPlnGetCloseXYA.publish(msg)
-
     rospy.on_shutdown(shutdown_stop)
     rospy.spin()
 
 
 if __name__ == '__main__':
     try:
-        # feat = Features()
         main()
     except rospy.ROSInterruptException:
         pass

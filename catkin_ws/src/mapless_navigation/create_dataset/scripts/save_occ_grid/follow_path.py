@@ -10,7 +10,6 @@ import math
 import numpy as np
 
 
-
 def getRobotPoseWrtOdom():
     listener = tf.TransformListener()
     try:
@@ -30,7 +29,6 @@ def getRobotPoseWrtOdom():
 
 
 def update_delta(p):
-
     listener = tf.TransformListener()
     try:
         listener.waitForTransform('odom', 'base_link', rospy.Time(0), rospy.Duration(2.0))
@@ -56,7 +54,6 @@ def update_delta(p):
 
 
 def pathFollowerCalback(msg):
-    m = Path()
     first = True
     JuskeshinoNavigation.setNodeHandle()
     for p in msg.poses:
@@ -97,10 +94,8 @@ def main():
     rospy.logwarn("follow path")
     JuskeshinoNavigation.setNodeHandle()
     listener = tf.TransformListener()
-
     rospy.Subscriber('/mapless/goal_path', Path, pathFollowerCalback)
     pub = rospy.Publisher("/hardware/mobile_base/cmd_vel", Twist, queue_size=1)
-
     rospy.spin()
 
 

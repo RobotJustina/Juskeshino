@@ -12,14 +12,11 @@ parser.add_argument("--replace", default="False", type=str, help="If True replac
 args = parser.parse_args(rospy.myargv()[1:])
 
 def main():
-
     rospy.init_node("load_random_room_world")
-
     path = rospkg.RosPack().get_path("gazebo_envs")
     path += "/worlds/"
     src = path + "random_room.world"
     dst = path + "room_selected.world"
-
     rospy.loginfo("load_random_room_world Initialized")
     print("Replacing map to", args.map, "in", dst)
     
@@ -43,6 +40,7 @@ def main():
 
     else:
         print("No map changes")
+
 
 if __name__ == '__main__':
     try:

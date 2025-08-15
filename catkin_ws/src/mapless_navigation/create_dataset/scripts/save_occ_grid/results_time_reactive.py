@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import rospy
 import tf
-import tf2_ros
 from nav_msgs.msg import Path
 from std_msgs.msg import Int8
 from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion
@@ -15,7 +14,6 @@ import pandas as pd
 
 package_path = rospkg.RosPack().get_path("create_dataset")
 file_path = package_path + "/scripts/save_occ_grid/" 
-
 navigating = False
 point1 = [0, 0]
 point2 = [0, 0]
@@ -102,7 +100,6 @@ def random_goal(free_spaces, map_info):
     position = Point(round(map_x, 2), round(map_y, 2), 0)
     x_world = cent[0] + position.x * res
     y_world = cent[1] + position.y * res
-
     point = PointStamped()
     point.header.frame_id = "map"
     point.header.stamp = rospy.Time.now()
@@ -126,9 +123,7 @@ def main():
     rospy.logwarn("results time models")
     JuskeshinoNavigation.setNodeHandle()
     listener = tf.TransformListener()
-
     rospy.Subscriber('/maples_nav/goal_reached', Int8, goalCallback)
-
     move_goal_pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
     goal_stat_pub = rospy.Publisher('/maples_nav/goal_reached', Int8, queue_size=1)   
 
@@ -138,7 +133,6 @@ def main():
         writer.writerow(['Experiment', 'Time', 'origin', 'objective', 'distance', 'arrive', 'trajectory'])
     experiments = 0
     while not rospy.is_shutdown():
-
         if not navigating:
             pose = random_goal(free_spaces, map_info)
             goal_x = pose.pose.position.x
@@ -156,7 +150,6 @@ def main():
                 move_goal_pub.publish(pose)
                 t0 = time.time()
                 navigating = True
-
         else:
             trajectory.append(get_position())
             rospy.sleep(.5)

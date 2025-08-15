@@ -34,7 +34,6 @@
   <arg name="laser_scan_topic" default="/hardware/scan"/>
   <arg name="point_cloud_topic" default="/camera/depth_registered/points"/>
 
-
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
     <arg name="posx" value="$(arg posx)" />
     <arg name="posy" value="$(arg posy)" />
@@ -103,6 +102,5 @@
   <node name="joystick_teleop_improved" pkg="joystick_teleop" type="joystick_teleop_node_improved.py" output="screen">
     <remap from="/hardware/mobile_base/cmd_vel" to="/cmd_vel"/>
   </node>
-
 
 </launch>

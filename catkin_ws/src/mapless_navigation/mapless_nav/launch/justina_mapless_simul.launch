@@ -32,7 +32,6 @@
   <arg name="/target_frame" default="odom"/>
   <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
 
-
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
     <arg name="posx" value="$(arg posx)" />
     <arg name="posy" value="$(arg posy)" />
@@ -94,7 +93,6 @@
 
   <node name="occ_grid_re_publisher" pkg="create_dataset" type="occ_grid_re_publisher.py"/>
 
-
   <node name="joy" pkg="joy" type="joy_node" output="screen">
     <remap from="/joy" to="/hardware/joy"/>
   </node>
@@ -102,6 +100,5 @@
   <node name="joystick_teleop_improved" pkg="joystick_teleop" type="joystick_teleop_node_improved.py" output="screen">
     <remap from="/hardware/mobile_base/cmd_vel" to="/cmd_vel"/>
   </node>
-
 
 </launch>

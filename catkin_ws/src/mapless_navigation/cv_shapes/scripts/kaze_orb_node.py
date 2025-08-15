@@ -8,10 +8,8 @@ import numpy as np
 
 method = {1: "Kaze", 2: "Orb", 3: "Akaze"}
 
-
 def simpleFeatureExtractorCallback(msg):
     method_selector = 3
-
     img_path = rospkg.RosPack().get_path('cv_shapes') + "/scripts/Data/ref1.jpg"
     img1 = cv2.imread(filename=img_path, flags=cv2.IMREAD_GRAYSCALE)
     #  Do something
@@ -24,7 +22,6 @@ def simpleFeatureExtractorCallback(msg):
 
 
 def compare_features(image1, image2, selector):
-
     descriptor = None
     if (selector == "Kaze"):
         # Initiate KAZE descriptor

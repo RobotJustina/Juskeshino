@@ -4,26 +4,6 @@ import matplotlib.pyplot as plt
 #from PIL import Image
 from sklearn.preprocessing import OneHotEncoder
 import glob
-import rospy
-
-# def load_data(files_path='/data/'):
-#     files_names =  files_path+'/*.npz'
-#     files = glob.glob(files_names)
-#     print("Data.npz files found:", len(files))
-#     print("Loading data ...")
-#     data , temp = None, None
-
-#     count = 0
-#     for file in files:
-#         arr = np.load(file)
-#         temp = arr['data'][:,:]
-#         if(count==0):
-#             data=temp
-#             count+=1
-#         else:
-#             data=np.concatenate((data, temp), axis=0)
-#     return data
-
 
 def load_data_matrix(files_path='/data/', shape=[100, 100]):
     files = glob.glob(files_path)
@@ -47,9 +27,6 @@ def load_data_matrix(files_path='/data/', shape=[100, 100]):
     data_Y = []
     count = 0
     for info in data:
-        #print("image shape: ", info.shape)
-        #print(info[-1, :])  # target (d, th)
-        # print(info[-1, 2:5])  # DATA Y
         """
         # MAT dim(81x80): ch0 80x80=occ_grid, mat[81]=vect_ydat dim(80)
         # 80x80 matrix is occ_grid data, row 81 is a vect_ydat with label info
@@ -58,8 +35,6 @@ def load_data_matrix(files_path='/data/', shape=[100, 100]):
         data_Y.append(np.copy(info[-1, 2:5]))
         info[-1, 2:5] = [0.0, 0.0, 0.0]  # clear Y data
         data_X.append([info])  # img(80x80) ch0, vet(2) ch2
-        #print("data_Y", data_Y[-1])
-        #print("data_X", info[-1])
         
     data_X = np.asarray(data_X, dtype=np.float32)
     data_Y = np.asarray(data_Y, dtype=np.float32)

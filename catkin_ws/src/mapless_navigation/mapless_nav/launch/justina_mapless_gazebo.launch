@@ -25,7 +25,6 @@
   </node>
 
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/>
-  <!-- <include file="$(find surge_et_ambula)/launch/justina/vision.launch"/> -->
 
   <node name="get_goal_point" pkg="mapless_nav" type="get_goal_point.py"/>
 

@@ -64,8 +64,6 @@ def get_position():
     return [round(x, 2), round(y, 2)]
 
 
-
-
 def random_goal(msg):
     # val 0 is free
     res = np.round(msg.info.resolution, 3)
@@ -81,14 +79,11 @@ def random_goal(msg):
     # Get free position
     max = len(free_spaces)
     selection = int(np.random.uniform(0, max))
-    #index = np.random.randint(0, selection.size)
-    #selection = int(selection[index])
     map_x = free_spaces[selection][1]
     map_y = free_spaces[selection][0]
     position = Point(round(map_x, 2), round(map_y, 2), 0)
     x_world = cent[0] + position.x * res
     y_world = cent[1] + position.y * res
-
     point = PointStamped()
     point.header.frame_id = "map"
     point.header.stamp = rospy.Time.now()
@@ -135,15 +130,9 @@ def main():
 
     experiments = 0
     while not rospy.is_shutdown():
-
         if not navigating:
-            # pose = random_goal(map_msg)
-            # goal_x = pose.pose.position.x
-            # goal_y = pose.pose.position.y
-            #point1 = [round(goal_x, 2), round(goal_y, 2)]
             x_world = objectives[experiments][0]
             y_world = objectives[experiments][1]
-
             point = PointStamped()
             point.header.frame_id = "map"
             point.header.stamp = rospy.Time.now()
@@ -172,11 +161,7 @@ def main():
                 print("Exit")
         else:
             trajectory.append(get_position())
-            #print(get_position())
-
-            rospy.sleep(.5)
-        #print("time:", time.time() - t0)
-    
+            rospy.sleep(.5) 
 
 
 if __name__ == '__main__':

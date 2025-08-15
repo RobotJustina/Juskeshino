@@ -23,7 +23,7 @@ obst_memory = [False, False, False]
 interrupt = False
 speed_factor = 0.8
 
-#_________
+
 class SimpleBase():
     def __init__(self):
         self._base_vel_pub = rospy.Publisher('/hardware/mobile_base/cmd_vel' , Twist, queue_size=10)
@@ -66,7 +66,6 @@ class Features():
         r = self.laser_obst_right 
         c = self.laser_obst_cent
         return l, r, c
-#_________
 
 
 def moveGoalCallback(msg):
@@ -241,7 +240,6 @@ def zero_runs(a):
     iszero = np.concatenate(([0], np.equal(a, 0).view(np.int8), [0]))
     absdiff = np.abs(np.diff(iszero))
     ranges = np.where(absdiff == 1)[0].reshape(-1, 2)
-
     return ranges
 
 
@@ -273,8 +271,7 @@ class Initial(smach.State):
         elif self.tries >0: 
             clear_console()
 
-        self.tries += 1
-        
+        self.tries += 1   
         if target_reached == True: # No objective
             return 'tries'
         else:

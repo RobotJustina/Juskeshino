@@ -54,9 +54,8 @@ def main():
     global goal_x
     global goal_y
     rospy.init_node("get_goal_point")
-
+    
     listener = tf.TransformListener()
-
     rospy.Subscriber('/clicked_point', PointStamped, callback_global_goal)
     pub_goal = rospy.Publisher("/NN_goal", Float32MultiArray, queue_size=10)
 

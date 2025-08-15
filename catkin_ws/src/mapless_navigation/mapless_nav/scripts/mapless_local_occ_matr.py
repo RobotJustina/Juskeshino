@@ -71,29 +71,19 @@ def occGridCallback(msg):
     # row n+2 = theta_to_target 
     # vect_ydat dim(3) label info = l_vel_x, l_vel_y, a_vel_z
     """
-
-
     data_X = np.vstack((data, other_features))
     entrada = np.asarray(data_X)
 
     # Config input to model
-
-
-    #print("entrada", entrada.shape)
     batch = []
     for i in range(n_channels):
         batch.append(entrada)
     entrada = np.array(batch)
-    #entrada = np.expand_dims(entrada, axis=0)
     entrada = np.expand_dims(entrada, axis=0)
-    
-
-    #print("entrada2", entrada.shape)
     x_ent = torch.tensor(entrada)
     x_ent = x_ent.to(torch.device(disp), torch.float32)
 
     turn_help = True
-    # print("last_goal", abs(last_goal[0]))
     if (abs(last_goal[0]) > 0.3):
         with torch.no_grad():
             y_pred = model(x_ent)
@@ -112,7 +102,6 @@ def occGridCallback(msg):
                 print("control liny", liny, end='\n')
                 angz = y_pred[2] * 2.0
             
-            
         else:
             linx = y_pred[0]
             """Deleted"""
@@ -127,7 +116,6 @@ def occGridCallback(msg):
         if last_goal[0] != 0 and last_goal[1] != 0:
             target_reached = True
 
-    
 
 def shutdown_stop():
     global pub_cmd
@@ -166,7 +154,6 @@ def main():
         if target_reached:
             cad += " > target reached"
         pub_cmd.publish(msg)
-        
         print(" "*100, end='\r')
         print(cad, end='\r')
         rospy.on_shutdown(shutdown_stop)

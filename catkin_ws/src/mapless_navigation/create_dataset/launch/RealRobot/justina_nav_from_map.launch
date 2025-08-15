@@ -13,7 +13,6 @@
   <node name="load_random_room_world" pkg="create_dataset" type="load_random_room_world.py" 
   args="--map=$(arg world) --replace=$(arg replace)" output="screen"/>
 
-
   <!-- occ_grid 4m -->
   <arg name="min_x" default="0.0"/>
   <arg name="max_x" default="8.0"/>
@@ -21,7 +20,6 @@
   <arg name="max_y" default="4.0"/>
 
   <remap from="/cmd_vel" to="/hardware/mobile_base/cmd_vel"/>
-
 
   <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
     <arg name="posx" value="$(arg posx)" />
@@ -49,7 +47,6 @@
     <arg name="initial_pose_y" value="$(arg posy)"/>
     <arg name="initial_pose_a" value="$(arg yaw)"/>
     <arg name="move_head" default="False"/>
-
     <arg name="laser_scan_topic" value="/hardware/scan"/>
     <arg name="point_cloud_topic" value="/camera/depth_registered/points"/>
     <arg name="use_lidar" value="True"/>
@@ -64,13 +61,11 @@
     <arg name="min_linear_speed" default="0.05"/>
     <arg name="max_angular_speed" value="1.2"/>
     <arg name="linear_acceleration" default="0.2"/> <!-- 0.1 -->
-
     <arg name="fine_dist_tolerance" default="0.03"/> <!-- 0.03 -->
     <arg name="coarse_dist_tolerance" default="0.2"/> <!-- 0.2 -->
     <arg name="angle_tolerance" default="3.0"/> <!-- 0.05 -->
     <arg name="smooth_alpha" default="0.1"/> <!-- 0.1 -->
     <arg name="smooth_beta" default="0.9"/> <!-- 0.9 -->
-    
     <arg name="control_alpha" default="0.4"/> <!-- 0.8 -->
     <arg name="control_beta" default="0.6"/>  <!-- 0.5 -->
     <arg name="no_sensor_data_timeout" default="0.5"/>  <!-- 0.5 -->

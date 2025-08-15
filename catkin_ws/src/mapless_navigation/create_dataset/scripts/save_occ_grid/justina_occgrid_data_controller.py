@@ -204,7 +204,6 @@ def main():
         rate = round(callback_count/ (time.time() - start))
         callback_count = 1
         
-    
 
 if __name__ == "__main__":
      main()

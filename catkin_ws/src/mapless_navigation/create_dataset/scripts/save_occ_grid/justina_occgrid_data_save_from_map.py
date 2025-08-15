@@ -39,7 +39,6 @@ nav_time = 0
 navigating = False
 
 
-
 class Map:
     def __init__(self, resolution, center, w, h, occ_mat):
         self.resolution = resolution
@@ -327,7 +326,6 @@ def main():
     save_data = False
 
     loop = rospy.Rate(1)
-
     while not rospy.is_shutdown():
 
         start = time.time()
@@ -396,6 +394,7 @@ def main():
         loop.sleep()
         rate = round(callback_count/ (time.time() - start))
         callback_count = 1
+
 
 if __name__ == "__main__":
      main()

@@ -41,24 +41,18 @@ int main(int argc, char **argv)
 
     ros::init(argc, argv, "image_taker");
     ros::NodeHandle nh;
-    // ros::Publisher image_pub = n.advertise<std_msgs::String>("image_viewer", 10);
     cv::namedWindow("Camera_viewer");
     image_transport::ImageTransport img_t(nh);
     image_transport::Subscriber img_sub = img_t.subscribe("hsrb/head_center_camera/image_raw", 1, imageCallback);
-    
     path_files = ros::package::getPath("create_dataset") + "/Dataset/";
     ROS_INFO("the path: %s", path_files.c_str());
-    //DirectoryUtils::replaceDir("../images", true);
     if (replace){
         DirectoryUtils::replaceDir(path_files, true);
     }
     ros::Rate loop_rate(1.0/10);
 
-    //int counter = 0;
     while (ros::ok())
     {
- 
-        //counter++;
         ros::spinOnce();
         loop_rate.sleep();
     }

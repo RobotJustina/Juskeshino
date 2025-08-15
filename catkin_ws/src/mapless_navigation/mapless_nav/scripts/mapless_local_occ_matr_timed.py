@@ -11,12 +11,12 @@ import torch
 from TorchModels.utils import models
 
 # >>>Select model
-n_channels = 2
-
+n_channels = 4
+outputs = 3
 occ_grid_meters = 4
-#model = models.Param_CNN_B(channels=n_channels, img_size=int(20*occ_grid_meters))
-model = models.RNN(channels=n_channels, img_size=int(20*occ_grid_meters)
-                   ,hidden_size=350, num_layers=4)
+model = models.Param_CNN_B(channels=n_channels, img_size=int(20*occ_grid_meters))
+#model = models.RNN(channels=n_channels, img_size=int(20*occ_grid_meters)
+#                   ,hidden_size=350, num_layers=4)
 
 package_path = rospkg.RosPack().get_path("mapless_nav")
 model_path = package_path + "/scripts/TorchModels/" 
@@ -44,13 +44,10 @@ def moveGoalCallback(msg):
     point.header.frame_id = "odom"
     point.header.stamp = rospy.Time.now()
     point.point = pos
-    
     clp_pub.publish(point)
-
     print(f"\nNew goal: ({pos.x:.3f}, {pos.y:.3f})", end="\r") 
     print(end='\n')
     target_reached = False
-
 
 
 def callback_goal(msg):
@@ -81,7 +78,6 @@ def occGridCallback(msg):
     data = np.reshape(data, (rows, rows))
     data = np.rot90(np.flip(data, axis=0))
 
-
     #other_features = np.zeros(msg.info.height)
     #other_features[:2] = [round(last_goal[0], 2), round(last_goal[1], 2)]
     other_features = np.array([np.ones(rows)*round(last_goal[0], 2), 
@@ -93,29 +89,19 @@ def occGridCallback(msg):
     # row n+2 = theta_to_target 
     # vect_ydat dim(3) label info = l_vel_x, l_vel_y, a_vel_z
     """
-
-
     data_X = np.vstack((data, other_features))
     entrada = np.asarray(data_X)
 
     # Config input to model
-
-
-    #print("entrada", entrada.shape)
     batch = []
     for i in range(n_channels):
         batch.append(entrada)
     entrada = np.array(batch)
-    #entrada = np.expand_dims(entrada, axis=0)
     entrada = np.expand_dims(entrada, axis=0)
-    
-
-    #print("entrada2", entrada.shape)
     x_ent = torch.tensor(entrada)
     x_ent = x_ent.to(torch.device(disp), torch.float32)
 
     turn_help = True
-    # print("last_goal", abs(last_goal[0]))
     #>> 3 params >>
     if (abs(last_goal[0]) > 0.5):
         with torch.no_grad():
@@ -125,13 +111,12 @@ def occGridCallback(msg):
             y_pred = y_pred.cpu().numpy()
         else:
             y_pred = y_pred.cpu().numpy()[0]
-            
+
         if turn_help:
             if abs(last_goal[1]) < 0.5:
                 linx = y_pred[0] #* speed_factor
                 angz = y_pred[2] *0.4
                 liny = y_pred[1]
-
             else:
                 linx = y_pred[0] / (5*abs(last_goal[1]))
                 liny = y_pred[1] / (10*abs(last_goal[1]))
@@ -139,41 +124,12 @@ def occGridCallback(msg):
                 print("control liny", liny, end='\n')
                 angz = y_pred[2] * 2.0
             
-            
         else:
             linx = y_pred[0]
             """Deleted"""
             liny = y_pred[1]
             """changed"""
             angz = y_pred[2]
-
-
-    #>> 2 params >
-    # if (abs(last_goal[0]) > 0.5):
-    #     with torch.no_grad():
-    #         y_pred = model(x_ent)
-    #     y_pred = y_pred.cpu().numpy()[0]
-
-    #     if turn_help:
-    #         if abs(last_goal[1]) < 0.3:
-    #             linx = y_pred[0] #* speed_factor
-    #             angz = y_pred[1]
-
-    #         else:
-    #             linx = y_pred[0] / (10*abs(last_goal[1]))
-    #             print("control linx", linx, end='\n')
-    #             print("control linx", linx, end='\n')
-    #             angz = y_pred[1] * speed_factor
-            
-    #     else:
-
-    #         linx = y_pred[0]
-
-    #         """Deleted"""
-    #         #liny = y_pred[1]
-
-    #         """changed"""
-    #         angz = y_pred[1]
 
     else:
         linx = 0.0
@@ -186,7 +142,6 @@ def occGridCallback(msg):
             goal_stat_pub.publish(status)
 
     
-
 def shutdown_stop():
     global pub_cmd
     pub_cmd.publish(Twist())
@@ -200,14 +155,11 @@ def main():
     rospy.Subscriber("/NN_goal", Float32MultiArray, callback_goal)
     rospy.Subscriber("/clicked_point", PointStamped, callback_point)
     rospy.Subscriber("/local_occ_grid", OccupancyGrid, occGridCallback)
-
     rospy.Subscriber('/move_base_simple/goal', PoseStamped, moveGoalCallback)
-
     pub_cmd = rospy.Publisher(
         "/hardware/mobile_base/cmd_vel", Twist, queue_size=10)
     pubHeadPos = rospy.Publisher("/hardware/head/goal_pose", Float64MultiArray, queue_size=1)
     print("NN_out has been started")
-
     goal_stat_pub = rospy.Publisher('/maples_nav/goal_reached', Int8, queue_size=1)
     
     loop = rospy.Rate(5)
@@ -225,11 +177,13 @@ def main():
         d = last_goal[0]
         th = last_goal[1]
         cad = f"trg({d:.4f}, {th:.4f}) || "
-        cad += f"vel(l_x, a_z) = ({linx:.3f},{angz:.3f})"
+        if outputs == 3:
+            cad += f"vel(l_x, l_y, a_z) = ({linx:.3f},{liny:.3f},{angz:.3f})"
+        else:    
+            cad += f"vel(l_x, a_z) = ({linx:.3f},{angz:.3f})"
         if target_reached:
             cad += " > target reached"
         pub_cmd.publish(msg)
-        
         print(" "*100, end='\r')
         print(cad, end='\r')
         rospy.on_shutdown(shutdown_stop)

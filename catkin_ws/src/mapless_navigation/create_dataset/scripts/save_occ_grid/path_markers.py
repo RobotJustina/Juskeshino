@@ -16,7 +16,6 @@ import numpy as np
 import math
 from juskeshino_tools.JuskeshinoNavigation import JuskeshinoNavigation
 
-
 marker_server = None
 nodes_count = 0
 

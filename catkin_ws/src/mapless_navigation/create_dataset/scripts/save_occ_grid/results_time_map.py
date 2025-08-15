@@ -121,9 +121,7 @@ def main():
     rospy.logwarn("results time map")
     JuskeshinoNavigation.setNodeHandle()
     listener = tf.TransformListener()
-
     rospy.Subscriber('/simple_move/goal_reached', GoalStatus, goalCallback)
-
     move_goal_pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
     map_msg = rospy.wait_for_message('/augmented_map', OccupancyGrid, timeout=5)
 
@@ -155,8 +153,6 @@ def main():
         else:
             trajectory.append(get_position())
             rospy.sleep(.5)
-
-    
 
 
 if __name__ == '__main__':

@@ -1,21 +1,15 @@
 #include "general_utils/cv_featues_utils.h"
 
-// CV Features >>
 void CVFeatures::harrisCorners(std::string window_name, cv::Mat image, int threshold, bool verbose){
-    //ROS_INFO("Test cv utils");
     cv::Mat img_gray;
     int blockSize = 2;
     int apertureSize = 3;
     double k = 0.04;
     try
     {
-
-        //cv::Mat image = cv_bridge::toCvShare(msg, "bgr8")->image;
         cv::cvtColor(image, img_gray, cv::COLOR_RGB2GRAY);
-
         cv::Mat dst = cv::Mat::zeros(image.size(), CV_32FC1);
         cv::cornerHarris(img_gray, dst, blockSize, apertureSize, k);
-
         cv::Mat dst_norm, dst_norm_scaled;
         cv::normalize(dst, dst_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat());
         cv::convertScaleAbs(dst_norm, dst_norm_scaled);
@@ -29,7 +23,6 @@ void CVFeatures::harrisCorners(std::string window_name, cv::Mat image, int thres
                 }
             }
         }
-
         cv::imshow(window_name, dst_norm_scaled);
         cv::waitKey(1);
     }
@@ -38,4 +31,3 @@ void CVFeatures::harrisCorners(std::string window_name, cv::Mat image, int thres
         ROS_ERROR("Could not convert to image!");
     }
 }
-// CV Features <<
