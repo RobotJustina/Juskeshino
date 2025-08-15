@@ -21,14 +21,15 @@ In order to save ooc grid data, follow the instructions:
 
 ## Occ Grid Dataset using map
 
-
+- launch "justina_mapless_save_from_map.launch" from pkg="create_dataset"
+- run the node "results_time_map.py" from pkg="create_dataset"
 
 # RUN experiments
 Report file will be save as "nav_register.csv" in  this folder
 
 ## Navigation using MAP
 - launch "justina_nav_from_map.launch" from pkg="create_dataset"
-- run the node "results_time_map.py" from pkg="create_dataset"
+- run the node "justina_occgrid_data_save_from_map.py" from pkg="create_dataset"
 
  Change scenario
 - Manually change world value from "static_map_file" and "prohibition_map_file" in "justina_nav_from_map.launch"
