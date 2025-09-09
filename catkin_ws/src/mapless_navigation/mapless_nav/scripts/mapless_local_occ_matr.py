@@ -2,7 +2,7 @@
 import rospy
 from std_msgs.msg import Float32MultiArray, Float64MultiArray
 from geometry_msgs.msg import Twist, PointStamped
-from nav_msgs.msg import OccupancyGrid, Odometry
+from nav_msgs.msg import OccupancyGrid
 import numpy as np
 import rospkg
 import torch

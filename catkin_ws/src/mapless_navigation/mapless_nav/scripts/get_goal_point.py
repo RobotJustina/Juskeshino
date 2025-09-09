@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 import rospy
-import numpy as np
-import ros_numpy
 import tf
 import math
 from std_msgs.msg import Float32MultiArray
